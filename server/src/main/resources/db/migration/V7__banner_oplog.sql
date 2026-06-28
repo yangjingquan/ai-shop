@@ -1,0 +1,26 @@
+CREATE TABLE banner (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  image_url VARCHAR(500) NOT NULL,
+  link_type TINYINT NOT NULL DEFAULT 0 COMMENT '0=NONE 1=PRODUCT 2=CATEGORY 3=URL',
+  link_value VARCHAR(500) DEFAULT '',
+  sort INT NOT NULL DEFAULT 0,
+  status TINYINT NOT NULL DEFAULT 1 COMMENT '1=显示 0=隐藏',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT(1) DEFAULT 0,
+  KEY idx_status_sort (status, sort)
+) ENGINE=InnoDB CHARSET=utf8mb4 COMMENT='首页轮播图';
+
+CREATE TABLE op_log (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  operator_type TINYINT NOT NULL COMMENT '1=ADMIN 2=MERCHANT 3=WX',
+  operator_id BIGINT UNSIGNED NOT NULL,
+  action VARCHAR(64) NOT NULL,
+  target_type VARCHAR(32) DEFAULT '',
+  target_id VARCHAR(64) DEFAULT '',
+  payload JSON COMMENT '入参快照',
+  ip VARCHAR(45) DEFAULT '',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_operator (operator_type, operator_id),
+  KEY idx_action_time (action, created_at)
+) ENGINE=InnoDB CHARSET=utf8mb4 COMMENT='敏感操作日志';

@@ -1,0 +1,76 @@
+<view class="home">
+  <view class="search-bar">
+    <view class="search-input">
+      <text class="search-icon">🔍</text>
+      <input
+        placeholder="搜索商品"
+        value="{{ keyword }}"
+        bindinput="onSearchInput"
+        confirm-type="search"
+      />
+    </view>
+  </view>
+
+  <swiper class="banner" autoplay circular indicator-dots interval="3000" wx:if="{{banners.length}}">
+    <swiper-item wx:for="{{banners}}" wx:key="id">
+      <image
+        class="banner-img"
+        src="{{ item.imageUrl }}"
+        mode="aspectFill"
+        data-banner="{{ item }}"
+        bindtap="onBannerTap"
+      />
+    </swiper-item>
+  </swiper>
+  <swiper class="banner" autoplay circular indicator-dots interval="3000" wx:else>
+    <swiper-item>
+      <view class="banner-placeholder">商城 Banner 占位</view>
+    </swiper-item>
+    <swiper-item>
+      <view class="banner-placeholder banner-2">新品 / 活动 占位</view>
+    </swiper-item>
+  </swiper>
+
+  <view class="cat-grid" wx:if="{{ topCategories.length }}">
+    <view
+      class="cat-cell"
+      wx:for="{{ topCategories }}"
+      wx:key="id"
+      bindtap="onCategory"
+      data-id="{{ item.id }}"
+    >
+      <image
+        wx:if="{{ item.icon }}"
+        class="cat-icon"
+        src="{{ item.icon }}"
+        mode="aspectFit"
+      />
+      <view wx:else class="cat-icon cat-icon-default">{{ item.name[0] }}</view>
+      <text class="cat-name">{{ item.name }}</text>
+    </view>
+  </view>
+
+  <view class="section-title">精选商品</view>
+
+  <view class="product-grid" wx:if="{{ products.length }}">
+    <view
+      class="prod-card"
+      wx:for="{{ products }}"
+      wx:key="id"
+      bindtap="onProduct"
+      data-id="{{ item.id }}"
+    >
+      <image
+        wx:if="{{ item.mainImage }}"
+        class="prod-image"
+        src="{{ item.mainImage }}"
+        mode="aspectFill"
+      />
+      <view wx:else class="prod-image prod-image-default">无图</view>
+      <view class="prod-title">{{ item.name }}</view>
+      <view class="prod-price">¥ {{ item.minPrice }}</view>
+    </view>
+  </view>
+
+  <view class="empty" wx:elif="{{ !loading }}">暂无商品</view>
+</view>

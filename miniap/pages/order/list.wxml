@@ -1,0 +1,29 @@
+<view class="order-list-page">
+  <view class="tabs">
+    <view class="tab {{currentStatus === null ? 'active' : ''}}" data-status="all" bindtap="switchTab">全部</view>
+    <view class="tab {{currentStatus === 0 ? 'active' : ''}}" data-status="0" bindtap="switchTab">待支付</view>
+    <view class="tab {{currentStatus === 1 ? 'active' : ''}}" data-status="1" bindtap="switchTab">待发货</view>
+    <view class="tab {{currentStatus === 2 ? 'active' : ''}}" data-status="2" bindtap="switchTab">待收货</view>
+    <view class="tab {{currentStatus === 3 ? 'active' : ''}}" data-status="3" bindtap="switchTab">已完成</view>
+    <view class="tab {{currentStatus === 4 ? 'active' : ''}}" data-status="4" bindtap="switchTab">已取消</view>
+  </view>
+
+  <view wx:if="{{orders.length === 0}}" class="empty">暂无订单</view>
+
+  <view class="order-card" wx:for="{{orders}}" wx:key="orderNo" data-orderno="{{item.orderNo}}" bindtap="goDetail">
+    <view class="card-header">
+      <text>{{item.merchantName}}</text>
+      <text class="status s{{item.status}}">{{item.statusText}}</text>
+    </view>
+    <view class="card-body">
+      <image class="item-img" src="{{item.firstItemImage}}" mode="aspectFill" />
+      <view class="item-info">
+        <view>{{item.itemSummary}}</view>
+        <view>共 {{item.itemCount}} 件</view>
+      </view>
+    </view>
+    <view class="card-footer">
+      <text>合计：¥{{item.payAmount}}</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,39 @@
+<view class="cart-page">
+  <view wx:if="{{items.length === 0}}" class="empty">购物车是空的</view>
+
+  <block wx:for="{{merchantGroups}}" wx:key="merchantId">
+    <view class="merchant-header">{{item.merchantName}}</view>
+    <view class="cart-item" wx:for="{{item.items}}" wx:for-item="cartItem" wx:key="id">
+      <checkbox
+        checked="{{selectedIds.indexOf(cartItem.id) > -1}}"
+        disabled="{{!cartItem.available}}"
+        data-id="{{cartItem.id}}"
+        bindtap="toggleSelect"
+      />
+      <image class="item-img" src="{{cartItem.mainImage}}" mode="aspectFill" />
+      <view class="item-info">
+        <view class="item-name">{{cartItem.productName}}</view>
+        <view class="item-spec">{{cartItem.specText}}</view>
+        <view class="item-bottom">
+          <text class="item-price">¥{{cartItem.unitPrice}}</text>
+          <input
+            class="item-qty"
+            type="number"
+            value="{{cartItem.quantity}}"
+            data-id="{{cartItem.id}}"
+            bindblur="changeQuantity"
+          />
+        </view>
+        <view wx:if="{{!cartItem.available}}" class="unavailable-tip">{{cartItem.unavailableReason}}</view>
+      </view>
+      <view class="item-delete" data-id="{{cartItem.id}}" bindtap="deleteItem">×</view>
+    </view>
+  </block>
+
+  <view class="bottom-bar" wx:if="{{items.length > 0}}">
+    <checkbox checked="{{allSelected}}" bindtap="selectAll" />
+    <text>全选</text>
+    <text class="total">合计：¥{{totalAmount}}</text>
+    <button class="checkout-btn" bindtap="goCheckout">去结算({{selectedIds.length}})</button>
+  </view>
+</view>

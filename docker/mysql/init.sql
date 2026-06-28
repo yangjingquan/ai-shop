@@ -1,0 +1,8 @@
+CREATE DATABASE IF NOT EXISTS shop
+  DEFAULT CHARACTER SET utf8mb4
+  DEFAULT COLLATE utf8mb4_unicode_ci;
+
+-- 让 shop 用户从任意主机连接（开发期）
+CREATE USER IF NOT EXISTS 'shop'@'%' IDENTIFIED BY 'changeme_shop';
+GRANT ALL PRIVILEGES ON shop.* TO 'shop'@'%';
+FLUSH PRIVILEGES;

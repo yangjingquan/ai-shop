@@ -1,0 +1,38 @@
+<view class="confirm-page">
+  <view class="section" wx:if="{{preview}}">
+    <view class="section-title">收货地址</view>
+    <view class="address-card">
+      <view>{{preview.address.receiver}} {{preview.address.phone}}</view>
+      <view>{{preview.address.region}} {{preview.address.detail}}</view>
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{preview}}">
+    <view class="section-title">商品明细</view>
+    <block wx:for="{{preview.groups}}" wx:key="merchantId">
+      <view class="merchant-header">{{item.merchantName}}</view>
+      <view class="order-item" wx:for="{{item.items}}" wx:key="cartItemId">
+        <image class="item-img" src="{{item.mainImage}}" mode="aspectFill" />
+        <view class="item-info">
+          <view>{{item.productName}}</view>
+          <view class="spec">{{item.specText}}</view>
+        </view>
+        <view class="item-right">
+          <text>¥{{item.unitPrice}} x {{item.quantity}}</text>
+          <text class="subtotal">¥{{item.subtotal}}</text>
+        </view>
+        <view wx:if="{{!item.available}}" class="unavailable-tip">{{item.unavailableReason}}</view>
+      </view>
+      <view class="group-total">
+        小计：¥{{item.payAmount}}（免运费）
+      </view>
+    </block>
+  </view>
+
+  <view class="bottom-bar">
+    <text>合计：¥{{preview.totalAmount || '0.00'}}</text>
+    <button class="submit-btn" bindtap="submitOrder" disabled="{{submitting}}">
+      {{submitting ? '提交中...' : '提交订单'}}
+    </button>
+  </view>
+</view>

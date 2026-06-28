@@ -1,0 +1,23 @@
+<view class="page">
+  <block wx:for="{{ list }}" wx:key="id">
+    <view class="addr-card">
+      <view class="line">
+        <text class="receiver">{{ item.receiver }}</text>
+        <text class="phone">{{ item.phone }}</text>
+        <text wx:if="{{ item.isDefault }}" class="tag-default">默认</text>
+      </view>
+      <view class="addr">{{ item.region }} {{ item.detail }}</view>
+      <view class="actions">
+        <text class="action" bindtap="onEdit" data-id="{{ item.id }}">编辑</text>
+        <text class="action" bindtap="onDelete" data-id="{{ item.id }}">删除</text>
+        <text wx:if="{{ !item.isDefault }}" class="action" bindtap="onSetDefault" data-id="{{ item.id }}">设默认</text>
+      </view>
+    </view>
+  </block>
+
+  <view wx:if="{{ list.length === 0 }}" class="empty">
+    <text>暂无地址，点击下方添加</text>
+  </view>
+
+  <view class="add-btn" bindtap="onAdd">+ 新增地址</view>
+</view>

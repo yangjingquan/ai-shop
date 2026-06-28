@@ -1,0 +1,16 @@
+/* 订单确认页 */
+.confirm-page { padding: 20rpx; background: #f5f5f5; }
+.section { background: #fff; margin-bottom: 20rpx; border-radius: 10rpx; padding: 20rpx; }
+.section-title { font-weight: bold; margin-bottom: 12rpx; }
+.address-card { font-size: 28rpx; line-height: 1.6; }
+.merchant-header { padding: 12rpx 0; font-weight: bold; font-size: 30rpx; }
+.order-item { display: flex; padding: 12rpx 0; border-bottom: 1rpx solid #eee; }
+.item-img { width: 120rpx; height: 120rpx; border-radius: 8rpx; }
+.item-info { flex: 1; padding: 0 16rpx; }
+.spec { color: #999; font-size: 24rpx; }
+.item-right { text-align: right; }
+.subtotal { font-weight: bold; color: #ff6600; }
+.unavailable-tip { color: #ff3333; font-size: 24rpx; }
+.group-total { text-align: right; padding: 12rpx 0; font-size: 28rpx; color: #666; }
+.bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 20rpx; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.1); }
+.submit-btn { background: #ff6600; color: #fff; border-radius: 40rpx; padding: 16rpx 40rpx; font-size: 30rpx; }

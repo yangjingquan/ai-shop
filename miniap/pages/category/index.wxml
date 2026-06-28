@@ -1,0 +1,36 @@
+<view class="cat-page">
+  <scroll-view class="left-tabs" scroll-y>
+    <view
+      wx:for="{{ topCats }}"
+      wx:key="id"
+      class="tab {{ activeTopId === item.id ? 'active' : '' }}"
+      bindtap="onTopTab"
+      data-id="{{ item.id }}"
+    >
+      {{ item.name }}
+    </view>
+    <view wx:if="{{ topCats.length === 0 && !loading }}" class="empty-tab">暂无分类</view>
+  </scroll-view>
+
+  <scroll-view class="right-content" scroll-y>
+    <view wx:for="{{ subCats }}" wx:key="id" class="sub-section">
+      <view class="sub-title">{{ item.name }}</view>
+      <view class="sub-products">
+        <view
+          wx:for="{{ item.products }}"
+          wx:key="id"
+          wx:for-item="p"
+          class="prod"
+          bindtap="onProduct"
+          data-id="{{ p.id }}"
+        >
+          <image class="prod-img" src="{{ p.mainImage }}" mode="aspectFill" />
+          <view class="prod-name">{{ p.name }}</view>
+          <view class="prod-price">¥ {{ p.minPrice }}</view>
+        </view>
+        <view wx:if="{{ item.products.length === 0 }}" class="empty-products">暂无商品</view>
+      </view>
+    </view>
+    <view wx:if="{{ subCats.length === 0 && !loading }}" class="empty-content">该分类下暂无子分类</view>
+  </scroll-view>
+</view>

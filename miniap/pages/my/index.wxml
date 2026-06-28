@@ -1,0 +1,30 @@
+<view class="my-page">
+  <view class="user-card">
+    <image class="avatar" src="{{ avatarUrl || '/images/default-avatar.png' }}" mode="aspectFill" />
+    <view class="info">
+      <text class="nickname">{{ nickname || '微信用户' }}</text>
+      <view class="phone-row">
+        <text wx:if="{{ phone }}" class="phone">{{ phone }}</text>
+        <button
+          wx:else
+          class="bind-btn"
+          size="mini"
+          type="primary"
+          open-type="getPhoneNumber"
+          bindgetphonenumber="onGetPhone"
+        >绑定手机号</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="menu">
+    <navigator class="menu-item" url="/pages/address/list" hover-class="menu-item-hover">
+      <text>收货地址</text>
+      <text class="arrow">›</text>
+    </navigator>
+    <view class="menu-item" hover-class="menu-item-hover" bindtap="goOrders">
+      <text>我的订单</text>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+</view>

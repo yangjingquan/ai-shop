@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: shop-server
+  profiles:
+    active: dev
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-not-delete-value: 0
+      logic-delete-value: 1
+      id-type: auto
+
+shop:
+  jwt:
+    secret: ${SHOP_JWT_SECRET:dev-shop-jwt-secret-please-change-in-prod-min-32-bytes}
+    admin-ttl-hours: 8
+    merchant-ttl-hours: 8
+    wx-ttl-days: 7
+  wechat:
+    appid: ${WX_APPID:wx-dev-placeholder}
+    secret: ${WX_SECRET:wx-dev-secret-placeholder}

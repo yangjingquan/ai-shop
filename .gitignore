@@ -1,0 +1,32 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java / Maven
+target/
+*.class
+HELP.md
+
+# Node / Vite
+node_modules/
+dist/
+.vite/
+*.local
+
+# Mini-app
+miniprogram_npm/
+
+# Env
+.env
+.env.local
+.env.production
+docker/.env
+
+# Logs
+logs/
+*.log

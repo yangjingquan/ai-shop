@@ -1,0 +1,41 @@
+<view class="detail-page" wx:if="{{order}}">
+  <view class="status-bar s{{order.status}}">{{order.statusText}}</view>
+
+  <view class="address-card">
+    <view>{{order.address.receiver}} {{order.address.phone}}</view>
+    <view>{{order.address.region}} {{order.address.detail}}</view>
+  </view>
+
+  <view class="merchant-name">{{order.merchantName}}</view>
+
+  <view class="order-item" wx:for="{{order.items}}" wx:key="skuId">
+    <image class="item-img" src="{{item.mainImage}}" mode="aspectFill" />
+    <view class="item-info">
+      <view>{{item.productName}}</view>
+      <view class="spec">{{item.specText}}</view>
+      <view>¥{{item.unitPrice}} x {{item.quantity}}</view>
+    </view>
+    <text class="subtotal">¥{{item.subtotal}}</text>
+  </view>
+
+  <view class="amount-row">
+    <text>商品金额</text><text>¥{{order.totalAmount}}</text>
+  </view>
+  <view class="amount-row">
+    <text>运费</text><text>¥{{order.freightAmount}}</text>
+  </view>
+  <view class="amount-row total">
+    <text>实付款</text><text>¥{{order.payAmount}}</text>
+  </view>
+
+  <view class="order-info">
+    <view>订单号：{{order.orderNo}}</view>
+    <view>创建时间：{{order.createdAt}}</view>
+    <view wx:if="{{order.payTime}}">支付时间：{{order.payTime}}</view>
+  </view>
+
+  <view class="actions" wx:if="{{order.status === 0}}">
+    <button class="cancel-btn" bindtap="cancelOrder">取消订单</button>
+    <button class="pay-btn" bindtap="mockPay">模拟支付</button>
+  </view>
+</view>
