@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 @Data
 public class MerchantSelfVO {
     private Long id;
+    private String merchantCode;
     private String name;
     private String logo;
     private String description;

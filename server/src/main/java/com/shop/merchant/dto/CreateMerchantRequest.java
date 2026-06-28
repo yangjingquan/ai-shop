@@ -25,4 +25,10 @@ public class CreateMerchantRequest {
     private String description;
     private String address;
     private String logo;
+
+    @Size(max = 64)
+    private String wxAppId;
+
+    @Size(max = 128)
+    private String wxSecret;
 }

@@ -54,9 +54,13 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         m.setAddress(req.getAddress());
         m.setContactName(req.getContactName());
         m.setContactPhone(req.getContactPhone());
+        m.setWxAppId(req.getWxAppId() == null ? "" : req.getWxAppId());
+        m.setWxSecret(req.getWxSecret() == null ? "" : req.getWxSecret());
         m.setStatus(1);
         m.setCreatedByAdminId(adminUserId);
         merchantMapper.insert(m);
+        m.setMerchantCode(generateMerchantCode(m.getId()));
+        merchantMapper.updateById(m);
 
         // 插首个 merchant_user
         MerchantUser mu = new MerchantUser();
@@ -93,8 +97,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         }
 
         List<MerchantVO> vos = result.getRecords().stream().map(m -> {
-            MerchantVO vo = new MerchantVO();
-            BeanUtils.copyProperties(m, vo);
+            MerchantVO vo = toVO(m);
             vo.setUsername(usernameMap.get(m.getId()));
             return vo;
         }).collect(Collectors.toList());
@@ -108,8 +111,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         if (m == null) {
             throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
         }
-        MerchantVO vo = new MerchantVO();
-        BeanUtils.copyProperties(m, vo);
+        MerchantVO vo = toVO(m);
         MerchantUser u = merchantUserMapper.selectOne(
                 new LambdaQueryWrapper<MerchantUser>()
                         .eq(MerchantUser::getMerchantId, id)
@@ -134,7 +136,23 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         if (req.getAddress() != null) m.setAddress(req.getAddress());
         if (req.getContactName() != null) m.setContactName(req.getContactName());
         if (req.getContactPhone() != null) m.setContactPhone(req.getContactPhone());
+        if (req.getWxAppId() != null) m.setWxAppId(req.getWxAppId());
+        if (req.getWxSecret() != null && !req.getWxSecret().isBlank()) m.setWxSecret(req.getWxSecret());
         merchantMapper.updateById(m);
+    }
+
+    private MerchantVO toVO(Merchant m) {
+        MerchantVO vo = new MerchantVO();
+        BeanUtils.copyProperties(m, vo);
+        vo.setWxSecretConfigured(m.getWxSecret() != null && !m.getWxSecret().isBlank());
+        return vo;
+    }
+
+    private String generateMerchantCode(Long merchantId) {
+        if (merchantId == null || merchantId <= 0 || merchantId > 999999) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "商户ID超出6位商户代码生成范围");
+        }
+        return String.format("%06d", merchantId);
     }
 
     @Override

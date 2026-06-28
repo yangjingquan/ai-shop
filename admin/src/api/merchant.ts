@@ -2,6 +2,7 @@ import request from '@/utils/request'
 
 export interface MerchantVO {
   id: number
+  merchantCode?: string
   name: string
   username?: string
   logo?: string
@@ -9,6 +10,8 @@ export interface MerchantVO {
   address?: string
   contactName?: string
   contactPhone?: string
+  wxAppId?: string
+  wxSecretConfigured?: boolean
   status: number
   createdAt?: string
   updatedAt?: string
@@ -30,6 +33,8 @@ export interface CreateMerchantPayload {
   description?: string
   address?: string
   logo?: string
+  wxAppId?: string
+  wxSecret?: string
 }
 
 export type UpdateMerchantPayload = Omit<CreateMerchantPayload, 'username' | 'password'>

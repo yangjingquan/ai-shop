@@ -11,13 +11,13 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@Profile("dev")
+@Profile("mock-wx")
 public class MockWxApiClient implements WxApiClient {
 
     @Override
-    public String code2Openid(String jsCode) {
-        String openid = "dev_openid_" + jsCode;
-        log.info("[MockWxApiClient] code={} -> openid={}", jsCode, openid);
+    public String code2Openid(String appid, String secret, String jsCode) {
+        String openid = "dev_openid_" + appid + "_" + jsCode;
+        log.info("[MockWxApiClient] appid={} code={} -> openid={}", appid, jsCode, openid);
         return openid;
     }
 }

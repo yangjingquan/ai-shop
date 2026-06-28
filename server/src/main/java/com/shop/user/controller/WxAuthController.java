@@ -22,6 +22,6 @@ public class WxAuthController {
     @RateLimit(key = "login", limit = 5, windowSec = 60)
     @PostMapping("/login")
     public ApiResult<WxLoginResponse> login(@RequestBody @Valid WxLoginRequest req) {
-        return ApiResult.success(userService.wxLogin(req.getCode()));
+        return ApiResult.success(userService.wxLogin(req.getCode(), req.getMerchantCode()));
     }
 }

@@ -27,6 +27,8 @@ const form = reactive({
   description: '',
   address: '',
   logo: '',
+  wxAppId: '',
+  wxSecret: '',
 })
 
 const rules: FormRules = {
@@ -52,6 +54,8 @@ watch(
       form.description = props.row.description ?? ''
       form.address = props.row.address ?? ''
       form.logo = props.row.logo ?? ''
+      form.wxAppId = props.row.wxAppId ?? ''
+      form.wxSecret = ''
       form.username = ''
       form.password = ''
     } else {
@@ -63,6 +67,8 @@ watch(
       form.description = ''
       form.address = ''
       form.logo = ''
+      form.wxAppId = ''
+      form.wxSecret = ''
     }
   },
 )
@@ -87,6 +93,8 @@ async function handleSubmit() {
           description: form.description || undefined,
           address: form.address || undefined,
           logo: form.logo || undefined,
+          wxAppId: form.wxAppId || undefined,
+          wxSecret: form.wxSecret || undefined,
         })
         ElMessage.success('创建成功')
       } else if (props.row) {
@@ -97,6 +105,8 @@ async function handleSubmit() {
           description: form.description || undefined,
           address: form.address || undefined,
           logo: form.logo || undefined,
+          wxAppId: form.wxAppId,
+          wxSecret: form.wxSecret || undefined,
         })
         ElMessage.success('保存成功')
       }
@@ -113,10 +123,13 @@ async function handleSubmit() {
   <el-dialog
     :model-value="modelValue"
     :title="mode === 'create' ? '新增商家' : '编辑商家'"
-    width="520px"
+    width="680px"
     @update:model-value="handleClose"
   >
-    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="130px">
+      <el-form-item v-if="mode === 'edit'" label="商户代码">
+        <el-input :model-value="row?.merchantCode || '-'" disabled />
+      </el-form-item>
       <el-form-item label="商家名称" prop="name">
         <el-input v-model="form.name" />
       </el-form-item>
@@ -140,6 +153,18 @@ async function handleSubmit() {
       <el-form-item label="店铺地址">
         <el-input v-model="form.address" />
       </el-form-item>
+      <el-form-item label="小程序 AppID">
+        <el-input v-model="form.wxAppId" placeholder="请输入 WX_APPID" maxlength="64" />
+      </el-form-item>
+      <el-form-item label="小程序 AppSecret">
+        <el-input
+          v-model="form.wxSecret"
+          show-password
+          maxlength="128"
+          :placeholder="mode === 'edit' ? '留空则不修改 WX_SECRET' : '请输入 WX_SECRET'"
+        />
+        <div v-if="mode === 'edit' && row?.wxSecretConfigured" class="hint">当前商户已配置 AppSecret，留空不会覆盖。</div>
+      </el-form-item>
       <el-form-item label="店铺 Logo">
         <ImageUploader v-model="form.logo" scope="admin" :limit="1" label="上传 Logo" />
       </el-form-item>
@@ -152,3 +177,11 @@ async function handleSubmit() {
     </template>
   </el-dialog>
 </template>
+
+<style scoped>
+.hint {
+  margin-top: 6px;
+  color: var(--shop-text-muted);
+  font-size: 12px;
+}
+</style>

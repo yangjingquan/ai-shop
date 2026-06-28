@@ -7,6 +7,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class WxLoginResponse {
     private String token;
+    private String openid;
     private Boolean isNewUser;
     private Boolean hasPhone;
 }

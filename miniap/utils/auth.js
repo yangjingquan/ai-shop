@@ -11,12 +11,13 @@ function silentLogin() {
         wx.request({
           url: config.BASE_URL + '/api/wx/auth/login',
           method: 'POST',
-          data: { code: loginRes.code },
+          data: { code: loginRes.code, merchantCode: config.MERCHANT_CODE },
           header: { 'content-type': 'application/json' },
           success(res) {
             const data = res.data
             if (data.code === 0 && data.data && data.data.token) {
               wx.setStorageSync('wx_token', data.data.token)
+              wx.setStorageSync('wx_openid', data.data.openid || '')
               wx.setStorageSync('has_phone', data.data.hasPhone)
               resolve(data.data)
             } else {

@@ -5,6 +5,8 @@ import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.security.JwtUtil;
 import com.shop.common.security.UserType;
+import com.shop.merchant.entity.Merchant;
+import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.user.dto.WxLoginResponse;
 import com.shop.user.entity.User;
 import com.shop.user.mapper.UserMapper;
@@ -27,11 +29,28 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final WxApiClient wxApiClient;
     private final WxPhoneApiClient wxPhoneApiClient;
+    private final MerchantMapper merchantMapper;
     private final JwtUtil jwtUtil;
 
     @Override
-    public WxLoginResponse wxLogin(String code) {
-        String openid = wxApiClient.code2Openid(code);
+    public WxLoginResponse wxLogin(String code, String merchantCode) {
+        Merchant merchant = merchantMapper.selectOne(
+            new LambdaQueryWrapper<Merchant>()
+                .eq(Merchant::getMerchantCode, merchantCode)
+                .last("LIMIT 1")
+        );
+        if (merchant == null) {
+            throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
+        }
+        if (!Integer.valueOf(1).equals(merchant.getStatus())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        if (merchant.getWxAppId() == null || merchant.getWxAppId().isBlank()
+            || merchant.getWxSecret() == null || merchant.getWxSecret().isBlank()) {
+            throw new BusinessException(ErrorCode.WX_LOGIN_FAILED);
+        }
+
+        String openid = wxApiClient.code2Openid(merchant.getWxAppId(), merchant.getWxSecret(), code);
         if (openid == null || openid.isBlank()) {
             throw new BusinessException(ErrorCode.WX_LOGIN_FAILED);
         }
@@ -50,10 +69,16 @@ public class UserServiceImpl implements UserService {
         }
         String token = jwtUtil.generateToken(
             UserType.WX,
-            Map.of("userId", user.getId(), "openid", openid)
+            Map.of(
+                "userId", user.getId(),
+                "openid", openid,
+                "merchantId", merchant.getId(),
+                "merchantCode", merchant.getMerchantCode(),
+                "appid", merchant.getWxAppId()
+            )
         );
         boolean hasPhone = user.getPhone() != null && !user.getPhone().isBlank();
-        return new WxLoginResponse(token, isNewUser, hasPhone);
+        return new WxLoginResponse(token, openid, isNewUser, hasPhone);
     }
 
     @Override
