@@ -3,35 +3,50 @@
 
   <block wx:for="{{merchantGroups}}" wx:key="merchantId">
     <view class="merchant-header">{{item.merchantName}}</view>
-    <view class="cart-item" wx:for="{{item.items}}" wx:for-item="cartItem" wx:key="id">
-      <checkbox
-        checked="{{selectedIds.indexOf(cartItem.id) > -1}}"
-        disabled="{{!cartItem.available}}"
+    <view class="swipe-wrap" wx:for="{{item.items}}" wx:for-item="cartItem" wx:key="id">
+      <view class="delete-action" data-id="{{cartItem.id}}" bindtap="deleteItem">删除</view>
+      <view
+        class="cart-item"
+        style="transform: translateX({{cartItem.swipeX}}px);"
         data-id="{{cartItem.id}}"
-        bindtap="toggleSelect"
-      />
-      <image class="item-img" src="{{cartItem.mainImage}}" mode="aspectFill" />
-      <view class="item-info">
-        <view class="item-name">{{cartItem.productName}}</view>
-        <view class="item-spec">{{cartItem.specText}}</view>
-        <view class="item-bottom">
-          <text class="item-price">¥{{cartItem.unitPrice}}</text>
-          <input
-            class="item-qty"
-            type="number"
-            value="{{cartItem.quantity}}"
-            data-id="{{cartItem.id}}"
-            bindblur="changeQuantity"
-          />
+        bindtouchstart="onItemTouchStart"
+        bindtouchmove="onItemTouchMove"
+        bindtouchend="onItemTouchEnd"
+      >
+        <view
+          class="check-btn {{cartItem.selected ? 'checked' : ''}} {{cartItem.available === false ? 'disabled' : ''}}"
+          data-id="{{cartItem.id}}"
+          data-checked="{{cartItem.selected}}"
+          bindtap="toggleSelect"
+        >
+          <text wx:if="{{cartItem.selected}}">✓</text>
         </view>
-        <view wx:if="{{!cartItem.available}}" class="unavailable-tip">{{cartItem.unavailableReason}}</view>
+        <image class="item-img" src="{{cartItem.mainImage}}" mode="aspectFill" />
+        <view class="item-info">
+          <view class="item-name">{{cartItem.productName}}</view>
+          <view class="item-spec">{{cartItem.specText}}</view>
+          <view class="item-bottom">
+            <text class="item-price">¥{{cartItem.unitPrice}}</text>
+            <view class="qty-stepper">
+              <text class="qty-btn {{cartItem.quantity <= 1 ? 'disabled' : ''}}" data-id="{{cartItem.id}}" bindtap="onQtyMinus">-</text>
+              <text class="qty-num">{{cartItem.quantity}}</text>
+              <text class="qty-btn {{cartItem.stock && cartItem.quantity >= cartItem.stock ? 'disabled' : ''}}" data-id="{{cartItem.id}}" bindtap="onQtyPlus">+</text>
+            </view>
+          </view>
+          <view wx:if="{{!cartItem.available}}" class="unavailable-tip">{{cartItem.unavailableReason}}</view>
+        </view>
       </view>
-      <view class="item-delete" data-id="{{cartItem.id}}" bindtap="deleteItem">×</view>
     </view>
   </block>
 
   <view class="bottom-bar" wx:if="{{items.length > 0}}">
-    <checkbox checked="{{allSelected}}" bindtap="selectAll" />
+    <view
+      class="check-btn bottom-check {{allSelected ? 'checked' : ''}}"
+      data-checked="{{allSelected}}"
+      bindtap="selectAll"
+    >
+      <text wx:if="{{allSelected}}">✓</text>
+    </view>
     <text>全选</text>
     <text class="total">合计：¥{{totalAmount}}</text>
     <button class="checkout-btn" bindtap="goCheckout">去结算({{selectedIds.length}})</button>
