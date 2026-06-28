@@ -1,9 +1,16 @@
 <view class="confirm-page">
+  <view class="no-address-card" wx:if="{{noAddress}}">
+    <view class="no-address-title">还没有收货地址</view>
+    <view class="no-address-desc">请先到【我的】页面设置收货地址，再返回提交订单。</view>
+    <button class="go-my-btn" bindtap="goMy">去我的页面设置</button>
+  </view>
+
   <view class="section" wx:if="{{preview}}">
     <view class="section-title">收货地址</view>
-    <view class="address-card">
+    <view class="address-card" bindtap="chooseAddress">
       <view>{{preview.address.receiver}} {{preview.address.phone}}</view>
       <view>{{preview.address.region}} {{preview.address.detail}}</view>
+      <view class="address-change">点击切换收货地址 ›</view>
     </view>
   </view>
 
@@ -29,7 +36,7 @@
     </block>
   </view>
 
-  <view class="bottom-bar">
+  <view class="bottom-bar" wx:if="{{!noAddress}}">
     <text>合计：¥{{preview.totalAmount || '0.00'}}</text>
     <button class="submit-btn" bindtap="submitOrder" disabled="{{submitting}}">
       {{submitting ? '提交中...' : '提交订单'}}

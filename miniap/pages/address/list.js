@@ -3,6 +3,11 @@ const addressApi = require('../../api/address')
 Page({
   data: {
     list: [],
+    selectMode: false,
+  },
+
+  onLoad(opts) {
+    this.setData({ selectMode: opts && opts.select === '1' })
   },
 
   onShow() {
@@ -13,6 +18,13 @@ Page({
     addressApi.list().then((res) => {
       this.setData({ list: res.data || [] })
     }).catch(() => {})
+  },
+
+  onSelect(e) {
+    if (!this.data.selectMode) return
+    const id = e.currentTarget.dataset.id
+    wx.setStorageSync('order_selected_address_id', id)
+    wx.navigateBack()
   },
 
   onAdd() {

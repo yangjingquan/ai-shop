@@ -3,6 +3,11 @@
 .section { background: #fff; margin-bottom: 20rpx; border-radius: 10rpx; padding: 20rpx; }
 .section-title { font-weight: bold; margin-bottom: 12rpx; }
 .address-card { font-size: 28rpx; line-height: 1.6; }
+.address-change { margin-top: 10rpx; color: #ff6600; font-size: 24rpx; }
+.no-address-card { background: #fff; border-radius: 16rpx; padding: 48rpx 32rpx; text-align: center; }
+.no-address-title { font-size: 34rpx; font-weight: 600; color: #333; margin-bottom: 16rpx; }
+.no-address-desc { font-size: 28rpx; color: #777; line-height: 1.6; margin-bottom: 32rpx; }
+.go-my-btn { background: #ff6600; color: #fff; border-radius: 40rpx; font-size: 30rpx; }
 .merchant-header { padding: 12rpx 0; font-weight: bold; font-size: 30rpx; }
 .order-item { display: flex; padding: 12rpx 0; border-bottom: 1rpx solid #eee; }
 .item-img { width: 120rpx; height: 120rpx; border-radius: 8rpx; }

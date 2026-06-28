@@ -1,6 +1,6 @@
 <view class="page">
   <block wx:for="{{ list }}" wx:key="id">
-    <view class="addr-card">
+    <view class="addr-card" bindtap="onSelect" data-id="{{ item.id }}">
       <view class="line">
         <text class="receiver">{{ item.receiver }}</text>
         <text class="phone">{{ item.phone }}</text>

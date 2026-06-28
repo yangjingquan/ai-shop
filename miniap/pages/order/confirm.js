@@ -6,6 +6,7 @@ Page({
     preview: null,
     cartItemIds: [],
     addressId: null,
+    noAddress: false,
     submitting: false
   },
 
@@ -15,6 +16,14 @@ Page({
     this.loadDefaultAddress();
   },
 
+  onShow() {
+    const selectedAddressId = wx.getStorageSync('order_selected_address_id');
+    if (!selectedAddressId) return;
+    wx.removeStorageSync('order_selected_address_id');
+    this.setData({ addressId: Number(selectedAddressId), noAddress: false });
+    this.loadPreview();
+  },
+
   loadDefaultAddress() {
     app.request({
       url: '/api/wx/addresses',
@@ -22,10 +31,10 @@ Page({
     }).then(res => {
       if (res.code === 0 && res.data && res.data.length > 0) {
         const defaultAddr = res.data.find(a => a.isDefault) || res.data[0];
-        this.setData({ addressId: defaultAddr.id });
+        this.setData({ addressId: defaultAddr.id, noAddress: false });
         this.loadPreview();
       } else {
-        wx.showToast({ title: '请先添加收货地址', icon: 'none' });
+        this.setData({ noAddress: true, preview: null, addressId: null });
       }
     });
   },
@@ -56,7 +65,19 @@ Page({
     });
   },
 
+  chooseAddress() {
+    wx.navigateTo({ url: '/pages/address/list?select=1' });
+  },
+
+  goMy() {
+    wx.switchTab({ url: '/pages/my/index' });
+  },
+
   submitOrder() {
+    if (this.data.noAddress || !this.data.addressId) {
+      this.goMy();
+      return;
+    }
     if (this.data.submitting) return;
     this.setData({ submitting: true });
 
