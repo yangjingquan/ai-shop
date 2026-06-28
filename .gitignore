@@ -30,3 +30,5 @@ docker/.env
 # Logs
 logs/
 *.log
+
+server/uploads/*
