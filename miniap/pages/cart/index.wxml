@@ -12,6 +12,7 @@
         bindtouchstart="onItemTouchStart"
         bindtouchmove="onItemTouchMove"
         bindtouchend="onItemTouchEnd"
+        bindtouchcancel="onItemTouchCancel"
       >
         <view
           class="check-btn {{cartItem.selected ? 'checked' : ''}} {{cartItem.available === false ? 'disabled' : ''}}"

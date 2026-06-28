@@ -1,6 +1,10 @@
 const cartApi = require('../../api/cart')
 const { resolveImageUrl } = require('../../utils/url')
 
+const DELETE_ACTION_WIDTH_RPX = 144
+const OPEN_THRESHOLD_RATIO = 0.5
+const DIRECTION_LOCK_DISTANCE = 8
+
 Page({
   data: {
     items: [],
@@ -9,11 +13,34 @@ Page({
     totalAmount: '0.00',
     allSelected: false,
     touchStartX: 0,
+    touchStartY: 0,
+    touchStartSwipeX: 0,
+    isHorizontalSwipe: false,
+    isVerticalScroll: false,
     swipingId: null,
   },
 
   onShow() {
     this.loadCart()
+  },
+
+  getDeleteActionWidthPx() {
+    if (!this.deleteActionWidthPx) {
+      const { windowWidth } = wx.getSystemInfoSync()
+      this.deleteActionWidthPx = DELETE_ACTION_WIDTH_RPX / 750 * windowWidth
+    }
+    return this.deleteActionWidthPx
+  },
+
+  resetTouchState() {
+    this.setData({
+      touchStartX: 0,
+      touchStartY: 0,
+      touchStartSwipeX: 0,
+      isHorizontalSwipe: false,
+      isVerticalScroll: false,
+      swipingId: null,
+    })
   },
 
   loadCart() {
@@ -131,17 +158,37 @@ Page({
   },
 
   onItemTouchStart(e) {
+    const id = Number(e.currentTarget.dataset.id)
+    const item = this.data.items.find(i => i.id === id)
     this.setData({
       touchStartX: e.touches[0].clientX,
-      swipingId: Number(e.currentTarget.dataset.id),
+      touchStartY: e.touches[0].clientY,
+      touchStartSwipeX: item ? Number(item.swipeX || 0) : 0,
+      isHorizontalSwipe: false,
+      isVerticalScroll: false,
+      swipingId: id,
     })
   },
 
   onItemTouchMove(e) {
     const id = Number(e.currentTarget.dataset.id)
-    const diffX = e.touches[0].clientX - this.data.touchStartX
-    if (diffX >= 0) return
-    const swipeX = Math.max(diffX, -72)
+    const touch = e.touches[0]
+    const diffX = touch.clientX - this.data.touchStartX
+    const diffY = touch.clientY - this.data.touchStartY
+
+    if (!this.data.swipingId || this.data.isVerticalScroll) return
+
+    if (!this.data.isHorizontalSwipe) {
+      if (Math.abs(diffX) < DIRECTION_LOCK_DISTANCE && Math.abs(diffY) < DIRECTION_LOCK_DISTANCE) return
+      if (Math.abs(diffY) > Math.abs(diffX)) {
+        this.setData({ isVerticalScroll: true })
+        return
+      }
+      this.setData({ isHorizontalSwipe: true })
+    }
+
+    const actionWidth = this.getDeleteActionWidthPx()
+    const swipeX = Math.min(0, Math.max(this.data.touchStartSwipeX + diffX, -actionWidth))
     const items = this.data.items.map(item => ({
       ...item,
       swipeX: item.id === id ? swipeX : 0,
@@ -151,14 +198,26 @@ Page({
 
   onItemTouchEnd(e) {
     const id = Number(e.currentTarget.dataset.id)
+    if (!this.data.swipingId) return
+
+    if (this.data.isVerticalScroll) {
+      this.resetTouchState()
+      return
+    }
+
     const item = this.data.items.find(i => i.id === id)
-    const shouldOpen = item && item.swipeX < -36
+    const actionWidth = this.getDeleteActionWidthPx()
+    const shouldOpen = item && Math.abs(Number(item.swipeX || 0)) > actionWidth * OPEN_THRESHOLD_RATIO
     const items = this.data.items.map(cartItem => ({
       ...cartItem,
-      swipeX: shouldOpen && cartItem.id === id ? -72 : 0,
+      swipeX: shouldOpen && cartItem.id === id ? -actionWidth : 0,
     }))
     this.updateCartState(items, this.data.selectedIds)
-    this.setData({ swipingId: null, touchStartX: 0 })
+    this.resetTouchState()
+  },
+
+  onItemTouchCancel(e) {
+    this.onItemTouchEnd(e)
   },
 
   deleteItem(e) {
@@ -173,6 +232,7 @@ Page({
               const items = this.data.items.filter(item => item.id !== id)
               const selectedIds = this.data.selectedIds.filter(sid => sid !== id)
               this.updateCartState(items, selectedIds)
+              this.resetTouchState()
             }
           })
         } else {
