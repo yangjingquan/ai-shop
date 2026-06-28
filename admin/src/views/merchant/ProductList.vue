@@ -5,6 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { productApi, type ProductListVO } from '@/api/product'
 
 const router = useRouter()
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
 
 const loading = ref(false)
 const list = ref<ProductListVO[]>([])
@@ -65,6 +66,12 @@ async function onRemove(row: ProductListVO) {
   fetchList()
 }
 
+function resolveImageUrl(url?: string) {
+  if (!url) return ''
+  if (/^(https?:)?\/\//.test(url) || url.startsWith('data:') || url.startsWith('blob:')) return url
+  return `${apiBaseUrl}${url.startsWith('/') ? url : `/${url}`}`
+}
+
 function priceRange(row: ProductListVO) {
   const min = Number(row.minPrice ?? 0)
   const max = Number(row.maxPrice ?? 0)
@@ -115,7 +122,9 @@ onMounted(fetchList)
           <template #default="{ row }">
             <el-image
               v-if="(row as ProductListVO).mainImage"
-              :src="(row as ProductListVO).mainImage"
+              :src="resolveImageUrl((row as ProductListVO).mainImage)"
+              :preview-src-list="[resolveImageUrl((row as ProductListVO).mainImage)]"
+              preview-teleported
               fit="cover"
               style="width: 48px; height: 48px; border-radius: 4px"
             />
