@@ -1,21 +1,30 @@
-/* 订单确认页 */
-.confirm-page { padding: 20rpx; background: #f5f5f5; }
-.section { background: #fff; margin-bottom: 20rpx; border-radius: 10rpx; padding: 20rpx; }
-.section-title { font-weight: bold; margin-bottom: 12rpx; }
-.address-card { font-size: 28rpx; line-height: 1.6; }
+.confirm-page { padding: 20rpx 20rpx 156rpx; }
+.section { margin-bottom: 20rpx; padding: 24rpx; }
+.section-title { margin-bottom: 18rpx; }
+.address-card { display: flex; align-items: center; font-size: 28rpx; line-height: 1.55; }
+.location-icon { width: 42rpx; height: 42rpx; margin-right: 18rpx; opacity: 0.68; }
+.address-info { flex: 1; min-width: 0; }
+.receiver-line { color: #1f2329; font-weight: 600; }
+.address-text { margin-top: 6rpx; color: #646a73; }
 .address-change { margin-top: 10rpx; color: #ff6600; font-size: 24rpx; }
-.no-address-card { background: #fff; border-radius: 16rpx; padding: 48rpx 32rpx; text-align: center; }
-.no-address-title { font-size: 34rpx; font-weight: 600; color: #333; margin-bottom: 16rpx; }
-.no-address-desc { font-size: 28rpx; color: #777; line-height: 1.6; margin-bottom: 32rpx; }
-.go-my-btn { background: #ff6600; color: #fff; border-radius: 40rpx; font-size: 30rpx; }
-.merchant-header { padding: 12rpx 0; font-weight: bold; font-size: 30rpx; }
-.order-item { display: flex; padding: 12rpx 0; border-bottom: 1rpx solid #eee; }
-.item-img { width: 120rpx; height: 120rpx; border-radius: 8rpx; }
-.item-info { flex: 1; padding: 0 16rpx; }
-.spec { color: #999; font-size: 24rpx; }
-.item-right { text-align: right; }
-.subtotal { font-weight: bold; color: #ff6600; }
-.unavailable-tip { color: #ff3333; font-size: 24rpx; }
-.group-total { text-align: right; padding: 12rpx 0; font-size: 28rpx; color: #666; }
-.bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 20rpx; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.1); }
-.submit-btn { background: #ff6600; color: #fff; border-radius: 40rpx; padding: 16rpx 40rpx; font-size: 30rpx; }
+.arrow { opacity: 0.38; }
+.no-address-card { margin: 20rpx 0; padding: 64rpx 32rpx; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.no-address-title { font-size: 34rpx; font-weight: 700; color: #1f2329; margin-bottom: 16rpx; }
+.no-address-desc { font-size: 28rpx; color: #646a73; line-height: 1.6; margin-bottom: 32rpx; }
+.go-my-btn { height: 80rpx; line-height: 80rpx; background: #ff6600; color: #fff; border-radius: 40rpx; font-size: 30rpx; padding: 0 44rpx; }
+.merchant-header { display: flex; align-items: center; gap: 10rpx; padding: 12rpx 0; font-weight: 700; font-size: 29rpx; color: #1f2329; }
+.merchant-header .icon { opacity: 0.62; }
+.order-item { display: flex; padding: 18rpx 0; border-bottom: 1rpx solid #eef0f3; }
+.item-img { width: 124rpx; height: 124rpx; border-radius: 12rpx; background: #f3f4f6; }
+.item-info { flex: 1; min-width: 0; padding: 0 16rpx; }
+.item-name { font-size: 28rpx; color: #1f2329; line-height: 38rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spec { color: #9aa0a6; font-size: 24rpx; margin-top: 6rpx; }
+.item-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8rpx; }
+.unit { color: #646a73; font-size: 24rpx; }
+.subtotal { font-weight: 700; color: #ff6600; font-size: 28rpx; }
+.unavailable-tip { display: flex; align-items: center; gap: 6rpx; color: #ff4d4f; font-size: 24rpx; margin-top: 8rpx; }
+.group-total { text-align: right; padding: 16rpx 0 2rpx; font-size: 27rpx; color: #646a73; }
+.group-total text { color: #ff6600; font-weight: 700; }
+.bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.98); padding: 18rpx 20rpx; padding-bottom: calc(18rpx + env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 -8rpx 28rpx rgba(15,23,42,0.06); border-top: 1rpx solid #eef0f3; color: #646a73; }
+.amount { color: #ff6600; font-weight: 700; font-size: 32rpx; }
+.submit-btn { height: 72rpx; line-height: 72rpx; background: #ff6600; color: #fff; border-radius: 36rpx; padding: 0 40rpx; font-size: 28rpx; font-weight: 600; margin: 0; }

@@ -1,7 +1,10 @@
-<view class="my-page">
-  <view class="user-card">
+<view class="my-page page-shell">
+  <view class="user-card card">
     <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
       <image class="avatar" src="{{ avatarUrl || '/images/default-avatar.png' }}" mode="aspectFill" />
+      <view class="avatar-badge">
+        <image class="badge-icon" src="/assets/icons/edit-white.png" mode="aspectFit" />
+      </view>
     </button>
     <view class="info">
       <input
@@ -9,16 +12,17 @@
         type="nickname"
         value="{{ nickname }}"
         placeholder="请输入昵称"
+        placeholder-class="placeholder"
         bindinput="onNicknameInput"
         bindblur="onNicknameBlur"
       />
       <view class="phone-row">
+        <image class="icon icon-sm" src="/assets/icons/phone.png" mode="aspectFit" />
         <text wx:if="{{ phone }}" class="phone">{{ phone }}</text>
         <button
           wx:else
           class="bind-btn"
           size="mini"
-          type="primary"
           open-type="getPhoneNumber"
           bindgetphonenumber="onGetPhone"
         >绑定手机号</button>
@@ -26,14 +30,20 @@
     </view>
   </view>
 
-  <view class="menu">
+  <view class="menu card">
     <navigator class="menu-item" url="/pages/address/list" hover-class="menu-item-hover">
-      <text>收货地址</text>
-      <text class="arrow">›</text>
+      <view class="menu-left">
+        <image class="menu-icon" src="/assets/icons/location.png" mode="aspectFit" />
+        <text>收货地址</text>
+      </view>
+      <image class="icon icon-sm arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" />
     </navigator>
     <view class="menu-item" hover-class="menu-item-hover" bindtap="goOrders">
-      <text>我的订单</text>
-      <text class="arrow">›</text>
+      <view class="menu-left">
+        <image class="menu-icon" src="/assets/icons/order.png" mode="aspectFit" />
+        <text>我的订单</text>
+      </view>
+      <image class="icon icon-sm arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" />
     </view>
   </view>
 </view>

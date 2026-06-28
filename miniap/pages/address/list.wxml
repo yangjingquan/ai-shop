@@ -1,23 +1,39 @@
-<view class="page">
+<view class="page page-shell">
   <block wx:for="{{ list }}" wx:key="id">
-    <view class="addr-card" bindtap="onSelect" data-id="{{ item.id }}">
+    <view class="addr-card card" bindtap="onSelect" data-id="{{ item.id }}">
       <view class="line">
+        <image class="icon icon-sm" src="/assets/icons/user.png" mode="aspectFit" />
         <text class="receiver">{{ item.receiver }}</text>
+        <image class="icon icon-sm phone-icon" src="/assets/icons/phone.png" mode="aspectFit" />
         <text class="phone">{{ item.phone }}</text>
         <text wx:if="{{ item.isDefault }}" class="tag-default">默认</text>
       </view>
-      <view class="addr">{{ item.region }} {{ item.detail }}</view>
+      <view class="addr-line">
+        <image class="icon icon-sm" src="/assets/icons/location.png" mode="aspectFit" />
+        <text class="addr">{{ item.region }} {{ item.detail }}</text>
+      </view>
       <view class="actions">
-        <text class="action" bindtap="onEdit" data-id="{{ item.id }}">编辑</text>
-        <text class="action" bindtap="onDelete" data-id="{{ item.id }}">删除</text>
-        <text wx:if="{{ !item.isDefault }}" class="action" bindtap="onSetDefault" data-id="{{ item.id }}">设默认</text>
+        <text class="action" catchtap="onEdit" data-id="{{ item.id }}">
+          <image class="icon icon-sm" src="/assets/icons/edit.png" mode="aspectFit" />编辑
+        </text>
+        <text class="action danger" catchtap="onDelete" data-id="{{ item.id }}">
+          <image class="icon icon-sm" src="/assets/icons/trash-danger.png" mode="aspectFit" />删除
+        </text>
+        <text wx:if="{{ !item.isDefault }}" class="action" catchtap="onSetDefault" data-id="{{ item.id }}">
+          <image class="icon icon-sm" src="/assets/icons/check.png" mode="aspectFit" />设默认
+        </text>
       </view>
     </view>
   </block>
 
-  <view wx:if="{{ list.length === 0 }}" class="empty">
-    <text>暂无地址，点击下方添加</text>
+  <view wx:if="{{ list.length === 0 }}" class="empty-state">
+    <image class="empty-icon" src="/assets/icons/location.png" mode="aspectFit" />
+    <view class="empty-title">暂无地址</view>
+    <view class="empty-desc">点击下方添加收货地址</view>
   </view>
 
-  <view class="add-btn" bindtap="onAdd">+ 新增地址</view>
+  <view class="add-btn" bindtap="onAdd">
+    <image class="add-icon" src="/assets/icons/plus-white.png" mode="aspectFit" />
+    <text>新增地址</text>
+  </view>
 </view>
