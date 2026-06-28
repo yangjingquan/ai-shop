@@ -8,6 +8,7 @@ import com.shop.common.security.UserType;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.user.dto.WxLoginResponse;
+import com.shop.user.dto.WxUserProfileVO;
 import com.shop.user.entity.User;
 import com.shop.user.mapper.UserMapper;
 import com.shop.user.service.UserService;
@@ -82,8 +83,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String bindPhone(Long userId, String code) {
-        String phone = wxPhoneApiClient.code2Phone(code);
+    public String bindPhone(Long userId, Long merchantId, String code) {
+        Merchant merchant = merchantMapper.selectById(merchantId);
+        if (merchant == null || merchant.getWxAppId() == null || merchant.getWxAppId().isBlank()
+                || merchant.getWxSecret() == null || merchant.getWxSecret().isBlank()) {
+            throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
+        }
+        String phone = wxPhoneApiClient.code2Phone(merchant.getWxAppId(), merchant.getWxSecret(), code);
         if (phone == null || !PHONE_PATTERN.matcher(phone).matches()) {
             throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
@@ -101,27 +107,44 @@ public class UserServiceImpl implements UserService {
             new LambdaQueryWrapper<User>().eq(User::getPhone, phone)
         );
         if (existing != null && !existing.getId().equals(userId)) {
-            phone = nextAvailableMockPhone(phone);
+            throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
         user.setPhone(phone);
         userMapper.updateById(user);
         return phone;
     }
 
-    private String nextAvailableMockPhone(String phone) {
-        long base = Long.parseLong(phone);
-        for (int i = 1; i < 1000; i++) {
-            String candidate = String.valueOf(base + i);
-            if (!PHONE_PATTERN.matcher(candidate).matches()) {
-                candidate = "139" + String.format("%08d", i);
-            }
-            User existing = userMapper.selectOne(
-                new LambdaQueryWrapper<User>().eq(User::getPhone, candidate)
-            );
-            if (existing == null) {
-                return candidate;
-            }
+    @Override
+    public WxUserProfileVO getProfile(Long userId) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
-        throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
+        WxUserProfileVO vo = new WxUserProfileVO();
+        vo.setNickname(user.getNickname());
+        vo.setAvatar(user.getAvatar());
+        vo.setPhone(user.getPhone());
+        return vo;
+    }
+
+    @Override
+    public void updateProfile(Long userId, String nickname, String avatar) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        if (nickname != null && !nickname.trim().isBlank()) {
+            user.setNickname(nickname.trim());
+        }
+        if (avatar != null && !avatar.trim().isBlank() && !isTemporaryAvatarUrl(avatar.trim())) {
+            user.setAvatar(avatar.trim());
+        }
+        userMapper.updateById(user);
+    }
+
+    private boolean isTemporaryAvatarUrl(String avatar) {
+        return avatar.startsWith("wxfile://")
+                || avatar.startsWith("blob:")
+                || avatar.startsWith("data:");
     }
 }

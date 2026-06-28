@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,16 +36,28 @@ class ProductServiceTest {
     private static final Long M_B = 1002L;
 
     private Long createCategory() {
+        return createCategory("M3T-类目-" + System.nanoTime());
+    }
+
+    private Long createCategory(String name) {
+        return createCategory(name, 0L);
+    }
+
+    private Long createCategory(String name, Long parentId) {
         CategoryRequest c = new CategoryRequest();
-        c.setName("M3T-类目-" + System.nanoTime());
-        c.setParentId(0L);
+        c.setName(name);
+        c.setParentId(parentId);
         c.setSort(1);
         return categoryService.create(c);
     }
 
     private ProductSaveRequest sample(Long categoryId) {
+        return sample(categoryId, "M3T 测试商品");
+    }
+
+    private ProductSaveRequest sample(Long categoryId, String name) {
         ProductSaveRequest r = new ProductSaveRequest();
-        r.setName("M3T 测试商品");
+        r.setName(name);
         r.setSubtitle("副标题");
         r.setCategoryId(categoryId);
         r.setMainImage("https://example.com/main.jpg");
@@ -149,6 +162,66 @@ class ProductServiceTest {
         BusinessException d = assertThrows(BusinessException.class,
                 () -> productService.delete(pid, M_B));
         assertEquals(ErrorCode.PRODUCT_NOT_FOUND.getCode(), d.getCode());
+    }
+
+    @Test
+    void publicPageSearchesProductNameOrCategoryName() {
+        String token = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        Long phoneTopCategoryId = createCategory("M3T数码一级分类" + token);
+        Long foodTopCategoryId = createCategory("M3T食品一级分类" + token);
+        Long phoneCategoryId = createCategory("M3T手机二级分类" + token, phoneTopCategoryId);
+        Long foodCategoryId = createCategory("M3T食品二级分类" + token, foodTopCategoryId);
+        Long phoneProductId = productService.create(sample(phoneCategoryId, "M3T旗舰机" + token), M_A);
+        Long foodProductId = productService.create(sample(foodCategoryId, "M3T零食" + token), M_A);
+        productService.setStatus(phoneProductId, 1, M_A);
+        productService.setStatus(foodProductId, 1, M_A);
+
+        PageResult<ProductListVO> byProductName = productService.page(1, 20, null, null, "旗舰", null);
+        assertTrue(byProductName.getList().stream().anyMatch(v -> v.getId().equals(phoneProductId)));
+        assertTrue(byProductName.getList().stream().noneMatch(v -> v.getId().equals(foodProductId)));
+
+        PageResult<ProductListVO> byCategoryName = productService.page(1, 20, null, null, "食品二级分类" + token, null);
+        assertTrue(byCategoryName.getList().stream().anyMatch(v -> v.getId().equals(foodProductId)));
+        assertTrue(byCategoryName.getList().stream().noneMatch(v -> v.getId().equals(phoneProductId)));
+
+        PageResult<ProductListVO> byTopCategoryName = productService.page(1, 20, null, null, "数码一级分类" + token, null);
+        assertTrue(byTopCategoryName.getList().stream().anyMatch(v -> v.getId().equals(phoneProductId)));
+        assertTrue(byTopCategoryName.getList().stream().noneMatch(v -> v.getId().equals(foodProductId)));
+    }
+
+    @Test
+    void publicPageTopCategoryIncludesSelfAndChildren() {
+        String token = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        Long topCategoryId = createCategory("M3T一级筛选" + token);
+        Long childCategoryId = createCategory("M3T二级筛选" + token, topCategoryId);
+        Long otherTopCategoryId = createCategory("M3T其他一级" + token);
+        Long topProductId = productService.create(sample(topCategoryId, "M3T一级商品" + token), M_A);
+        Long childProductId = productService.create(sample(childCategoryId, "M3T二级商品" + token), M_A);
+        Long otherProductId = productService.create(sample(otherTopCategoryId, "M3T其他商品" + token), M_A);
+        productService.setStatus(topProductId, 1, M_A);
+        productService.setStatus(childProductId, 1, M_A);
+        productService.setStatus(otherProductId, 1, M_A);
+
+        PageResult<ProductListVO> byTopCategory = productService.page(1, 20, null, topCategoryId, null, null);
+        assertTrue(byTopCategory.getList().stream().anyMatch(v -> v.getId().equals(topProductId)));
+        assertTrue(byTopCategory.getList().stream().anyMatch(v -> v.getId().equals(childProductId)));
+        assertTrue(byTopCategory.getList().stream().noneMatch(v -> v.getId().equals(otherProductId)));
+    }
+
+    @Test
+    void publicPageCategoryAndKeywordShouldBeIntersection() {
+        String token = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        Long topCategoryId = createCategory("M3T交集一级" + token);
+        Long childCategoryId = createCategory("M3T交集二级" + token, topCategoryId);
+        Long otherCategoryId = createCategory("M3T跨类二级" + token);
+        Long insideProductId = productService.create(sample(childCategoryId, "M3T苹果手机" + token), M_A);
+        Long outsideProductId = productService.create(sample(otherCategoryId, "M3T苹果平板" + token), M_A);
+        productService.setStatus(insideProductId, 1, M_A);
+        productService.setStatus(outsideProductId, 1, M_A);
+
+        PageResult<ProductListVO> result = productService.page(1, 20, null, topCategoryId, "苹果", null);
+        assertTrue(result.getList().stream().anyMatch(v -> v.getId().equals(insideProductId)));
+        assertTrue(result.getList().stream().noneMatch(v -> v.getId().equals(outsideProductId)));
     }
 
     @Test

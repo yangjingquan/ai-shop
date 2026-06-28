@@ -89,29 +89,29 @@ onMounted(fetchList)
       </div>
 
       <el-table v-loading="loading" :data="list" stripe>
-        <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column prop="merchantCode" label="商户代码" width="150" />
-        <el-table-column prop="name" label="商家名称" />
-        <el-table-column prop="username" label="登录账号" width="130" />
-        <el-table-column prop="contactName" label="联系人" width="100" />
-        <el-table-column prop="contactPhone" label="联系电话" width="130" />
-        <el-table-column prop="wxAppId" label="小程序 AppID" min-width="180" show-overflow-tooltip />
-        <el-table-column label="密钥状态" width="110">
+        <el-table-column prop="id" label="ID" width="56" />
+        <el-table-column prop="merchantCode" label="商户代码" width="110" show-overflow-tooltip />
+        <el-table-column prop="name" label="商家名称" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="username" label="登录账号" width="96" show-overflow-tooltip />
+        <el-table-column prop="contactName" label="联系人" width="80" show-overflow-tooltip />
+        <el-table-column prop="contactPhone" label="联系电话" width="108" />
+        <el-table-column prop="wxAppId" label="小程序 AppID" min-width="120" show-overflow-tooltip />
+        <el-table-column label="密钥状态" width="82">
           <template #default="{ row }">
             <el-tag :type="(row as MerchantVO).wxSecretConfigured ? 'success' : 'info'">
               {{ (row as MerchantVO).wxSecretConfigured ? '已配置' : '未配置' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="90">
+        <el-table-column label="状态" width="72">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">
               {{ row.status === 1 ? '启用' : '冻结' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="170" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column prop="createdAt" label="创建时间" width="132" />
+        <el-table-column label="操作" width="108">
           <template #default="{ row }">
             <el-button link type="primary" @click="onEdit(row as MerchantVO)">编辑</el-button>
             <el-button

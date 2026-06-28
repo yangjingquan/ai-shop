@@ -22,7 +22,7 @@ Page({
       const [bannerRes, treeRes, pageRes] = await Promise.all([
         bannerApi.list().catch(() => ({ data: [] })),
         categoryApi.tree().catch(() => ({ data: [] })),
-        productApi.page({ page: 1, size: 20 }).catch(() => ({ data: { list: [] } })),
+        this.fetchProducts(),
       ])
       const banners = ((bannerRes && bannerRes.data) || []).map((b) => ({
         ...b,
@@ -34,16 +34,27 @@ Page({
         name: c.name,
         icon: resolveImageUrl(c.icon || ''),
       }))
-      const list = ((pageRes && pageRes.data && pageRes.data.list) || []).map((p) => ({
-        id: p.id,
-        name: p.name,
-        mainImage: resolveImageUrl(p.mainImage || ''),
-        minPrice: this.fmtPrice(p.minPrice),
-      }))
+      const list = this.normalizeProducts(pageRes)
       this.setData({ banners, topCategories: top, products: list })
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  async fetchProducts(keyword) {
+    const params = { page: 1, size: 20 }
+    const query = (keyword || '').trim()
+    if (query) params.keyword = query
+    return productApi.page(params).catch(() => ({ data: { list: [] } }))
+  },
+
+  normalizeProducts(pageRes) {
+    return ((pageRes && pageRes.data && pageRes.data.list) || []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      mainImage: resolveImageUrl(p.mainImage || ''),
+      minPrice: this.fmtPrice(p.minPrice),
+    }))
   },
 
   fmtPrice(v) {
@@ -52,7 +63,28 @@ Page({
   },
 
   onSearchInput(e) {
-    this.setData({ keyword: e.detail.value })
+    const keyword = e.detail.value
+    this.setData({ keyword })
+    if (!keyword.trim()) {
+      this.loadProducts('')
+    }
+  },
+
+  async onSearch() {
+    await this.loadProducts(this.data.keyword)
+  },
+
+  async loadProducts(keyword) {
+    this.setData({ loading: true })
+    try {
+      const pageRes = await this.fetchProducts(keyword)
+      this.setData({
+        keyword: (keyword || '').trim(),
+        products: this.normalizeProducts(pageRes),
+      })
+    } finally {
+      this.setData({ loading: false })
+    }
   },
 
   onBannerTap(e) {

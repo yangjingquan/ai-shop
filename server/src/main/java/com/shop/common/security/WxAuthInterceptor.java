@@ -31,6 +31,7 @@ public class WxAuthInterceptor implements HandlerInterceptor {
         }
         CurrentUser user = CurrentUser.builder()
                 .userId(claims.get("userId", Long.class))
+                .merchantId(claims.get("merchantId", Long.class))
                 .userType(UserType.WX)
                 .build();
         CurrentUserHolder.set(user);

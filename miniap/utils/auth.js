@@ -8,11 +8,23 @@ function silentLogin() {
           reject(new Error('wx.login failed'))
           return
         }
+        const merchantCode = String(config.MERCHANT_CODE || '').trim()
+        if (!merchantCode) {
+          console.warn('silentLogin skipped: MERCHANT_CODE is empty')
+          resolve(null)
+          return
+        }
+        const payload = { code: String(loginRes.code || ''), merchantCode }
+        console.info('wx login request:', {
+          url: config.BASE_URL + '/api/wx/auth/login',
+          hasCode: !!loginRes.code,
+          merchantCode,
+        })
         wx.request({
           url: config.BASE_URL + '/api/wx/auth/login',
           method: 'POST',
-          data: { code: loginRes.code, merchantCode: config.MERCHANT_CODE },
-          header: { 'content-type': 'application/json' },
+          data: payload,
+          header: { 'content-type': 'application/json', Accept: 'application/json' },
           success(res) {
             const data = res.data
             if (data.code === 0 && data.data && data.data.token) {

@@ -3,9 +3,11 @@ const config = require('./config')
 function request(options) {
   return new Promise((resolve, reject) => {
     const token = wx.getStorageSync('wx_token') || ''
+    const method = options.method || 'GET'
+    const url = config.BASE_URL + options.url
     wx.request({
-      url: config.BASE_URL + options.url,
-      method: options.method || 'GET',
+      url,
+      method,
       data: options.data || {},
       timeout: options.timeout || config.REQUEST_TIMEOUT,
       header: {
@@ -23,6 +25,7 @@ function request(options) {
           return
         }
         if (data.code !== 0) {
+          console.warn('request failed:', { url, method, statusCode: res.statusCode, data })
           wx.showToast({ title: data.msg || '请求失败', icon: 'none' })
           reject(data)
           return
@@ -30,6 +33,7 @@ function request(options) {
         resolve(data)
       },
       fail(err) {
+        console.warn('network error:', { url, method, err })
         wx.showToast({ title: '网络错误', icon: 'none' })
         reject(err)
       },

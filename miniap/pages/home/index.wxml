@@ -6,6 +6,7 @@
         placeholder="搜索商品"
         value="{{ keyword }}"
         bindinput="onSearchInput"
+        bindconfirm="onSearch"
         confirm-type="search"
       />
     </view>
@@ -50,7 +51,7 @@
     </view>
   </view>
 
-  <view class="section-title">精选商品</view>
+  <view class="section-title">{{ keyword ? '搜索结果' : '精选商品' }}</view>
 
   <view class="product-grid" wx:if="{{ products.length }}">
     <view
@@ -72,5 +73,5 @@
     </view>
   </view>
 
-  <view class="empty" wx:elif="{{ !loading }}">暂无商品</view>
+  <view class="empty" wx:elif="{{ !loading }}">{{ keyword ? '暂无搜索结果' : '暂无商品' }}</view>
 </view>

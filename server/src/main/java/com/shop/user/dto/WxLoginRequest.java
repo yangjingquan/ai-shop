@@ -12,4 +12,8 @@ public class WxLoginRequest {
     @NotBlank(message = "商户代码不能为空")
     @Pattern(regexp = "^M[A-Z0-9]{6,31}$", message = "商户代码格式错误")
     private String merchantCode;
+
+    public void setMerchantCode(String merchantCode) {
+        this.merchantCode = merchantCode == null ? null : merchantCode.trim();
+    }
 }

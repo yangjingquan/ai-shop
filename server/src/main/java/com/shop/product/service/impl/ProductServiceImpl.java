@@ -200,7 +200,11 @@ public class ProductServiceImpl implements ProductService {
             q.eq(Product::getMerchantId, merchantId);
         }
         if (categoryId != null) {
-            q.eq(Product::getCategoryId, categoryId);
+            List<Long> scopeCategoryIds = resolveCategoryScopeIds(categoryId);
+            if (scopeCategoryIds.isEmpty()) {
+                return PageResult.of(List.of(), 0, page, size);
+            }
+            q.in(Product::getCategoryId, scopeCategoryIds);
         }
         // 公共/admin 视角（merchantId==null）：未指定 status 时默认只看上架；商家自己看时 status 可空
         Integer effectiveStatus = status;
@@ -211,7 +215,14 @@ public class ProductServiceImpl implements ProductService {
             q.eq(Product::getStatus, effectiveStatus);
         }
         if (StringUtils.hasText(keyword)) {
-            q.like(Product::getName, keyword);
+            String kw = keyword.trim();
+            List<Long> matchedCategoryIds = findMatchedCategoryIds(kw);
+            q.and(w -> {
+                w.like(Product::getName, kw);
+                if (!matchedCategoryIds.isEmpty()) {
+                    w.or().in(Product::getCategoryId, matchedCategoryIds);
+                }
+            });
         }
         q.orderByDesc(Product::getSort).orderByDesc(Product::getId);
 
@@ -262,6 +273,50 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ============== private ==============
+
+    private List<Long> findMatchedCategoryIds(String keyword) {
+        List<Category> matched = categoryMapper.selectList(
+                new LambdaQueryWrapper<Category>()
+                        .select(Category::getId, Category::getLevel)
+                        .like(Category::getName, keyword));
+        if (matched.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Long> ids = new HashSet<>();
+        List<Long> topIds = new ArrayList<>();
+        for (Category category : matched) {
+            ids.add(category.getId());
+            if (Integer.valueOf(1).equals(category.getLevel())) {
+                topIds.add(category.getId());
+            }
+        }
+        if (!topIds.isEmpty()) {
+            categoryMapper.selectList(
+                            new LambdaQueryWrapper<Category>()
+                                    .select(Category::getId)
+                                    .in(Category::getParentId, topIds))
+                    .forEach(c -> ids.add(c.getId()));
+        }
+        return new ArrayList<>(ids);
+    }
+
+    private List<Long> resolveCategoryScopeIds(Long categoryId) {
+        Category category = categoryMapper.selectById(categoryId);
+        if (category == null) {
+            return List.of();
+        }
+        Set<Long> ids = new HashSet<>();
+        ids.add(category.getId());
+        if (Integer.valueOf(1).equals(category.getLevel())) {
+            categoryMapper.selectList(
+                            new LambdaQueryWrapper<Category>()
+                                    .select(Category::getId)
+                                    .eq(Category::getParentId, category.getId()))
+                    .forEach(c -> ids.add(c.getId()));
+        }
+        return new ArrayList<>(ids);
+    }
 
     private Product mustOwn(Long id, Long merchantId) {
         Product p = productMapper.selectById(id);
