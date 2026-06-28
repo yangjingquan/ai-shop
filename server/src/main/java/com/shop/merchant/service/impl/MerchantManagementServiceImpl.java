@@ -21,6 +21,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,11 @@ import java.util.stream.Collectors;
 public class MerchantManagementServiceImpl implements MerchantManagementService {
 
     private static final BCryptPasswordEncoder ENCODER = new BCryptPasswordEncoder();
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final String MERCHANT_CODE_PREFIX = "M";
+    private static final String MERCHANT_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final int MERCHANT_CODE_RANDOM_LENGTH = 10;
+    private static final int MERCHANT_CODE_MAX_ATTEMPTS = 20;
 
     private final MerchantMapper merchantMapper;
     private final MerchantUserMapper merchantUserMapper;
@@ -58,9 +64,8 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         m.setWxSecret(req.getWxSecret() == null ? "" : req.getWxSecret());
         m.setStatus(1);
         m.setCreatedByAdminId(adminUserId);
+        m.setMerchantCode(generateMerchantCode());
         merchantMapper.insert(m);
-        m.setMerchantCode(generateMerchantCode(m.getId()));
-        merchantMapper.updateById(m);
 
         // 插首个 merchant_user
         MerchantUser mu = new MerchantUser();
@@ -148,11 +153,26 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         return vo;
     }
 
-    private String generateMerchantCode(Long merchantId) {
-        if (merchantId == null || merchantId <= 0 || merchantId > 999999) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "商户ID超出6位商户代码生成范围");
+    private String generateMerchantCode() {
+        for (int i = 0; i < MERCHANT_CODE_MAX_ATTEMPTS; i++) {
+            String candidate = buildMerchantCodeCandidate();
+            Long existing = merchantMapper.selectCount(
+                    new LambdaQueryWrapper<Merchant>().eq(Merchant::getMerchantCode, candidate)
+            );
+            if (existing == null || existing == 0) {
+                return candidate;
+            }
         }
-        return String.format("%06d", merchantId);
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR.getCode(), "商户代码生成失败");
+    }
+
+    private String buildMerchantCodeCandidate() {
+        StringBuilder code = new StringBuilder(MERCHANT_CODE_PREFIX);
+        for (int i = 0; i < MERCHANT_CODE_RANDOM_LENGTH; i++) {
+            int index = SECURE_RANDOM.nextInt(MERCHANT_CODE_CHARS.length());
+            code.append(MERCHANT_CODE_CHARS.charAt(index));
+        }
+        return code.toString();
     }
 
     @Override

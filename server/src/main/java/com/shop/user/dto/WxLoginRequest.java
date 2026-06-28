@@ -10,6 +10,6 @@ public class WxLoginRequest {
     private String code;
 
     @NotBlank(message = "商户代码不能为空")
-    @Pattern(regexp = "^\\d{6}$", message = "商户代码格式错误")
+    @Pattern(regexp = "^M[A-Z0-9]{6,31}$", message = "商户代码格式错误")
     private String merchantCode;
 }

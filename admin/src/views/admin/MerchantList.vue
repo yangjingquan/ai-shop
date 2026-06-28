@@ -90,7 +90,7 @@ onMounted(fetchList)
 
       <el-table v-loading="loading" :data="list" stripe>
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column prop="merchantCode" label="商户代码" width="110" />
+        <el-table-column prop="merchantCode" label="商户代码" width="150" />
         <el-table-column prop="name" label="商家名称" />
         <el-table-column prop="username" label="登录账号" width="130" />
         <el-table-column prop="contactName" label="联系人" width="100" />

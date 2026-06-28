@@ -49,11 +49,25 @@ class MerchantManagementServiceTest {
 
         Merchant m = merchantMapper.selectById(mid);
         assertEquals("商家A", m.getName());
+        assertNotNull(m.getMerchantCode());
+        assertTrue(m.getMerchantCode().matches("^M[A-Z0-9]{10}$"));
+        assertFalse(m.getMerchantCode().matches("^\\d+$"));
+        assertTrue(m.getMerchantCode().length() <= 32);
 
         Long userCount = merchantUserMapper.selectCount(
                 new LambdaQueryWrapper<MerchantUser>().eq(MerchantUser::getMerchantId, mid)
         );
         assertEquals(1L, userCount, "应同步插入 1 条 merchant_user");
+    }
+
+    @Test
+    void merchantCodeShouldBeUnique() {
+        Long firstId = merchantManagementService.createMerchant(sample("商家A", "unique_code_a"), 1L);
+        Long secondId = merchantManagementService.createMerchant(sample("商家B", "unique_code_b"), 1L);
+
+        Merchant first = merchantMapper.selectById(firstId);
+        Merchant second = merchantMapper.selectById(secondId);
+        assertNotEquals(first.getMerchantCode(), second.getMerchantCode());
     }
 
     @Test
