@@ -14,6 +14,17 @@ Page({
     this.loadTree(opts && opts.categoryId ? Number(opts.categoryId) : null)
   },
 
+  onShow() {
+    const jumpCategoryId = Number(wx.getStorageSync('home_jump_category_id') || 0)
+    if (!jumpCategoryId) return
+    wx.removeStorageSync('home_jump_category_id')
+    if (!this.data.topCats.length) {
+      this.pendingCategoryId = jumpCategoryId
+      return
+    }
+    this.switchTopCategory(jumpCategoryId)
+  },
+
   loadTree(presetTopId) {
     this.setData({ loading: true })
     categoryApi
@@ -21,10 +32,13 @@ Page({
       .then((res) => {
         const tree = (res && res.data) || []
         const topCats = tree
+        const pendingCategoryId = this.pendingCategoryId
+        this.pendingCategoryId = null
+        const targetTopId = presetTopId || pendingCategoryId
         let activeTopId = 0
         if (topCats.length > 0) {
-          if (presetTopId && topCats.find((c) => c.id === presetTopId)) {
-            activeTopId = presetTopId
+          if (targetTopId && topCats.find((c) => c.id === targetTopId)) {
+            activeTopId = targetTopId
           } else {
             activeTopId = topCats[0].id
           }
@@ -63,11 +77,16 @@ Page({
     })
   },
 
+  switchTopCategory(id) {
+    const topId = Number(id)
+    if (!topId || !this.data.topCats.find((c) => c.id === topId)) return
+    if (topId === this.data.activeTopId) return
+    this.setData({ activeTopId: topId })
+    this.renderTop(topId)
+  },
+
   onTopTab(e) {
-    const id = Number(e.currentTarget.dataset.id)
-    if (id === this.data.activeTopId) return
-    this.setData({ activeTopId: id })
-    this.renderTop(id)
+    this.switchTopCategory(e.currentTarget.dataset.id)
   },
 
   onProduct(e) {

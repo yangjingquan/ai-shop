@@ -108,14 +108,9 @@ Page({
   },
 
   onCategory(e) {
-    const id = e.currentTarget.dataset.id
-    wx.switchTab({
-      url: '/pages/category/index',
-      success: () => {
-        // 把选中的一级分类带过去（通过全局 storage）
-        wx.setStorageSync('home_jump_category_id', id)
-      },
-    })
+    const id = Number(e.currentTarget.dataset.id)
+    wx.setStorageSync('home_jump_category_id', id)
+    wx.switchTab({ url: '/pages/category/index' })
   },
 
   onProduct(e) {
