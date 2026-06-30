@@ -74,6 +74,12 @@ public class MerchantOrderController {
         return ApiResult.success(PageResult.of(list, result.getTotal(), page, size));
     }
 
+    @GetMapping("/order/{orderNo}")
+    public ApiResult<OrderDetailVO> detail(@PathVariable String orderNo) {
+        Long merchantId = CurrentUserHolder.get().getMerchantId();
+        return ApiResult.success(orderService.merchantDetail(merchantId, orderNo));
+    }
+
     @GetMapping("/refund/list")
     public ApiResult<List<RefundApplication>> refundList(
             @RequestParam(required = false) Integer status,

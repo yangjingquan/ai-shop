@@ -495,7 +495,21 @@ public class OrderServiceImpl implements OrderService {
         if (order == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
+        return buildOrderDetailVO(order);
+    }
 
+    @Override
+    public OrderDetailVO merchantDetail(Long merchantId, String orderNo) {
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                .eq(Order::getOrderNo, orderNo)
+                .eq(Order::getMerchantId, merchantId));
+        if (order == null) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        return buildOrderDetailVO(order);
+    }
+
+    private OrderDetailVO buildOrderDetailVO(Order order) {
         Merchant merchant = merchantMapper.selectById(order.getMerchantId());
 
         List<OrderItem> items = orderItemMapper.selectList(
@@ -527,6 +541,12 @@ public class OrderServiceImpl implements OrderService {
         vo.setCreatedAt(order.getCreatedAt());
         vo.setPayTime(order.getPayTime());
         vo.setPayTransactionId(order.getPayTransactionId());
+        vo.setShipNo(order.getShipNo());
+        vo.setShipTime(order.getShipTime());
+        vo.setFinishTime(order.getFinishTime());
+        vo.setCancelTime(order.getCancelTime());
+        vo.setCancelReason(order.getCancelReason());
+        vo.setRemark(order.getRemark());
         vo.setItems(itemVOs);
 
         // 解析地址快照

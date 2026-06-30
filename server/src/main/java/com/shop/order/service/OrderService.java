@@ -25,6 +25,9 @@ public interface OrderService {
     /** 订单详情 */
     OrderDetailVO detail(Long userId, String orderNo);
 
+    /** 商家订单详情 */
+    OrderDetailVO merchantDetail(Long merchantId, String orderNo);
+
     /** 商家发货 */
     void ship(Long merchantId, String orderNo, String shipNo);
 

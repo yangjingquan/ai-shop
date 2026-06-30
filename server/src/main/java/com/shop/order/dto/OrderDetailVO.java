@@ -35,6 +35,18 @@ public class OrderDetailVO {
 
     private String payTransactionId;
 
+    private String shipNo;
+
+    private LocalDateTime shipTime;
+
+    private LocalDateTime finishTime;
+
+    private LocalDateTime cancelTime;
+
+    private String cancelReason;
+
+    private String remark;
+
     private List<OrderItemVO> items;
 
     /** 毫秒时间戳，仅 WAIT_PAY 状态时有值 */
