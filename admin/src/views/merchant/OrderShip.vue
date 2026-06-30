@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import request from '@/utils/request'
 
 interface OrderRow {
   orderNo: string
   statusText: string
   payAmount: number | string
   createdAt: string
+}
+
+interface PageResult<T> {
+  list: T[]
+  total: number
+  pageNum: number
+  pageSize: number
 }
 
 const orders = ref<OrderRow[]>([])
@@ -17,10 +24,10 @@ const loading = ref(false)
 async function loadOrders() {
   loading.value = true
   try {
-    const res = await axios.get('/api/merchant/order/page', {
+    const data = await request.get<unknown, PageResult<OrderRow>>('/api/merchant/order/page', {
       params: { status: 1, page: 1, size: 100 },
     })
-    orders.value = res.data.data?.list || []
+    orders.value = data?.list || []
   } finally {
     loading.value = false
   }
@@ -32,14 +39,9 @@ async function doShip(orderNo: string) {
     ElMessage.error('物流单号格式不合法（5-30位字母数字）')
     return
   }
-  try {
-    await axios.post('/api/merchant/order/ship', { shipNo: sn }, { params: { orderNo } })
-    ElMessage.success('发货成功')
-    await loadOrders()
-  } catch (err: unknown) {
-    const message = axios.isAxiosError(err) ? err.response?.data?.msg : undefined
-    ElMessage.error(message || '发货失败')
-  }
+  await request.post<unknown, void>('/api/merchant/order/ship', { shipNo: sn }, { params: { orderNo } })
+  ElMessage.success('发货成功')
+  await loadOrders()
 }
 
 onMounted(loadOrders)

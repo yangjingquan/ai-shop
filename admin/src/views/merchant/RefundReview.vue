@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import request from '@/utils/request'
 
 interface RefundRow {
   id: number
@@ -19,38 +19,28 @@ const loading = ref(false)
 async function loadRefunds() {
   loading.value = true
   try {
-    const res = await axios.get('/api/merchant/refund/list', {
+    const data = await request.get<unknown, RefundRow[]>('/api/merchant/refund/list', {
       params: { status: currentTab.value === -1 ? undefined : currentTab.value, page: 1, size: 100 },
     })
-    refunds.value = res.data.data || []
+    refunds.value = data || []
   } finally {
     loading.value = false
   }
 }
 
 async function doApprove(id: number) {
-  try {
-    await axios.post(`/api/merchant/refund/${id}/approve`, { approved: true })
-    ElMessage.success('已同意退款')
-    await loadRefunds()
-  } catch (err: unknown) {
-    const message = axios.isAxiosError(err) ? err.response?.data?.msg : undefined
-    ElMessage.error(message || '操作失败')
-  }
+  await request.post<unknown, void>(`/api/merchant/refund/${id}/approve`, { approved: true })
+  ElMessage.success('已同意退款')
+  await loadRefunds()
 }
 
 async function doReject(id: number) {
-  try {
-    await axios.post(`/api/merchant/refund/${id}/approve`, {
-      approved: false,
-      rejectReason: rejectReasons.value[id] || '',
-    })
-    ElMessage.success('已拒绝退款')
-    await loadRefunds()
-  } catch (err: unknown) {
-    const message = axios.isAxiosError(err) ? err.response?.data?.msg : undefined
-    ElMessage.error(message || '操作失败')
-  }
+  await request.post<unknown, void>(`/api/merchant/refund/${id}/approve`, {
+    approved: false,
+    rejectReason: rejectReasons.value[id] || '',
+  })
+  ElMessage.success('已拒绝退款')
+  await loadRefunds()
 }
 
 onMounted(loadRefunds)
