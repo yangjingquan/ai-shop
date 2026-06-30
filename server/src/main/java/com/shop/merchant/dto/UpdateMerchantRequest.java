@@ -1,5 +1,6 @@
 package com.shop.merchant.dto;
 
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -20,4 +21,8 @@ public class UpdateMerchantRequest {
 
     @Size(max = 128)
     private String wxSecret;
+
+    @Size(max = 32)
+    @Pattern(regexp = "^$|^[0-9]{6,32}$", message = "微信支付商户号需为 6-32 位数字")
+    private String wxMchId;
 }

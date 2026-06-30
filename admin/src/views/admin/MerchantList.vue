@@ -96,6 +96,11 @@ onMounted(fetchList)
         <el-table-column prop="contactName" label="联系人" width="80" show-overflow-tooltip />
         <el-table-column prop="contactPhone" label="联系电话" width="108" />
         <el-table-column prop="wxAppId" label="小程序 AppID" min-width="120" show-overflow-tooltip />
+        <el-table-column label="微信支付商户号" min-width="130" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ (row as MerchantVO).wxMchId || '未配置' }}
+          </template>
+        </el-table-column>
         <el-table-column label="密钥状态" width="82">
           <template #default="{ row }">
             <el-tag :type="(row as MerchantVO).wxSecretConfigured ? 'success' : 'info'">

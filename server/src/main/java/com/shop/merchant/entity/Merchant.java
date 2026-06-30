@@ -18,6 +18,7 @@ public class Merchant extends BaseEntity {
     private String contactPhone;
     private String wxAppId;
     private String wxSecret;
+    private String wxMchId;
     private Integer status;
     private Long createdByAdminId;
 }

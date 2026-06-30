@@ -15,6 +15,7 @@ public class MerchantVO {
     private String contactName;
     private String contactPhone;
     private String wxAppId;
+    private String wxMchId;
     private Boolean wxSecretConfigured;
     private Integer status;
     private String username;

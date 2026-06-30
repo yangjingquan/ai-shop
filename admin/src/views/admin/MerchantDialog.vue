@@ -29,6 +29,7 @@ const form = reactive({
   logo: '',
   wxAppId: '',
   wxSecret: '',
+  wxMchId: '',
 })
 
 const rules: FormRules = {
@@ -56,6 +57,7 @@ watch(
       form.logo = props.row.logo ?? ''
       form.wxAppId = props.row.wxAppId ?? ''
       form.wxSecret = ''
+      form.wxMchId = props.row.wxMchId ?? ''
       form.username = ''
       form.password = ''
     } else {
@@ -69,6 +71,7 @@ watch(
       form.logo = ''
       form.wxAppId = ''
       form.wxSecret = ''
+      form.wxMchId = ''
     }
   },
 )
@@ -95,6 +98,7 @@ async function handleSubmit() {
           logo: form.logo || undefined,
           wxAppId: form.wxAppId || undefined,
           wxSecret: form.wxSecret || undefined,
+          wxMchId: form.wxMchId || undefined,
         })
         ElMessage.success('创建成功')
       } else if (props.row) {
@@ -107,6 +111,7 @@ async function handleSubmit() {
           logo: form.logo || undefined,
           wxAppId: form.wxAppId,
           wxSecret: form.wxSecret || undefined,
+          wxMchId: form.wxMchId,
         })
         ElMessage.success('保存成功')
       }
@@ -164,6 +169,9 @@ async function handleSubmit() {
           :placeholder="mode === 'edit' ? '留空则不修改 WX_SECRET' : '请输入 WX_SECRET'"
         />
         <div v-if="mode === 'edit' && row?.wxSecretConfigured" class="hint">当前商户已配置 AppSecret，留空不会覆盖。</div>
+      </el-form-item>
+      <el-form-item label="微信支付商户号">
+        <el-input v-model="form.wxMchId" placeholder="请输入微信支付商户号" maxlength="32" clearable />
       </el-form-item>
       <el-form-item label="店铺 Logo">
         <ImageUploader v-model="form.logo" scope="admin" :limit="1" label="上传 Logo" />

@@ -62,6 +62,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         m.setContactPhone(req.getContactPhone());
         m.setWxAppId(req.getWxAppId() == null ? "" : req.getWxAppId());
         m.setWxSecret(req.getWxSecret() == null ? "" : req.getWxSecret());
+        m.setWxMchId(req.getWxMchId() == null ? "" : req.getWxMchId());
         m.setStatus(1);
         m.setCreatedByAdminId(adminUserId);
         m.setMerchantCode(generateMerchantCode());
@@ -143,6 +144,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         if (req.getContactPhone() != null) m.setContactPhone(req.getContactPhone());
         if (req.getWxAppId() != null) m.setWxAppId(req.getWxAppId());
         if (req.getWxSecret() != null && !req.getWxSecret().isBlank()) m.setWxSecret(req.getWxSecret());
+        if (req.getWxMchId() != null) m.setWxMchId(req.getWxMchId());
         merchantMapper.updateById(m);
     }
 
