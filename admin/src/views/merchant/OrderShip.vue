@@ -59,7 +59,7 @@ interface OrderDetail {
   items: OrderDetailItem[]
 }
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081').replace(/\/$/, '')
 
 const orders = ref<OrderRow[]>([])
 const shipNos = ref<Record<string, string>>({})

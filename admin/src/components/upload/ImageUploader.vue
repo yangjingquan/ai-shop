@@ -24,7 +24,7 @@ const uploading = ref(false)
 const previewVisible = ref(false)
 const previewUrl = ref('')
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081').replace(/\/$/, '')
 const helpText = computed(() =>
   props.multiple ? `支持批量选择，最多 ${props.limit} 张；支持 jpg / png / webp / gif` : '支持 jpg / png / webp / gif',
 )

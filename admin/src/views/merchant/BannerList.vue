@@ -19,7 +19,7 @@ const form = reactive<BannerPayload>({
   status: 1,
 })
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081').replace(/\/$/, '')
 
 const linkTypeText: Record<number, string> = {
   0: '不跳转',
