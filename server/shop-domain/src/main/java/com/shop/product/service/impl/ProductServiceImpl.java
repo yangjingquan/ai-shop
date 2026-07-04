@@ -68,6 +68,7 @@ public class ProductServiceImpl implements ProductService {
         p.setTotalStock(0);
         p.setTotalSales(0);
         p.setStatus(0);
+        p.setIsRecommend(normalizeFlag(req.getIsRecommend()));
         p.setSort(0);
         productMapper.insert(p);
 
@@ -90,6 +91,7 @@ public class ProductServiceImpl implements ProductService {
         p.setMainImage(req.getMainImage());
         p.setImages(req.getImages());
         p.setDescription(XssSanitizer.sanitize(req.getDescription()));
+        p.setIsRecommend(normalizeFlag(req.getIsRecommend()));
         productMapper.updateById(p);
 
         // 先删后插
@@ -129,6 +131,7 @@ public class ProductServiceImpl implements ProductService {
         vo.setTotalStock(p.getTotalStock());
         vo.setTotalSales(p.getTotalSales());
         vo.setStatus(p.getStatus());
+        vo.setIsRecommend(p.getIsRecommend());
         vo.setSort(p.getSort());
 
         List<ProductSpec> specs = specMapper.selectList(
@@ -194,7 +197,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId,
-                                          String keyword, Integer status) {
+                                          String keyword, Integer status, Integer isRecommend) {
         LambdaQueryWrapper<Product> q = new LambdaQueryWrapper<>();
         if (merchantId != null) {
             q.eq(Product::getMerchantId, merchantId);
@@ -213,6 +216,9 @@ public class ProductServiceImpl implements ProductService {
         }
         if (effectiveStatus != null) {
             q.eq(Product::getStatus, effectiveStatus);
+        }
+        if (isRecommend != null) {
+            q.eq(Product::getIsRecommend, normalizeFlag(isRecommend));
         }
         if (StringUtils.hasText(keyword)) {
             String kw = keyword.trim();
@@ -248,6 +254,7 @@ public class ProductServiceImpl implements ProductService {
             v.setTotalStock(p.getTotalStock());
             v.setTotalSales(p.getTotalSales());
             v.setStatus(p.getStatus());
+            v.setIsRecommend(p.getIsRecommend());
             v.setCategoryId(p.getCategoryId());
             v.setCategoryName(catNames.get(p.getCategoryId()));
             return v;
@@ -273,6 +280,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ============== private ==============
+
+    private int normalizeFlag(Integer flag) {
+        return Integer.valueOf(1).equals(flag) ? 1 : 0;
+    }
 
     private List<Long> findMatchedCategoryIds(String keyword) {
         List<Category> matched = categoryMapper.selectList(

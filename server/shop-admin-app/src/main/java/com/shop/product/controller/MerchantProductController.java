@@ -30,9 +30,10 @@ public class MerchantProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Integer status) {
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Integer isRecommend) {
         return ApiResult.success(productService.page(page, size, currentMerchantId(),
-                categoryId, keyword, status));
+                categoryId, keyword, status, isRecommend));
     }
 
     @GetMapping("/{id}")

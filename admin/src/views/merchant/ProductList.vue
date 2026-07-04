@@ -15,7 +15,8 @@ const query = reactive<{
   size: number
   keyword: string
   status: number | undefined
-}>({ page: 1, size: 10, keyword: '', status: undefined })
+  isRecommend: number | undefined
+}>({ page: 1, size: 10, keyword: '', status: undefined, isRecommend: undefined })
 
 async function fetchList() {
   loading.value = true
@@ -25,6 +26,7 @@ async function fetchList() {
       size: query.size,
       keyword: query.keyword || undefined,
       status: query.status,
+      isRecommend: query.isRecommend,
     })
     list.value = data.list
     total.value = data.total
@@ -113,6 +115,16 @@ onMounted(fetchList)
           <el-option label="上架" :value="1" />
           <el-option label="下架" :value="0" />
         </el-select>
+        <el-select
+          v-model="query.isRecommend"
+          placeholder="全部推荐"
+          clearable
+          style="width: 150px"
+          @change="onSearch"
+        >
+          <el-option label="推荐" :value="1" />
+          <el-option label="普通" :value="0" />
+        </el-select>
         <el-button type="primary" @click="onSearch">搜索</el-button>
       </div>
 
@@ -140,6 +152,13 @@ onMounted(fetchList)
         </el-table-column>
         <el-table-column prop="totalStock" label="库存" width="90" />
         <el-table-column prop="totalSales" label="销量" width="90" />
+        <el-table-column label="推荐" width="90">
+          <template #default="{ row }">
+            <el-tag :type="(row as ProductListVO).isRecommend === 1 ? 'success' : 'info'">
+              {{ (row as ProductListVO).isRecommend === 1 ? '推荐' : '普通' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="(row as ProductListVO).status === 1 ? 'success' : 'info'">

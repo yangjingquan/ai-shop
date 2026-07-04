@@ -424,6 +424,7 @@ CREATE TABLE `product` (
   `total_stock` int DEFAULT '0',
   `total_sales` int DEFAULT '0',
   `status` tinyint(1) DEFAULT '0' COMMENT '1 上架 / 0 下架',
+  `is_recommend` tinyint(1) DEFAULT '0' COMMENT '1 推荐 / 0 不推荐',
   `sort` int DEFAULT '0',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -431,7 +432,8 @@ CREATE TABLE `product` (
   PRIMARY KEY (`id`),
   KEY `idx_merchant_status` (`merchant_id`,`status`,`deleted`),
   KEY `idx_category_status` (`category_id`,`status`,`deleted`),
-  KEY `idx_status_sort` (`status`,`sort`,`deleted`)
+  KEY `idx_status_sort` (`status`,`sort`,`deleted`),
+  KEY `idx_status_recommend_sort` (`status`,`is_recommend`,`sort`,`deleted`)
 ) ENGINE=InnoDB AUTO_INCREMENT=113 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='商品 SPU';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -441,7 +443,7 @@ CREATE TABLE `product` (
 
 LOCK TABLES `product` WRITE;
 /*!40000 ALTER TABLE `product` DISABLE KEYS */;
-INSERT INTO `product` VALUES (1,1,2,'测试手机改','测试副标题','https://example.com/main.jpg','[\"https://example.com/1.jpg\"]','<p>详情</p>',6999.00,7999.00,35,0,0,0,'2026-06-18 18:36:36','2026-06-18 18:56:28',0),(2,1,4,'短袖-男','夏天男士短袖-多款式','/uploads/20260628/a5b4dbfe-99ad-4cce-9a43-cd5eabd188eb.jpg','[\"/uploads/20260628/d04209f5-5f6e-4b60-8275-5def6c6cdc92.jpg\", \"/uploads/20260628/d42d75ee-7bd3-4cca-9aa3-b83184c986e5.jpg\"]','<p>详情</p>',100.00,105.00,226,1,1,0,'2026-06-18 20:08:31','2026-06-28 12:46:15',0),(3,1,6,'短裤-男','夏季男生短裤','/uploads/20260626/3d182f70-9733-41a7-a35e-caad3ed806c4.jpg','[\"/uploads/20260626/5b8e056c-29c1-417b-b79f-2290a81da3c6.jpg\", \"/uploads/20260626/e93eb2b8-77e1-4dfb-bd3f-0b0ca920f92f.jpg\"]','<p>详情说法</p>',99.00,109.00,99,19,1,0,'2026-06-18 20:10:48','2026-06-28 11:23:08',0),(68,1,6,'Nike速干裤','Nike速干裤运动短裤','/uploads/20260628/e6ab17f7-d931-4a4c-8d71-6eda0e90a6fe.jpg','[\"/uploads/20260628/5f703d42-f53e-4700-924d-646b6f41c1bb.jpg\", \"/uploads/20260628/aded9b15-c28f-40a0-a5f4-14df375f841c.jpg\", \"/uploads/20260628/caf6538e-eab5-4e13-96c7-202be7c0bd66.jpg\", \"/uploads/20260628/bd90e061-b358-49a3-a958-fa448ef81a93.jpg\", \"/uploads/20260628/294b8992-ba90-4a13-add3-1b01a80fdd2e.jpg\"]','男士速干短裤',0.01,0.01,433,2,1,0,'2026-06-28 22:47:24','2026-06-28 23:19:25',0);
+INSERT INTO `product` VALUES (1,1,2,'测试手机改','测试副标题','https://example.com/main.jpg','[\"https://example.com/1.jpg\"]','<p>详情</p>',6999.00,7999.00,35,0,0,0,0,'2026-06-18 18:36:36','2026-06-18 18:56:28',0),(2,1,4,'短袖-男','夏天男士短袖-多款式','/uploads/20260628/a5b4dbfe-99ad-4cce-9a43-cd5eabd188eb.jpg','[\"/uploads/20260628/d04209f5-5f6e-4b60-8275-5def6c6cdc92.jpg\", \"/uploads/20260628/d42d75ee-7bd3-4cca-9aa3-b83184c986e5.jpg\"]','<p>详情</p>',100.00,105.00,226,1,1,0,0,'2026-06-18 20:08:31','2026-06-28 12:46:15',0),(3,1,6,'短裤-男','夏季男生短裤','/uploads/20260626/3d182f70-9733-41a7-a35e-caad3ed806c4.jpg','[\"/uploads/20260626/5b8e056c-29c1-417b-b79f-2290a81da3c6.jpg\", \"/uploads/20260626/e93eb2b8-77e1-4dfb-bd3f-0b0ca920f92f.jpg\"]','<p>详情说法</p>',99.00,109.00,99,19,1,0,0,'2026-06-18 20:10:48','2026-06-28 11:23:08',0),(68,1,6,'Nike速干裤','Nike速干裤运动短裤','/uploads/20260628/e6ab17f7-d931-4a4c-8d71-6eda0e90a6fe.jpg','[\"/uploads/20260628/5f703d42-f53e-4700-924d-646b6f41c1bb.jpg\", \"/uploads/20260628/aded9b15-c28f-40a0-a5f4-14df375f841c.jpg\", \"/uploads/20260628/caf6538e-eab5-4e13-96c7-202be7c0bd66.jpg\", \"/uploads/20260628/bd90e061-b358-49a3-a958-fa448ef81a93.jpg\", \"/uploads/20260628/294b8992-ba90-4a13-add3-1b01a80fdd2e.jpg\"]','男士速干短裤',0.01,0.01,433,2,1,0,0,'2026-06-28 22:47:24','2026-06-28 23:19:25',0);
 /*!40000 ALTER TABLE `product` ENABLE KEYS */;
 UNLOCK TABLES;
 

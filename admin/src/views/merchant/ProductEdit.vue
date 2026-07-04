@@ -47,6 +47,7 @@ const form = reactive({
   mainImage: '',
   images: [] as string[],
   description: '',
+  isRecommend: 0,
 })
 
 const rules: FormRules = {
@@ -181,6 +182,7 @@ async function loadDetail(id: number) {
     form.mainImage = data.mainImage ?? ''
     form.images = (data.images ?? []).filter(Boolean)
     form.description = data.description ?? ''
+    form.isRecommend = data.isRecommend === 1 ? 1 : 0
 
     // 暂停 watch 触发的 rebuild
     suppressSkuRebuild = true
@@ -272,6 +274,7 @@ async function handleSubmit() {
       mainImage: form.mainImage?.trim() || undefined,
       images: form.images.length ? [...form.images] : undefined,
       description: form.description?.trim() || undefined,
+      isRecommend: form.isRecommend === 1 ? 1 : 0,
       specs: specs.value.map((s) => ({
         name: s.name.trim(),
         values: s.values.map((v) => v.trim()).filter(Boolean),
@@ -349,6 +352,12 @@ onMounted(async () => {
             clearable
             style="width: 320px"
           />
+        </el-form-item>
+        <el-form-item label="是否推荐商品">
+          <el-radio-group v-model="form.isRecommend">
+            <el-radio :value="1">是</el-radio>
+            <el-radio :value="0">否</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="主图">
           <ImageUploader v-model="form.mainImage" scope="merchant" :limit="1" label="上传主图" />

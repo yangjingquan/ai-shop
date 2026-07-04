@@ -36,6 +36,11 @@
   overflow: hidden;
   box-shadow: 0 12rpx 32rpx rgba(15, 23, 42, 0.06);
 }
+.banner .wx-swiper-dots.wx-swiper-dots-horizontal {
+  left: auto;
+  right: 24rpx;
+  transform: none;
+}
 .banner-img {
   width: 100%;
   height: 100%;

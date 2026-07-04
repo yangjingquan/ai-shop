@@ -24,6 +24,9 @@ public class ProductSaveRequest {
 
     private String description;
 
+    /** 1 推荐 / 0 不推荐 */
+    private Integer isRecommend;
+
     @NotEmpty
     @Valid
     private List<SpecInput> specs;

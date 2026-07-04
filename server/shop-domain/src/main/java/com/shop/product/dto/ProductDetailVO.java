@@ -23,6 +23,7 @@ public class ProductDetailVO {
     private Integer totalStock;
     private Integer totalSales;
     private Integer status;
+    private Integer isRecommend;
     private Integer sort;
 
     private List<SpecVO> specs = new ArrayList<>();

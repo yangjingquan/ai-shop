@@ -14,7 +14,7 @@ public interface ProductService {
     /** merchantId == null 表示公共/admin 视角，不做归属校验 */
     ProductDetailVO get(Long id, Long merchantId);
 
-    PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId, String keyword, Integer status);
+    PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId, String keyword, Integer status, Integer isRecommend);
 
     void setStatus(Long id, int status, Long merchantId);
 

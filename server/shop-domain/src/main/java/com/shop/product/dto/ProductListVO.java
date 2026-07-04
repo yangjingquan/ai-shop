@@ -25,6 +25,8 @@ public class ProductListVO {
 
     private Integer status;
 
+    private Integer isRecommend;
+
     private Long categoryId;
 
     private String categoryName;

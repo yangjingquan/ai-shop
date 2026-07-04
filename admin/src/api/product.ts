@@ -11,6 +11,7 @@ export interface ProductListVO {
   totalStock: number
   totalSales: number
   status: number
+  isRecommend?: number
   categoryId: number
   categoryName?: string
 }
@@ -53,6 +54,7 @@ export interface ProductDetailVO {
   totalStock: number
   totalSales: number
   status: number
+  isRecommend?: number
   sort?: number
   specs: ProductSpecVO[]
   skus: ProductSkuVO[]
@@ -78,6 +80,7 @@ export interface ProductSavePayload {
   mainImage?: string
   images?: string[]
   description?: string
+  isRecommend: number
   specs: ProductSpecInput[]
   skus: ProductSkuInput[]
 }
@@ -88,6 +91,7 @@ export interface ProductPageQuery {
   categoryId?: number
   keyword?: string
   status?: number
+  isRecommend?: number
 }
 
 export const productApi = {

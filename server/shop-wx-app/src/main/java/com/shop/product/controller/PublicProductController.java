@@ -20,9 +20,10 @@ public class PublicProductController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer isRecommend) {
         // 公共视角：merchantId=null 触发 service 默认 status=1 过滤
-        return ApiResult.success(productService.page(page, size, null, categoryId, keyword, null));
+        return ApiResult.success(productService.page(page, size, null, categoryId, keyword, null, isRecommend));
     }
 
     @GetMapping("/{id}")

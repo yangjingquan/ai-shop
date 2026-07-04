@@ -44,7 +44,14 @@ Page({
   async fetchProducts(keyword) {
     const params = { page: 1, size: 20 }
     const query = (keyword || '').trim()
-    if (query) params.keyword = query
+    if (query) {
+      params.keyword = query
+      return productApi.page(params).catch(() => ({ data: { list: [] } }))
+    }
+
+    const recommendRes = await productApi.page({ ...params, isRecommend: 1 }).catch(() => ({ data: { list: [] } }))
+    const recommendList = (recommendRes && recommendRes.data && recommendRes.data.list) || []
+    if (recommendList.length) return recommendRes
     return productApi.page(params).catch(() => ({ data: { list: [] } }))
   },
 
