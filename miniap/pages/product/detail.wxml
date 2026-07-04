@@ -22,14 +22,6 @@
     </view>
   </view>
 
-  <view class="sku-row card" bindtap="openSku">
-    <view class="sku-label">
-      <image class="icon icon-sm" src="/assets/icons/package.png" mode="aspectFit" />
-      <text>{{ selectedSkuText || '请选择规格' }}</text>
-    </view>
-    <image class="icon icon-sm arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" />
-  </view>
-
   <view class="desc card">
     <view class="desc-title section-title">商品详情</view>
     <view wx:if="{{ product.description }}" class="desc-body">
@@ -97,7 +89,7 @@
       </scroll-view>
 
       <button class="confirm-btn" bindtap="onConfirm" disabled="{{addingCart}}">
-        {{addingCart ? '处理中...' : (skuAction === 'cart' ? '加入购物车' : '立即购买')}}
+        {{addingCart ? '处理中...' : '确定'}}
       </button>
     </view>
   </view>

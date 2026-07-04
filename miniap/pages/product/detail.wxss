@@ -1,10 +1,14 @@
 .detail {
-  padding-bottom: 156rpx;
+  padding-bottom: 168rpx;
+  background: #f7f4ed;
 }
 .banner {
-  width: 100%;
-  height: 720rpx;
+  width: auto;
+  height: 640rpx;
+  margin: 0 24rpx;
   background: #fff;
+  border-radius: 0 0 20rpx 20rpx;
+  overflow: hidden;
 }
 .banner image {
   width: 100%;
@@ -110,33 +114,57 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(255, 255, 255, 0.96);
   border-top: 1rpx solid #eef0f3;
-  padding: 16rpx 32rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  display: flex;
-  gap: 20rpx;
+  padding: 18rpx 24rpx;
+  padding-bottom: calc(18rpx + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: 124rpx minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 14rpx;
   box-shadow: 0 -8rpx 28rpx rgba(15, 23, 42, 0.06);
+  box-sizing: border-box;
 }
 .bottom-bar button {
-  flex: 1;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: 18rpx;
   height: 88rpx;
   line-height: 88rpx;
-  border-radius: 44rpx;
-  font-size: 30rpx;
-  font-weight: 600;
-  padding: 0;
+  font-size: 28rpx;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
 }
-.bottom-bar .cart {
-  background: #fff7f0;
-  color: #ff6600;
+.bottom-bar button::after,
+.confirm-btn::after {
+  border: none;
 }
-.bottom-bar .confirm {
-  background: #ff6600;
+.cart-tab {
+  flex-direction: column;
+  gap: 4rpx;
+  background: #fff;
+  color: #9aa0a6;
+  font-size: 22rpx;
+  line-height: 1.1;
+  box-shadow: none;
+}
+.action {
+  color: #111318;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+.add-cart {
+  background: #ffef68;
+}
+.buy-now {
+  background: #ff5a1f;
   color: #fff;
 }
 .btn-icon {
@@ -160,6 +188,7 @@
   max-height: 82vh;
   display: flex;
   flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 .sku-head {
   display: flex;
@@ -284,13 +313,18 @@
 }
 
 .confirm-btn {
-  margin: 16rpx 32rpx;
-  margin-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  height: 88rpx;
-  line-height: 88rpx;
-  background: #ff6600;
+  width: 520rpx;
+  height: 92rpx;
+  line-height: 92rpx;
+  margin: 18rpx auto 28rpx;
+  padding: 0;
+  background: #ff5a1f;
   color: #fff;
-  border-radius: 44rpx;
-  font-size: 30rpx;
-  font-weight: 600;
+  border-radius: 46rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
