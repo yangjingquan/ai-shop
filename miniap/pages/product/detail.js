@@ -76,13 +76,18 @@ Page({
 
   openSku(e) {
     if (!this.data.product) return
-    const action = e && e.currentTarget && e.currentTarget.dataset.action ? e.currentTarget.dataset.action : 'buy'
+    const rawAction = e && e.currentTarget && e.currentTarget.dataset.action
+    const action = rawAction === 'cart' ? 'cart' : 'buy'
     this.setData({ skuOpen: true, skuAction: action })
   },
   closeSku() {
     this.setData({ skuOpen: false })
   },
   noop() {},
+
+  onCartTab() {
+    wx.switchTab({ url: '/pages/cart/index' })
+  },
 
   onSelectVal(e) {
     const specIndex = Number(e.currentTarget.dataset.specIndex)

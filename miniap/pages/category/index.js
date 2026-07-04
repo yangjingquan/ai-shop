@@ -6,8 +6,15 @@ Page({
   data: {
     topCats: [],
     activeTopId: 0,
+    currentTop: null,
+    currentTopName: '',
     subCats: [],
+    selectedSubId: 0,
+    selectedSubName: '全部商品',
+    products: [],
+    categoryExpanded: false,
     loading: false,
+    productLoading: false,
   },
 
   onLoad(opts) {
@@ -25,60 +32,91 @@ Page({
     this.switchTopCategory(jumpCategoryId)
   },
 
-  loadTree(presetTopId) {
+  loadTree(presetCategoryId) {
     this.setData({ loading: true })
     categoryApi
       .tree()
       .then((res) => {
-        const tree = (res && res.data) || []
-        const topCats = tree
+        const topCats = (res && res.data) || []
         const pendingCategoryId = this.pendingCategoryId
         this.pendingCategoryId = null
-        const targetTopId = presetTopId || pendingCategoryId
-        let activeTopId = 0
-        if (topCats.length > 0) {
-          if (targetTopId && topCats.find((c) => c.id === targetTopId)) {
-            activeTopId = targetTopId
-          } else {
-            activeTopId = topCats[0].id
-          }
-        }
+        const targetCategoryId = presetCategoryId || pendingCategoryId
+        const activeTopId = this.resolveTopId(topCats, targetCategoryId) || (topCats[0] && topCats[0].id) || 0
         this.setData({ topCats, activeTopId })
-        if (activeTopId) this.renderTop(activeTopId)
+        if (activeTopId) {
+          this.renderTop(activeTopId, targetCategoryId)
+        }
       })
       .catch(() => {})
       .then(() => this.setData({ loading: false }))
   },
 
-  renderTop(topId) {
+  resolveTopId(topCats, categoryId) {
+    if (!categoryId) return 0
+    const direct = topCats.find((c) => c.id === categoryId)
+    if (direct) return direct.id
+    const parent = topCats.find((c) => (c.children || []).some((sub) => sub.id === categoryId))
+    return parent ? parent.id : 0
+  },
+
+  renderTop(topId, presetCategoryId) {
     const top = this.data.topCats.find((c) => c.id === topId)
     if (!top) {
-      this.setData({ subCats: [] })
+      this.setData({
+        currentTop: null,
+        currentTopName: '',
+        subCats: [],
+        selectedSubId: 0,
+        selectedSubName: '全部商品',
+        products: [],
+      })
       return
     }
-    const subs = (top.children || []).map((c) => ({
-      id: c.id,
-      name: c.name,
-      products: [],
+    const subCats = (top.children || []).map((sub) => ({
+      ...sub,
+      isHot: false,
     }))
-    this.setData({ subCats: subs })
-    subs.forEach((sub, idx) => {
-      productApi
-        .page({ page: 1, size: 6, categoryId: sub.id })
-        .then((res) => {
-          const list = ((res && res.data && res.data.list) || []).map((p) => ({
-            ...p,
-            mainImage: resolveImageUrl(p.mainImage || ''),
-          }))
-          const key = `subCats[${idx}].products`
-          this.setData({ [key]: list })
-        })
-        .catch(() => {})
+    const selectedSub = subCats.find((sub) => sub.id === presetCategoryId)
+    const selectedSubId = selectedSub ? selectedSub.id : 0
+    const selectedSubName = selectedSub ? selectedSub.name : '全部商品'
+    this.setData({
+      currentTop: top,
+      currentTopName: top.name || '',
+      subCats,
+      selectedSubId,
+      selectedSubName,
+      categoryExpanded: false,
     })
+    this.loadProducts(selectedSubId || top.id)
+  },
+
+  loadProducts(categoryId) {
+    if (!categoryId) return
+    this.setData({ productLoading: true })
+    productApi
+      .page({ page: 1, size: 20, categoryId })
+      .then((res) => {
+        const products = ((res && res.data && res.data.list) || []).map((p) => ({
+          id: p.id,
+          name: p.name,
+          shortName: (p.name || '').slice(0, 1),
+          subtitle: p.subtitle || p.categoryName || '精选好物 · 品质优选',
+          mainImage: resolveImageUrl(p.mainImage || ''),
+          minPrice: this.fmtPrice(p.minPrice),
+        }))
+        this.setData({ products })
+      })
+      .catch(() => this.setData({ products: [] }))
+      .then(() => this.setData({ productLoading: false }))
+  },
+
+  fmtPrice(v) {
+    const n = Number(v || 0)
+    return n.toFixed(2)
   },
 
   switchTopCategory(id) {
-    const topId = Number(id)
+    const topId = this.resolveTopId(this.data.topCats, Number(id))
     if (!topId || !this.data.topCats.find((c) => c.id === topId)) return
     if (topId === this.data.activeTopId) return
     this.setData({ activeTopId: topId })
@@ -89,8 +127,27 @@ Page({
     this.switchTopCategory(e.currentTarget.dataset.id)
   },
 
+  onToggleCategoryPanel() {
+    this.setData({ categoryExpanded: !this.data.categoryExpanded })
+  },
+
+  onSubCategory(e) {
+    const id = Number(e.currentTarget.dataset.id || 0)
+    const sub = this.data.subCats.find((c) => c.id === id)
+    const selectedSubId = sub ? sub.id : 0
+    const selectedSubName = sub ? sub.name : '全部商品'
+    const categoryId = selectedSubId || this.data.activeTopId
+    this.setData({ selectedSubId, selectedSubName })
+    this.loadProducts(categoryId)
+  },
+
+  onSearchTap() {
+    wx.switchTab({ url: '/pages/home/index' })
+  },
+
   onProduct(e) {
     const id = e.currentTarget.dataset.id
+    if (!id) return
     wx.navigateTo({ url: `/pages/product/detail?id=${id}` })
   },
 })

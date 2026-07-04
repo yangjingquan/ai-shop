@@ -1,51 +1,91 @@
-<view class="cat-page page-shell">
-  <scroll-view class="left-tabs" scroll-y>
-    <view
-      wx:for="{{ topCats }}"
-      wx:key="id"
-      class="tab {{ activeTopId === item.id ? 'active' : '' }}"
-      bindtap="onTopTab"
-      data-id="{{ item.id }}"
-    >
-      <text>{{ item.name }}</text>
-    </view>
-    <view wx:if="{{ topCats.length === 0 && !loading }}" class="empty-tab">
-      <image class="empty-mini-icon" src="/assets/icons/empty.png" mode="aspectFit" />
-      <text>暂无分类</text>
-    </view>
-  </scroll-view>
+<view class="cat-page">
+  <view class="topbar">
+    <view class="page-title">分类</view>
+    <view class="search" bindtap="onSearchTap">⌕ 搜索手机、香氛、运动鞋</view>
+  </view>
 
-  <scroll-view class="right-content" scroll-y>
-    <view wx:for="{{ subCats }}" wx:key="id" class="sub-section">
-      <view class="sub-title">
-        <image class="icon icon-sm" src="/assets/icons/category.png" mode="aspectFit" />
+  <view class="layout">
+    <scroll-view class="side" scroll-y>
+      <view
+        wx:for="{{ topCats }}"
+        wx:key="id"
+        class="side-item {{ activeTopId === item.id ? 'active' : '' }}"
+        bindtap="onTopTab"
+        data-id="{{ item.id }}"
+      >
         <text>{{ item.name }}</text>
       </view>
-      <view class="sub-products">
-        <view
-          wx:for="{{ item.products }}"
-          wx:key="id"
-          wx:for-item="p"
-          class="prod card"
-          bindtap="onProduct"
-          data-id="{{ p.id }}"
-        >
-          <image wx:if="{{ p.mainImage }}" class="prod-img" src="{{ p.mainImage }}" mode="aspectFill" />
-          <view wx:else class="prod-img prod-img-empty">
-            <image class="empty-prod-icon" src="/assets/icons/empty.png" mode="aspectFit" />
+      <view wx:if="{{ topCats.length === 0 && !loading }}" class="empty-side">
+        <text>暂无分类</text>
+      </view>
+    </scroll-view>
+
+    <scroll-view class="main" scroll-y>
+      <view wx:if="{{ currentTop }}" class="category-panel">
+        <view class="category-head">
+          <text>{{ currentTopName }}</text>
+          <view class="arrow {{ categoryExpanded ? 'up' : '' }}" bindtap="onToggleCategoryPanel">
+            <text class="arrow-icon">{{ categoryExpanded ? '∧' : '∨' }}</text>
           </view>
-          <view class="prod-name">{{ p.name }}</view>
-          <view class="prod-price">¥ {{ p.minPrice }}</view>
         </view>
-        <view wx:if="{{ item.products.length === 0 }}" class="empty-products">
-          <image class="empty-mini-icon" src="/assets/icons/empty.png" mode="aspectFit" />
-          <text>暂无商品</text>
+        <scroll-view wx:if="{{ !categoryExpanded }}" class="chip-row" scroll-x enhanced show-scrollbar="false">
+          <view class="chip-track">
+            <view
+              class="cat-chip {{ selectedSubId === 0 ? 'active' : '' }}"
+              bindtap="onSubCategory"
+              data-id="0"
+            >全部</view>
+            <view
+              wx:for="{{ subCats }}"
+              wx:key="id"
+              class="cat-chip {{ selectedSubId === item.id ? 'active' : '' }}"
+              bindtap="onSubCategory"
+              data-id="{{ item.id }}"
+            >{{ item.name }}</view>
+          </view>
+        </scroll-view>
+        <view wx:else class="cat-grid">
+          <view
+            class="cat-chip {{ selectedSubId === 0 ? 'active' : '' }}"
+            bindtap="onSubCategory"
+            data-id="0"
+          >全部</view>
+          <view
+            wx:for="{{ subCats }}"
+            wx:key="id"
+            class="cat-chip {{ selectedSubId === item.id ? 'active' : '' }}"
+            bindtap="onSubCategory"
+            data-id="{{ item.id }}"
+          >{{ item.name }}</view>
         </view>
       </view>
-    </view>
-    <view wx:if="{{ subCats.length === 0 && !loading }}" class="empty-state empty-content">
-      <image class="empty-icon" src="/assets/icons/empty.png" mode="aspectFit" />
-      <view class="empty-title">该分类下暂无子分类</view>
-    </view>
-  </scroll-view>
+
+      <view class="section-head">
+        <view class="section-title">{{ selectedSubName }}</view>
+      </view>
+
+      <view wx:if="{{ products.length }}" class="product-grid">
+        <view
+          wx:for="{{ products }}"
+          wx:key="id"
+          class="tile"
+          bindtap="onProduct"
+          data-id="{{ item.id }}"
+        >
+          <view class="tile-media {{ item.mainImage ? '' : 'tile-media-empty' }}">
+            <image wx:if="{{ item.mainImage }}" src="{{ item.mainImage }}" mode="aspectFill" />
+            <view wx:else class="product-art"><text>{{ item.shortName }}</text></view>
+          </view>
+          <view class="tile-name">{{ item.name }}</view>
+          <view class="tile-desc">{{ item.subtitle }}</view>
+          <view class="price">¥ {{ item.minPrice }}</view>
+        </view>
+      </view>
+
+      <view wx:if="{{ !products.length && !productLoading }}" class="empty-content">
+        <image class="empty-icon" src="/assets/icons/empty.png" mode="aspectFit" />
+        <view>暂无商品</view>
+      </view>
+    </scroll-view>
+  </view>
 </view>
