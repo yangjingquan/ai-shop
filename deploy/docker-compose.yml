@@ -1,0 +1,132 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: shop-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    volumes:
+      - shop-mysql-data:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      retries: 20
+      start_period: 40s
+    networks:
+      - shop-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: shop-redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--appendonly", "yes"]
+    volumes:
+      - shop-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      retries: 10
+    networks:
+      - shop-net
+
+  shop-admin-app:
+    build:
+      context: ./admin-app
+    container_name: shop-admin-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SHOP_JWT_SECRET: ${SHOP_JWT_SECRET}
+      WX_APPID: ${WX_APPID}
+      WX_SECRET: ${WX_SECRET}
+      SHOP_FILE_UPLOAD_DIR: /data/shop/uploads
+      SHOP_FILE_PUBLIC_PREFIX: /uploads
+      SHOP_LOG_FILE: /data/shop/logs/shop-admin-app.log
+      SHOP_CORS_ALLOWED_ORIGIN_PATTERNS: "http://103.47.83.185:8080,http://console.nexbyte.top,http://conapi.nexbyte.top"
+      TZ: Asia/Shanghai
+    volumes:
+      - ./uploads:/data/shop/uploads
+      - ./logs/admin-app:/data/shop/logs
+    networks:
+      - shop-net
+
+  shop-wx-app:
+    build:
+      context: ./wx-app
+    container_name: shop-wx-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SHOP_JWT_SECRET: ${SHOP_JWT_SECRET}
+      WX_APPID: ${WX_APPID}
+      WX_SECRET: ${WX_SECRET}
+      SHOP_FILE_UPLOAD_DIR: /data/shop/uploads
+      SHOP_FILE_PUBLIC_PREFIX: /uploads
+      SHOP_LOG_FILE: /data/shop/logs/shop-wx-app.log
+      TZ: Asia/Shanghai
+    volumes:
+      - ./uploads:/data/shop/uploads
+      - ./logs/wx-app:/data/shop/logs
+    networks:
+      - shop-net
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: shop-nginx
+    restart: unless-stopped
+    depends_on:
+      - shop-admin-app
+      - shop-wx-app
+    ports:
+      - "8080:80"
+      - "8081:81"
+      - "8082:82"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./admin-dist:/usr/share/nginx/html/console:ro
+      - ./uploads:/usr/share/nginx/html/uploads:ro
+      - ./logs/nginx:/var/log/nginx
+    networks:
+      - shop-net
+
+networks:
+  shop-net:
+    driver: bridge
+
+volumes:
+  shop-mysql-data:
+  shop-redis-data:
