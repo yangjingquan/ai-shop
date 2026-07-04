@@ -1,22 +1,39 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { productApi, type ProductListVO } from '@/api/product'
+import { categoryApi, type CategoryVO } from '@/api/category'
 
 const router = useRouter()
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081').replace(/\/$/, '')
 
 const loading = ref(false)
 const list = ref<ProductListVO[]>([])
+const selectedRows = ref<ProductListVO[]>([])
 const total = ref(0)
 const query = reactive<{
   page: number
   size: number
   keyword: string
+  categoryId: number | undefined
   status: number | undefined
   isRecommend: number | undefined
-}>({ page: 1, size: 10, keyword: '', status: undefined, isRecommend: undefined })
+}>({ page: 1, size: 10, keyword: '', categoryId: undefined, status: undefined, isRecommend: undefined })
+
+const catTree = ref<CategoryVO[]>([])
+const selectedCount = computed(() => selectedRows.value.length)
+const catOptions = computed(() =>
+  catTree.value.map((t) => ({
+    value: t.id,
+    label: t.name,
+    children: (t.children ?? []).map((c) => ({ value: c.id, label: c.name })),
+  })),
+)
+
+async function loadCategories() {
+  catTree.value = (await categoryApi.publicTree()) ?? []
+}
 
 async function fetchList() {
   loading.value = true
@@ -24,6 +41,7 @@ async function fetchList() {
     const data = await productApi.page({
       page: query.page,
       size: query.size,
+      categoryId: query.categoryId,
       keyword: query.keyword || undefined,
       status: query.status,
       isRecommend: query.isRecommend,
@@ -46,6 +64,30 @@ function onCreate() {
 
 function onEdit(row: ProductListVO) {
   router.push(`/merchant/products/edit/${row.id}`)
+}
+
+function onSelectionChange(rows: ProductListVO[]) {
+  selectedRows.value = rows
+}
+
+async function onBatchSetStatus(status: number) {
+  if (!selectedRows.value.length) {
+    ElMessage.warning('请先选择商品')
+    return
+  }
+  const action = status === 1 ? '上架' : '下架'
+  const rows = [...selectedRows.value]
+  await ElMessageBox.confirm(`确定要批量${action}选中的 ${rows.length} 个商品？`, '提示', {
+    type: 'warning',
+  })
+  loading.value = true
+  try {
+    await Promise.all(rows.map((row) => productApi.setStatus(row.id, status)))
+    ElMessage.success(`批量${action}成功`)
+    await fetchList()
+  } finally {
+    loading.value = false
+  }
 }
 
 async function onToggleStatus(row: ProductListVO) {
@@ -81,7 +123,10 @@ function priceRange(row: ProductListVO) {
   return `¥ ${min.toFixed(2)} - ${max.toFixed(2)}`
 }
 
-onMounted(fetchList)
+onMounted(async () => {
+  await loadCategories()
+  await fetchList()
+})
 </script>
 
 <template>
@@ -105,6 +150,16 @@ onMounted(fetchList)
           @keyup.enter="onSearch"
           @clear="onSearch"
         />
+        <el-cascader
+          v-model="query.categoryId"
+          :options="catOptions"
+          :props="{ checkStrictly: true, emitPath: false }"
+          placeholder="全部分类"
+          clearable
+          style="width: 220px"
+          @change="onSearch"
+          @clear="onSearch"
+        />
         <el-select
           v-model="query.status"
           placeholder="全部状态"
@@ -126,9 +181,17 @@ onMounted(fetchList)
           <el-option label="普通" :value="0" />
         </el-select>
         <el-button type="primary" @click="onSearch">搜索</el-button>
+        <el-button :disabled="!selectedCount" @click="onBatchSetStatus(1)">
+          一键上架
+        </el-button>
+        <el-button :disabled="!selectedCount" @click="onBatchSetStatus(0)">
+          一键下架
+        </el-button>
+        <span v-if="selectedCount" class="selection-tip">已选 {{ selectedCount }} 个</span>
       </div>
 
-      <el-table v-loading="loading" :data="list" stripe>
+      <el-table v-loading="loading" :data="list" stripe @selection-change="onSelectionChange">
+        <el-table-column type="selection" width="48" />
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column label="主图" width="80">
           <template #default="{ row }">
@@ -203,5 +266,9 @@ onMounted(fetchList)
   border: 1px solid var(--shop-border);
   border-radius: 12px !important;
   background: #fff8ed;
+}
+.selection-tip {
+  color: var(--shop-text-2);
+  font-size: 13px;
 }
 </style>
