@@ -65,6 +65,8 @@ public class ProductServiceImpl implements ProductService {
         p.setDescription(XssSanitizer.sanitize(req.getDescription()));
         p.setMinPrice(BigDecimal.ZERO);
         p.setMaxPrice(BigDecimal.ZERO);
+        p.setMinOriginalPrice(null);
+        p.setMaxOriginalPrice(null);
         p.setTotalStock(0);
         p.setTotalSales(0);
         p.setStatus(0);
@@ -128,6 +130,8 @@ public class ProductServiceImpl implements ProductService {
         vo.setDescription(p.getDescription());
         vo.setMinPrice(p.getMinPrice());
         vo.setMaxPrice(p.getMaxPrice());
+        BigDecimal detailMinOriginalPrice = p.getMinOriginalPrice();
+        BigDecimal detailMaxOriginalPrice = p.getMaxOriginalPrice();
         vo.setTotalStock(p.getTotalStock());
         vo.setTotalSales(p.getTotalSales());
         vo.setStatus(p.getStatus());
@@ -188,10 +192,21 @@ public class ProductServiceImpl implements ProductService {
             svo.setSpecValueIds(ids);
             svo.setSpecText(sk.getSpecText());
             svo.setPrice(sk.getPrice());
+            svo.setOriginalPrice(sk.getOriginalPrice());
+            if (sk.getOriginalPrice() != null) {
+                if (detailMinOriginalPrice == null || sk.getOriginalPrice().compareTo(detailMinOriginalPrice) < 0) {
+                    detailMinOriginalPrice = sk.getOriginalPrice();
+                }
+                if (detailMaxOriginalPrice == null || sk.getOriginalPrice().compareTo(detailMaxOriginalPrice) > 0) {
+                    detailMaxOriginalPrice = sk.getOriginalPrice();
+                }
+            }
             svo.setStock(sk.getStock());
             svo.setImage(sk.getImage());
             vo.getSkus().add(svo);
         }
+        vo.setMinOriginalPrice(detailMinOriginalPrice == null ? BigDecimal.ZERO : detailMinOriginalPrice);
+        vo.setMaxOriginalPrice(detailMaxOriginalPrice == null ? BigDecimal.ZERO : detailMaxOriginalPrice);
         return vo;
     }
 
@@ -251,6 +266,8 @@ public class ProductServiceImpl implements ProductService {
             v.setMainImage(p.getMainImage());
             v.setMinPrice(p.getMinPrice());
             v.setMaxPrice(p.getMaxPrice());
+            v.setMinOriginalPrice(p.getMinOriginalPrice());
+            v.setMaxOriginalPrice(p.getMaxOriginalPrice());
             v.setTotalStock(p.getTotalStock());
             v.setTotalSales(p.getTotalSales());
             v.setStatus(p.getStatus());
@@ -367,6 +384,10 @@ public class ProductServiceImpl implements ProductService {
             throw new BusinessException(ErrorCode.SKU_LIMIT_EXCEEDED);
         }
         for (ProductSaveRequest.SkuInput sku : skus) {
+            if (sku.getOriginalPrice() != null && sku.getPrice() != null
+                    && sku.getOriginalPrice().compareTo(sku.getPrice()) < 0) {
+                throw new BusinessException(ErrorCode.INVALID_SPEC);
+            }
             if (sku.getSpecValueIndexes() == null || sku.getSpecValueIndexes().size() != specs.size()) {
                 throw new BusinessException(ErrorCode.INVALID_SPEC);
             }
@@ -421,6 +442,7 @@ public class ProductServiceImpl implements ProductService {
             entity.setSpecValueIds(specValueIds);
             entity.setSpecText(String.join(" / ", specTexts));
             entity.setPrice(sku.getPrice());
+            entity.setOriginalPrice(sku.getOriginalPrice());
             entity.setStock(sku.getStock());
             entity.setImage(sku.getImage() == null ? "" : sku.getImage());
             skuMapper.insert(entity);
@@ -446,6 +468,8 @@ public class ProductServiceImpl implements ProductService {
                 new LambdaQueryWrapper<ProductSku>().eq(ProductSku::getProductId, productId));
         BigDecimal min = BigDecimal.ZERO;
         BigDecimal max = BigDecimal.ZERO;
+        BigDecimal minOriginal = null;
+        BigDecimal maxOriginal = null;
         int total = 0;
         if (!skus.isEmpty()) {
             min = skus.get(0).getPrice();
@@ -453,6 +477,11 @@ public class ProductServiceImpl implements ProductService {
             for (ProductSku s : skus) {
                 if (s.getPrice().compareTo(min) < 0) min = s.getPrice();
                 if (s.getPrice().compareTo(max) > 0) max = s.getPrice();
+                BigDecimal original = s.getOriginalPrice();
+                if (original != null) {
+                    if (minOriginal == null || original.compareTo(minOriginal) < 0) minOriginal = original;
+                    if (maxOriginal == null || original.compareTo(maxOriginal) > 0) maxOriginal = original;
+                }
                 total += s.getStock() == null ? 0 : s.getStock();
             }
         }
@@ -460,6 +489,8 @@ public class ProductServiceImpl implements ProductService {
                 .eq(Product::getId, productId)
                 .set(Product::getMinPrice, min)
                 .set(Product::getMaxPrice, max)
+                .set(Product::getMinOriginalPrice, minOriginal)
+                .set(Product::getMaxOriginalPrice, maxOriginal)
                 .set(Product::getTotalStock, total));
     }
 }

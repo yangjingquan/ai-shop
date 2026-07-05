@@ -8,6 +8,8 @@ export interface ProductListVO {
   mainImage?: string
   minPrice: number
   maxPrice: number
+  minOriginalPrice?: number | null
+  maxOriginalPrice?: number | null
   totalStock: number
   totalSales: number
   status: number
@@ -35,6 +37,7 @@ export interface ProductSkuVO {
   specValueIds: number[]
   specText?: string
   price: number
+  originalPrice?: number | null
   stock: number
   image?: string
 }
@@ -51,6 +54,8 @@ export interface ProductDetailVO {
   description?: string
   minPrice: number
   maxPrice: number
+  minOriginalPrice?: number | null
+  maxOriginalPrice?: number | null
   totalStock: number
   totalSales: number
   status: number
@@ -68,6 +73,7 @@ export interface ProductSpecInput {
 export interface ProductSkuInput {
   specValueIndexes: number[]
   price: number
+  originalPrice?: number | null
   stock: number
   skuCode?: string
   image?: string

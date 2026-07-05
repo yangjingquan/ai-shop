@@ -54,6 +54,9 @@ public class ProductSaveRequest {
         @DecimalMin("0.01")
         private BigDecimal price;
 
+        @DecimalMin("0.01")
+        private BigDecimal originalPrice;
+
         @NotNull
         @Min(0)
         private Integer stock;

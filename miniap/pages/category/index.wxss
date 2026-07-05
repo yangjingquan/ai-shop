@@ -283,7 +283,7 @@ page {
   line-height: 24rpx;
 }
 
-.product-single .price {
+.product-single .price-wrap {
   align-self: end;
   margin-top: 8rpx;
 }
@@ -355,12 +355,24 @@ page {
   -webkit-box-orient: vertical;
 }
 
+.price-wrap {
+  align-self: end;
+  margin-top: 8rpx;
+}
+
 .price {
   display: block;
-  margin-top: 8rpx;
   color: #ff4b43;
   font-size: 27rpx;
   font-weight: 950;
+}
+
+.original-price {
+  margin-top: 3rpx;
+  color: #8b8e97;
+  font-size: 20rpx;
+  font-weight: 650;
+  text-decoration: line-through;
 }
 
 .empty-content {

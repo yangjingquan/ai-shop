@@ -84,7 +84,10 @@
       <view class="prod-body">
         <view class="prod-title">{{ item.name }}</view>
         <view class="prod-row">
-          <view class="prod-price">¥ {{ item.minPrice }}</view>
+          <view class="prod-prices">
+            <view class="prod-price">¥ {{ item.salePriceText || item.minPrice }}</view>
+            <view wx:if="{{ item.hasOriginalPrice }}" class="prod-original-price">¥ {{ item.originalPriceText }}</view>
+          </view>
           <view class="prod-more">
             <image class="icon icon-sm" src="/assets/icons/arrow-right.png" mode="aspectFit" />
           </view>

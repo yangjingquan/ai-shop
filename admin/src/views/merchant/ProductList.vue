@@ -123,6 +123,19 @@ function priceRange(row: ProductListVO) {
   return `¥ ${min.toFixed(2)} - ${max.toFixed(2)}`
 }
 
+function hasOriginalPrice(row: ProductListVO) {
+  return Number(row.minOriginalPrice ?? 0) > 0 || Number(row.maxOriginalPrice ?? 0) > 0
+}
+
+function originalPriceRange(row: ProductListVO) {
+  const min = Number(row.minOriginalPrice ?? 0)
+  const max = Number(row.maxOriginalPrice ?? 0)
+  if (!min && !max) return ''
+  if (min === max || !max) return `¥ ${min.toFixed(2)}`
+  if (!min) return `¥ ${max.toFixed(2)}`
+  return `¥ ${min.toFixed(2)} - ${max.toFixed(2)}`
+}
+
 onMounted(async () => {
   await loadCategories()
   await fetchList()
@@ -208,9 +221,14 @@ onMounted(async () => {
         </el-table-column>
         <el-table-column prop="name" label="商品名称" min-width="200" />
         <el-table-column prop="categoryName" label="分类" width="140" />
-        <el-table-column label="价格" width="160">
+        <el-table-column label="价格" width="170">
           <template #default="{ row }">
-            {{ priceRange(row as ProductListVO) }}
+            <div class="price-cell">
+              <div class="sale-price">{{ priceRange(row as ProductListVO) }}</div>
+              <div v-if="hasOriginalPrice(row as ProductListVO)" class="original-price">
+                {{ originalPriceRange(row as ProductListVO) }}
+              </div>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="totalStock" label="库存" width="90" />
@@ -270,5 +288,18 @@ onMounted(async () => {
 .selection-tip {
   color: var(--shop-text-2);
   font-size: 13px;
+}
+.price-cell {
+  line-height: 1.35;
+}
+.sale-price {
+  color: #ff6600;
+  font-weight: 700;
+}
+.original-price {
+  margin-top: 2px;
+  color: var(--shop-text-2);
+  font-size: 12px;
+  text-decoration: line-through;
 }
 </style>

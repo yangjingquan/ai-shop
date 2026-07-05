@@ -159,10 +159,20 @@
   align-items: center;
   justify-content: space-between;
 }
+.prod-prices {
+  min-width: 0;
+}
 .prod-price {
   font-size: 32rpx;
   color: #ff6600;
   font-weight: 700;
+}
+.prod-original-price {
+  margin-top: 4rpx;
+  color: #9aa0a6;
+  font-size: 22rpx;
+  font-weight: 500;
+  text-decoration: line-through;
 }
 .prod-more {
   width: 44rpx;

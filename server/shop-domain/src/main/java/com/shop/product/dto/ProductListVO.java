@@ -19,6 +19,10 @@ public class ProductListVO {
 
     private BigDecimal maxPrice;
 
+    private BigDecimal minOriginalPrice;
+
+    private BigDecimal maxOriginalPrice;
+
     private Integer totalStock;
 
     private Integer totalSales;

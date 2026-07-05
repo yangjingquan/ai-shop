@@ -104,6 +104,9 @@ Page({
           subtitle: p.subtitle || p.categoryName || '精选好物 · 品质优选',
           mainImage: resolveImageUrl(p.mainImage || ''),
           minPrice: this.fmtPrice(p.minPrice),
+          salePriceText: this.fmtPrice(p.minPrice),
+          originalPriceText: this.fmtPrice(this.minPositivePrice(p.minOriginalPrice, p.maxOriginalPrice, p.originalPrice)),
+          hasOriginalPrice: this.hasOriginalPrice(p.minOriginalPrice, p.maxOriginalPrice, p.originalPrice),
         }))
         this.setData({ products })
       })
@@ -114,6 +117,24 @@ Page({
   fmtPrice(v) {
     const n = Number(v || 0)
     return n.toFixed(2)
+  },
+
+  fmtRange(min, max) {
+    const a = Number(min || 0)
+    const b = Number(max || 0)
+    if (!a && !b) return ''
+    if (!b || a === b) return a.toFixed(2)
+    if (!a) return b.toFixed(2)
+    return `${a.toFixed(2)} - ${b.toFixed(2)}`
+  },
+
+  minPositivePrice(...values) {
+    const nums = values.map((v) => Number(v || 0)).filter((n) => n > 0)
+    return nums.length ? Math.min(...nums) : 0
+  },
+
+  hasOriginalPrice(...values) {
+    return this.minPositivePrice(...values) > 0
   },
 
   switchTopCategory(id) {

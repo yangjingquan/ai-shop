@@ -26,6 +26,8 @@ public class ProductSku extends BaseEntity {
 
     private BigDecimal price;
 
+    private BigDecimal originalPrice;
+
     private Integer stock;
 
     private String image;

@@ -20,6 +20,8 @@ public class ProductDetailVO {
     private String description;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
+    private BigDecimal minOriginalPrice;
+    private BigDecimal maxOriginalPrice;
     private Integer totalStock;
     private Integer totalSales;
     private Integer status;
@@ -51,6 +53,7 @@ public class ProductDetailVO {
         private List<Long> specValueIds;
         private String specText;
         private BigDecimal price;
+        private BigDecimal originalPrice;
         private Integer stock;
         private String image;
     }

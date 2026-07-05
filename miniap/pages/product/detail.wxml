@@ -12,7 +12,10 @@
   </swiper>
 
   <view class="info card">
-    <view class="price">¥ {{ product.minPrice }}<text wx:if="{{ product.minPrice !== product.maxPrice }}"> - {{ product.maxPrice }}</text></view>
+    <view class="price-block">
+      <view class="price">¥ {{ product.salePriceText || product.minPrice }}</view>
+      <view wx:if="{{ product.hasOriginalPrice }}" class="original-price">¥ {{ product.originalPriceText }}</view>
+    </view>
     <view class="name">{{ product.name }}</view>
     <view wx:if="{{ product.subtitle }}" class="subtitle">{{ product.subtitle }}</view>
     <view class="meta">
@@ -51,7 +54,11 @@
           mode="aspectFill"
         />
         <view class="sku-meta">
-          <view class="price">¥ {{ selectedSku ? selectedSku.price : product.minPrice }}</view>
+          <view class="price">¥ {{ selectedSku ? selectedSku.priceText : product.salePriceText }}</view>
+          <view
+            wx:if="{{ selectedSku ? selectedSku.hasOriginalPrice : product.hasOriginalPrice }}"
+            class="original-price sku-original-price"
+          >¥ {{ selectedSku ? selectedSku.originalPriceText : product.originalPriceText }}</view>
           <view class="text">{{ selectedSkuText || '请选择规格' }}</view>
           <view wx:if="{{ selectedSku }}" class="stock">库存 {{ selectedSku.stock }}</view>
         </view>

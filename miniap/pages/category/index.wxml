@@ -85,7 +85,10 @@
           </view>
           <view class="tile-name">{{ item.name }}</view>
           <view class="tile-desc">{{ item.subtitle }}</view>
-          <view class="price">¥ {{ item.minPrice }}</view>
+          <view class="price-wrap">
+            <view class="price">¥ {{ item.salePriceText || item.minPrice }}</view>
+            <view wx:if="{{ item.hasOriginalPrice }}" class="original-price">¥ {{ item.originalPriceText }}</view>
+          </view>
         </view>
       </view>
 

@@ -19,6 +19,7 @@ interface SpecForm {
 interface SkuRow {
   specValueIndexes: number[]
   specText: string
+  originalPrice: number | null
   price: number
   stock: number
   skuCode: string
@@ -143,6 +144,7 @@ function rebuildSkuRows() {
     return {
       specValueIndexes: c.map((x) => x.idx),
       specText,
+      originalPrice: old?.originalPrice ?? null,
       price: old?.price ?? 0,
       stock: old?.stock ?? 0,
       skuCode: old?.skuCode ?? '',
@@ -162,7 +164,7 @@ const batchStock = ref(0)
 function applyBatchPrice() {
   for (const r of skuRows.value) r.price = batchPrice.value
   batchPriceVisible.value = false
-  ElMessage.success('已批量设置价格')
+  ElMessage.success('已批量设置卖价')
 }
 function applyBatchStock() {
   for (const r of skuRows.value) r.stock = batchStock.value
@@ -211,6 +213,7 @@ async function loadDetail(id: number) {
       return {
         specValueIndexes: indexes,
         specText,
+        originalPrice: sku.originalPrice == null ? null : Number(sku.originalPrice),
         price: Number(sku.price ?? 0),
         stock: sku.stock ?? 0,
         skuCode: sku.skuCode ?? '',
@@ -257,8 +260,18 @@ async function handleSubmit() {
       return
     }
     for (const r of skuRows.value) {
-      if (r.price <= 0) {
-        ElMessage.error(`SKU「${r.specText}」价格必须大于 0`)
+      const originalPrice = r.originalPrice == null ? null : Number(r.originalPrice)
+      const price = Number(r.price)
+      if (price <= 0) {
+        ElMessage.error(`SKU「${r.specText}」卖价必须大于 0`)
+        return
+      }
+      if (originalPrice != null && Number.isFinite(originalPrice) && originalPrice > 0 && originalPrice < price) {
+        ElMessage.error(`SKU「${r.specText}」原价不能小于卖价`)
+        return
+      }
+      if (originalPrice != null && (!Number.isFinite(originalPrice) || originalPrice < 0)) {
+        ElMessage.error(`SKU「${r.specText}」原价格式不正确`)
         return
       }
       if (r.stock < 0) {
@@ -282,6 +295,7 @@ async function handleSubmit() {
       skus: skuRows.value.map<ProductSkuInput>((r) => ({
         specValueIndexes: r.specValueIndexes,
         price: Number(r.price),
+        originalPrice: r.originalPrice == null ? undefined : Number(r.originalPrice) || undefined,
         stock: Number(r.stock),
         skuCode: r.skuCode || undefined,
         image: r.image || undefined,
@@ -325,7 +339,7 @@ onMounted(async () => {
       <div>
         <span class="page-kicker">PRODUCT EDITOR</span>
         <h1 class="page-title">{{ isEdit ? '编辑商品' : '新增商品' }}</h1>
-        <p class="page-desc">维护商品基础资料、规格组合、SKU 价格与库存。</p>
+        <p class="page-desc">维护商品基础资料、规格组合、SKU 原价、卖价与库存。</p>
       </div>
     </div>
 
@@ -403,7 +417,7 @@ onMounted(async () => {
 
       <div class="sku-toolbar">
         <el-button :disabled="!skuRows.length" @click="batchPriceVisible = true">
-          批量设价
+          批量设卖价
         </el-button>
         <el-button :disabled="!skuRows.length" @click="batchStockVisible = true">
           批量设库存
@@ -413,7 +427,20 @@ onMounted(async () => {
 
       <el-table :data="skuRows" border size="small">
         <el-table-column prop="specText" label="规格" min-width="180" />
-        <el-table-column label="价格" width="160">
+        <el-table-column label="原价" width="160">
+          <template #default="{ row }">
+            <el-input-number
+              v-model="(row as SkuRow).originalPrice"
+              :min="0"
+              :precision="2"
+              :step="1"
+              :controls="false"
+              placeholder="不填不展示"
+              style="width: 130px"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column label="卖价" width="160">
           <template #default="{ row }">
             <el-input-number
               v-model="(row as SkuRow).price"
@@ -456,7 +483,7 @@ onMounted(async () => {
       </div>
     </el-card>
 
-    <el-dialog v-model="batchPriceVisible" title="批量设价" width="320px">
+    <el-dialog v-model="batchPriceVisible" title="批量设卖价" width="320px">
       <el-input-number v-model="batchPrice" :min="0" :precision="2" :step="1" />
       <template #footer>
         <el-button @click="batchPriceVisible = false">取消</el-button>

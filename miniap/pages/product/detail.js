@@ -40,7 +40,13 @@ Page({
       product.mainImage = resolveImageUrl(product.mainImage || '')
       product.images = Array.isArray(product.images) ? product.images.map(resolveImageUrl).filter(Boolean) : []
       product.skus = Array.isArray(product.skus)
-        ? product.skus.map((sku) => ({ ...sku, image: resolveImageUrl(sku.image || '') }))
+        ? product.skus.map((sku) => ({
+            ...sku,
+            image: resolveImageUrl(sku.image || ''),
+            priceText: this.fmtPrice(sku.price),
+            originalPriceText: this.fmtPrice(sku.originalPrice),
+            hasOriginalPrice: Number(sku.originalPrice || 0) > 0,
+          }))
         : []
       const banners = []
       if (product.mainImage) banners.push(product.mainImage)
@@ -53,6 +59,9 @@ Page({
         values: (s.values || []).map((v) => ({ id: v.id, value: v.value })),
       }))
       product.specs = specs
+      product.salePriceText = this.fmtPrice(product.minPrice)
+      product.originalPriceText = this.fmtPrice(this.minPositivePrice(product.minOriginalPrice, product.maxOriginalPrice, product.originalPrice))
+      product.hasOriginalPrice = this.hasOriginalPrice(product.minOriginalPrice, product.maxOriginalPrice, product.originalPrice)
       product.minPrice = this.fmtPrice(product.minPrice)
       product.maxPrice = this.fmtPrice(product.maxPrice)
       const selected = new Array(specs.length).fill(null)
@@ -72,6 +81,24 @@ Page({
   fmtPrice(v) {
     const n = Number(v || 0)
     return n.toFixed(2)
+  },
+
+  fmtRange(min, max) {
+    const a = Number(min || 0)
+    const b = Number(max || 0)
+    if (!a && !b) return ''
+    if (!b || a === b) return a.toFixed(2)
+    if (!a) return b.toFixed(2)
+    return `${a.toFixed(2)} - ${b.toFixed(2)}`
+  },
+
+  minPositivePrice(...values) {
+    const nums = values.map((v) => Number(v || 0)).filter((n) => n > 0)
+    return nums.length ? Math.min(...nums) : 0
+  },
+
+  hasOriginalPrice(...values) {
+    return this.minPositivePrice(...values) > 0
   },
 
   openSku(e) {
