@@ -11,10 +11,14 @@ public interface ProductService {
 
     void update(Long id, ProductSaveRequest req, Long merchantId);
 
-    /** merchantId == null 表示公共/admin 视角，不做归属校验 */
+    /** merchantId == null 表示 admin 视角，不做归属校验 */
     ProductDetailVO get(Long id, Long merchantId);
 
+    ProductDetailVO publicGet(Long id, Long merchantId);
+
     PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId, String keyword, Integer status, Integer isRecommend);
+
+    PageResult<ProductListVO> publicPage(int page, int size, Long merchantId, Long categoryId, String keyword, Integer isRecommend);
 
     void setStatus(Long id, int status, Long merchantId);
 

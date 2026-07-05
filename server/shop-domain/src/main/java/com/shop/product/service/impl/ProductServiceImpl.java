@@ -11,16 +11,15 @@ import com.shop.common.response.PageResult;
 import com.shop.product.dto.ProductDetailVO;
 import com.shop.product.dto.ProductListVO;
 import com.shop.product.dto.ProductSaveRequest;
-import com.shop.product.entity.Category;
 import com.shop.product.entity.Product;
 import com.shop.product.entity.ProductSku;
 import com.shop.product.entity.ProductSpec;
 import com.shop.product.entity.ProductSpecValue;
-import com.shop.product.mapper.CategoryMapper;
 import com.shop.product.mapper.ProductMapper;
 import com.shop.product.mapper.ProductSkuMapper;
 import com.shop.product.mapper.ProductSpecMapper;
 import com.shop.product.mapper.ProductSpecValueMapper;
+import com.shop.product.service.MerchantCategoryService;
 import com.shop.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,12 +45,12 @@ public class ProductServiceImpl implements ProductService {
     private final ProductSpecMapper specMapper;
     private final ProductSpecValueMapper specValueMapper;
     private final ProductSkuMapper skuMapper;
-    private final CategoryMapper categoryMapper;
+    private final MerchantCategoryService merchantCategoryService;
 
     @Override
     @Transactional
     public Long create(ProductSaveRequest req, Long merchantId) {
-        validateCategory(req.getCategoryId());
+        merchantCategoryService.validateUsableCategory(merchantId, req.getCategoryId());
         validateSpecs(req.getSpecs());
         validateSkus(req.getSkus(), req.getSpecs());
 
@@ -83,7 +82,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void update(Long id, ProductSaveRequest req, Long merchantId) {
         Product p = mustOwn(id, merchantId);
-        validateCategory(req.getCategoryId());
+        merchantCategoryService.validateUsableCategory(merchantId, req.getCategoryId());
         validateSpecs(req.getSpecs());
         validateSkus(req.getSkus(), req.getSpecs());
 
@@ -119,10 +118,7 @@ public class ProductServiceImpl implements ProductService {
         vo.setId(p.getId());
         vo.setMerchantId(p.getMerchantId());
         vo.setCategoryId(p.getCategoryId());
-        Category c = categoryMapper.selectById(p.getCategoryId());
-        if (c != null) {
-            vo.setCategoryName(c.getName());
-        }
+        vo.setCategoryName(merchantCategoryService.getCategoryName(p.getMerchantId(), p.getCategoryId()));
         vo.setName(p.getName());
         vo.setSubtitle(p.getSubtitle());
         vo.setMainImage(p.getMainImage());
@@ -211,6 +207,21 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public ProductDetailVO publicGet(Long id, Long merchantId) {
+        ProductDetailVO vo = get(id, merchantId);
+        if (vo.getStatus() == null || vo.getStatus() != 1) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+        return vo;
+    }
+
+    @Override
+    public PageResult<ProductListVO> publicPage(int page, int size, Long merchantId, Long categoryId,
+                                                String keyword, Integer isRecommend) {
+        return page(page, size, merchantId, categoryId, keyword, 1, isRecommend);
+    }
+
+    @Override
     public PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId,
                                           String keyword, Integer status, Integer isRecommend) {
         LambdaQueryWrapper<Product> q = new LambdaQueryWrapper<>();
@@ -218,26 +229,21 @@ public class ProductServiceImpl implements ProductService {
             q.eq(Product::getMerchantId, merchantId);
         }
         if (categoryId != null) {
-            List<Long> scopeCategoryIds = resolveCategoryScopeIds(categoryId);
+            List<Long> scopeCategoryIds = merchantCategoryService.resolveCategoryScopeIds(merchantId, categoryId);
             if (scopeCategoryIds.isEmpty()) {
                 return PageResult.of(List.of(), 0, page, size);
             }
             q.in(Product::getCategoryId, scopeCategoryIds);
         }
-        // 公共/admin 视角（merchantId==null）：未指定 status 时默认只看上架；商家自己看时 status 可空
-        Integer effectiveStatus = status;
-        if (effectiveStatus == null && merchantId == null) {
-            effectiveStatus = 1;
-        }
-        if (effectiveStatus != null) {
-            q.eq(Product::getStatus, effectiveStatus);
+        if (status != null) {
+            q.eq(Product::getStatus, status);
         }
         if (isRecommend != null) {
             q.eq(Product::getIsRecommend, normalizeFlag(isRecommend));
         }
         if (StringUtils.hasText(keyword)) {
             String kw = keyword.trim();
-            List<Long> matchedCategoryIds = findMatchedCategoryIds(kw);
+            List<Long> matchedCategoryIds = merchantCategoryService.findMatchedCategoryIds(merchantId, kw);
             q.and(w -> {
                 w.like(Product::getName, kw);
                 if (!matchedCategoryIds.isEmpty()) {
@@ -250,13 +256,11 @@ public class ProductServiceImpl implements ProductService {
         IPage<Product> pageReq = new Page<>(page, size);
         IPage<Product> result = productMapper.selectPage(pageReq, q);
 
-        List<Long> categoryIds = result.getRecords().stream()
-                .map(Product::getCategoryId).distinct().collect(Collectors.toList());
         Map<Long, String> catNames = new HashMap<>();
-        if (!categoryIds.isEmpty()) {
-            categoryMapper.selectList(new LambdaQueryWrapper<Category>().in(Category::getId, categoryIds))
-                    .forEach(c -> catNames.put(c.getId(), c.getName()));
-        }
+        result.getRecords().stream()
+                .map(Product::getCategoryId)
+                .distinct()
+                .forEach(id -> catNames.put(id, merchantCategoryService.getCategoryName(merchantId, id)));
 
         List<ProductListVO> list = result.getRecords().stream().map(p -> {
             ProductListVO v = new ProductListVO();
@@ -302,63 +306,12 @@ public class ProductServiceImpl implements ProductService {
         return Integer.valueOf(1).equals(flag) ? 1 : 0;
     }
 
-    private List<Long> findMatchedCategoryIds(String keyword) {
-        List<Category> matched = categoryMapper.selectList(
-                new LambdaQueryWrapper<Category>()
-                        .select(Category::getId, Category::getLevel)
-                        .like(Category::getName, keyword));
-        if (matched.isEmpty()) {
-            return List.of();
-        }
-
-        Set<Long> ids = new HashSet<>();
-        List<Long> topIds = new ArrayList<>();
-        for (Category category : matched) {
-            ids.add(category.getId());
-            if (Integer.valueOf(1).equals(category.getLevel())) {
-                topIds.add(category.getId());
-            }
-        }
-        if (!topIds.isEmpty()) {
-            categoryMapper.selectList(
-                            new LambdaQueryWrapper<Category>()
-                                    .select(Category::getId)
-                                    .in(Category::getParentId, topIds))
-                    .forEach(c -> ids.add(c.getId()));
-        }
-        return new ArrayList<>(ids);
-    }
-
-    private List<Long> resolveCategoryScopeIds(Long categoryId) {
-        Category category = categoryMapper.selectById(categoryId);
-        if (category == null) {
-            return List.of();
-        }
-        Set<Long> ids = new HashSet<>();
-        ids.add(category.getId());
-        if (Integer.valueOf(1).equals(category.getLevel())) {
-            categoryMapper.selectList(
-                            new LambdaQueryWrapper<Category>()
-                                    .select(Category::getId)
-                                    .eq(Category::getParentId, category.getId()))
-                    .forEach(c -> ids.add(c.getId()));
-        }
-        return new ArrayList<>(ids);
-    }
-
     private Product mustOwn(Long id, Long merchantId) {
         Product p = productMapper.selectById(id);
         if (p == null || (merchantId != null && !merchantId.equals(p.getMerchantId()))) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
         return p;
-    }
-
-    private void validateCategory(Long categoryId) {
-        Category c = categoryMapper.selectById(categoryId);
-        if (c == null) {
-            throw new BusinessException(ErrorCode.CATEGORY_NOT_FOUND);
-        }
     }
 
     private void validateSpecs(List<ProductSaveRequest.SpecInput> specs) {

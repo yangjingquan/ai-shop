@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { productApi, type ProductListVO } from '@/api/product'
-import { categoryApi, type CategoryVO } from '@/api/category'
+import { merchantCategoryApi, type MerchantCategoryVO } from '@/api/category'
 
 const router = useRouter()
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081').replace(/\/$/, '')
@@ -21,7 +21,7 @@ const query = reactive<{
   isRecommend: number | undefined
 }>({ page: 1, size: 10, keyword: '', categoryId: undefined, status: undefined, isRecommend: undefined })
 
-const catTree = ref<CategoryVO[]>([])
+const catTree = ref<MerchantCategoryVO[]>([])
 const selectedCount = computed(() => selectedRows.value.length)
 const catOptions = computed(() =>
   catTree.value.map((t) => ({
@@ -32,7 +32,7 @@ const catOptions = computed(() =>
 )
 
 async function loadCategories() {
-  catTree.value = (await categoryApi.publicTree()) ?? []
+  catTree.value = (await merchantCategoryApi.enabledTree()) ?? []
 }
 
 async function fetchList() {

@@ -5,6 +5,8 @@ import com.shop.common.response.PageResult;
 import com.shop.product.dto.ProductDetailVO;
 import com.shop.product.dto.ProductListVO;
 import com.shop.product.service.ProductService;
+import com.shop.wx.config.WxMerchantResolver;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 public class PublicProductController {
 
     private final ProductService productService;
+    private final WxMerchantResolver wxMerchantResolver;
 
     @GetMapping("/page")
     public ApiResult<PageResult<ProductListVO>> page(
@@ -21,13 +24,15 @@ public class PublicProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Integer isRecommend) {
-        // 公共视角：merchantId=null 触发 service 默认 status=1 过滤
-        return ApiResult.success(productService.page(page, size, null, categoryId, keyword, null, isRecommend));
+            @RequestParam(required = false) Integer isRecommend,
+            HttpServletRequest request) {
+        Long merchantId = wxMerchantResolver.currentMerchantId(request);
+        return ApiResult.success(productService.publicPage(page, size, merchantId, categoryId, keyword, isRecommend));
     }
 
     @GetMapping("/{id}")
-    public ApiResult<ProductDetailVO> get(@PathVariable Long id) {
-        return ApiResult.success(productService.get(id, null));
+    public ApiResult<ProductDetailVO> get(@PathVariable Long id, HttpServletRequest request) {
+        Long merchantId = wxMerchantResolver.currentMerchantId(request);
+        return ApiResult.success(productService.publicGet(id, merchantId));
     }
 }

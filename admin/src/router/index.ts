@@ -52,6 +52,12 @@ const routes: RouteRecordRaw[] = [
         meta: { roles: ['merchant'] },
       },
       {
+        path: 'merchant/categories',
+        name: 'MerchantCategoryList',
+        component: () => import('@/views/merchant/CategoryList.vue'),
+        meta: { roles: ['merchant'] },
+      },
+      {
         path: 'merchant/products',
         name: 'MerchantProductList',
         component: () => import('@/views/merchant/ProductList.vue'),

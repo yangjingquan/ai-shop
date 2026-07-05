@@ -13,6 +13,7 @@ function request(options) {
       header: {
         'content-type': 'application/json',
         'wx-token': token,
+        'merchant-code': config.MERCHANT_CODE,
         ...options.header,
       },
       success(res) {

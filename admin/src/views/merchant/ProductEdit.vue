@@ -8,7 +8,7 @@ import {
   type ProductSavePayload,
   type ProductSkuInput,
 } from '@/api/product'
-import { categoryApi, type CategoryVO } from '@/api/category'
+import { merchantCategoryApi, type MerchantCategoryVO } from '@/api/category'
 import ImageUploader from '@/components/upload/ImageUploader.vue'
 
 interface SpecForm {
@@ -60,7 +60,7 @@ const specs = ref<SpecForm[]>([])
 const skuRows = ref<SkuRow[]>([])
 
 // 二级分类树（CascadeSelect 需要）
-const catTree = ref<CategoryVO[]>([])
+const catTree = ref<MerchantCategoryVO[]>([])
 const catOptions = computed(() =>
   catTree.value
     .filter((t) => t.status !== 0)
@@ -78,7 +78,7 @@ const initialDetail = ref<ProductDetailVO | null>(null)
 let suppressSkuRebuild = false
 
 async function loadCategories() {
-  catTree.value = (await categoryApi.publicTree()) ?? []
+  catTree.value = (await merchantCategoryApi.enabledTree()) ?? []
 }
 
 function emptySpec(): SpecForm {
@@ -280,6 +280,10 @@ async function handleSubmit() {
       }
     }
 
+    if (!catTree.value.some((t) => (t.children ?? []).some((c) => c.status !== 0))) {
+      ElMessage.error('请先在分类管理中创建或导入二级分类')
+      return
+    }
     const payload: ProductSavePayload = {
       name: form.name.trim(),
       subtitle: form.subtitle?.trim() || undefined,
