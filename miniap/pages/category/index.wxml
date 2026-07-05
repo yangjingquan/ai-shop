@@ -24,8 +24,8 @@
       <view wx:if="{{ currentTop }}" class="category-panel">
         <view class="category-head">
           <text>{{ currentTopName }}</text>
-          <view class="arrow {{ categoryExpanded ? 'up' : '' }}" bindtap="onToggleCategoryPanel">
-            <text class="arrow-icon">{{ categoryExpanded ? '∧' : '∨' }}</text>
+          <view class="expand-toggle {{ categoryExpanded ? 'active' : '' }}" bindtap="onToggleCategoryPanel">
+            {{ categoryExpanded ? '收起' : '展开' }}
           </view>
         </view>
         <scroll-view wx:if="{{ !categoryExpanded }}" class="chip-row" scroll-x enhanced show-scrollbar="false">
@@ -62,9 +62,16 @@
 
       <view class="section-head">
         <view class="section-title">{{ selectedSubName }}</view>
+        <view class="view-toggle" bindtap="onToggleProductView">
+          <image
+            class="view-toggle-icon"
+            src="{{ productViewMode === 'grid' ? '/assets/icons/view-list.svg' : '/assets/icons/view-module.svg' }}"
+            mode="aspectFit"
+          />
+        </view>
       </view>
 
-      <view wx:if="{{ products.length }}" class="product-grid">
+      <view wx:if="{{ products.length }}" class="product-list {{ productViewMode === 'grid' ? 'product-grid' : 'product-single' }}">
         <view
           wx:for="{{ products }}"
           wx:key="id"

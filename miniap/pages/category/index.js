@@ -12,6 +12,7 @@ Page({
     selectedSubId: 0,
     selectedSubName: '全部商品',
     products: [],
+    productViewMode: 'list',
     categoryExpanded: false,
     loading: false,
     productLoading: false,
@@ -143,6 +144,10 @@ Page({
 
   onSearchTap() {
     wx.switchTab({ url: '/pages/home/index' })
+  },
+
+  onToggleProductView() {
+    this.setData({ productViewMode: this.data.productViewMode === 'grid' ? 'list' : 'grid' })
   },
 
   onProduct(e) {
