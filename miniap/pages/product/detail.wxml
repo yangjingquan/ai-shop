@@ -52,6 +52,8 @@
           class="sku-img"
           src="{{ (selectedSku && selectedSku.image) || product.mainImage }}"
           mode="aspectFill"
+          bindtap="previewSkuImage"
+          data-url="{{ (selectedSku && selectedSku.image) || product.mainImage }}"
         />
         <view class="sku-meta">
           <view class="price">¥ {{ selectedSku ? selectedSku.priceText : product.salePriceText }}</view>

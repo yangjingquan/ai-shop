@@ -190,25 +190,30 @@
 }
 .sku-popup {
   width: 100%;
+  max-width: 100vw;
   background: #fff;
   border-radius: 28rpx 28rpx 0 0;
   max-height: 82vh;
   display: flex;
   flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 .sku-head {
   display: flex;
-  padding: 28rpx 32rpx;
+  padding: 44rpx 32rpx 28rpx;
   border-bottom: 1rpx solid #eef0f3;
   position: relative;
 }
 .sku-img {
   width: 160rpx;
   height: 160rpx;
+  flex: 0 0 160rpx;
   border-radius: 16rpx;
   background: #f6f7f9;
-  margin-top: -48rpx;
+  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.1);
+  margin-top: 0;
 }
 .sku-meta {
   flex: 1;
@@ -259,8 +264,11 @@
 
 .sku-body {
   flex: 1;
+  width: 100%;
+  min-width: 0;
   padding: 20rpx 32rpx;
   max-height: 52vh;
+  box-sizing: border-box;
 }
 .spec-group {
   margin-bottom: 28rpx;
@@ -292,20 +300,32 @@
 }
 
 .qty-row {
+  width: 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 24rpx;
   padding: 18rpx 0 8rpx;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 .qty-row .label {
+  flex: 0 0 auto;
   font-size: 28rpx;
   color: #1f2329;
   font-weight: 600;
 }
 .qty {
-  display: flex;
+  flex: 0 0 196rpx;
+  width: 196rpx;
+  max-width: 196rpx;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 56rpx 60rpx 56rpx;
   align-items: center;
-  gap: 16rpx;
+  column-gap: 12rpx;
+  box-sizing: border-box;
 }
 .qty-btn {
   width: 56rpx;
@@ -320,10 +340,13 @@
   opacity: 0.68;
 }
 .qty-num {
-  min-width: 56rpx;
+  width: 60rpx;
+  min-width: 0;
   text-align: center;
   font-size: 28rpx;
   color: #1f2329;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .confirm-btn {

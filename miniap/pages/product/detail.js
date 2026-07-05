@@ -112,6 +112,16 @@ Page({
   },
   noop() {},
 
+  previewSkuImage(e) {
+    const url = e && e.currentTarget && e.currentTarget.dataset.url
+    if (!url) return
+    const urls = [url]
+    ;(this.data.banners || []).forEach((item) => {
+      if (item && urls.indexOf(item) === -1) urls.push(item)
+    })
+    wx.previewImage({ current: url, urls })
+  },
+
   onCartTab() {
     wx.switchTab({ url: '/pages/cart/index' })
   },
