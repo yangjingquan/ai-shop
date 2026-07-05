@@ -78,7 +78,6 @@ onMounted(load)
         :data="tree"
         row-key="id"
         :tree-props="{ children: 'children' }"
-        default-expand-all
         border
       >
       <el-table-column prop="name" label="名称" min-width="200" />
