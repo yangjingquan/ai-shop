@@ -29,10 +29,12 @@ Page({
         imageUrl: resolveImageUrl(b.imageUrl || ''),
       }))
       const tree = (treeRes && treeRes.data) || []
-      const top = tree.slice(0, 8).map((c) => ({
+      const top = tree.slice(0, 5).map((c, idx) => ({
         id: c.id,
         name: c.name,
         icon: resolveImageUrl(c.icon || ''),
+        symbol: this.categorySymbol(idx),
+        tone: `tone-${(idx % 5) + 1}`,
       }))
       const list = this.normalizeProducts(pageRes)
       this.setData({ banners, topCategories: top, products: list })
@@ -42,24 +44,24 @@ Page({
   },
 
   async fetchProducts(keyword) {
-    const params = { page: 1, size: 20 }
+    const params = { page: 1, size: 12 }
     const query = (keyword || '').trim()
     if (query) {
       params.keyword = query
       return productApi.page(params).catch(() => ({ data: { list: [] } }))
     }
-
-    const recommendRes = await productApi.page({ ...params, isRecommend: 1 }).catch(() => ({ data: { list: [] } }))
-    const recommendList = (recommendRes && recommendRes.data && recommendRes.data.list) || []
-    if (recommendList.length) return recommendRes
-    return productApi.page(params).catch(() => ({ data: { list: [] } }))
+    return productApi.page({ ...params, isRecommend: 1 }).catch(() => ({ data: { list: [] } }))
   },
 
   normalizeProducts(pageRes) {
-    return ((pageRes && pageRes.data && pageRes.data.list) || []).map((p) => ({
+    return ((pageRes && pageRes.data && pageRes.data.list) || []).map((p, idx) => ({
       id: p.id,
       name: p.name,
+      subtitle: p.subtitle || p.categoryName || '精选好物',
       mainImage: resolveImageUrl(p.mainImage || ''),
+      hasImage: !!p.mainImage,
+      visualType: ['phone', 'watch', 'audio', 'bag'][idx % 4],
+      cardTone: `rec-tone-${(idx % 4) + 1}`,
       minPrice: this.fmtPrice(p.minPrice),
       salePriceText: this.fmtPrice(p.minPrice),
       originalPriceText: this.fmtPrice(this.minPositivePrice(p.minOriginalPrice, p.maxOriginalPrice, p.originalPrice)),
@@ -67,18 +69,13 @@ Page({
     }))
   },
 
+  categorySymbol(idx) {
+    return ['◒', '◍', '◈', '◎', '✦'][idx % 5]
+  },
+
   fmtPrice(v) {
     const n = Number(v || 0)
     return n.toFixed(2)
-  },
-
-  fmtRange(min, max) {
-    const a = Number(min || 0)
-    const b = Number(max || 0)
-    if (!a && !b) return ''
-    if (!b || a === b) return a.toFixed(2)
-    if (!a) return b.toFixed(2)
-    return `${a.toFixed(2)} - ${b.toFixed(2)}`
   },
 
   minPositivePrice(...values) {
@@ -139,6 +136,10 @@ Page({
     const id = Number(e.currentTarget.dataset.id)
     wx.setStorageSync('home_jump_category_id', id)
     wx.switchTab({ url: '/pages/category/index' })
+  },
+
+  onMoreRecommend() {
+    wx.navigateTo({ url: '/pages/recommend/index' })
   },
 
   onProduct(e) {

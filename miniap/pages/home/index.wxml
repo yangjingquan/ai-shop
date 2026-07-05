@@ -1,103 +1,102 @@
-<view class="home page-shell">
-  <view class="search-bar">
-    <view class="search-input">
-      <image class="icon icon-sm search-icon" src="/assets/icons/search.png" mode="aspectFit" />
-      <input
-        placeholder="搜索商品"
-        placeholder-class="input-placeholder"
-        value="{{ keyword }}"
-        bindinput="onSearchInput"
-        bindconfirm="onSearch"
-        confirm-type="search"
-      />
+<view class="home">
+  <view class="content">
+    <view class="nav">
+      <view class="brand">潮</view>
+      <view class="search">
+        <text class="search-mark">⌕</text>
+        <input
+          placeholder="搜索卫衣、耳机、香氛"
+          placeholder-class="input-placeholder"
+          value="{{ keyword }}"
+          bindinput="onSearchInput"
+          bindconfirm="onSearch"
+          confirm-type="search"
+        />
+      </view>
+      <view class="search-btn" bindtap="onSearch">搜索</view>
     </view>
-  </view>
 
-  <swiper class="banner" autoplay circular indicator-dots interval="3000" wx:if="{{banners.length}}">
-    <swiper-item wx:for="{{banners}}" wx:key="id">
-      <image
-        class="banner-img"
-        src="{{ item.imageUrl }}"
-        mode="aspectFill"
-        data-banner="{{ item }}"
-        bindtap="onBannerTap"
-      />
-    </swiper-item>
-  </swiper>
-  <swiper class="banner" autoplay circular indicator-dots interval="3000" wx:else>
-    <swiper-item>
-      <view class="banner-placeholder">
-        <view class="banner-title">品质好物</view>
-        <view class="banner-desc">每日精选上新</view>
+    <swiper class="banner" autoplay circular indicator-dots interval="3000" wx:if="{{banners.length}}">
+      <swiper-item wx:for="{{banners}}" wx:key="id">
+        <image
+          class="banner-img"
+          src="{{ item.imageUrl }}"
+          mode="aspectFill"
+          data-banner="{{ item }}"
+          bindtap="onBannerTap"
+        />
+      </swiper-item>
+    </swiper>
+    <view class="banner banner-placeholder" wx:else>
+      <view class="banner-text">
+        <view class="kicker">NEW DROP</view>
+        <view class="banner-title">周末潮流<text>\n</text>上新季</view>
+        <view class="banner-desc">精选好物低至 5 折</view>
+        <view class="cta">立即逛逛</view>
       </view>
-    </swiper-item>
-    <swiper-item>
-      <view class="banner-placeholder banner-2">
-        <view class="banner-title">会员优选</view>
-        <view class="banner-desc">清爽购物体验</view>
-      </view>
-    </swiper-item>
-  </swiper>
-
-  <view class="cat-grid card" wx:if="{{ topCategories.length }}">
-    <view
-      class="cat-cell"
-      wx:for="{{ topCategories }}"
-      wx:key="id"
-      bindtap="onCategory"
-      data-id="{{ item.id }}"
-    >
-      <image
-        wx:if="{{ item.icon }}"
-        class="cat-icon"
-        src="{{ item.icon }}"
-        mode="aspectFit"
-      />
-      <view wx:else class="cat-icon cat-icon-default">
-        <image class="icon" src="/assets/icons/category.png" mode="aspectFit" />
-      </view>
-      <text class="cat-name">{{ item.name }}</text>
+      <view class="shoe"><view class="shoe-line"></view></view>
     </view>
-  </view>
 
-  <view class="section-title home-title">
-    <text>{{ keyword ? '搜索结果' : '精选商品' }}</text>
-  </view>
-
-  <view class="product-grid" wx:if="{{ products.length }}">
-    <view
-      class="prod-card card"
-      wx:for="{{ products }}"
-      wx:key="id"
-      bindtap="onProduct"
-      data-id="{{ item.id }}"
-    >
-      <image
-        wx:if="{{ item.mainImage }}"
-        class="prod-image"
-        src="{{ item.mainImage }}"
-        mode="aspectFill"
-      />
-      <view wx:else class="prod-image prod-image-default">
-        <image class="empty-goods-icon" src="/assets/icons/empty.png" mode="aspectFit" />
+    <view class="categories" wx:if="{{ topCategories.length }}">
+      <view
+        class="cat"
+        wx:for="{{ topCategories }}"
+        wx:key="id"
+        bindtap="onCategory"
+        data-id="{{ item.id }}"
+      >
+        <view class="cat-icon {{ item.tone }}">
+          <image wx:if="{{ item.icon }}" class="cat-img" src="{{ item.icon }}" mode="aspectFit" />
+          <text wx:else>{{ item.symbol }}</text>
+        </view>
+        <text class="cat-name">{{ item.name }}</text>
       </view>
-      <view class="prod-body">
-        <view class="prod-title">{{ item.name }}</view>
-        <view class="prod-row">
-          <view class="prod-prices">
-            <view class="prod-price">¥ {{ item.salePriceText || item.minPrice }}</view>
-            <view wx:if="{{ item.hasOriginalPrice }}" class="prod-original-price">¥ {{ item.originalPriceText }}</view>
-          </view>
-          <view class="prod-more">
-            <image class="icon icon-sm" src="/assets/icons/arrow-right.png" mode="aspectFit" />
-          </view>
+    </view>
+
+    <view class="section-head">
+      <view class="section-title">{{ keyword ? '搜索结果' : '推荐商品' }}</view>
+      <view wx:if="{{ !keyword }}" class="more" bindtap="onMoreRecommend">更多 ›</view>
+    </view>
+
+    <scroll-view class="recommend" scroll-x enhanced show-scrollbar="false" wx:if="{{ products.length }}">
+      <view class="recommend-track">
+        <view
+          class="rec-card {{ item.cardTone }}"
+          wx:for="{{ products }}"
+          wx:key="id"
+          bindtap="onProduct"
+          data-id="{{ item.id }}"
+        >
+          <image wx:if="{{ item.mainImage }}" class="rec-image" src="{{ item.mainImage }}" mode="aspectFit" />
+          <view wx:else class="rec-visual {{ item.visualType }}"></view>
+          <view class="rec-name">{{ item.name }}</view>
+          <view class="price">¥{{ item.salePriceText || item.minPrice }}</view>
         </view>
       </view>
+    </scroll-view>
+    <view class="empty-state" wx:elif="{{ !loading }}">
+      <image class="empty-icon" src="/assets/icons/empty.png" mode="aspectFit" />
+      <view class="empty-title">{{ keyword ? '暂无搜索结果' : '暂无推荐商品' }}</view>
     </view>
-  </view>
 
-  <view class="empty-state" wx:elif="{{ !loading }}">
-    <image class="empty-icon" src="/assets/icons/empty.png" mode="aspectFit" />
-    <view class="empty-title">{{ keyword ? '暂无搜索结果' : '暂无商品' }}</view>
+    <view class="section-head deal-head">
+      <view class="section-title">限时会场</view>
+      <view class="more">11:00 更新</view>
+    </view>
+    <view class="deal-row">
+      <view class="group-card">
+        <view class="deal-title">团购商品</view>
+        <view class="deal-desc">3 人成团 · 省更多</view>
+        <view class="avatars"><view></view><view></view><view></view></view>
+        <view class="group-price">拼团价 ¥89</view>
+        <view class="headphone"></view>
+      </view>
+      <view class="flash-card">
+        <view class="deal-title dark">秒杀商品</view>
+        <view class="timer"><text>01</text><text>23</text><text>59</text></view>
+        <view class="flash-price">¥69 起</view>
+        <view class="speaker"></view>
+      </view>
+    </view>
   </view>
 </view>

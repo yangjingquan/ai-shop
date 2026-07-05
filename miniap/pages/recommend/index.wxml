@@ -1,0 +1,71 @@
+<view class="recommend-page">
+  <view class="content">
+    <view class="hero">
+      <view class="hero-kicker">EDITOR'S PICKS</view>
+      <view class="hero-title">今日值得买</view>
+      <view class="hero-desc">按年轻用户偏好精选，覆盖数码、穿搭与生活方式</view>
+    </view>
+
+    <scroll-view class="filters" scroll-x enhanced show-scrollbar="false">
+      <view class="filter-track">
+        <view
+          class="chip {{ item.active ? 'active' : '' }}"
+          wx:for="{{ filters }}"
+          wx:key="id"
+          data-id="{{ item.id }}"
+          bindtap="onFilter"
+        >{{ item.name }}</view>
+      </view>
+    </scroll-view>
+
+    <view class="showcase" wx:if="{{ groups.length }}">
+      <block wx:for="{{ groups }}" wx:key="id" wx:for-item="group">
+        <view wx:if="{{ group.feature }}" class="feature" bindtap="onProduct" data-id="{{ group.feature.id }}">
+          <view class="feature-info">
+            <view class="top-no">TOP {{ group.feature.rank }}</view>
+            <view class="feature-title">{{ group.feature.name }}</view>
+            <view class="feature-desc">{{ group.feature.subtitle }}</view>
+            <view class="price big">¥{{ group.feature.salePriceText }}</view>
+          </view>
+          <image wx:if="{{ group.feature.mainImage }}" class="visual-img" src="{{ group.feature.mainImage }}" mode="aspectFit" />
+          <view wx:else class="visual {{ group.feature.visualType }}"></view>
+        </view>
+
+        <view wx:if="{{ group.picks.length }}" class="pair-grid">
+          <view
+            class="pick"
+            wx:for="{{ group.picks }}"
+            wx:key="id"
+            bindtap="onProduct"
+            data-id="{{ item.id }}"
+          >
+            <image wx:if="{{ item.mainImage }}" class="mini-img" src="{{ item.mainImage }}" mode="aspectFit" />
+            <view wx:else class="mini-visual {{ item.visualType }}"></view>
+            <view class="pick-title">{{ item.name }}</view>
+            <view class="pick-desc">{{ item.subtitle }}</view>
+            <view class="price">¥{{ item.salePriceText }}</view>
+          </view>
+        </view>
+
+        <view wx:if="{{ group.rank }}" class="rank" bindtap="onProduct" data-id="{{ group.rank.id }}">
+          <view class="rank-num">{{ group.rank.rank }}</view>
+          <view class="rank-info">
+            <view class="rank-title">{{ group.rank.name }}</view>
+            <view class="rank-desc">{{ group.rank.subtitle }}</view>
+          </view>
+          <view class="rank-price">¥{{ group.rank.salePriceText }}</view>
+        </view>
+      </block>
+    </view>
+
+    <view class="empty-state" wx:elif="{{ !loading }}">
+      <image class="empty-icon" src="/assets/icons/empty.png" mode="aspectFit" />
+      <view class="empty-title">暂无推荐商品</view>
+    </view>
+
+    <view class="load-footer" wx:if="{{ products.length }}">
+      <text wx:if="{{ loading }}">加载中...</text>
+      <text wx:elif="{{ !hasMore }}">--到底了--</text>
+    </view>
+  </view>
+</view>

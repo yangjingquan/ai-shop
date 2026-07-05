@@ -251,7 +251,11 @@ public class ProductServiceImpl implements ProductService {
                 }
             });
         }
-        q.orderByDesc(Product::getSort).orderByDesc(Product::getId);
+        if (Integer.valueOf(1).equals(isRecommend)) {
+            q.orderByAsc(Product::getSort).orderByDesc(Product::getId);
+        } else {
+            q.orderByDesc(Product::getSort).orderByDesc(Product::getId);
+        }
 
         IPage<Product> pageReq = new Page<>(page, size);
         IPage<Product> result = productMapper.selectPage(pageReq, q);
