@@ -19,4 +19,7 @@ public interface CartService {
 
     /** 删除单条 */
     void delete(Long userId, Long cartItemId);
+
+    /** 批量删除当前用户购物车项 */
+    void deleteBatch(Long userId, List<Long> cartItemIds);
 }

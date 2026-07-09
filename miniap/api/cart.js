@@ -5,4 +5,5 @@ module.exports = {
   list: () => request({ url: '/api/wx/cart' }),
   update: (id, data) => request({ url: `/api/wx/cart/${id}`, method: 'PUT', data }),
   remove: (id) => request({ url: `/api/wx/cart/${id}`, method: 'DELETE' }),
+  batchRemove: (ids) => request({ url: '/api/wx/cart/batch', method: 'DELETE', data: { ids } }),
 }

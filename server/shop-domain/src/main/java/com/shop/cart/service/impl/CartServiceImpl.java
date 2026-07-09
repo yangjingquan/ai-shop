@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -160,6 +161,29 @@ public class CartServiceImpl implements CartService {
     public void delete(Long userId, Long cartItemId) {
         CartItem item = mustOwn(userId, cartItemId);
         cartItemMapper.deleteById(item.getId());
+    }
+
+    @Override
+    @Transactional
+    public void deleteBatch(Long userId, List<Long> cartItemIds) {
+        List<Long> distinctIds = cartItemIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (distinctIds.isEmpty()) {
+            return;
+        }
+
+        List<CartItem> items = cartItemMapper.selectList(new LambdaQueryWrapper<CartItem>()
+                .eq(CartItem::getUserId, userId)
+                .in(CartItem::getId, distinctIds));
+        if (items.size() != distinctIds.size()) {
+            throw new BusinessException(ErrorCode.CART_ITEM_NOT_OWNED);
+        }
+
+        cartItemMapper.delete(new LambdaQueryWrapper<CartItem>()
+                .eq(CartItem::getUserId, userId)
+                .in(CartItem::getId, distinctIds));
     }
 
     private CartItem mustOwn(Long userId, Long cartItemId) {

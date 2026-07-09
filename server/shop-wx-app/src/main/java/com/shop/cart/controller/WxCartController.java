@@ -1,6 +1,7 @@
 package com.shop.cart.controller;
 
 import com.shop.cart.dto.CartAddRequest;
+import com.shop.cart.dto.CartBatchDeleteRequest;
 import com.shop.cart.dto.CartItemVO;
 import com.shop.cart.dto.CartUpdateRequest;
 import com.shop.cart.service.CartService;
@@ -37,6 +38,13 @@ public class WxCartController {
     public ApiResult<Void> update(@PathVariable Long id, @RequestBody @Valid CartUpdateRequest req) {
         Long userId = CurrentUserHolder.get().getUserId();
         cartService.update(userId, id, req);
+        return ApiResult.success(null);
+    }
+
+    @DeleteMapping("/batch")
+    public ApiResult<Void> deleteBatch(@RequestBody @Valid CartBatchDeleteRequest req) {
+        Long userId = CurrentUserHolder.get().getUserId();
+        cartService.deleteBatch(userId, req.getIds());
         return ApiResult.success(null);
     }
 

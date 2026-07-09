@@ -1,9 +1,17 @@
 const cartApi = require('../../api/cart')
+const productApi = require('../../api/product')
 const { resolveImageUrl } = require('../../utils/url')
 
 const DELETE_ACTION_WIDTH_RPX = 144
 const OPEN_THRESHOLD_RATIO = 0.5
 const DIRECTION_LOCK_DISTANCE = 8
+const RECOMMEND_PAGE_SIZE = 10
+
+const UNAVAILABLE_REASON_TEXT = {
+  OFF_SHELF: '商品已下架',
+  SKU_GONE: '规格已失效',
+  STOCK_NOT_ENOUGH: '库存不足',
+}
 
 Page({
   data: {
@@ -12,6 +20,10 @@ Page({
     merchantGroups: [],
     totalAmount: '0.00',
     allSelected: false,
+    manageMode: false,
+    recommendList: [],
+    recommendPage: 1,
+    recommendLoading: false,
     touchStartX: 0,
     touchStartY: 0,
     touchStartSwipeX: 0,
@@ -22,6 +34,9 @@ Page({
 
   onShow() {
     this.loadCart()
+    if (!this.data.recommendList.length) {
+      this.loadRecommend(true)
+    }
   },
 
   getDeleteActionWidthPx() {
@@ -43,29 +58,62 @@ Page({
     })
   },
 
+  formatPrice(value) {
+    return Number(value || 0).toFixed(2)
+  },
+
+  getUnavailableText(reason) {
+    if (!reason) return '暂不可购买'
+    return UNAVAILABLE_REASON_TEXT[reason] || reason
+  },
+
+  normalizeRecommendData(data) {
+    const list = (data && (data.records || data.list || data.items)) || data || []
+    if (!Array.isArray(list)) return []
+    return list.map(item => ({
+      ...item,
+      id: Number(item.id),
+      name: item.name || item.productName || '',
+      priceText: this.formatPrice(item.price || item.minPrice || item.salePrice || 0),
+      mainImage: resolveImageUrl(item.mainImage || item.coverImage || ''),
+    }))
+  },
+
   loadCart() {
     cartApi.list().then(res => {
       if (res.code === 0) {
-        const items = (res.data || []).map(item => ({
-          ...item,
-          id: Number(item.id),
-          merchantId: Number(item.merchantId),
-          quantity: Number(item.quantity || 1),
-          unitPrice: Number(item.unitPrice || 0),
-          stock: Number(item.stock || 0),
-          available: item.available !== false,
-          selected: this.data.selectedIds.includes(Number(item.id)),
-          swipeX: 0,
-          mainImage: resolveImageUrl(item.mainImage || '')
-        }))
+        const items = (res.data || []).map(item => {
+          const unitPrice = Number(item.unitPrice || 0)
+          return {
+            ...item,
+            id: Number(item.id),
+            merchantId: Number(item.merchantId),
+            productId: Number(item.productId),
+            skuId: Number(item.skuId),
+            quantity: Number(item.quantity || 1),
+            unitPrice,
+            unitPriceText: this.formatPrice(unitPrice),
+            stock: Number(item.stock || 0),
+            available: item.available !== false,
+            unavailableText: this.getUnavailableText(item.unavailableReason),
+            selected: this.data.selectedIds.includes(Number(item.id)),
+            swipeX: 0,
+            mainImage: resolveImageUrl(item.mainImage || '')
+          }
+        })
         this.updateCartState(items, this.data.selectedIds)
       }
     })
   },
 
   updateCartState(items, selectedIds) {
-    const validIds = items.filter(i => i.available !== false).map(i => i.id)
-    const nextSelectedIds = selectedIds.filter(id => validIds.includes(Number(id))).map(Number)
+    const selectableIds = this.data.manageMode
+      ? items.map(i => i.id)
+      : items.filter(i => i.available !== false).map(i => i.id)
+    const selectableSet = new Set(selectableIds)
+    const nextSelectedIds = selectedIds
+      .map(Number)
+      .filter(id => selectableSet.has(id))
     const selectedSet = new Set(nextSelectedIds)
     const groupMap = {}
     let total = 0
@@ -83,7 +131,7 @@ Page({
         }
       }
       groupMap[item.merchantId].items.push(item)
-      if (nextSelectedIds.includes(item.id) && item.available !== false) {
+      if (selectedSet.has(item.id) && item.available !== false) {
         total += Number(item.unitPrice || 0) * Number(item.quantity || 0)
       }
     })
@@ -92,7 +140,7 @@ Page({
       items: Object.values(groupMap).flatMap(group => group.items),
       merchantGroups: Object.values(groupMap),
       selectedIds: nextSelectedIds,
-      allSelected: nextSelectedIds.length === validIds.length && validIds.length > 0,
+      allSelected: nextSelectedIds.length === selectableIds.length && selectableIds.length > 0,
       totalAmount: total.toFixed(2),
     })
   },
@@ -100,15 +148,24 @@ Page({
   closeSwipeItems(exceptId) {
     const items = this.data.items.map(item => ({
       ...item,
-      swipeX: exceptId && item.id === exceptId ? item.swipeX : 0,
+      swipeX: exceptId !== undefined && item.id === exceptId ? item.swipeX : 0,
     }))
     this.updateCartState(items, this.data.selectedIds)
+  },
+
+  toggleManageMode() {
+    const manageMode = !this.data.manageMode
+    const items = this.data.items.map(item => ({ ...item, swipeX: 0 }))
+    this.setData({ manageMode }, () => {
+      this.updateCartState(items, this.data.selectedIds)
+      this.resetTouchState()
+    })
   },
 
   toggleSelect(e) {
     const cartItemId = Number(e.currentTarget.dataset.id)
     const item = this.data.items.find(i => i.id === cartItemId)
-    if (!item || item.available === false) return
+    if (!item || (!this.data.manageMode && item.available === false)) return
 
     const checked = e.currentTarget.dataset.checked === 'true'
     const selectedIds = [...this.data.selectedIds]
@@ -123,9 +180,11 @@ Page({
   },
 
   selectAll() {
-    const validIds = this.data.items.filter(i => i.available !== false).map(i => i.id)
+    const selectableIds = this.data.manageMode
+      ? this.data.items.map(i => i.id)
+      : this.data.items.filter(i => i.available !== false).map(i => i.id)
     const checked = this.data.allSelected
-    const selectedIds = checked ? [] : validIds
+    const selectedIds = checked ? [] : selectableIds
     this.closeSwipeItems()
     this.updateCartState(this.data.items, selectedIds)
   },
@@ -223,8 +282,11 @@ Page({
   deleteItem(e) {
     const id = Number(e.currentTarget.dataset.id)
     wx.showModal({
-      title: '确认删除',
-      content: '确定要删除该商品吗？',
+      title: '确认删除商品？',
+      content: '删除后可在商品详情页重新加入购物车。',
+      cancelText: '取消',
+      confirmText: '确认删除',
+      confirmColor: '#ff4b43',
       success: (modalRes) => {
         if (modalRes.confirm) {
           cartApi.remove(id).then(res => {
@@ -233,6 +295,7 @@ Page({
               const selectedIds = this.data.selectedIds.filter(sid => sid !== id)
               this.updateCartState(items, selectedIds)
               this.resetTouchState()
+              wx.showToast({ title: '已删除', icon: 'success' })
             }
           })
         } else {
@@ -240,6 +303,81 @@ Page({
         }
       }
     })
+  },
+
+  batchDeleteSelected() {
+    const ids = this.data.selectedIds.map(Number)
+    if (!ids.length) {
+      wx.showToast({ title: '请选择商品', icon: 'none' })
+      return
+    }
+
+    wx.showModal({
+      title: '确认删除选中商品？',
+      content: `将删除已选的 ${ids.length} 件商品，删除后可在商品详情页重新加入购物车。`,
+      cancelText: '取消',
+      confirmText: '确认删除',
+      confirmColor: '#ff4b43',
+      success: (modalRes) => {
+        if (!modalRes.confirm) return
+        cartApi.batchRemove(ids).then(res => {
+          if (res.code === 0) {
+            const idSet = new Set(ids)
+            const items = this.data.items.filter(item => !idSet.has(item.id))
+            this.setData({ manageMode: false }, () => {
+              this.updateCartState(items, [])
+              this.resetTouchState()
+              wx.showToast({ title: '已删除', icon: 'success' })
+            })
+          }
+        })
+      }
+    })
+  },
+
+  loadRecommend(reset) {
+    if (this.data.recommendLoading) return
+    const page = reset ? 1 : this.data.recommendPage
+
+    this.setData({ recommendLoading: true })
+    productApi.page({
+      isRecommend: 1,
+      page,
+      size: RECOMMEND_PAGE_SIZE,
+    }).then(res => {
+      if (res.code !== 0) {
+        this.setData({ recommendLoading: false })
+        return
+      }
+      const list = this.normalizeRecommendData(res.data)
+      if (!list.length && page > 1) {
+        this.setData({ recommendPage: 1, recommendLoading: false }, () => {
+          this.loadRecommend(true)
+        })
+        return
+      }
+      this.setData({
+        recommendList: list,
+        recommendPage: page + 1,
+        recommendLoading: false,
+      })
+    }).catch(() => {
+      this.setData({ recommendLoading: false })
+    })
+  },
+
+  changeRecommend() {
+    this.loadRecommend(false)
+  },
+
+  goProductDetail(e) {
+    const id = Number(e.currentTarget.dataset.id || e.currentTarget.dataset.productId)
+    if (!id) return
+    wx.navigateTo({ url: `/pages/product/detail?id=${id}` })
+  },
+
+  goCategory() {
+    wx.switchTab({ url: '/pages/category/index' })
   },
 
   goCheckout() {

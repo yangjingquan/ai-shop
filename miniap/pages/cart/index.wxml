@@ -1,18 +1,18 @@
 <view class="cart-page page-shell">
-  <view wx:if="{{items.length === 0}}" class="empty-state">
+  <view class="cart-topbar">
+    <view wx:if="{{items.length > 0}}" class="manage-btn" bindtap="toggleManageMode">{{manageMode ? '完成' : '管理'}}</view>
+  </view>
+
+  <view wx:if="{{items.length === 0}}" class="cart-empty-card">
     <image class="empty-icon" src="/assets/icons/cart.png" mode="aspectFit" />
-    <view class="empty-title">购物车是空的</view>
-    <view class="empty-desc">去挑选几件喜欢的商品吧</view>
+    <view class="empty-title">购物车还是空的</view>
+    <view class="empty-desc">把喜欢的商品先装进来吧</view>
+    <view class="shop-btn" bindtap="goCategory">去逛逛</view>
   </view>
 
   <block wx:for="{{merchantGroups}}" wx:key="merchantId">
-    <view class="merchant-header">
-      <image class="icon icon-sm" src="/assets/icons/shop.png" mode="aspectFit" />
-      <text>{{item.merchantName}}</text>
-    </view>
     <view class="swipe-wrap" wx:for="{{item.items}}" wx:for-item="cartItem" wx:key="id">
       <view class="delete-action" data-id="{{cartItem.id}}" bindtap="deleteItem">
-        <image class="delete-icon" src="/assets/icons/trash-danger.png" mode="aspectFit" />
         <text>删除</text>
       </view>
       <view
@@ -25,19 +25,19 @@
         bindtouchcancel="onItemTouchCancel"
       >
         <view
-          class="check-btn {{cartItem.selected ? 'checked' : ''}} {{cartItem.available === false ? 'disabled' : ''}}"
+          class="check-btn {{cartItem.selected ? 'checked' : ''}} {{(!manageMode && cartItem.available === false) ? 'disabled' : ''}}"
           data-id="{{cartItem.id}}"
           data-checked="{{cartItem.selected}}"
           bindtap="toggleSelect"
         >
           <image wx:if="{{cartItem.selected}}" class="check-icon" src="/assets/icons/check-primary.png" mode="aspectFit" />
         </view>
-        <image class="item-img" src="{{cartItem.mainImage}}" mode="aspectFill" />
+        <image class="item-img" src="{{cartItem.mainImage}}" mode="aspectFill" data-id="{{cartItem.productId}}" bindtap="goProductDetail" />
         <view class="item-info">
-          <view class="item-name">{{cartItem.productName}}</view>
+          <view class="item-name" data-id="{{cartItem.productId}}" bindtap="goProductDetail">{{cartItem.productName}}</view>
           <view class="item-spec">{{cartItem.specText}}</view>
           <view class="item-bottom">
-            <text class="item-price">¥{{cartItem.unitPrice}}</text>
+            <text class="item-price">¥{{cartItem.unitPriceText}}</text>
             <view class="qty-stepper">
               <view class="qty-btn {{cartItem.quantity <= 1 ? 'disabled' : ''}}" data-id="{{cartItem.id}}" bindtap="onQtyMinus">
                 <image class="icon icon-sm" src="/assets/icons/minus.png" mode="aspectFit" />
@@ -50,14 +50,36 @@
           </view>
           <view wx:if="{{!cartItem.available}}" class="unavailable-tip">
             <image class="icon icon-sm" src="/assets/icons/warning.png" mode="aspectFit" />
-            <text>{{cartItem.unavailableReason}}</text>
+            <text>{{cartItem.unavailableText}}</text>
           </view>
         </view>
       </view>
     </view>
   </block>
 
-  <view class="bottom-bar" wx:if="{{items.length > 0}}">
+  <view class="guess-section">
+    <view class="guess-head">
+      <view class="guess-title">猜你喜欢</view>
+      <view class="change-btn {{recommendLoading ? 'loading' : ''}}" bindtap="changeRecommend">{{recommendLoading ? '加载中' : '换一批'}}</view>
+    </view>
+    <view class="guess-grid">
+      <view
+        class="guess-card"
+        wx:for="{{recommendList}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="goProductDetail"
+      >
+        <image class="guess-img" src="{{item.mainImage}}" mode="aspectFill" />
+        <view class="guess-info">
+          <view class="guess-name">{{item.name}}</view>
+          <view class="guess-price">¥{{item.priceText}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-bar" wx:if="{{items.length > 0 && !manageMode}}">
     <view class="select-all">
       <view
         class="check-btn bottom-check {{allSelected ? 'checked' : ''}}"
@@ -68,7 +90,24 @@
       </view>
       <text>全选</text>
     </view>
-    <text class="total">合计：¥{{totalAmount}}</text>
+    <view class="total-wrap">
+      <text class="total-label">合计</text>
+      <text class="total">¥{{totalAmount}}</text>
+    </view>
     <button class="checkout-btn" bindtap="goCheckout">去结算({{selectedIds.length}})</button>
+  </view>
+
+  <view class="bottom-bar manage-bottom" wx:if="{{items.length > 0 && manageMode}}">
+    <view class="select-all">
+      <view
+        class="check-btn bottom-check {{allSelected ? 'checked' : ''}}"
+        data-checked="{{allSelected}}"
+        bindtap="selectAll"
+      >
+        <image wx:if="{{allSelected}}" class="check-icon" src="/assets/icons/check-primary.png" mode="aspectFit" />
+      </view>
+      <text>全选</text>
+    </view>
+    <button class="batch-delete-btn" bindtap="batchDeleteSelected">删除({{selectedIds.length}})</button>
   </view>
 </view>
