@@ -1,6 +1,6 @@
-<view class="cart-page page-shell">
-  <view class="cart-topbar">
-    <view wx:if="{{items.length > 0}}" class="manage-btn" bindtap="toggleManageMode">{{manageMode ? '完成' : '管理'}}</view>
+<view class="cart-page page-shell {{items.length === 0 ? 'is-empty' : ''}}">
+  <view wx:if="{{items.length > 0}}" class="cart-topbar">
+    <view class="manage-btn" bindtap="toggleManageMode">{{manageMode ? '完成' : '管理'}}</view>
   </view>
 
   <view wx:if="{{items.length === 0}}" class="cart-empty-card">
@@ -108,6 +108,7 @@
       </view>
       <text>全选</text>
     </view>
+    <view class="total-wrap manage-total-spacer"></view>
     <button class="batch-delete-btn" bindtap="batchDeleteSelected">删除({{selectedIds.length}})</button>
   </view>
 </view>

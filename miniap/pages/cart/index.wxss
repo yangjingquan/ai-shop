@@ -5,6 +5,10 @@
   box-sizing: border-box;
 }
 
+.cart-page.is-empty {
+  padding-top: 0;
+}
+
 .cart-topbar {
   height: 76rpx;
   display: flex;
@@ -412,9 +416,14 @@
   background: #ff6600;
 }
 
+.manage-total-spacer {
+  visibility: hidden;
+}
+
 .batch-delete-btn {
-  margin-left: auto;
+  width: 188rpx;
   min-width: 188rpx;
+  margin: 0;
   padding: 0 44rpx;
   background: #ff4b43;
 }

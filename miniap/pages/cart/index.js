@@ -167,12 +167,11 @@ Page({
     const item = this.data.items.find(i => i.id === cartItemId)
     if (!item || (!this.data.manageMode && item.available === false)) return
 
-    const checked = e.currentTarget.dataset.checked === 'true'
     const selectedIds = [...this.data.selectedIds]
     const idx = selectedIds.indexOf(cartItemId)
-    if (checked && idx > -1) {
+    if (idx > -1) {
       selectedIds.splice(idx, 1)
-    } else if (!checked && idx === -1) {
+    } else {
       selectedIds.push(cartItemId)
     }
     this.closeSwipeItems()
