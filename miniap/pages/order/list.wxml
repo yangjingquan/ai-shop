@@ -1,5 +1,5 @@
 <view class="order-list-page">
-  <scroll-view class="tabs" scroll-x enable-flex>
+  <view class="tabs">
     <view
       wx:for="{{tabs}}"
       wx:key="key"
@@ -7,7 +7,7 @@
       data-key="{{item.key}}"
       bindtap="switchTab"
     >{{item.label}}</view>
-  </scroll-view>
+  </view>
 
   <view wx:if="{{!loading && orders.length === 0}}" class="empty-card">
     <view class="empty-art">

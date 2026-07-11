@@ -7,7 +7,9 @@
 
 .tabs {
   height: 76rpx;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 18rpx;
 }
 
@@ -194,7 +196,9 @@
   padding: 0 14rpx;
   border-radius: 17rpx;
   color: #17191f;
-  background: #f4f2ec;
+  background: #e9e5dc;
+  border: 1rpx solid rgba(23, 25, 31, 0.06);
+  box-shadow: 0 6rpx 14rpx rgba(50, 44, 36, 0.07);
   font-size: 21rpx;
   line-height: 54rpx;
   font-weight: 900;
