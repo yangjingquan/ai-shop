@@ -428,6 +428,7 @@ public class OrderServiceImpl implements OrderService {
     public PageResult<OrderListVO> page(Long userId, int page, int size, Integer status) {
         LambdaQueryWrapper<Order> q = new LambdaQueryWrapper<Order>()
                 .eq(Order::getUserId, userId)
+                .orderByDesc(Order::getCreatedAt)
                 .orderByDesc(Order::getId);
         if (status != null) {
             q.eq(Order::getStatus, status);
@@ -441,7 +442,9 @@ public class OrderServiceImpl implements OrderService {
         final Map<Long, List<OrderItem>> itemsByOrderId = new HashMap<>();
         if (!orderIds.isEmpty()) {
             List<OrderItem> allItems = orderItemMapper.selectList(
-                    new LambdaQueryWrapper<OrderItem>().in(OrderItem::getOrderId, orderIds));
+                    new LambdaQueryWrapper<OrderItem>()
+                            .in(OrderItem::getOrderId, orderIds)
+                            .orderByAsc(OrderItem::getId));
             itemsByOrderId.putAll(allItems.stream()
                     .collect(Collectors.groupingBy(OrderItem::getOrderId)));
         }
@@ -477,6 +480,18 @@ public class OrderServiceImpl implements OrderService {
             if (!items.isEmpty()) {
                 vo.setFirstItemImage(items.get(0).getMainImage());
             }
+            vo.setItems(items.stream().map(i -> {
+                OrderListVO.OrderItemVO iv = new OrderListVO.OrderItemVO();
+                iv.setProductId(i.getProductId());
+                iv.setSkuId(i.getSkuId());
+                iv.setProductName(i.getProductName());
+                iv.setMainImage(i.getMainImage());
+                iv.setSpecText(i.getSpecText());
+                iv.setUnitPrice(i.getUnitPrice());
+                iv.setQuantity(i.getQuantity());
+                iv.setSubtotal(i.getSubtotal());
+                return iv;
+            }).collect(Collectors.toList()));
             if (o.getStatus() == OrderStatus.WAIT_PAY.getCode() && o.getCreatedAt() != null) {
                 vo.setExpireAt(o.getCreatedAt().plusMinutes(30)
                         .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());

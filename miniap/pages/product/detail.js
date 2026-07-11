@@ -15,6 +15,8 @@ Page({
     loading: false,
     addingCart: false,
     skuAction: 'buy',
+    initialSkuId: 0,
+    initialAction: '',
   },
 
   onLoad(opts) {
@@ -23,7 +25,11 @@ Page({
       wx.showToast({ title: '参数错误', icon: 'none' })
       return
     }
-    this.setData({ productId: id })
+    this.setData({
+      productId: id,
+      initialSkuId: Number(opts.skuId || 0),
+      initialAction: opts.action || '',
+    })
     this.loadDetail()
   },
 
@@ -73,6 +79,7 @@ Page({
         selectedSkuText: '',
         qty: 1,
       })
+      this.applyInitialSku()
     } finally {
       this.setData({ loading: false })
     }
@@ -99,6 +106,23 @@ Page({
 
   hasOriginalPrice(...values) {
     return this.minPositivePrice(...values) > 0
+  },
+
+  applyInitialSku() {
+    const skuId = Number(this.data.initialSkuId || 0)
+    if (!skuId || !this.data.product) return
+    const sku = (this.data.product.skus || []).find((item) => Number(item.id) === skuId)
+    if (!sku || !Array.isArray(sku.specValueIds)) {
+      wx.showToast({ title: '原规格已失效，请重新选择', icon: 'none' })
+      if (this.data.initialAction === 'buy') {
+        this.setData({ skuOpen: true, skuAction: 'buy' })
+      }
+      return
+    }
+    this.matchSku(sku.specValueIds.slice())
+    if (this.data.initialAction === 'buy') {
+      this.setData({ skuOpen: true, skuAction: 'buy' })
+    }
   },
 
   openSku(e) {
