@@ -21,6 +21,11 @@ public class Order extends BaseEntity {
 
     private Integer status;
 
+    /** 0 普通订单 / 1 团购订单 */
+    private Integer orderType;
+
+    private Long groupBuyGroupId;
+
     private BigDecimal totalAmount;
 
     private BigDecimal freightAmount;

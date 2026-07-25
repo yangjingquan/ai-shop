@@ -31,6 +31,12 @@ public class ProductListVO {
 
     private Integer isRecommend;
 
+    private Integer isGroupBuy;
+
+    private BigDecimal groupBuyPrice;
+
+    private Integer groupBuyRequiredCount;
+
     private Long categoryId;
 
     private String categoryName;

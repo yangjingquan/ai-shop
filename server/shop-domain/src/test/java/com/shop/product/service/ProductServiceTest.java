@@ -90,6 +90,22 @@ class ProductServiceTest {
     }
 
     @Test
+    void createGroupBuyProductPersistsFields() {
+        Long cid = createCategory();
+        ProductSaveRequest req = sample(cid, "M3T 团购商品");
+        req.setIsGroupBuy(1);
+        req.setGroupBuyPrice(new BigDecimal("6999.00"));
+        req.setGroupBuyRequiredCount(3);
+
+        Long pid = productService.create(req, M_A);
+        ProductDetailVO detail = productService.get(pid, M_A);
+
+        assertEquals(1, detail.getIsGroupBuy());
+        assertEquals(0, detail.getGroupBuyPrice().compareTo(new BigDecimal("6999.00")));
+        assertEquals(3, detail.getGroupBuyRequiredCount());
+    }
+
+    @Test
     void createWithSpecsAndSkus() {
         Long cid = createCategory();
         Long pid = productService.create(sample(cid), M_A);
