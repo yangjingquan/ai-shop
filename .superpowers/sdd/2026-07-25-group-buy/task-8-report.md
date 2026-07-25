@@ -38,3 +38,14 @@ DONE_WITH_CONCERNS
 
 ## Commit
 - `feat: display group buy order states`
+
+## Review Fix Report
+- Replaced the smoke script's manual next steps with an end-to-end HTTP flow that logs in the merchant, creates and shelves a group-buy product, verifies `/api/wx/group-buy/products`, reads product detail for SKU selection, logs in two wx test users, creates addresses, opens a group, mock-pays opener, joins the group, mock-pays joiner, verifies group formation/order status 6, verifies merchant status-6 shipping readiness, ships one formed order, and verifies status 2 with ship number.
+- Kept excluded scope out of the implementation: no WeChat refund API, invite posters, QR codes, mixed carts, tiered prices, per-SKU group prices, or separate group-buy stock.
+
+## Review Fix Verification
+- `bash -n scripts/m5-group-buy-smoke.sh`: PASS.
+- Static mini program/script readability check: PASS, printed `miniapp status files readable`.
+- `cd server && ./mvnw test`: still FAILS before code tests can run because the local shared MySQL schema history has a Flyway V17 checksum mismatch. This is an environmental DB verification blocker, not a smoke script code/test failure. I did not repair or mutate the shared DB.
+  - Applied to database: `2078743849`
+  - Resolved locally: `1396471401`
