@@ -19,7 +19,16 @@ const query = reactive<{
   categoryId: number | undefined
   status: number | undefined
   isRecommend: number | undefined
-}>({ page: 1, size: 10, keyword: '', categoryId: undefined, status: undefined, isRecommend: undefined })
+  isGroupBuy: number | undefined
+}>({
+  page: 1,
+  size: 10,
+  keyword: '',
+  categoryId: undefined,
+  status: undefined,
+  isRecommend: undefined,
+  isGroupBuy: undefined,
+})
 
 const catTree = ref<MerchantCategoryVO[]>([])
 const selectedCount = computed(() => selectedRows.value.length)
@@ -45,6 +54,7 @@ async function fetchList() {
       keyword: query.keyword || undefined,
       status: query.status,
       isRecommend: query.isRecommend,
+      isGroupBuy: query.isGroupBuy,
     })
     list.value = data.list
     total.value = data.total
@@ -193,6 +203,16 @@ onMounted(async () => {
           <el-option label="推荐" :value="1" />
           <el-option label="普通" :value="0" />
         </el-select>
+        <el-select
+          v-model="query.isGroupBuy"
+          placeholder="全部团购"
+          clearable
+          style="width: 150px"
+          @change="onSearch"
+        >
+          <el-option label="团购" :value="1" />
+          <el-option label="非团购" :value="0" />
+        </el-select>
         <el-button type="primary" @click="onSearch">搜索</el-button>
         <el-button :disabled="!selectedCount" @click="onBatchSetStatus(1)">
           一键上架
@@ -233,6 +253,16 @@ onMounted(async () => {
         </el-table-column>
         <el-table-column prop="totalStock" label="库存" width="90" />
         <el-table-column prop="totalSales" label="销量" width="90" />
+        <el-table-column label="团购" width="130">
+          <template #default="{ row }">
+            <div v-if="(row as ProductListVO).isGroupBuy === 1" class="group-buy-cell">
+              <el-tag type="warning">团购</el-tag>
+              <div class="group-buy-price">¥ {{ Number((row as ProductListVO).groupBuyPrice ?? 0).toFixed(2) }}</div>
+              <div class="group-buy-count">{{ (row as ProductListVO).groupBuyRequiredCount }} 人成团</div>
+            </div>
+            <el-tag v-else type="info">普通</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="推荐" width="90">
           <template #default="{ row }">
             <el-tag :type="(row as ProductListVO).isRecommend === 1 ? 'success' : 'info'">
@@ -301,5 +331,19 @@ onMounted(async () => {
   color: var(--shop-text-2);
   font-size: 12px;
   text-decoration: line-through;
+}
+.group-buy-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.group-buy-price {
+  color: #ff6600;
+  font-size: 12px;
+  font-weight: 700;
+}
+.group-buy-count {
+  color: var(--shop-text-2);
+  font-size: 12px;
 }
 </style>

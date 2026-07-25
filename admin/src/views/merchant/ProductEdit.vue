@@ -49,6 +49,9 @@ const form = reactive({
   images: [] as string[],
   description: '',
   isRecommend: 0,
+  isGroupBuy: 0,
+  groupBuyPrice: null as number | null,
+  groupBuyRequiredCount: 2,
 })
 
 const rules: FormRules = {
@@ -185,6 +188,9 @@ async function loadDetail(id: number) {
     form.images = (data.images ?? []).filter(Boolean)
     form.description = data.description ?? ''
     form.isRecommend = data.isRecommend === 1 ? 1 : 0
+    form.isGroupBuy = data.isGroupBuy === 1 ? 1 : 0
+    form.groupBuyPrice = data.groupBuyPrice == null ? null : Number(data.groupBuyPrice)
+    form.groupBuyRequiredCount = data.groupBuyRequiredCount ?? 2
 
     // 暂停 watch 触发的 rebuild
     suppressSkuRebuild = true
@@ -280,6 +286,23 @@ async function handleSubmit() {
       }
     }
 
+    if (form.isGroupBuy === 1) {
+      const groupBuyPrice = Number(form.groupBuyPrice ?? 0)
+      if (!Number.isFinite(groupBuyPrice) || groupBuyPrice <= 0) {
+        ElMessage.error('团购价格必须大于 0')
+        return
+      }
+      if (!Number.isInteger(form.groupBuyRequiredCount) || form.groupBuyRequiredCount < 2) {
+        ElMessage.error('成团人数至少为 2')
+        return
+      }
+      const minSkuPrice = Math.min(...skuRows.value.map((r) => Number(r.price || 0)).filter((n) => n > 0))
+      if (Number.isFinite(minSkuPrice) && groupBuyPrice > minSkuPrice) {
+        ElMessage.error('团购价格不能高于最低 SKU 卖价')
+        return
+      }
+    }
+
     if (!catTree.value.some((t) => (t.children ?? []).some((c) => c.status !== 0))) {
       ElMessage.error('请先在分类管理中创建或导入二级分类')
       return
@@ -292,6 +315,9 @@ async function handleSubmit() {
       images: form.images.length ? [...form.images] : undefined,
       description: form.description?.trim() || undefined,
       isRecommend: form.isRecommend === 1 ? 1 : 0,
+      isGroupBuy: form.isGroupBuy === 1 ? 1 : 0,
+      groupBuyPrice: form.isGroupBuy === 1 ? Number(form.groupBuyPrice) : undefined,
+      groupBuyRequiredCount: form.isGroupBuy === 1 ? Number(form.groupBuyRequiredCount) : undefined,
       specs: specs.value.map((s) => ({
         name: s.name.trim(),
         values: s.values.map((v) => v.trim()).filter(Boolean),
@@ -377,6 +403,33 @@ onMounted(async () => {
             <el-radio :value="0">否</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item label="是否团购商品">
+          <el-radio-group v-model="form.isGroupBuy">
+            <el-radio :value="1">是</el-radio>
+            <el-radio :value="0">否</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <template v-if="form.isGroupBuy === 1">
+          <el-form-item label="团购价格">
+            <el-input-number
+              v-model="form.groupBuyPrice"
+              :min="0"
+              :precision="2"
+              :step="1"
+              :controls="false"
+              style="width: 180px"
+            />
+          </el-form-item>
+          <el-form-item label="几人成团">
+            <el-input-number
+              v-model="form.groupBuyRequiredCount"
+              :min="2"
+              :step="1"
+              :precision="0"
+              style="width: 180px"
+            />
+          </el-form-item>
+        </template>
         <el-form-item label="主图">
           <ImageUploader v-model="form.mainImage" scope="merchant" :limit="1" label="上传主图" />
         </el-form-item>
