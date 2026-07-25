@@ -73,6 +73,11 @@
   color: #8b8e97;
 }
 
+.group-progress { margin-left: 12rpx; color: #ff6600; font-size: 24rpx; }
+.state-text.s5 { color: #f59e0b; }
+.state-text.s6 { color: #16a34a; }
+.state-text.s7 { color: #dc2626; }
+
 .goods-list {
   border-radius: 14rpx;
 }

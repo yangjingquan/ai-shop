@@ -7,7 +7,8 @@ Page({
     tabs: [
       { label: '全部', value: null, key: 'all' },
       { label: '待支付', value: 0, key: '0' },
-      { label: '待发货', value: 1, key: '1' },
+      { label: '待成团', value: 5, key: '5' },
+      { label: '已成团', value: 6, key: '6' },
       { label: '待收货', value: 2, key: '2' },
       { label: '已完成', value: 3, key: '3' },
     ],
@@ -49,6 +50,7 @@ Page({
         const list = ((res.data && res.data.list) || []).map((item) => ({
           ...item,
           firstItemImage: resolveImageUrl(item.firstItemImage || ''),
+          groupBuyProgress: item.groupBuyRequiredCount ? `${item.groupBuyPaidCount || 0}/${item.groupBuyRequiredCount} 人` : '',
           totalLabel: item.status === 0 ? '需支付' : '实付',
           items: (item.items || []).map((goods) => ({
             ...goods,

@@ -28,6 +28,8 @@ Page({
           freightAmountText: this.fmtPrice(raw.freightAmount),
           discountAmountText: this.fmtPrice(raw.discountAmount),
           payAmountText: this.fmtPrice(raw.payAmount),
+          groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
+          groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
           totalLabel: raw.status === 0 ? '需支付' : '实付款',
           items: (raw.items || []).map((item) => ({
             ...item,
@@ -45,6 +47,13 @@ Page({
 
   fmtPrice(value) {
     return Number(value || 0).toFixed(2)
+  },
+
+  formatTime(ts) {
+    const d = new Date(Number(ts || 0))
+    if (!Number.isFinite(d.getTime())) return ''
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
   },
 
   reloadDetail() {

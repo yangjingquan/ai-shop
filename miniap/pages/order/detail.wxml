@@ -13,6 +13,12 @@
       <text class="status-text s{{order.status}}">{{order.statusText}}</text>
     </view>
 
+    <view wx:if="{{order.orderType === 1}}" class="group-info">
+      <view>团购进度：{{order.groupBuyProgress}}</view>
+      <view wx:if="{{order.groupBuyExpireText}}">有效期至：{{order.groupBuyExpireText}}</view>
+      <view wx:if="{{order.status === 7}}">拼团失败，等待商家处理退款</view>
+    </view>
+
     <view
       class="goods"
       wx:for="{{order.items}}"
