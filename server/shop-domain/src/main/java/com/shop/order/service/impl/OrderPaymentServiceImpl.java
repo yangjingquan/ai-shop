@@ -3,6 +3,7 @@ package com.shop.order.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
+import com.shop.groupbuy.service.GroupBuyService;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.entity.PaymentLog;
@@ -35,6 +36,7 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     private final PaymentLogMapper paymentLogMapper;
     private final ProductService productService;
     private final StringRedisTemplate stringRedisTemplate;
+    private final GroupBuyService groupBuyService;
 
     @Override
     @Transactional
@@ -71,11 +73,17 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
                 return; // 已处理过
             }
             // 5. 更新订单状态
-            order.setStatus(OrderStatus.WAIT_SHIP.getCode());
             order.setPayTime(LocalDateTime.now());
             order.setPayTransactionId(transactionId);
             order.setPayMethod(1);
-            orderMapper.updateById(order);
+            if (Integer.valueOf(1).equals(order.getOrderType())) {
+                order.setStatus(OrderStatus.WAIT_GROUP.getCode());
+                orderMapper.updateById(order);
+                groupBuyService.handleOrderPaid(orderNo);
+            } else {
+                order.setStatus(OrderStatus.WAIT_SHIP.getCode());
+                orderMapper.updateById(order);
+            }
 
             // 6. 累加 total_sales + recalcProduct
             List<OrderItem> items = orderItemMapper.selectList(

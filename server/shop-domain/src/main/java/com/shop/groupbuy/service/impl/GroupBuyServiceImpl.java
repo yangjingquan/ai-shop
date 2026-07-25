@@ -102,7 +102,51 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     }
 
     @Override
+    @Transactional
     public void handleOrderPaid(String orderNo) {
+        GroupBuyMember member = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>()
+                .eq(GroupBuyMember::getOrderNo, orderNo));
+        if (member == null || member.getStatus() == GroupBuyMemberStatus.PAID.getCode()) {
+            return;
+        }
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo));
+        if (order == null || !Integer.valueOf(1).equals(order.getOrderType())) {
+            return;
+        }
+        GroupBuyGroup group = groupMapper.selectByIdForUpdate(member.getGroupId());
+        if (group == null || group.getStatus() != GroupBuyGroupStatus.WAIT_GROUP.getCode()) {
+            return;
+        }
+
+        member.setStatus(GroupBuyMemberStatus.PAID.getCode());
+        member.setPaidAt(LocalDateTime.now());
+        memberMapper.updateById(member);
+
+        Long paid = memberMapper.selectCount(new LambdaQueryWrapper<GroupBuyMember>()
+                .eq(GroupBuyMember::getGroupId, group.getId())
+                .eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.PAID.getCode()));
+        group.setPaidCount(paid.intValue());
+
+        if (group.getPaidCount() >= group.getRequiredCount()) {
+            group.setStatus(GroupBuyGroupStatus.FORMED.getCode());
+            group.setFormedAt(LocalDateTime.now());
+            groupMapper.updateById(group);
+
+            List<GroupBuyMember> paidMembers = memberMapper.selectList(new LambdaQueryWrapper<GroupBuyMember>()
+                    .eq(GroupBuyMember::getGroupId, group.getId())
+                    .eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.PAID.getCode()));
+            for (GroupBuyMember paidMember : paidMembers) {
+                Order paidOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                        .eq(Order::getOrderNo, paidMember.getOrderNo())
+                        .eq(Order::getStatus, OrderStatus.WAIT_GROUP.getCode()));
+                if (paidOrder != null) {
+                    paidOrder.setStatus(OrderStatus.GROUP_SUCCESS.getCode());
+                    orderMapper.updateById(paidOrder);
+                }
+            }
+        } else {
+            groupMapper.updateById(group);
+        }
     }
 
     @Override
