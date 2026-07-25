@@ -142,6 +142,10 @@ Page({
     wx.navigateTo({ url: '/pages/recommend/index' })
   },
 
+  onGroupBuy() {
+    wx.navigateTo({ url: '/pages/group-buy/list' })
+  },
+
   onProduct(e) {
     const id = e.currentTarget.dataset.id
     wx.navigateTo({ url: `/pages/product/detail?id=${id}` })

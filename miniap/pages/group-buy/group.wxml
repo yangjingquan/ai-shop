@@ -1,0 +1,7 @@
+<view class="group-page" wx:if="{{group}}">
+  <view class="panel">
+    <view class="status">{{group.statusText}}</view>
+    <view class="count">{{group.paidCount}} / {{group.requiredCount}} 人</view>
+    <button wx:if="{{group.status === 0}}" bindtap="goProduct">去参团</button>
+  </view>
+</view>

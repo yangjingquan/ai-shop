@@ -11,8 +11,10 @@
     <view class="address-card" bindtap="chooseAddress">
       <image class="icon location-icon" src="/assets/icons/location.png" mode="aspectFit" />
       <view class="address-info">
-        <view class="receiver-line">{{preview.address.receiver}} {{preview.address.phone}}</view>
-        <view class="address-text">{{preview.address.region}} {{preview.address.detail}}</view>
+        <block wx:if="{{preview.address && preview.address.receiver}}">
+          <view class="receiver-line">{{preview.address.receiver}} {{preview.address.phone}}</view>
+          <view class="address-text">{{preview.address.region}} {{preview.address.detail}}</view>
+        </block>
         <view class="address-change">点击切换收货地址</view>
       </view>
       <image class="icon icon-sm arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" />

@@ -1,0 +1,5 @@
+.group-page { min-height: 100vh; padding: 32rpx; background: #f7f7f7; box-sizing: border-box; }
+.panel { padding: 32rpx; border-radius: 8rpx; background: #fff; }
+.status { color: #222; font-size: 34rpx; font-weight: 700; }
+.count { margin: 24rpx 0; color: #ff6600; font-size: 30rpx; }
+button { background: #ff6600; color: #fff; border-radius: 8rpx; }

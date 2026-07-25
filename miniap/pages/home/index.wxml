@@ -84,7 +84,7 @@
       <view class="more">11:00 更新</view>
     </view>
     <view class="deal-row">
-      <view class="group-card">
+      <view class="group-card" bindtap="onGroupBuy">
         <view class="deal-title">团购商品</view>
         <view class="deal-desc">3 人成团 · 省更多</view>
         <view class="avatars"><view></view><view></view><view></view></view>
