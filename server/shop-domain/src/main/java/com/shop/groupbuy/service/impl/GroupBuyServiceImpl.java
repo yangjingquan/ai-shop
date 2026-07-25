@@ -41,6 +41,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -153,8 +154,67 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     }
 
     @Override
+    @Transactional
     public int failExpiredGroups(int batchLimit) {
-        return 0;
+        List<GroupBuyGroup> expired = groupMapper.selectList(new LambdaQueryWrapper<GroupBuyGroup>()
+                .eq(GroupBuyGroup::getStatus, GroupBuyGroupStatus.WAIT_GROUP.getCode())
+                .lt(GroupBuyGroup::getExpireAt, LocalDateTime.now())
+                .orderByAsc(GroupBuyGroup::getId)
+                .last("LIMIT " + batchLimit));
+        int count = 0;
+        for (GroupBuyGroup candidate : expired) {
+            GroupBuyGroup group = groupMapper.selectByIdForUpdate(candidate.getId());
+            if (group == null || group.getStatus() != GroupBuyGroupStatus.WAIT_GROUP.getCode()) {
+                continue;
+            }
+            if (group.getPaidCount() >= group.getRequiredCount()) {
+                continue;
+            }
+            group.setStatus(GroupBuyGroupStatus.FAILED_WAIT_REFUND.getCode());
+            groupMapper.updateById(group);
+
+            List<GroupBuyMember> members = memberMapper.selectList(new LambdaQueryWrapper<GroupBuyMember>()
+                    .eq(GroupBuyMember::getGroupId, group.getId()));
+            for (GroupBuyMember member : members) {
+                Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, member.getOrderNo()));
+                if (order == null) {
+                    continue;
+                }
+                if (member.getStatus() == GroupBuyMemberStatus.PAID.getCode()) {
+                    member.setStatus(GroupBuyMemberStatus.WAIT_REFUND.getCode());
+                    memberMapper.updateById(member);
+                    if (order.getStatus() == OrderStatus.WAIT_GROUP.getCode()) {
+                        order.setStatus(OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode());
+                        orderMapper.updateById(order);
+                        releaseOrderStock(order);
+                    }
+                } else if (member.getStatus() == GroupBuyMemberStatus.WAIT_PAY.getCode()) {
+                    member.setStatus(GroupBuyMemberStatus.CANCELLED.getCode());
+                    memberMapper.updateById(member);
+                    if (order.getStatus() == OrderStatus.WAIT_PAY.getCode()) {
+                        order.setStatus(OrderStatus.CANCELLED.getCode());
+                        order.setCancelReason("GROUP_TIMEOUT");
+                        order.setCancelTime(LocalDateTime.now());
+                        orderMapper.updateById(order);
+                        releaseOrderStock(order);
+                    }
+                }
+            }
+            count++;
+        }
+        return count;
+    }
+
+    private void releaseOrderStock(Order order) {
+        List<OrderItem> items = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
+                .eq(OrderItem::getOrderId, order.getId()));
+        for (OrderItem item : items) {
+            orderMapper.releaseStock(item.getSkuId(), item.getQuantity());
+        }
+        Set<Long> productIds = items.stream().map(OrderItem::getProductId).collect(Collectors.toSet());
+        for (Long productId : productIds) {
+            productService.recalcProduct(productId);
+        }
     }
 
     private GroupBuyCreateVO createGroupOrder(Long userId, Long groupId, GroupBuyCreateRequest req, boolean openNewGroup) {
