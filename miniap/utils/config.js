@@ -1,4 +1,4 @@
-const ENV = 'prod'
+const ENV = 'dev'
 
 const CONFIGS = {
   dev: {
