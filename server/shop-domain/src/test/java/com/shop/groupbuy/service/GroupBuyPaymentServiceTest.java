@@ -10,6 +10,8 @@ import com.shop.order.entity.Order;
 import com.shop.order.enums.OrderStatus;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.service.OrderPaymentService;
+import com.shop.user.entity.UserAddress;
+import com.shop.user.mapper.UserAddressMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,6 +32,7 @@ class GroupBuyPaymentServiceTest {
     @Autowired private OrderPaymentService paymentService;
     @Autowired private OrderMapper orderMapper;
     @Autowired private GroupBuyGroupMapper groupMapper;
+    @Autowired private UserAddressMapper addressMapper;
 
     private static final Long USER_A = 3L;
     private static final Long USER_B = 4L;
@@ -53,7 +56,7 @@ class GroupBuyPaymentServiceTest {
     @Test
     void paymentThatFillsGroupFormsAllPaidOrders() {
         GroupBuyCreateVO opened = groupBuyService.openGroup(USER_A, req());
-        GroupBuyCreateVO joined = groupBuyService.joinGroup(USER_B, opened.getGroupId(), req());
+        GroupBuyCreateVO joined = groupBuyService.joinGroup(USER_B, opened.getGroupId(), req(createAddress(USER_B)));
 
         paymentService.handlePaidCallback(opened.getOrderNo(), txn(), "{\"mock\":true}");
         paymentService.handlePaidCallback(joined.getOrderNo(), txn(), "{\"mock\":true}");
@@ -68,12 +71,28 @@ class GroupBuyPaymentServiceTest {
     }
 
     private GroupBuyCreateRequest req() {
+        return req(ADDR_ID);
+    }
+
+    private GroupBuyCreateRequest req(Long addressId) {
         GroupBuyCreateRequest req = new GroupBuyCreateRequest();
         req.setProductId(PRODUCT_ID);
         req.setSkuId(SKU_ID);
         req.setQuantity(1);
-        req.setAddressId(ADDR_ID);
+        req.setAddressId(addressId);
         return req;
+    }
+
+    private Long createAddress(Long userId) {
+        UserAddress address = new UserAddress();
+        address.setUserId(userId);
+        address.setReceiver("Test");
+        address.setPhone("13800138000");
+        address.setRegion("Test Region");
+        address.setDetail("Test Detail");
+        address.setIsDefault(0);
+        addressMapper.insert(address);
+        return address.getId();
     }
 
     private String txn() {

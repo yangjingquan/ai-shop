@@ -110,7 +110,10 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             return;
         }
         Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo));
-        if (order == null || !Integer.valueOf(1).equals(order.getOrderType())) {
+        if (order == null || !Integer.valueOf(1).equals(order.getOrderType())
+                || order.getStatus() != OrderStatus.WAIT_GROUP.getCode()
+                || order.getPayTime() == null
+                || order.getPayTransactionId() == null) {
             return;
         }
         GroupBuyGroup group = groupMapper.selectByIdForUpdate(member.getGroupId());
