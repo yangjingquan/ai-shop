@@ -27,9 +27,9 @@ public class HomeServiceImpl implements HomeService {
         vo.setBanners(bannerService.listActive());
 
         // 最近上架（按 id 倒序即按时间倒序）
-        var recent = productService.publicPage(1, 10, merchantId, null, null, null).getList();
+        var recent = productService.publicPage(1, 10, merchantId, null, null, null, null).getList();
         // 销量 Top
-        var topSales = productService.publicPage(1, 10, merchantId, null, null, null);
+        var topSales = productService.publicPage(1, 10, merchantId, null, null, null, null);
 
         // 但 page API 不支持 ORDER BY total_sales。用内置规则拿到 recent 再手动取销量高的。
         // 简化：取 page 2 page 不同排序，只用 recent + 同一个 page 的 list 去重。

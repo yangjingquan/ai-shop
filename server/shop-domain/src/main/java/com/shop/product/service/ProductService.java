@@ -16,9 +16,11 @@ public interface ProductService {
 
     ProductDetailVO publicGet(Long id, Long merchantId);
 
-    PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId, String keyword, Integer status, Integer isRecommend);
+    PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId,
+                                   String keyword, Integer status, Integer isRecommend, Integer isGroupBuy);
 
-    PageResult<ProductListVO> publicPage(int page, int size, Long merchantId, Long categoryId, String keyword, Integer isRecommend);
+    PageResult<ProductListVO> publicPage(int page, int size, Long merchantId, Long categoryId,
+                                         String keyword, Integer isRecommend, Integer isGroupBuy);
 
     void setStatus(Long id, int status, Long merchantId);
 

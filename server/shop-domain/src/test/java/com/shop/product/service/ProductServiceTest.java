@@ -106,6 +106,46 @@ class ProductServiceTest {
     }
 
     @Test
+    void groupBuyProductRequiresValidConfig() {
+        Long cid = createCategory();
+        ProductSaveRequest missingPrice = sample(cid, "M3T 团购缺价格");
+        missingPrice.setIsGroupBuy(1);
+        missingPrice.setGroupBuyRequiredCount(3);
+
+        BusinessException priceEx = assertThrows(BusinessException.class,
+                () -> productService.create(missingPrice, M_A));
+        assertEquals(ErrorCode.INVALID_SPEC.getCode(), priceEx.getCode());
+
+        ProductSaveRequest badCount = sample(cid, "M3T 团购人数错误");
+        badCount.setIsGroupBuy(1);
+        badCount.setGroupBuyPrice(new BigDecimal("6999.00"));
+        badCount.setGroupBuyRequiredCount(1);
+
+        BusinessException countEx = assertThrows(BusinessException.class,
+                () -> productService.create(badCount, M_A));
+        assertEquals(ErrorCode.INVALID_SPEC.getCode(), countEx.getCode());
+    }
+
+    @Test
+    void publicPageFiltersGroupBuyProducts() {
+        Long cid = createCategory();
+        ProductSaveRequest groupReq = sample(cid, "M3T 团购筛选商品");
+        groupReq.setIsGroupBuy(1);
+        groupReq.setGroupBuyPrice(new BigDecimal("6999.00"));
+        groupReq.setGroupBuyRequiredCount(3);
+        Long groupPid = productService.create(groupReq, M_A);
+        Long normalPid = productService.create(sample(cid, "M3T 普通筛选商品"), M_A);
+        productService.setStatus(groupPid, 1, M_A);
+        productService.setStatus(normalPid, 1, M_A);
+
+        PageResult<ProductListVO> result = productService.publicPage(1, 20, null, cid, null, null, 1);
+
+        assertTrue(result.getList().stream().anyMatch(v -> v.getId().equals(groupPid)));
+        assertTrue(result.getList().stream().noneMatch(v -> v.getId().equals(normalPid)));
+        assertEquals(1, result.getList().stream().filter(v -> v.getId().equals(groupPid)).findFirst().get().getIsGroupBuy());
+    }
+
+    @Test
     void createWithSpecsAndSkus() {
         Long cid = createCategory();
         Long pid = productService.create(sample(cid), M_A);
@@ -168,7 +208,7 @@ class ProductServiceTest {
         ProductDetailVO detail = productService.get(recommendedId, M_A);
         assertEquals(1, detail.getIsRecommend());
 
-        PageResult<ProductListVO> result = productService.page(1, 20, null, cid, null, null, 1);
+        PageResult<ProductListVO> result = productService.page(1, 20, null, cid, null, null, 1, null);
         assertTrue(result.getList().stream().anyMatch(v -> v.getId().equals(recommendedId)));
         assertTrue(result.getList().stream().noneMatch(v -> v.getId().equals(normalId)));
 
@@ -215,15 +255,15 @@ class ProductServiceTest {
         productService.setStatus(phoneProductId, 1, M_A);
         productService.setStatus(foodProductId, 1, M_A);
 
-        PageResult<ProductListVO> byProductName = productService.page(1, 20, null, null, "旗舰", null, null);
+        PageResult<ProductListVO> byProductName = productService.page(1, 20, null, null, "旗舰", null, null, null);
         assertTrue(byProductName.getList().stream().anyMatch(v -> v.getId().equals(phoneProductId)));
         assertTrue(byProductName.getList().stream().noneMatch(v -> v.getId().equals(foodProductId)));
 
-        PageResult<ProductListVO> byCategoryName = productService.page(1, 20, null, null, "食品二级分类" + token, null, null);
+        PageResult<ProductListVO> byCategoryName = productService.page(1, 20, null, null, "食品二级分类" + token, null, null, null);
         assertTrue(byCategoryName.getList().stream().anyMatch(v -> v.getId().equals(foodProductId)));
         assertTrue(byCategoryName.getList().stream().noneMatch(v -> v.getId().equals(phoneProductId)));
 
-        PageResult<ProductListVO> byTopCategoryName = productService.page(1, 20, null, null, "数码一级分类" + token, null, null);
+        PageResult<ProductListVO> byTopCategoryName = productService.page(1, 20, null, null, "数码一级分类" + token, null, null, null);
         assertTrue(byTopCategoryName.getList().stream().anyMatch(v -> v.getId().equals(phoneProductId)));
         assertTrue(byTopCategoryName.getList().stream().noneMatch(v -> v.getId().equals(foodProductId)));
     }
@@ -241,7 +281,7 @@ class ProductServiceTest {
         productService.setStatus(childProductId, 1, M_A);
         productService.setStatus(otherProductId, 1, M_A);
 
-        PageResult<ProductListVO> byTopCategory = productService.page(1, 20, null, topCategoryId, null, null, null);
+        PageResult<ProductListVO> byTopCategory = productService.page(1, 20, null, topCategoryId, null, null, null, null);
         assertTrue(byTopCategory.getList().stream().anyMatch(v -> v.getId().equals(topProductId)));
         assertTrue(byTopCategory.getList().stream().anyMatch(v -> v.getId().equals(childProductId)));
         assertTrue(byTopCategory.getList().stream().noneMatch(v -> v.getId().equals(otherProductId)));
@@ -258,7 +298,7 @@ class ProductServiceTest {
         productService.setStatus(insideProductId, 1, M_A);
         productService.setStatus(outsideProductId, 1, M_A);
 
-        PageResult<ProductListVO> result = productService.page(1, 20, null, topCategoryId, "苹果", null, null);
+        PageResult<ProductListVO> result = productService.page(1, 20, null, topCategoryId, "苹果", null, null, null);
         assertTrue(result.getList().stream().anyMatch(v -> v.getId().equals(insideProductId)));
         assertTrue(result.getList().stream().noneMatch(v -> v.getId().equals(outsideProductId)));
     }
@@ -269,7 +309,7 @@ class ProductServiceTest {
         Long pid = productService.create(sample(cid), M_A);
 
         // 默认下架，public 看不到
-        PageResult<ProductListVO> p1 = productService.page(1, 20, null, cid, null, null, null);
+        PageResult<ProductListVO> p1 = productService.page(1, 20, null, cid, null, null, null, null);
         assertTrue(p1.getList().stream().noneMatch(v -> v.getId().equals(pid)),
                 "默认下架商品不应在公共列表");
 
@@ -280,7 +320,7 @@ class ProductServiceTest {
 
         // 上架后能看到
         productService.setStatus(pid, 1, M_A);
-        PageResult<ProductListVO> p2 = productService.page(1, 20, null, cid, null, null, null);
+        PageResult<ProductListVO> p2 = productService.page(1, 20, null, cid, null, null, null, null);
         assertTrue(p2.getList().stream().anyMatch(v -> v.getId().equals(pid)),
                 "上架后商品应在公共列表");
 

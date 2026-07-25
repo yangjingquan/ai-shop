@@ -25,9 +25,10 @@ public class PublicProductController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer isRecommend,
+            @RequestParam(required = false) Integer isGroupBuy,
             HttpServletRequest request) {
         Long merchantId = wxMerchantResolver.currentMerchantId(request);
-        return ApiResult.success(productService.publicPage(page, size, merchantId, categoryId, keyword, isRecommend));
+        return ApiResult.success(productService.publicPage(page, size, merchantId, categoryId, keyword, isRecommend, isGroupBuy));
     }
 
     @GetMapping("/{id}")

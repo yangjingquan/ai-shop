@@ -53,6 +53,7 @@ public class ProductServiceImpl implements ProductService {
         merchantCategoryService.validateUsableCategory(merchantId, req.getCategoryId());
         validateSpecs(req.getSpecs());
         validateSkus(req.getSkus(), req.getSpecs());
+        validateGroupBuy(req);
 
         Product p = new Product();
         p.setMerchantId(merchantId);
@@ -70,6 +71,9 @@ public class ProductServiceImpl implements ProductService {
         p.setTotalSales(0);
         p.setStatus(0);
         p.setIsRecommend(normalizeFlag(req.getIsRecommend()));
+        p.setIsGroupBuy(normalizeGroupBuyFlag(req.getIsGroupBuy()));
+        p.setGroupBuyPrice(Integer.valueOf(1).equals(p.getIsGroupBuy()) ? req.getGroupBuyPrice() : null);
+        p.setGroupBuyRequiredCount(Integer.valueOf(1).equals(p.getIsGroupBuy()) ? req.getGroupBuyRequiredCount() : null);
         p.setSort(0);
         productMapper.insert(p);
 
@@ -85,6 +89,7 @@ public class ProductServiceImpl implements ProductService {
         merchantCategoryService.validateUsableCategory(merchantId, req.getCategoryId());
         validateSpecs(req.getSpecs());
         validateSkus(req.getSkus(), req.getSpecs());
+        validateGroupBuy(req);
 
         p.setCategoryId(req.getCategoryId());
         p.setName(req.getName());
@@ -93,6 +98,9 @@ public class ProductServiceImpl implements ProductService {
         p.setImages(req.getImages());
         p.setDescription(XssSanitizer.sanitize(req.getDescription()));
         p.setIsRecommend(normalizeFlag(req.getIsRecommend()));
+        p.setIsGroupBuy(normalizeGroupBuyFlag(req.getIsGroupBuy()));
+        p.setGroupBuyPrice(Integer.valueOf(1).equals(p.getIsGroupBuy()) ? req.getGroupBuyPrice() : null);
+        p.setGroupBuyRequiredCount(Integer.valueOf(1).equals(p.getIsGroupBuy()) ? req.getGroupBuyRequiredCount() : null);
         productMapper.updateById(p);
 
         // 先删后插
@@ -132,6 +140,9 @@ public class ProductServiceImpl implements ProductService {
         vo.setTotalSales(p.getTotalSales());
         vo.setStatus(p.getStatus());
         vo.setIsRecommend(p.getIsRecommend());
+        vo.setIsGroupBuy(p.getIsGroupBuy());
+        vo.setGroupBuyPrice(p.getGroupBuyPrice());
+        vo.setGroupBuyRequiredCount(p.getGroupBuyRequiredCount());
         vo.setSort(p.getSort());
 
         List<ProductSpec> specs = specMapper.selectList(
@@ -217,13 +228,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public PageResult<ProductListVO> publicPage(int page, int size, Long merchantId, Long categoryId,
-                                                String keyword, Integer isRecommend) {
-        return page(page, size, merchantId, categoryId, keyword, 1, isRecommend);
+                                                String keyword, Integer isRecommend, Integer isGroupBuy) {
+        return page(page, size, merchantId, categoryId, keyword, 1, isRecommend, isGroupBuy);
     }
 
     @Override
     public PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId,
-                                          String keyword, Integer status, Integer isRecommend) {
+                                          String keyword, Integer status, Integer isRecommend, Integer isGroupBuy) {
         LambdaQueryWrapper<Product> q = new LambdaQueryWrapper<>();
         if (merchantId != null) {
             q.eq(Product::getMerchantId, merchantId);
@@ -240,6 +251,9 @@ public class ProductServiceImpl implements ProductService {
         }
         if (isRecommend != null) {
             q.eq(Product::getIsRecommend, normalizeFlag(isRecommend));
+        }
+        if (isGroupBuy != null) {
+            q.eq(Product::getIsGroupBuy, normalizeGroupBuyFlag(isGroupBuy));
         }
         if (StringUtils.hasText(keyword)) {
             String kw = keyword.trim();
@@ -280,6 +294,9 @@ public class ProductServiceImpl implements ProductService {
             v.setTotalSales(p.getTotalSales());
             v.setStatus(p.getStatus());
             v.setIsRecommend(p.getIsRecommend());
+            v.setIsGroupBuy(p.getIsGroupBuy());
+            v.setGroupBuyPrice(p.getGroupBuyPrice());
+            v.setGroupBuyRequiredCount(p.getGroupBuyRequiredCount());
             v.setCategoryId(p.getCategoryId());
             v.setCategoryName(catNames.get(p.getCategoryId()));
             return v;
@@ -307,6 +324,30 @@ public class ProductServiceImpl implements ProductService {
     // ============== private ==============
 
     private int normalizeFlag(Integer flag) {
+        return Integer.valueOf(1).equals(flag) ? 1 : 0;
+    }
+
+    private void validateGroupBuy(ProductSaveRequest req) {
+        if (!Integer.valueOf(1).equals(req.getIsGroupBuy())) {
+            return;
+        }
+        if (req.getGroupBuyPrice() == null || req.getGroupBuyPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC);
+        }
+        if (req.getGroupBuyRequiredCount() == null || req.getGroupBuyRequiredCount() < 2) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC);
+        }
+        BigDecimal minSkuPrice = req.getSkus().stream()
+                .map(ProductSaveRequest.SkuInput::getPrice)
+                .filter(java.util.Objects::nonNull)
+                .min(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
+        if (minSkuPrice.compareTo(BigDecimal.ZERO) > 0 && req.getGroupBuyPrice().compareTo(minSkuPrice) > 0) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC);
+        }
+    }
+
+    private int normalizeGroupBuyFlag(Integer flag) {
         return Integer.valueOf(1).equals(flag) ? 1 : 0;
     }
 
