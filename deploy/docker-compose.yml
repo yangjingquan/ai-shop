@@ -13,6 +13,8 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
       - --default-time-zone=+08:00
+    ports:
+      - "127.0.0.1:3306:3306"
     volumes:
       - shop-mysql-data:/var/lib/mysql
       - ./init:/docker-entrypoint-initdb.d:ro
@@ -114,6 +116,7 @@ services:
       - "8080:80"
       - "8081:81"
       - "8082:82"
+      - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
