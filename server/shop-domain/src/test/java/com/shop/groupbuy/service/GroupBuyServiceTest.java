@@ -1,6 +1,8 @@
 package com.shop.groupbuy.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.shop.common.exception.BusinessException;
+import com.shop.common.exception.ErrorCode;
 import com.shop.groupbuy.dto.GroupBuyCreateRequest;
 import com.shop.groupbuy.dto.GroupBuyCreateVO;
 import com.shop.groupbuy.entity.GroupBuyGroup;
@@ -25,6 +27,7 @@ import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -46,11 +49,7 @@ class GroupBuyServiceTest {
     void openGroupCreatesGroupMemberAndWaitPayOrder() {
         enableGroupBuySeedProduct();
 
-        GroupBuyCreateRequest req = new GroupBuyCreateRequest();
-        req.setProductId(PRODUCT_ID);
-        req.setSkuId(SKU_ID);
-        req.setQuantity(1);
-        req.setAddressId(ADDR_ID);
+        GroupBuyCreateRequest req = request();
 
         GroupBuyCreateVO vo = groupBuyService.openGroup(WX_USER, req);
 
@@ -68,6 +67,74 @@ class GroupBuyServiceTest {
 
         GroupBuyMember member = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>().eq(GroupBuyMember::getOrderNo, vo.getOrderNo()));
         assertEquals(GroupBuyMemberStatus.WAIT_PAY.getCode(), member.getStatus());
+    }
+
+    @Test
+    void joinGroupCreatesMemberAndWaitPayOrder() {
+        enableGroupBuySeedProduct();
+        GroupBuyCreateRequest req = request();
+        GroupBuyCreateVO opened = groupBuyService.openGroup(WX_USER, req);
+
+        GroupBuyCreateVO joined = groupBuyService.joinGroup(4L, opened.getGroupId(), req);
+
+        assertNotNull(joined.getOrderNo());
+        assertEquals(opened.getGroupId(), joined.getGroupId());
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, joined.getOrderNo()));
+        assertEquals(OrderStatus.WAIT_PAY.getCode(), order.getStatus());
+        assertEquals(1, order.getOrderType());
+        assertEquals(opened.getGroupId(), order.getGroupBuyGroupId());
+        GroupBuyMember member = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>().eq(GroupBuyMember::getOrderNo, joined.getOrderNo()));
+        assertEquals(GroupBuyMemberStatus.WAIT_PAY.getCode(), member.getStatus());
+    }
+
+    @Test
+    void joinGroupRejectsMismatchedProduct() {
+        enableGroupBuySeedProduct();
+        GroupBuyCreateVO opened = groupBuyService.openGroup(WX_USER, request());
+        GroupBuyCreateRequest req = request();
+        req.setProductId(2L);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> groupBuyService.joinGroup(4L, opened.getGroupId(), req));
+
+        assertEquals(ErrorCode.GROUP_BUY_GROUP_NOT_FOUND.getCode(), ex.getCode());
+    }
+
+    @Test
+    void productDetailRejectsOrdinaryProduct() {
+        Product product = productMapper.selectById(PRODUCT_ID);
+        product.setIsGroupBuy(0);
+        product.setGroupBuyPrice(null);
+        product.setGroupBuyRequiredCount(null);
+        productMapper.updateById(product);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> groupBuyService.productDetail(PRODUCT_ID, product.getMerchantId()));
+
+        assertEquals(ErrorCode.GROUP_BUY_PRODUCT_NOT_FOUND.getCode(), ex.getCode());
+    }
+
+    @Test
+    void openGroupRejectsInvalidGroupBuyConfig() {
+        Product product = productMapper.selectById(PRODUCT_ID);
+        product.setIsGroupBuy(1);
+        product.setGroupBuyPrice(null);
+        product.setGroupBuyRequiredCount(null);
+        productMapper.updateById(product);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> groupBuyService.openGroup(WX_USER, request()));
+
+        assertEquals(ErrorCode.GROUP_BUY_PRODUCT_CONFIG_INVALID.getCode(), ex.getCode());
+    }
+
+    private GroupBuyCreateRequest request() {
+        GroupBuyCreateRequest req = new GroupBuyCreateRequest();
+        req.setProductId(PRODUCT_ID);
+        req.setSkuId(SKU_ID);
+        req.setQuantity(1);
+        req.setAddressId(ADDR_ID);
+        return req;
     }
 
     private void enableGroupBuySeedProduct() {

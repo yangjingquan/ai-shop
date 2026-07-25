@@ -64,6 +64,10 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     @Override
     public GroupBuyProductDetailVO productDetail(Long productId, Long merchantId) {
         ProductDetailVO product = productService.publicGet(productId, merchantId);
+        if (product.getIsGroupBuy() == null || product.getIsGroupBuy() != 1) {
+            throw new BusinessException(ErrorCode.GROUP_BUY_PRODUCT_NOT_FOUND);
+        }
+        validateGroupBuyConfig(product.getGroupBuyPrice(), product.getGroupBuyRequiredCount());
         GroupBuyProductDetailVO vo = new GroupBuyProductDetailVO();
         vo.setProduct(product);
         List<GroupBuyGroup> active = groupMapper.selectList(new LambdaQueryWrapper<GroupBuyGroup>()
@@ -112,6 +116,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
                 || product.getIsGroupBuy() == null || product.getIsGroupBuy() != 1) {
             throw new BusinessException(ErrorCode.GROUP_BUY_PRODUCT_NOT_FOUND);
         }
+        validateGroupBuyConfig(product.getGroupBuyPrice(), product.getGroupBuyRequiredCount());
         ProductSku sku = skuMapper.selectById(req.getSkuId());
         if (sku == null || !product.getId().equals(sku.getProductId()) || sku.getStock() < req.getQuantity()) {
             throw new BusinessException(ErrorCode.CART_ITEM_INVALID);
@@ -201,6 +206,13 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         vo.setPayAmount(total);
         vo.setPayParams(mockPayParams(orderNo));
         return vo;
+    }
+
+    private void validateGroupBuyConfig(BigDecimal groupBuyPrice, Integer requiredCount) {
+        if (groupBuyPrice == null || groupBuyPrice.compareTo(BigDecimal.ZERO) <= 0
+                || requiredCount == null || requiredCount < 2) {
+            throw new BusinessException(ErrorCode.GROUP_BUY_PRODUCT_CONFIG_INVALID);
+        }
     }
 
     private GroupBuyGroupVO toGroupVO(GroupBuyGroup group) {

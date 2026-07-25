@@ -45,6 +45,7 @@ public enum ErrorCode {
     INVALID_SPEC(212, "规格定义不合法"),
     BANNER_NOT_FOUND(220, "轮播图不存在"),
     GROUP_BUY_PRODUCT_NOT_FOUND(260, "团购商品不存在"),
+    GROUP_BUY_PRODUCT_CONFIG_INVALID(266, "团购商品配置不合法"),
     GROUP_BUY_GROUP_NOT_FOUND(261, "团不存在"),
     GROUP_BUY_GROUP_FULL(262, "团已满员"),
     GROUP_BUY_GROUP_EXPIRED(263, "团已过期"),
