@@ -111,6 +111,31 @@ class GroupBuyPaymentServiceTest {
         assertEquals(GroupBuyMemberStatus.WAIT_REFUND.getCode(), member.getStatus());
     }
 
+    @Test
+    void paymentAfterGroupExpiredFailsAllPaidOrders() {
+        GroupBuyCreateVO opened = groupBuyService.openGroup(USER_A, req());
+        GroupBuyCreateVO joined = groupBuyService.joinGroup(USER_B, opened.getGroupId(), req(createAddress(USER_B)));
+
+        paymentService.handlePaidCallback(opened.getOrderNo(), txn(), "{\"mock\":true}");
+        GroupBuyGroup group = groupMapper.selectById(opened.getGroupId());
+        group.setExpireAt(LocalDateTime.now().minusMinutes(1));
+        groupMapper.updateById(group);
+
+        paymentService.handlePaidCallback(joined.getOrderNo(), txn(), "{\"mock\":true}");
+
+        GroupBuyGroup afterGroup = groupMapper.selectById(opened.getGroupId());
+        Order firstOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, opened.getOrderNo()));
+        Order secondOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, joined.getOrderNo()));
+        GroupBuyMember firstMember = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>().eq(GroupBuyMember::getOrderNo, opened.getOrderNo()));
+        GroupBuyMember secondMember = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>().eq(GroupBuyMember::getOrderNo, joined.getOrderNo()));
+
+        assertEquals(GroupBuyGroupStatus.FAILED_WAIT_REFUND.getCode(), afterGroup.getStatus());
+        assertEquals(OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode(), firstOrder.getStatus());
+        assertEquals(OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode(), secondOrder.getStatus());
+        assertEquals(GroupBuyMemberStatus.WAIT_REFUND.getCode(), firstMember.getStatus());
+        assertEquals(GroupBuyMemberStatus.WAIT_REFUND.getCode(), secondMember.getStatus());
+    }
+
     private GroupBuyCreateRequest req() {
         return req(ADDR_ID);
     }

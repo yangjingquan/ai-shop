@@ -135,13 +135,8 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             return;
         }
         if (group.getExpireAt() != null && !group.getExpireAt().isAfter(now)) {
-            group.setStatus(GroupBuyGroupStatus.FAILED_WAIT_REFUND.getCode());
-            groupMapper.updateById(group);
-            member.setStatus(GroupBuyMemberStatus.WAIT_REFUND.getCode());
-            memberMapper.updateById(member);
-            order.setStatus(OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode());
-            orderMapper.updateById(order);
-            releaseOrderStock(order);
+            markMemberPaid(member, now);
+            failGroupForTimeout(group);
             return;
         }
 
@@ -209,25 +204,29 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             if (group.getPaidCount() >= group.getRequiredCount()) {
                 continue;
             }
-            group.setStatus(GroupBuyGroupStatus.FAILED_WAIT_REFUND.getCode());
-            groupMapper.updateById(group);
-
-            List<GroupBuyMember> members = memberMapper.selectList(new LambdaQueryWrapper<GroupBuyMember>()
-                    .eq(GroupBuyMember::getGroupId, group.getId()));
-            for (GroupBuyMember member : members) {
-                Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, member.getOrderNo()));
-                if (order == null) {
-                    continue;
-                }
-                if (member.getStatus() == GroupBuyMemberStatus.PAID.getCode()) {
-                    markPaidOrderWaitRefund(member, order);
-                } else if (member.getStatus() == GroupBuyMemberStatus.WAIT_PAY.getCode()) {
-                    cancelUnpaidOrder(member, order);
-                }
-            }
+            failGroupForTimeout(group);
             count++;
         }
         return count;
+    }
+
+    private void failGroupForTimeout(GroupBuyGroup group) {
+        group.setStatus(GroupBuyGroupStatus.FAILED_WAIT_REFUND.getCode());
+        groupMapper.updateById(group);
+
+        List<GroupBuyMember> members = memberMapper.selectList(new LambdaQueryWrapper<GroupBuyMember>()
+                .eq(GroupBuyMember::getGroupId, group.getId()));
+        for (GroupBuyMember member : members) {
+            Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, member.getOrderNo()));
+            if (order == null) {
+                continue;
+            }
+            if (member.getStatus() == GroupBuyMemberStatus.PAID.getCode()) {
+                markPaidOrderWaitRefund(member, order);
+            } else if (member.getStatus() == GroupBuyMemberStatus.WAIT_PAY.getCode()) {
+                cancelUnpaidOrder(member, order);
+            }
+        }
     }
 
     private void markPaidOrderWaitRefund(GroupBuyMember member, Order order) {
