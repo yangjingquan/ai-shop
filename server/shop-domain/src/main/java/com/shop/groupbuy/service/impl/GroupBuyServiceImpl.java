@@ -1,6 +1,7 @@
 package com.shop.groupbuy.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.response.PageResult;
@@ -156,11 +157,16 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     @Override
     @Transactional
     public int failExpiredGroups(int batchLimit) {
+        int limit = Math.min(batchLimit, 1000);
+        if (limit <= 0) {
+            return 0;
+        }
+
         List<GroupBuyGroup> expired = groupMapper.selectList(new LambdaQueryWrapper<GroupBuyGroup>()
                 .eq(GroupBuyGroup::getStatus, GroupBuyGroupStatus.WAIT_GROUP.getCode())
                 .lt(GroupBuyGroup::getExpireAt, LocalDateTime.now())
                 .orderByAsc(GroupBuyGroup::getId)
-                .last("LIMIT " + batchLimit));
+                .last("LIMIT " + limit));
         int count = 0;
         for (GroupBuyGroup candidate : expired) {
             GroupBuyGroup group = groupMapper.selectByIdForUpdate(candidate.getId());
@@ -181,28 +187,49 @@ public class GroupBuyServiceImpl implements GroupBuyService {
                     continue;
                 }
                 if (member.getStatus() == GroupBuyMemberStatus.PAID.getCode()) {
-                    member.setStatus(GroupBuyMemberStatus.WAIT_REFUND.getCode());
-                    memberMapper.updateById(member);
-                    if (order.getStatus() == OrderStatus.WAIT_GROUP.getCode()) {
-                        order.setStatus(OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode());
-                        orderMapper.updateById(order);
-                        releaseOrderStock(order);
-                    }
+                    markPaidOrderWaitRefund(member, order);
                 } else if (member.getStatus() == GroupBuyMemberStatus.WAIT_PAY.getCode()) {
-                    member.setStatus(GroupBuyMemberStatus.CANCELLED.getCode());
-                    memberMapper.updateById(member);
-                    if (order.getStatus() == OrderStatus.WAIT_PAY.getCode()) {
-                        order.setStatus(OrderStatus.CANCELLED.getCode());
-                        order.setCancelReason("GROUP_TIMEOUT");
-                        order.setCancelTime(LocalDateTime.now());
-                        orderMapper.updateById(order);
-                        releaseOrderStock(order);
-                    }
+                    cancelUnpaidOrder(member, order);
                 }
             }
             count++;
         }
         return count;
+    }
+
+    private void markPaidOrderWaitRefund(GroupBuyMember member, Order order) {
+        int affected = orderMapper.update(null, new LambdaUpdateWrapper<Order>()
+                .eq(Order::getId, order.getId())
+                .eq(Order::getStatus, OrderStatus.WAIT_GROUP.getCode())
+                .set(Order::getStatus, OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode()));
+        if (affected > 0 || order.getStatus() == OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode()) {
+            member.setStatus(GroupBuyMemberStatus.WAIT_REFUND.getCode());
+            memberMapper.updateById(member);
+            if (affected > 0) {
+                releaseOrderStock(order);
+            }
+        }
+    }
+
+    private void cancelUnpaidOrder(GroupBuyMember member, Order order) {
+        LocalDateTime now = LocalDateTime.now();
+        int affected = orderMapper.update(null, new LambdaUpdateWrapper<Order>()
+                .eq(Order::getId, order.getId())
+                .eq(Order::getStatus, OrderStatus.WAIT_PAY.getCode())
+                .set(Order::getStatus, OrderStatus.CANCELLED.getCode())
+                .set(Order::getCancelReason, "GROUP_TIMEOUT")
+                .set(Order::getCancelTime, now));
+        if (affected > 0) {
+            member.setStatus(GroupBuyMemberStatus.CANCELLED.getCode());
+            memberMapper.updateById(member);
+            releaseOrderStock(order);
+            return;
+        }
+
+        Order latest = orderMapper.selectById(order.getId());
+        if (latest != null && latest.getStatus() == OrderStatus.WAIT_GROUP.getCode()) {
+            markPaidOrderWaitRefund(member, latest);
+        }
     }
 
     private void releaseOrderStock(Order order) {

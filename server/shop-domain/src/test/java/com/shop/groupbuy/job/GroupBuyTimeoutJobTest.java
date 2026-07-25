@@ -62,6 +62,64 @@ class GroupBuyTimeoutJobTest {
         assertEquals(GroupBuyMemberStatus.WAIT_REFUND.getCode(), afterMember.getStatus());
     }
 
+    @Test
+    void failExpiredGroupsCancelsUnpaidOrdersOnlyWhileWaitPay() {
+        GroupBuyCreateVO opened = groupBuyService.openGroup(USER_A, req());
+        GroupBuyGroup group = groupMapper.selectById(opened.getGroupId());
+        group.setExpireAt(LocalDateTime.now().minusMinutes(1));
+        groupMapper.updateById(group);
+
+        int count = groupBuyService.failExpiredGroups(10);
+
+        assertEquals(1, count);
+        Order afterOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, opened.getOrderNo()));
+        GroupBuyMember afterMember = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>().eq(GroupBuyMember::getOrderNo, opened.getOrderNo()));
+
+        assertEquals(OrderStatus.CANCELLED.getCode(), afterOrder.getStatus());
+        assertEquals("GROUP_TIMEOUT", afterOrder.getCancelReason());
+        assertEquals(GroupBuyMemberStatus.CANCELLED.getCode(), afterMember.getStatus());
+    }
+
+    @Test
+    void failExpiredGroupsSkipsFullyPaidUnformedGroups() {
+        GroupBuyCreateVO opened = groupBuyService.openGroup(USER_A, req());
+        paymentService.handlePaidCallback(opened.getOrderNo(), txn(), "{\"mock\":true}");
+        GroupBuyGroup group = groupMapper.selectById(opened.getGroupId());
+        group.setPaidCount(group.getRequiredCount());
+        group.setExpireAt(LocalDateTime.now().minusMinutes(1));
+        groupMapper.updateById(group);
+
+        int count = groupBuyService.failExpiredGroups(10);
+
+        GroupBuyGroup afterGroup = groupMapper.selectById(opened.getGroupId());
+        Order afterOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, opened.getOrderNo()));
+        GroupBuyMember afterMember = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>().eq(GroupBuyMember::getOrderNo, opened.getOrderNo()));
+
+        assertEquals(0, count);
+        assertEquals(GroupBuyGroupStatus.WAIT_GROUP.getCode(), afterGroup.getStatus());
+        assertEquals(OrderStatus.WAIT_GROUP.getCode(), afterOrder.getStatus());
+        assertEquals(GroupBuyMemberStatus.PAID.getCode(), afterMember.getStatus());
+    }
+
+    @Test
+    void failExpiredGroupsIgnoresNonPositiveBatchLimit() {
+        GroupBuyCreateVO opened = groupBuyService.openGroup(USER_A, req());
+        GroupBuyGroup group = groupMapper.selectById(opened.getGroupId());
+        group.setExpireAt(LocalDateTime.now().minusMinutes(1));
+        groupMapper.updateById(group);
+
+        int count = groupBuyService.failExpiredGroups(0);
+
+        GroupBuyGroup afterGroup = groupMapper.selectById(opened.getGroupId());
+        Order afterOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, opened.getOrderNo()));
+        GroupBuyMember afterMember = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>().eq(GroupBuyMember::getOrderNo, opened.getOrderNo()));
+
+        assertEquals(0, count);
+        assertEquals(GroupBuyGroupStatus.WAIT_GROUP.getCode(), afterGroup.getStatus());
+        assertEquals(OrderStatus.WAIT_PAY.getCode(), afterOrder.getStatus());
+        assertEquals(GroupBuyMemberStatus.WAIT_PAY.getCode(), afterMember.getStatus());
+    }
+
     private GroupBuyCreateRequest req() {
         GroupBuyCreateRequest req = new GroupBuyCreateRequest();
         req.setProductId(PRODUCT_ID);
