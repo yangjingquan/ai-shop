@@ -49,3 +49,14 @@ DONE_WITH_CONCERNS
 - `cd server && ./mvnw test`: still FAILS before code tests can run because the local shared MySQL schema history has a Flyway V17 checksum mismatch. This is an environmental DB verification blocker, not a smoke script code/test failure. I did not repair or mutate the shared DB.
   - Applied to database: `2078743849`
   - Resolved locally: `1396471401`
+
+## Smoke Reliability Fix Report
+- Updated `scripts/m5-group-buy-smoke.sh` to match existing smoke credential conventions: admin defaults to `admin/admin123`, merchant password defaults to `merchant123`.
+- Removed hardcoded `categoryId=10001`. The script now creates a smoke merchant via admin API, logs in as that merchant, and creates a merchant-owned enabled level-2 category through `/api/merchant/categories` before product creation.
+- Removed assumptions that wx user IDs 1 and 2 already exist. The script now creates two C-end smoke users through the normal `/api/wx/auth/login` flow using unique mock codes and the generated merchant code. If the local wx app is not running with `mock-wx` or equivalent working WeChat auth, it fails early with an actionable message instead of pretending to cover open/join.
+- Preserved use of `/api/wx/group-buy/products` and retained coverage for open group, join group, mock pay, formation, merchant status-6 shipping readiness, and shipping a formed order.
+
+## Smoke Reliability Verification
+- `bash -n scripts/m5-group-buy-smoke.sh`: PASS.
+- Static mini program/script readability check: PASS, printed `miniapp status files readable`.
+- Backend full test status remains unchanged from the previous run: blocked by local shared MySQL Flyway V17 checksum mismatch, not by this smoke script change. No Flyway repair or shared DB mutation was performed.
