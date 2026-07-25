@@ -119,14 +119,33 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             return;
         }
         GroupBuyGroup group = groupMapper.selectByIdForUpdate(member.getGroupId());
-        if (group == null || group.getStatus() != GroupBuyGroupStatus.WAIT_GROUP.getCode()) {
+        if (group == null) {
             return;
         }
 
-        member.setStatus(GroupBuyMemberStatus.PAID.getCode());
-        member.setPaidAt(LocalDateTime.now());
-        memberMapper.updateById(member);
+        LocalDateTime now = LocalDateTime.now();
+        if (group.getStatus() == GroupBuyGroupStatus.FORMED.getCode()) {
+            markMemberPaid(member, now);
+            order.setStatus(OrderStatus.GROUP_SUCCESS.getCode());
+            orderMapper.updateById(order);
+            refreshPaidCount(group);
+            return;
+        }
+        if (group.getStatus() != GroupBuyGroupStatus.WAIT_GROUP.getCode()) {
+            return;
+        }
+        if (group.getExpireAt() != null && !group.getExpireAt().isAfter(now)) {
+            group.setStatus(GroupBuyGroupStatus.FAILED_WAIT_REFUND.getCode());
+            groupMapper.updateById(group);
+            member.setStatus(GroupBuyMemberStatus.WAIT_REFUND.getCode());
+            memberMapper.updateById(member);
+            order.setStatus(OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode());
+            orderMapper.updateById(order);
+            releaseOrderStock(order);
+            return;
+        }
 
+        markMemberPaid(member, now);
         Long paid = memberMapper.selectCount(new LambdaQueryWrapper<GroupBuyMember>()
                 .eq(GroupBuyMember::getGroupId, group.getId())
                 .eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.PAID.getCode()));
@@ -134,7 +153,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
 
         if (group.getPaidCount() >= group.getRequiredCount()) {
             group.setStatus(GroupBuyGroupStatus.FORMED.getCode());
-            group.setFormedAt(LocalDateTime.now());
+            group.setFormedAt(now);
             groupMapper.updateById(group);
 
             List<GroupBuyMember> paidMembers = memberMapper.selectList(new LambdaQueryWrapper<GroupBuyMember>()
@@ -152,6 +171,20 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         } else {
             groupMapper.updateById(group);
         }
+    }
+
+    private void markMemberPaid(GroupBuyMember member, LocalDateTime paidAt) {
+        member.setStatus(GroupBuyMemberStatus.PAID.getCode());
+        member.setPaidAt(paidAt);
+        memberMapper.updateById(member);
+    }
+
+    private void refreshPaidCount(GroupBuyGroup group) {
+        Long paid = memberMapper.selectCount(new LambdaQueryWrapper<GroupBuyMember>()
+                .eq(GroupBuyMember::getGroupId, group.getId())
+                .eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.PAID.getCode()));
+        group.setPaidCount(paid.intValue());
+        groupMapper.updateById(group);
     }
 
     @Override

@@ -9,7 +9,10 @@ import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.response.PageResult;
 import com.shop.groupbuy.entity.GroupBuyGroup;
+import com.shop.groupbuy.entity.GroupBuyMember;
+import com.shop.groupbuy.enums.GroupBuyMemberStatus;
 import com.shop.groupbuy.mapper.GroupBuyGroupMapper;
+import com.shop.groupbuy.mapper.GroupBuyMemberMapper;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.order.dto.*;
@@ -63,6 +66,7 @@ public class OrderServiceImpl implements OrderService {
     private final RefundApplicationMapper refundApplicationMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final GroupBuyGroupMapper groupBuyGroupMapper;
+    private final GroupBuyMemberMapper groupBuyMemberMapper;
 
     private static final java.util.regex.Pattern SHIP_NO_PATTERN =
             java.util.regex.Pattern.compile("^[A-Za-z0-9]{5,30}$");
@@ -423,6 +427,20 @@ public class OrderServiceImpl implements OrderService {
         locked.setCancelTime(LocalDateTime.now());
         locked.setCancelReason(reason);
         orderMapper.updateById(locked);
+        markGroupBuyMemberCancelled(locked);
+    }
+
+    private void markGroupBuyMemberCancelled(Order order) {
+        if (!Integer.valueOf(1).equals(order.getOrderType())) {
+            return;
+        }
+        GroupBuyMember member = groupBuyMemberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>()
+                .eq(GroupBuyMember::getOrderNo, order.getOrderNo())
+                .eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.WAIT_PAY.getCode()));
+        if (member != null) {
+            member.setStatus(GroupBuyMemberStatus.CANCELLED.getCode());
+            groupBuyMemberMapper.updateById(member);
+        }
     }
 
     // ==================== page / detail ====================

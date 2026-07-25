@@ -4,8 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shop.groupbuy.dto.GroupBuyCreateRequest;
 import com.shop.groupbuy.dto.GroupBuyCreateVO;
 import com.shop.groupbuy.entity.GroupBuyGroup;
+import com.shop.groupbuy.entity.GroupBuyMember;
 import com.shop.groupbuy.enums.GroupBuyGroupStatus;
+import com.shop.groupbuy.enums.GroupBuyMemberStatus;
 import com.shop.groupbuy.mapper.GroupBuyGroupMapper;
+import com.shop.groupbuy.mapper.GroupBuyMemberMapper;
 import com.shop.order.entity.Order;
 import com.shop.order.enums.OrderStatus;
 import com.shop.order.mapper.OrderMapper;
@@ -19,6 +22,7 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,6 +36,7 @@ class GroupBuyPaymentServiceTest {
     @Autowired private OrderPaymentService paymentService;
     @Autowired private OrderMapper orderMapper;
     @Autowired private GroupBuyGroupMapper groupMapper;
+    @Autowired private GroupBuyMemberMapper memberMapper;
     @Autowired private UserAddressMapper addressMapper;
 
     private static final Long USER_A = 3L;
@@ -68,6 +73,42 @@ class GroupBuyPaymentServiceTest {
         assertEquals(GroupBuyGroupStatus.FORMED.getCode(), group.getStatus());
         assertEquals(OrderStatus.GROUP_SUCCESS.getCode(), first.getStatus());
         assertEquals(OrderStatus.GROUP_SUCCESS.getCode(), second.getStatus());
+    }
+
+    @Test
+    void latePaymentAfterGroupFormedMarksExtraPaidOrderGroupSuccess() {
+        GroupBuyCreateVO opened = groupBuyService.openGroup(USER_A, req());
+        GroupBuyCreateVO joined = groupBuyService.joinGroup(USER_B, opened.getGroupId(), req(createAddress(USER_B)));
+        GroupBuyCreateVO extra = groupBuyService.joinGroup(5L, opened.getGroupId(), req(createAddress(5L)));
+
+        paymentService.handlePaidCallback(opened.getOrderNo(), txn(), "{\"mock\":true}");
+        paymentService.handlePaidCallback(joined.getOrderNo(), txn(), "{\"mock\":true}");
+        paymentService.handlePaidCallback(extra.getOrderNo(), txn(), "{\"mock\":true}");
+
+        Order extraOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, extra.getOrderNo()));
+        GroupBuyMember extraMember = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>().eq(GroupBuyMember::getOrderNo, extra.getOrderNo()));
+
+        assertEquals(OrderStatus.GROUP_SUCCESS.getCode(), extraOrder.getStatus());
+        assertEquals(GroupBuyMemberStatus.PAID.getCode(), extraMember.getStatus());
+        assertNotNull(extraMember.getPaidAt());
+    }
+
+    @Test
+    void paymentAfterGroupExpiredMarksOrderWaitRefundWithoutFormingGroup() {
+        GroupBuyCreateVO opened = groupBuyService.openGroup(USER_A, req());
+        GroupBuyGroup group = groupMapper.selectById(opened.getGroupId());
+        group.setExpireAt(LocalDateTime.now().minusMinutes(1));
+        groupMapper.updateById(group);
+
+        paymentService.handlePaidCallback(opened.getOrderNo(), txn(), "{\"mock\":true}");
+
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, opened.getOrderNo()));
+        GroupBuyGroup afterGroup = groupMapper.selectById(opened.getGroupId());
+        GroupBuyMember member = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>().eq(GroupBuyMember::getOrderNo, opened.getOrderNo()));
+
+        assertEquals(OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode(), order.getStatus());
+        assertEquals(GroupBuyGroupStatus.FAILED_WAIT_REFUND.getCode(), afterGroup.getStatus());
+        assertEquals(GroupBuyMemberStatus.WAIT_REFUND.getCode(), member.getStatus());
     }
 
     private GroupBuyCreateRequest req() {
