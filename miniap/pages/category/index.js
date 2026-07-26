@@ -14,7 +14,6 @@ Page({
     products: [],
     productViewMode: 'list',
     categoryExpanded: false,
-    mainScrollTop: 0,
     loading: false,
     productLoading: false,
   },
@@ -138,18 +137,10 @@ Page({
     return this.minPositivePrice(...values) > 0
   },
 
-  resetMainScroll() {
-    this.setData({ mainScrollTop: 1 })
-    wx.nextTick(() => {
-      this.setData({ mainScrollTop: 0 })
-    })
-  },
-
   switchTopCategory(id) {
     const topId = this.resolveTopId(this.data.topCats, Number(id))
     if (!topId || !this.data.topCats.find((c) => c.id === topId)) return
     if (topId === this.data.activeTopId) return
-    this.resetMainScroll()
     this.setData({ activeTopId: topId })
     this.renderTop(topId)
   },
