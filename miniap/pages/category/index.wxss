@@ -1,12 +1,9 @@
 page {
-  height: 100%;
-  overflow: hidden;
   background: #f7f4ed;
 }
 
 .cat-page {
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
   padding: 20rpx 24rpx calc(112rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: #f7f4ed;
@@ -55,7 +52,6 @@ page {
 
 .side {
   height: 100%;
-  overflow: hidden;
   padding: 16rpx 12rpx;
   border-radius: 16rpx;
   background: rgba(255, 255, 255, 0.68);
@@ -116,7 +112,6 @@ page {
 .main {
   min-width: 0;
   height: 100%;
-  overflow: hidden;
   box-sizing: border-box;
 }
 
