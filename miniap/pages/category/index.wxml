@@ -20,7 +20,7 @@
       </view>
     </scroll-view>
 
-    <scroll-view class="main" scroll-y enhanced show-scrollbar="false" bounces="false">
+    <scroll-view class="main" scroll-y enhanced show-scrollbar="false" bounces="false" scroll-top="{{ mainScrollTop }}">
       <view wx:if="{{ currentTop }}" class="category-panel">
         <view class="category-head">
           <text>{{ currentTopName }}</text>
