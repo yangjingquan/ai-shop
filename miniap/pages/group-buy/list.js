@@ -32,6 +32,11 @@ Page({
     this.refresh()
   },
 
+  onClearSearch() {
+    this.setData({ keyword: '' })
+    this.refresh()
+  },
+
   refresh() {
     this.setData({ page: 1, products: [], hasMore: true })
     return this.load()

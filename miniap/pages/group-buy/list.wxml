@@ -1,6 +1,9 @@
 <view class="group-list-page">
   <view class="search-row">
-    <input value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" placeholder="搜索团购商品" />
+    <view class="search-box">
+      <input value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" placeholder="搜索团购商品" />
+      <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">✕</view>
+    </view>
     <view class="search-btn" bindtap="onSearch">搜索</view>
   </view>
 

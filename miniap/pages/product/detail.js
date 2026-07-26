@@ -42,10 +42,14 @@ Page({
   async loadDetail() {
     this.setData({ loading: true })
     try {
-      const res = this.data.groupBuyMode
+      let res = this.data.groupBuyMode
         ? await groupBuyApi.productDetail(this.data.productId)
         : await productApi.get(this.data.productId)
-      const rawProduct = this.data.groupBuyMode ? ((res && res.data && res.data.product) || null) : ((res && res.data) || null)
+      let rawProduct = this.data.groupBuyMode ? ((res && res.data && res.data.product) || null) : ((res && res.data) || null)
+      if (!this.data.groupBuyMode && rawProduct && Number(rawProduct.isGroupBuy) === 1) {
+        res = await groupBuyApi.productDetail(this.data.productId)
+        rawProduct = (res && res.data && res.data.product) || null
+      }
       const product = rawProduct ? { ...rawProduct } : null
       if (!product) {
         wx.showToast({ title: '商品不存在', icon: 'none' })
@@ -79,7 +83,7 @@ Page({
       product.minPrice = this.fmtPrice(product.minPrice)
       product.maxPrice = this.fmtPrice(product.maxPrice)
       const selected = new Array(specs.length).fill(null)
-      const groups = this.data.groupBuyMode ? ((res && res.data && res.data.groups) || []) : []
+      const groups = Number(product.isGroupBuy) === 1 ? ((res && res.data && res.data.groups) || []) : []
       this.setData({
         product,
         banners,
