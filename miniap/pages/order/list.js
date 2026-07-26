@@ -7,10 +7,13 @@ Page({
     tabs: [
       { label: '全部', value: null, key: 'all' },
       { label: '待支付', value: 0, key: '0' },
+      { label: '待发货', value: 1, key: '1' },
       { label: '待成团', value: 5, key: '5' },
       { label: '已成团', value: 6, key: '6' },
       { label: '待收货', value: 2, key: '2' },
       { label: '已完成', value: 3, key: '3' },
+      { label: '已取消', value: 4, key: '4' },
+      { label: '待退款', value: 7, key: '7' },
     ],
     orders: [],
     currentStatus: null,
