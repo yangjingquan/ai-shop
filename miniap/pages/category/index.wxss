@@ -3,9 +3,8 @@ page {
 }
 
 .cat-page {
-  height: 100vh;
+  min-height: 100vh;
   padding: 20rpx 24rpx calc(112rpx + env(safe-area-inset-bottom));
-  overflow: hidden;
   box-sizing: border-box;
   background: #f7f4ed;
   color: #17191f;
@@ -114,13 +113,6 @@ page {
   min-width: 0;
   height: 100%;
   box-sizing: border-box;
-}
-
-.side::-webkit-scrollbar,
-.main::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
 }
 
 .category-panel {
