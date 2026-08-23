@@ -1,5 +1,4 @@
 const orderApi = require('../../api/order')
-const config = require('../../utils/config')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
@@ -123,12 +122,6 @@ Page({
         if (!payParams) {
           wx.showToast({ title: '支付参数错误', icon: 'none' })
           return Promise.reject(new Error('missing payParams'))
-        }
-        if (config.ENV !== 'prod' || payParams.appId === 'wx_mock') {
-          return orderApi.mockPay(orderNo).then(() => {
-            wx.showToast({ title: '支付成功', icon: 'success' })
-            this.refreshList()
-          })
         }
         return new Promise((resolve, reject) => {
           wx.requestPayment({

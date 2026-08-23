@@ -97,8 +97,7 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
-        // 本地 dev mock 可能把不同微信取号 code 映射到已有测试手机号。
-        // 如果当前用户已经绑定过手机号，则保持幂等，避免重复点击绑定返回 180。
+        // 已绑定时保持幂等，避免用户重复点击绑定失败。
         if (user.getPhone() != null && !user.getPhone().isBlank()) {
             return user.getPhone();
         }

@@ -1,6 +1,5 @@
 const app = getApp();
 const { resolveImageUrl } = require('../../utils/url')
-const config = require('../../utils/config')
 
 Page({
   data: {
@@ -123,43 +122,22 @@ Page({
   },
 
   payOrder(order) {
-    const payParams = order && order.payParams;
-    if (!payParams) {
-      return Promise.reject(new Error('payParams missing'));
-    }
-    if (config.ENV !== 'prod' || payParams.appId === 'wx_mock') {
-      return app.request({
-        url: '/api/wx/order/' + order.orderNo + '/mock-pay',
-        method: 'POST'
+    return orderApi.repay(order.orderNo).then((res) => {
+      const payParams = res && res.data && res.data.payParams;
+      if (!payParams) {
+        throw new Error('payParams missing');
+      }
+      return new Promise((resolve, reject) => {
+        wx.requestPayment({
+          timeStamp: payParams.timeStamp,
+          nonceStr: payParams.nonceStr,
+          package: payParams.packageStr,
+          signType: payParams.signType || 'RSA',
+          paySign: payParams.paySign,
+          success: resolve,
+          fail: reject
+        });
       });
-    }
-    return new Promise((resolve, reject) => {
-      wx.requestPayment({
-        timeStamp: payParams.timeStamp,
-        nonceStr: payParams.nonceStr,
-        package: payParams.packageStr,
-        signType: payParams.signType || 'RSA',
-        paySign: payParams.paySign,
-        success: resolve,
-        fail: reject
-      });
-    });
-  },
-
-  mockPayAll(orders) {
-    const promises = orders.map(order => {
-      return app.request({
-        url: '/api/wx/order/' + order.orderNo + '/mock-pay',
-        method: 'POST'
-      });
-    });
-    Promise.all(promises).then(() => {
-      wx.showToast({ title: '下单成功', icon: 'success' });
-      setTimeout(() => {
-        wx.switchTab({ url: '/pages/order/list' });
-      }, 1000);
-    }).catch(() => {
-      wx.showToast({ title: '支付失败', icon: 'none' });
     });
   }
 });

@@ -9,7 +9,6 @@ import com.shop.common.exception.ErrorCode;
 import com.shop.user.service.WxPhoneApiClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +19,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Component
-@Profile("!mock-wx")
 @RequiredArgsConstructor
 public class RealWxPhoneApiClient implements WxPhoneApiClient {
 

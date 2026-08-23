@@ -29,7 +29,7 @@ CREATE TABLE `order` (
     COMMENT '= total + freight - discount',
   pay_method TINYINT DEFAULT 0 COMMENT '0=未支付 1=微信支付',
   pay_time DATETIME NULL,
-  pay_transaction_id VARCHAR(64) DEFAULT '' COMMENT '微信支付订单号 / mock 时为 MOCK_xxx',
+  pay_transaction_id VARCHAR(64) DEFAULT '' COMMENT '微信支付订单号',
   address_snapshot VARCHAR(500) NOT NULL COMMENT 'JSON 快照',
   ship_no VARCHAR(64) DEFAULT '' COMMENT 'M4b 用',
   ship_time DATETIME NULL COMMENT 'M4b 用',
@@ -68,9 +68,9 @@ CREATE TABLE order_item (
 CREATE TABLE payment_log (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   order_no VARCHAR(32) NOT NULL,
-  transaction_id VARCHAR(64) NOT NULL COMMENT '微信流水号 / MOCK_xxx',
+  transaction_id VARCHAR(64) NOT NULL COMMENT '微信支付流水号',
   amount DECIMAL(10,2) NOT NULL,
-  raw_payload JSON COMMENT '回调原始报文 / mock 时为 stub',
+  raw_payload JSON COMMENT '微信支付回调原始报文',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uk_transaction (transaction_id),
   KEY idx_order_no (order_no)

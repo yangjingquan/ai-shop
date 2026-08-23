@@ -1,9 +1,12 @@
 #!/bin/bash
-# M2 冒烟脚本：admin 创建商家 → merchant 改资料 → wx 绑手机号 + 加 2 条地址
+# M2 冒烟脚本：admin 创建商家 → merchant 改资料 → 真实微信登录、绑手机号 + 加 2 条地址
 set -e
 
 ADMIN_BASE=${ADMIN_BASE:-http://127.0.0.1:8081}
 WX_BASE=${WX_BASE:-http://127.0.0.1:8082}
+WX_MERCHANT_CODE=${WX_MERCHANT_CODE:?请提供已配置微信小程序的商户代码}
+WX_LOGIN_CODE=${WX_LOGIN_CODE:?请提供 wx.login 获取的一次性 code}
+WX_PHONE_CODE=${WX_PHONE_CODE:?请提供 getPhoneNumber 获取的一次性 code}
 
 echo "=== 1. Admin 登录 ==="
 ATOKEN=$(curl -s -X POST "$ADMIN_BASE/api/admin/auth/login" \
@@ -33,16 +36,16 @@ curl -s -X PUT "$ADMIN_BASE/api/merchant/profile" \
 echo "=== 4. Wx 静默登录 ==="
 WTOKEN=$(curl -s -X POST "$WX_BASE/api/wx/auth/login" \
   -H "Content-Type: application/json" \
-  -d "{\"code\":\"smoke-$SUFFIX\"}" | jq -r .data.token)
+  -d "{\"code\":\"$WX_LOGIN_CODE\",\"merchantCode\":\"$WX_MERCHANT_CODE\"}" | jq -r .data.token)
 test -n "$WTOKEN" && test "$WTOKEN" != "null" || { echo "wx 登录失败"; exit 1; }
 
-echo "=== 5. Wx 绑手机号（幂等：mock 固定 13800000000，被占用时返回 180 视为 OK）==="
+echo "=== 5. Wx 绑定真实手机号 ==="
 BIND_RESP=$(curl -s -X POST "$WX_BASE/api/wx/user/bind-phone" \
   -H "wx-token: $WTOKEN" -H "Content-Type: application/json" \
-  -d '{"code":"any-phone-code"}')
+  -d "{\"code\":\"$WX_PHONE_CODE\"}")
 echo "$BIND_RESP" | jq
 BIND_CODE=$(echo "$BIND_RESP" | jq -r .code)
-if [ "$BIND_CODE" != "0" ] && [ "$BIND_CODE" != "180" ]; then
+if [ "$BIND_CODE" != "0" ]; then
   echo "绑手机号异常 code=$BIND_CODE"; exit 1
 fi
 

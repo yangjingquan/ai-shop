@@ -5,6 +5,7 @@ import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
+import com.shop.merchant.service.PaymentCredentialCipher;
 import com.shop.order.dto.OrderCreateVO;
 import com.shop.order.entity.Order;
 import com.shop.order.service.WxPayService;
@@ -16,12 +17,18 @@ import com.wechat.pay.java.service.payments.jsapi.model.Amount;
 import com.wechat.pay.java.service.payments.jsapi.model.Payer;
 import com.wechat.pay.java.service.payments.jsapi.model.PrepayRequest;
 import com.wechat.pay.java.service.payments.jsapi.model.PrepayWithRequestPaymentResponse;
+import com.wechat.pay.java.service.payments.jsapi.model.QueryOrderByOutTradeNoRequest;
+import com.wechat.pay.java.service.payments.jsapi.model.CloseOrderRequest;
+import com.wechat.pay.java.service.payments.model.Transaction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Service
@@ -30,6 +37,7 @@ public class WxPayServiceImpl implements WxPayService {
 
     private final MerchantMapper merchantMapper;
     private final UserMapper userMapper;
+    private final PaymentCredentialCipher paymentCredentialCipher;
 
     @Override
     public OrderCreateVO.PayParams createJsapiPayParams(Order order) {
@@ -50,6 +58,8 @@ public class WxPayServiceImpl implements WxPayService {
             request.setDescription("商城订单 " + order.getOrderNo());
             request.setOutTradeNo(order.getOrderNo());
             request.setNotifyUrl(merchant.getWxPayNotifyUrl());
+            request.setTimeExpire(OffsetDateTime.now(ZoneOffset.ofHours(8)).plusMinutes(30)
+                    .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
             Amount amount = new Amount();
             amount.setTotal(yuanToFen(order.getPayAmount()));
@@ -77,6 +87,39 @@ public class WxPayServiceImpl implements WxPayService {
         }
     }
 
+    @Override
+    public Transaction queryOrder(Order order) {
+        Merchant merchant = getPayReadyMerchant(order.getMerchantId());
+        try {
+            QueryOrderByOutTradeNoRequest request = new QueryOrderByOutTradeNoRequest();
+            request.setMchid(merchant.getWxMchId().trim());
+            request.setOutTradeNo(order.getOrderNo());
+            return new JsapiServiceExtension.Builder().config(buildConfig(merchant)).build()
+                    .queryOrderByOutTradeNo(request);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("微信支付查单失败, orderNo={}, merchantCode={}", order.getOrderNo(), merchant.getMerchantCode(), e);
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "微信支付状态查询失败，请稍后重试");
+        }
+    }
+
+    @Override
+    public void closeOrder(Order order) {
+        Merchant merchant = getPayReadyMerchant(order.getMerchantId());
+        try {
+            CloseOrderRequest request = new CloseOrderRequest();
+            request.setMchid(merchant.getWxMchId().trim());
+            request.setOutTradeNo(order.getOrderNo());
+            new JsapiServiceExtension.Builder().config(buildConfig(merchant)).build().closeOrder(request);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("微信支付关单失败, orderNo={}, merchantCode={}", order.getOrderNo(), merchant.getMerchantCode(), e);
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "微信支付关单失败，请稍后重试");
+        }
+    }
+
     private Merchant getPayReadyMerchant(Long merchantId) {
         Merchant merchant = merchantMapper.selectOne(new LambdaQueryWrapper<Merchant>()
                 .eq(Merchant::getId, merchantId));
@@ -101,9 +144,9 @@ public class WxPayServiceImpl implements WxPayService {
     private RSAAutoCertificateConfig buildConfig(Merchant merchant) {
         return new RSAAutoCertificateConfig.Builder()
                 .merchantId(merchant.getWxMchId().trim())
-                .privateKey(normalizePrivateKey(merchant.getWxPayPrivateKey()))
+                .privateKey(normalizePrivateKey(paymentCredentialCipher.decrypt(merchant.getWxPayPrivateKey())))
                 .merchantSerialNumber(merchant.getWxPayMchSerialNo().trim())
-                .apiV3Key(merchant.getWxPayApiV3Key().trim())
+                .apiV3Key(paymentCredentialCipher.decrypt(merchant.getWxPayApiV3Key()).trim())
                 .build();
     }
 

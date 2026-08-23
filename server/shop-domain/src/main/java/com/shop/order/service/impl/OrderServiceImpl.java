@@ -22,6 +22,7 @@ import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.PaymentLogMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderService;
+import com.shop.order.service.OrderPaymentService;
 import com.shop.order.service.WxPayService;
 import com.shop.product.entity.Product;
 import com.shop.product.entity.ProductSku;
@@ -35,7 +36,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -43,6 +43,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import com.wechat.pay.java.service.payments.model.Transaction;
+import com.wechat.pay.java.service.payments.model.Transaction.TradeStateEnum;
 
 @Slf4j
 @Service
@@ -60,6 +62,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemMapper orderItemMapper;
     private final PaymentLogMapper paymentLogMapper;
     private final RefundApplicationMapper refundApplicationMapper;
+    private final OrderPaymentService orderPaymentService;
     private final WxPayService wxPayService;
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -235,6 +238,9 @@ public class OrderServiceImpl implements OrderService {
             // 按 merchant 分组
             Map<Long, List<CartItem>> grouped = cartItems.stream()
                     .collect(Collectors.groupingBy(CartItem::getMerchantId));
+            if (grouped.size() != 1) {
+                throw new BusinessException(ErrorCode.CART_ITEM_CROSS_MERCHANT);
+            }
 
             List<OrderCreateVO> results = new ArrayList<>();
 
@@ -310,7 +316,6 @@ public class OrderServiceImpl implements OrderService {
                 OrderCreateVO vo = new OrderCreateVO();
                 vo.setOrderNo(orderNo);
                 vo.setPayAmount(totalAmount);
-                vo.setPayParams(wxPayService.createJsapiPayParams(order));
                 results.add(vo);
             }
 
@@ -359,16 +364,19 @@ public class OrderServiceImpl implements OrderService {
         if (!OrderStatus.canCancel(order.getStatus())) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_NOT_ALLOWED);
         }
+        closeWechatPaymentBeforeCancellation(order);
         cancelInternal(order, "USER_CANCEL");
     }
 
     @Override
+    @Transactional
     public int cancelExpired(int batchLimit) {
         List<Order> expired = orderMapper.selectExpiredOrders(batchLimit);
         int count = 0;
         for (Order order : expired) {
             try {
-                cancelInternalInNewTx(order, "TIMEOUT");
+                closeWechatPaymentBeforeCancellation(order);
+                cancelInternal(order, "TIMEOUT");
                 count++;
             } catch (Exception e) {
                 log.error("取消过期订单失败 orderNo={}", order.getOrderNo(), e);
@@ -379,12 +387,6 @@ public class OrderServiceImpl implements OrderService {
 
     /** 在同一事务内取消，供用户取消调用 */
     private void cancelInternal(Order order, String reason) {
-        doCancel(order, reason);
-    }
-
-    /** 在新事务内取消，供定时任务逐条调用 */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void cancelInternalInNewTx(Order order, String reason) {
         doCancel(order, reason);
     }
 
@@ -415,6 +417,32 @@ public class OrderServiceImpl implements OrderService {
         locked.setCancelTime(LocalDateTime.now());
         locked.setCancelReason(reason);
         orderMapper.updateById(locked);
+    }
+
+    private void closeWechatPaymentBeforeCancellation(Order order) {
+        Transaction transaction = wxPayService.queryOrder(order);
+        if (transaction != null && transaction.getTradeState() == TradeStateEnum.SUCCESS) {
+            if (transaction.getAmount() == null || transaction.getAmount().getTotal() == null
+                    || transaction.getAmount().getTotal() != yuanToFen(order.getPayAmount())
+                    || transaction.getTransactionId() == null || transaction.getTransactionId().isBlank()) {
+                throw new BusinessException(ErrorCode.WX_PAY_CALLBACK_AMOUNT_MISMATCH);
+            }
+            orderPaymentService.handlePaidCallback(order.getOrderNo(), transaction.getTransactionId(), toJson(transaction));
+            throw new BusinessException(ErrorCode.ORDER_STATUS_NOT_ALLOWED.getCode(), "订单已支付，不能取消");
+        }
+        if (transaction == null || transaction.getTradeState() == TradeStateEnum.ACCEPT) {
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "无法确认微信支付状态，请稍后重试");
+        }
+        if (transaction.getTradeState() != TradeStateEnum.CLOSED) {
+            wxPayService.closeOrder(order);
+        }
+    }
+
+    private int yuanToFen(BigDecimal amount) {
+        if (amount == null) {
+            throw new BusinessException(ErrorCode.PAY_FAILED);
+        }
+        return amount.movePointRight(2).setScale(0, java.math.RoundingMode.UNNECESSARY).intValueExact();
     }
 
     // ==================== page / detail ====================

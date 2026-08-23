@@ -5,6 +5,7 @@ import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
+import com.shop.merchant.service.PaymentCredentialCipher;
 import com.shop.order.entity.Order;
 import com.shop.order.service.OrderPaymentService;
 import com.shop.order.service.WxPayCallbackService;
@@ -28,6 +29,7 @@ public class WxPayCallbackServiceImpl implements WxPayCallbackService {
     private final MerchantMapper merchantMapper;
     private final com.shop.order.mapper.OrderMapper orderMapper;
     private final OrderPaymentService orderPaymentService;
+    private final PaymentCredentialCipher paymentCredentialCipher;
 
     @Override
     public void handle(String merchantCode, WxPayCallbackHeaders headers, String rawBody) {
@@ -46,9 +48,9 @@ public class WxPayCallbackServiceImpl implements WxPayCallbackService {
     private Transaction parseTransaction(Merchant merchant, WxPayCallbackHeaders headers, String rawBody) {
         AutoCertificateNotificationConfig config = new AutoCertificateNotificationConfig.Builder()
                 .merchantId(merchant.getWxMchId().trim())
-                .privateKey(normalizePrivateKey(merchant.getWxPayPrivateKey()))
+                .privateKey(normalizePrivateKey(paymentCredentialCipher.decrypt(merchant.getWxPayPrivateKey())))
                 .merchantSerialNumber(merchant.getWxPayMchSerialNo().trim())
-                .apiV3Key(merchant.getWxPayApiV3Key().trim())
+                .apiV3Key(paymentCredentialCipher.decrypt(merchant.getWxPayApiV3Key()).trim())
                 .build();
 
         RequestParam requestParam = new RequestParam.Builder()

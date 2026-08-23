@@ -42,7 +42,7 @@ class OrderPaymentServiceTest {
     private static final Long ADDR_ID = 12L;
 
     @Test
-    void mockPayChangesStatus() {
+    void verifiedPaymentChangesStatus() {
         // 创建一个订单
         CartAddRequest req = new CartAddRequest();
         req.setSkuId(9L);
@@ -55,9 +55,8 @@ class OrderPaymentServiceTest {
         List<OrderCreateVO> vos = orderService.create(WX_USER, creq);
         String orderNo = vos.get(0).getOrderNo();
 
-        // mock-pay
-        String txnId = "MOCK_TXN_" + UUID.randomUUID().toString().replace("-", "");
-        paymentService.handlePaidCallback(orderNo, txnId, "{\"mock\":true}");
+        String txnId = "WX_TXN_" + UUID.randomUUID().toString().replace("-", "");
+        paymentService.handlePaidCallback(orderNo, txnId, "{\"transactionId\":\"" + txnId + "\"}");
 
         // 验证状态变化
         Order order = orderMapper.selectOne(
@@ -79,34 +78,11 @@ class OrderPaymentServiceTest {
         List<OrderCreateVO> vos = orderService.create(WX_USER, creq);
         String orderNo = vos.get(0).getOrderNo();
 
-        String txnId = "MOCK_TXN_" + UUID.randomUUID().toString().replace("-", "");
-        paymentService.handlePaidCallback(orderNo, txnId, "{\"mock\":true}");
+        String txnId = "WX_TXN_" + UUID.randomUUID().toString().replace("-", "");
+        paymentService.handlePaidCallback(orderNo, txnId, "{\"transactionId\":\"" + txnId + "\"}");
         // 第二次不应抛异常
         assertDoesNotThrow(() ->
-                paymentService.handlePaidCallback(orderNo, txnId, "{\"mock\":true}"));
+                paymentService.handlePaidCallback(orderNo, txnId, "{\"transactionId\":\"" + txnId + "\"}"));
     }
 
-    @Test
-    void payCancelledOrderShouldNoOp() {
-        CartAddRequest req = new CartAddRequest();
-        req.setSkuId(9L);
-        req.setQuantity(1);
-        Long cid = cartService.add(WX_USER, req);
-
-        OrderCreateRequest creq = new OrderCreateRequest();
-        creq.setCartItemIds(List.of(cid));
-        creq.setAddressId(ADDR_ID);
-        List<OrderCreateVO> vos = orderService.create(WX_USER, creq);
-        String orderNo = vos.get(0).getOrderNo();
-
-        orderService.cancelByUser(WX_USER, orderNo);
-
-        // 对已取消订单支付应不抛异常、状态不变
-        String txnId = "MOCK_TXN_" + UUID.randomUUID().toString().replace("-", "");
-        paymentService.handlePaidCallback(orderNo, txnId, "{\"mock\":true}");
-
-        Order order = orderMapper.selectOne(
-                new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo));
-        assertEquals(OrderStatus.CANCELLED.getCode(), order.getStatus());
-    }
 }

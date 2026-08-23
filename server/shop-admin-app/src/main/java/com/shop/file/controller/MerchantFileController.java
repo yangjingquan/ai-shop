@@ -1,8 +1,6 @@
 package com.shop.file.controller;
 
 import com.shop.common.response.ApiResult;
-import com.shop.file.dto.UploadSignVO;
-import com.shop.file.service.CosClient;
 import com.shop.file.service.LocalFileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -17,13 +15,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MerchantFileController {
 
-    private final CosClient cosClient;
     private final LocalFileStorageService localFileStorageService;
-
-    @GetMapping("/upload-sign")
-    public ApiResult<UploadSignVO> getSign(@RequestParam(defaultValue = "file") String fileName) {
-        return ApiResult.success(cosClient.generateUploadSign(fileName));
-    }
 
     @PostMapping("/upload")
     public ApiResult<Map<String, String>> upload(@RequestParam("file") MultipartFile file) throws IOException {

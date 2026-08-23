@@ -60,12 +60,13 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       SHOP_JWT_SECRET: ${SHOP_JWT_SECRET}
+      SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY: ${SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY}
       WX_APPID: ${WX_APPID}
       WX_SECRET: ${WX_SECRET}
       SHOP_FILE_UPLOAD_DIR: /data/shop/uploads
       SHOP_FILE_PUBLIC_PREFIX: /uploads
       SHOP_LOG_FILE: /data/shop/logs/shop-admin-app.log
-      SHOP_CORS_ALLOWED_ORIGIN_PATTERNS: "http://103.47.83.185:8080,http://console.nexbyte.top,http://conapi.nexbyte.top"
+      SHOP_CORS_ALLOWED_ORIGIN_PATTERNS: "http://103.47.83.185:8080,https://console.nexbyte.top,https://conapi.nexbyte.top"
       TZ: Asia/Shanghai
     volumes:
       - ./uploads:/data/shop/uploads
@@ -93,6 +94,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       SHOP_JWT_SECRET: ${SHOP_JWT_SECRET}
+      SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY: ${SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY}
       WX_APPID: ${WX_APPID}
       WX_SECRET: ${WX_SECRET}
       SHOP_FILE_UPLOAD_DIR: /data/shop/uploads

@@ -29,6 +29,8 @@ mybatis-plus:
       id-type: auto
 
 shop:
+  payment-credentials:
+    encryption-key: ${SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY:}
   jwt:
     secret: ${SHOP_JWT_SECRET:dev-shop-jwt-secret-please-change-in-prod-min-32-bytes}
     admin-ttl-hours: 8

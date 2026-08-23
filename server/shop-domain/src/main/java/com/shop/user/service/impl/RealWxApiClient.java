@@ -7,12 +7,10 @@ import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.user.service.WxApiClient;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@Profile("!mock-wx")
 public class RealWxApiClient implements WxApiClient {
 
     @Override
