@@ -12,7 +12,13 @@ export interface MerchantVO {
   contactPhone?: string
   wxAppId?: string
   wxMchId?: string
+  wxPayMchSerialNo?: string
+  wxPayNotifyUrl?: string
+  wxPayEnabled?: number
   wxSecretConfigured?: boolean
+  wxPayApiV3KeyConfigured?: boolean
+  wxPayPrivateKeyConfigured?: boolean
+  wxPayConfigured?: boolean
   status: number
   createdAt?: string
   updatedAt?: string
@@ -37,6 +43,11 @@ export interface CreateMerchantPayload {
   wxAppId?: string
   wxSecret?: string
   wxMchId?: string
+  wxPayApiV3Key?: string
+  wxPayMchSerialNo?: string
+  wxPayPrivateKey?: string
+  wxPayNotifyUrl?: string
+  wxPayEnabled?: number
 }
 
 export type UpdateMerchantPayload = Omit<CreateMerchantPayload, 'username' | 'password'>

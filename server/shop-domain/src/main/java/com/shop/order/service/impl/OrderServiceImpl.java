@@ -22,6 +22,7 @@ import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.PaymentLogMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderService;
+import com.shop.order.service.WxPayService;
 import com.shop.product.entity.Product;
 import com.shop.product.entity.ProductSku;
 import com.shop.product.mapper.ProductMapper;
@@ -59,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemMapper orderItemMapper;
     private final PaymentLogMapper paymentLogMapper;
     private final RefundApplicationMapper refundApplicationMapper;
+    private final WxPayService wxPayService;
     private final StringRedisTemplate stringRedisTemplate;
 
     private static final java.util.regex.Pattern SHIP_NO_PATTERN =
@@ -308,14 +310,7 @@ public class OrderServiceImpl implements OrderService {
                 OrderCreateVO vo = new OrderCreateVO();
                 vo.setOrderNo(orderNo);
                 vo.setPayAmount(totalAmount);
-                OrderCreateVO.PayParams pp = new OrderCreateVO.PayParams();
-                pp.setAppId("wx_mock");
-                pp.setTimeStamp(String.valueOf(System.currentTimeMillis() / 1000));
-                pp.setNonceStr(UUID.randomUUID().toString().substring(0, 16));
-                pp.setPackageStr("prepay_id=mock_" + orderNo);
-                pp.setSignType("MD5");
-                pp.setPaySign("MOCK_SIGN");
-                vo.setPayParams(pp);
+                vo.setPayParams(wxPayService.createJsapiPayParams(order));
                 results.add(vo);
             }
 
@@ -723,14 +718,7 @@ public class OrderServiceImpl implements OrderService {
         vo.setOrderNo(orderNo);
         vo.setPayAmount(order.getPayAmount());
 
-        OrderCreateVO.PayParams pp = new OrderCreateVO.PayParams();
-        pp.setAppId("wx_mock");
-        pp.setTimeStamp(String.valueOf(System.currentTimeMillis() / 1000));
-        pp.setNonceStr(UUID.randomUUID().toString().substring(0, 16));
-        pp.setPackageStr("prepay_id=mock_repay_" + orderNo);
-        pp.setSignType("MD5");
-        pp.setPaySign("MOCK_SIGN_REPAY");
-        vo.setPayParams(pp);
+        vo.setPayParams(wxPayService.createJsapiPayParams(order));
         return vo;
     }
 }

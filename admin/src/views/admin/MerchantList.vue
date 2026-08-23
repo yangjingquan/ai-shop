@@ -61,6 +61,18 @@ async function onToggleStatus(row: MerchantVO) {
   fetchList()
 }
 
+function payStatusType(row: MerchantVO) {
+  if (row.wxPayConfigured) return 'success'
+  if (row.wxPayEnabled === 1) return 'warning'
+  return 'info'
+}
+
+function payStatusText(row: MerchantVO) {
+  if (row.wxPayConfigured) return '已启用'
+  if (row.wxPayEnabled === 1) return '未完整'
+  return '未启用'
+}
+
 onMounted(fetchList)
 </script>
 
@@ -101,10 +113,24 @@ onMounted(fetchList)
             {{ (row as MerchantVO).wxMchId || '未配置' }}
           </template>
         </el-table-column>
-        <el-table-column label="密钥状态" width="82">
+        <el-table-column label="AppSecret" width="86">
           <template #default="{ row }">
             <el-tag :type="(row as MerchantVO).wxSecretConfigured ? 'success' : 'info'">
               {{ (row as MerchantVO).wxSecretConfigured ? '已配置' : '未配置' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="支付状态" width="86">
+          <template #default="{ row }">
+            <el-tag :type="payStatusType(row as MerchantVO)">
+              {{ payStatusText(row as MerchantVO) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="API v3" width="86">
+          <template #default="{ row }">
+            <el-tag :type="(row as MerchantVO).wxPayApiV3KeyConfigured ? 'success' : 'info'">
+              {{ (row as MerchantVO).wxPayApiV3KeyConfigured ? '已配置' : '未配置' }}
             </el-tag>
           </template>
         </el-table-column>

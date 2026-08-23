@@ -63,6 +63,11 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         m.setWxAppId(req.getWxAppId() == null ? "" : req.getWxAppId());
         m.setWxSecret(req.getWxSecret() == null ? "" : req.getWxSecret());
         m.setWxMchId(req.getWxMchId() == null ? "" : req.getWxMchId());
+        m.setWxPayApiV3Key(req.getWxPayApiV3Key() == null ? "" : req.getWxPayApiV3Key());
+        m.setWxPayMchSerialNo(req.getWxPayMchSerialNo() == null ? "" : req.getWxPayMchSerialNo());
+        m.setWxPayPrivateKey(req.getWxPayPrivateKey() == null ? "" : req.getWxPayPrivateKey());
+        m.setWxPayNotifyUrl(req.getWxPayNotifyUrl() == null ? "" : req.getWxPayNotifyUrl());
+        m.setWxPayEnabled(req.getWxPayEnabled() != null && req.getWxPayEnabled() == 1 ? 1 : 0);
         m.setStatus(1);
         m.setCreatedByAdminId(adminUserId);
         m.setMerchantCode(generateMerchantCode());
@@ -145,14 +150,37 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         if (req.getWxAppId() != null) m.setWxAppId(req.getWxAppId());
         if (req.getWxSecret() != null && !req.getWxSecret().isBlank()) m.setWxSecret(req.getWxSecret());
         if (req.getWxMchId() != null) m.setWxMchId(req.getWxMchId());
+        if (req.getWxPayApiV3Key() != null && !req.getWxPayApiV3Key().isBlank()) {
+            m.setWxPayApiV3Key(req.getWxPayApiV3Key());
+        }
+        if (req.getWxPayMchSerialNo() != null) m.setWxPayMchSerialNo(req.getWxPayMchSerialNo());
+        if (req.getWxPayPrivateKey() != null && !req.getWxPayPrivateKey().isBlank()) {
+            m.setWxPayPrivateKey(req.getWxPayPrivateKey());
+        }
+        if (req.getWxPayNotifyUrl() != null) m.setWxPayNotifyUrl(req.getWxPayNotifyUrl());
+        if (req.getWxPayEnabled() != null) m.setWxPayEnabled(req.getWxPayEnabled() == 1 ? 1 : 0);
         merchantMapper.updateById(m);
     }
 
     private MerchantVO toVO(Merchant m) {
         MerchantVO vo = new MerchantVO();
         BeanUtils.copyProperties(m, vo);
-        vo.setWxSecretConfigured(m.getWxSecret() != null && !m.getWxSecret().isBlank());
+        boolean hasAppId = hasText(m.getWxAppId());
+        boolean hasMchId = hasText(m.getWxMchId());
+        boolean hasApiV3Key = hasText(m.getWxPayApiV3Key());
+        boolean hasSerialNo = hasText(m.getWxPayMchSerialNo());
+        boolean hasPrivateKey = hasText(m.getWxPayPrivateKey());
+        boolean hasNotifyUrl = hasText(m.getWxPayNotifyUrl());
+        vo.setWxSecretConfigured(hasText(m.getWxSecret()));
+        vo.setWxPayApiV3KeyConfigured(hasApiV3Key);
+        vo.setWxPayPrivateKeyConfigured(hasPrivateKey);
+        vo.setWxPayConfigured(hasAppId && hasMchId && hasApiV3Key && hasSerialNo && hasPrivateKey && hasNotifyUrl
+                && m.getWxPayEnabled() != null && m.getWxPayEnabled() == 1);
         return vo;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private String generateMerchantCode() {

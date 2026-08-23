@@ -1,5 +1,6 @@
 const app = getApp();
 const { resolveImageUrl } = require('../../utils/url')
+const config = require('../../utils/config')
 
 Page({
   data: {
@@ -90,15 +91,58 @@ Page({
       }
     }).then(res => {
       if (res.code === 0) {
-        const orders = res.data;
-        // dev 环境自动 mock-pay
-        this.mockPayAll(orders);
+        const orders = res.data || [];
+        this.payCreatedOrders(orders);
       } else {
         wx.showToast({ title: res.msg, icon: 'none' });
         this.setData({ submitting: false });
       }
     }).catch(() => {
       this.setData({ submitting: false });
+    });
+  },
+
+  payCreatedOrders(orders) {
+    if (!orders.length) {
+      wx.showToast({ title: '订单创建失败', icon: 'none' });
+      this.setData({ submitting: false });
+      return;
+    }
+    const firstOrder = orders[0];
+    const pendingCount = orders.length - 1;
+    this.payOrder(firstOrder).then(() => {
+      const title = pendingCount > 0 ? '支付成功，仍有订单待支付' : '支付成功，状态同步中';
+      wx.showToast({ title, icon: 'success' });
+      setTimeout(() => {
+        wx.switchTab({ url: '/pages/order/list' });
+      }, 1000);
+    }).catch(() => {
+      wx.showToast({ title: '支付未完成', icon: 'none' });
+      this.setData({ submitting: false });
+    });
+  },
+
+  payOrder(order) {
+    const payParams = order && order.payParams;
+    if (!payParams) {
+      return Promise.reject(new Error('payParams missing'));
+    }
+    if (config.ENV !== 'prod' || payParams.appId === 'wx_mock') {
+      return app.request({
+        url: '/api/wx/order/' + order.orderNo + '/mock-pay',
+        method: 'POST'
+      });
+    }
+    return new Promise((resolve, reject) => {
+      wx.requestPayment({
+        timeStamp: payParams.timeStamp,
+        nonceStr: payParams.nonceStr,
+        package: payParams.packageStr,
+        signType: payParams.signType || 'RSA',
+        paySign: payParams.paySign,
+        success: resolve,
+        fail: reject
+      });
     });
   },
 

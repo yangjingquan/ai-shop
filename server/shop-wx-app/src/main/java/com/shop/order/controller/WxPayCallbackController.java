@@ -1,20 +1,32 @@
 package com.shop.order.controller;
 
-import com.shop.order.service.OrderPaymentService;
+import com.shop.order.service.WxPayCallbackService;
+import com.shop.order.service.WxPayCallbackService.WxPayCallbackHeaders;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/callback")
 @RequiredArgsConstructor
 public class WxPayCallbackController {
 
-    private final OrderPaymentService orderPaymentService;
+    private final WxPayCallbackService wxPayCallbackService;
 
-    /** 微信支付回调入口。M4a 空壳，M4b 接真微信支付时补验签+解密逻辑。 */
+    @PostMapping("/wxpay/{merchantCode}")
+    public Map<String, String> wxpayCallback(@PathVariable String merchantCode,
+                                             @RequestHeader("Wechatpay-Timestamp") String timestamp,
+                                             @RequestHeader("Wechatpay-Nonce") String nonce,
+                                             @RequestHeader("Wechatpay-Signature") String signature,
+                                             @RequestHeader("Wechatpay-Serial") String serial,
+                                             @RequestBody String rawBody) {
+        wxPayCallbackService.handle(merchantCode, new WxPayCallbackHeaders(timestamp, nonce, signature, serial), rawBody);
+        return Map.of("code", "SUCCESS", "message", "成功");
+    }
+
     @PostMapping("/wxpay")
-    public String wxpayCallback(@RequestBody String rawBody) {
-        // M4a: 不解析，留给 M4b
-        return "SUCCESS";
+    public Map<String, String> wxpayCallbackWithoutMerchant() {
+        return Map.of("code", "FAIL", "message", "缺少商户代码");
     }
 }

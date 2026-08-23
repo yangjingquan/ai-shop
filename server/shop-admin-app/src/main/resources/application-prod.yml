@@ -30,4 +30,4 @@ shop:
     upload-dir: ${SHOP_FILE_UPLOAD_DIR:/data/shop/uploads}
     public-prefix: ${SHOP_FILE_PUBLIC_PREFIX:/uploads}
   cors:
-    allowed-origin-patterns: http://console.nexbyte.top,http://conapi.nexbyte.top
+    allowed-origin-patterns: https://console.nexbyte.top,https://conapi.nexbyte.top
