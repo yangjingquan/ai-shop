@@ -316,6 +316,9 @@ public class OrderServiceImpl implements OrderService {
                 OrderCreateVO vo = new OrderCreateVO();
                 vo.setOrderNo(orderNo);
                 vo.setPayAmount(totalAmount);
+                // 创建订单后立即完成微信 JSAPI 预下单，前端可直接拉起支付。
+                // 该调用仍在当前事务内：预下单失败时回滚订单、库存和购物车变更，避免留下无法支付的订单。
+                vo.setPayParams(wxPayService.createJsapiPayParams(order));
                 results.add(vo);
             }
 

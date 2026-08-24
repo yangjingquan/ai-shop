@@ -122,21 +122,19 @@ Page({
   },
 
   payOrder(order) {
-    return orderApi.repay(order.orderNo).then((res) => {
-      const payParams = res && res.data && res.data.payParams;
-      if (!payParams) {
-        throw new Error('payParams missing');
-      }
-      return new Promise((resolve, reject) => {
-        wx.requestPayment({
-          timeStamp: payParams.timeStamp,
-          nonceStr: payParams.nonceStr,
-          package: payParams.packageStr,
-          signType: payParams.signType || 'RSA',
-          paySign: payParams.paySign,
-          success: resolve,
-          fail: reject
-        });
+    const payParams = order && order.payParams;
+    if (!payParams) {
+      return Promise.reject(new Error('payParams missing'));
+    }
+    return new Promise((resolve, reject) => {
+      wx.requestPayment({
+        timeStamp: payParams.timeStamp,
+        nonceStr: payParams.nonceStr,
+        package: payParams.packageStr,
+        signType: payParams.signType || 'RSA',
+        paySign: payParams.paySign,
+        success: resolve,
+        fail: reject
       });
     });
   }

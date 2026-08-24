@@ -10,7 +10,7 @@ public interface OrderService {
     /** 结算预览：拆单 + 算金额，只读 */
     OrderPreviewVO preview(Long userId, OrderPreviewRequest req);
 
-    /** 下单：库存扣减 + 地址/SKU快照 + 删购物车，返回每个商家一个订单 */
+    /** 下单并完成微信 JSAPI 预下单：库存扣减 + 地址/SKU快照 + 删购物车，返回每个商家一个订单及支付参数 */
     List<OrderCreateVO> create(Long userId, OrderCreateRequest req);
 
     /** 用户主动取消（仅 WAIT_PAY） */
