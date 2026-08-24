@@ -108,7 +108,10 @@ services:
       - shop-net
 
   nginx:
-    image: nginx:1.27-alpine
+    build:
+      context: ..
+      dockerfile: deploy/nginx/Dockerfile
+    image: shop-nginx:local
     container_name: shop-nginx
     restart: unless-stopped
     depends_on:
@@ -120,11 +123,15 @@ services:
       - "8082:82"
       - "443:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
-      - ./admin-dist:/usr/share/nginx/html/console:ro
       - ./uploads:/usr/share/nginx/html/uploads:ro
       - ./logs/nginx:/var/log/nginx
+    healthcheck:
+      test: ["CMD-SHELL", "test -s /usr/share/nginx/html/console/index.html && wget -q -O /dev/null http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     networks:
       - shop-net
 

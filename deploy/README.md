@@ -1,6 +1,6 @@
 # deploy
 
-服务器上的部署目录（同步到 `/opt/shop`）。
+服务器上保留完整仓库，部署目录为 `/opt/shop/deploy`。请在该目录执行 Compose；Nginx 镜像构建会读取上一级的 `admin/` 源码并在镜像内生成前端产物。
 
 ## 结构
 
@@ -8,9 +8,9 @@
 deploy/
 ├── admin-app/            # 后台管理接口服务 Dockerfile + jar
 ├── wx-app/               # 小程序接口服务 Dockerfile + jar
-├── admin-dist/           # 后台管理前端产物（nginx 静态托管）
 ├── init/                 # 首次启动 MySQL 时导入的 sql（dump）
 ├── nginx/
+│   ├── Dockerfile        # 构建并托管后台管理前端的 Nginx 镜像
 │   ├── conf.d/*.conf     # console / conapi / miniapi 三个域名
 │   └── ssl/              # miniapi.nexbyte.top.{pem,key}
 ├── uploads/              # 后端上传文件持久化
@@ -52,13 +52,15 @@ https://你的支付回调域名/api/callback/wxpay/该商户代码
 ## 后续更新
 
 ```bash
-# 覆盖对应 jar / dist / 配置文件后：
-docker compose up -d --build shop-admin-app shop-wx-app
-docker compose restart nginx
+# 拉取完整仓库的最新代码后，在 deploy/ 目录执行：
+docker compose up -d --build shop-admin-app shop-wx-app nginx
+../scripts/verify-console-deploy.sh
 ```
+
+前端产物由 `deploy/nginx/Dockerfile` 在镜像构建阶段从 `admin/` 自动生成。不要再手工复制或挂载 `admin-dist`；这样一次部署中的 Nginx 配置和静态文件始终来自同一份代码。
 
 ## 域名
 
-- http://console.nexbyte.top  → nginx 静态托管 admin-dist
+- https://console.nexbyte.top → Nginx 镜像内静态托管后台管理前端
 - http://conapi.nexbyte.top   → 反代 shop-admin-app:8081
 - https://miniapi.nexbyte.top → 反代 shop-wx-app:8082（TLS 由 nginx 终止）
