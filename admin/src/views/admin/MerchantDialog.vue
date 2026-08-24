@@ -27,14 +27,6 @@ const form = reactive({
   description: '',
   address: '',
   logo: '',
-  wxAppId: '',
-  wxSecret: '',
-  wxMchId: '',
-  wxPayApiV3Key: '',
-  wxPayMchSerialNo: '',
-  wxPayPrivateKey: '',
-  wxPayNotifyUrl: '',
-  wxPayEnabled: 0,
 })
 
 const rules: FormRules = {
@@ -60,14 +52,6 @@ watch(
       form.description = props.row.description ?? ''
       form.address = props.row.address ?? ''
       form.logo = props.row.logo ?? ''
-      form.wxAppId = props.row.wxAppId ?? ''
-      form.wxSecret = ''
-      form.wxMchId = props.row.wxMchId ?? ''
-      form.wxPayApiV3Key = ''
-      form.wxPayMchSerialNo = props.row.wxPayMchSerialNo ?? ''
-      form.wxPayPrivateKey = ''
-      form.wxPayNotifyUrl = props.row.wxPayNotifyUrl ?? ''
-      form.wxPayEnabled = props.row.wxPayEnabled ?? 0
       form.username = ''
       form.password = ''
     } else {
@@ -79,14 +63,6 @@ watch(
       form.description = ''
       form.address = ''
       form.logo = ''
-      form.wxAppId = ''
-      form.wxSecret = ''
-      form.wxMchId = ''
-      form.wxPayApiV3Key = ''
-      form.wxPayMchSerialNo = ''
-      form.wxPayPrivateKey = ''
-      form.wxPayNotifyUrl = ''
-      form.wxPayEnabled = 0
     }
   },
 )
@@ -111,14 +87,6 @@ async function handleSubmit() {
           description: form.description || undefined,
           address: form.address || undefined,
           logo: form.logo || undefined,
-          wxAppId: form.wxAppId || undefined,
-          wxSecret: form.wxSecret || undefined,
-          wxMchId: form.wxMchId || undefined,
-          wxPayApiV3Key: form.wxPayApiV3Key || undefined,
-          wxPayMchSerialNo: form.wxPayMchSerialNo || undefined,
-          wxPayPrivateKey: form.wxPayPrivateKey || undefined,
-          wxPayNotifyUrl: form.wxPayNotifyUrl || undefined,
-          wxPayEnabled: form.wxPayEnabled,
         })
         ElMessage.success('创建成功')
       } else if (props.row) {
@@ -129,14 +97,6 @@ async function handleSubmit() {
           description: form.description || undefined,
           address: form.address || undefined,
           logo: form.logo || undefined,
-          wxAppId: form.wxAppId,
-          wxSecret: form.wxSecret || undefined,
-          wxMchId: form.wxMchId,
-          wxPayApiV3Key: form.wxPayApiV3Key || undefined,
-          wxPayMchSerialNo: form.wxPayMchSerialNo,
-          wxPayPrivateKey: form.wxPayPrivateKey || undefined,
-          wxPayNotifyUrl: form.wxPayNotifyUrl,
-          wxPayEnabled: form.wxPayEnabled,
         })
         ElMessage.success('保存成功')
       }
@@ -182,50 +142,6 @@ async function handleSubmit() {
       </el-form-item>
       <el-form-item label="店铺地址">
         <el-input v-model="form.address" />
-      </el-form-item>
-      <el-form-item label="小程序 AppID">
-        <el-input v-model="form.wxAppId" placeholder="请输入 WX_APPID" maxlength="64" />
-      </el-form-item>
-      <el-form-item label="小程序 AppSecret">
-        <el-input
-          v-model="form.wxSecret"
-          show-password
-          maxlength="128"
-          :placeholder="mode === 'edit' ? '留空则不修改 WX_SECRET' : '请输入 WX_SECRET'"
-        />
-        <div v-if="mode === 'edit' && row?.wxSecretConfigured" class="hint">当前商户已配置 AppSecret，留空不会覆盖。</div>
-      </el-form-item>
-      <el-form-item label="微信支付商户号">
-        <el-input v-model="form.wxMchId" placeholder="请输入微信支付商户号" maxlength="32" clearable />
-      </el-form-item>
-      <el-divider content-position="left">微信支付 API v3 配置</el-divider>
-      <el-form-item label="API v3 密钥">
-        <el-input
-          v-model="form.wxPayApiV3Key"
-          show-password
-          maxlength="128"
-          :placeholder="mode === 'edit' ? '留空则不修改 API v3 密钥' : '请输入 API v3 密钥'"
-        />
-        <div class="hint">保存后以 AES-GCM 密文存储；编辑时留空不会覆盖已配置值。</div>
-      </el-form-item>
-      <el-form-item label="证书序列号">
-        <el-input v-model="form.wxPayMchSerialNo" placeholder="请输入商户 API 证书序列号" maxlength="128" clearable />
-      </el-form-item>
-      <el-form-item label="商户私钥 PEM">
-        <el-input
-          v-model="form.wxPayPrivateKey"
-          type="textarea"
-          :rows="5"
-          :placeholder="mode === 'edit' ? '留空则不修改商户私钥' : '请输入商户 API 私钥 PEM'"
-        />
-        <div class="hint">粘贴完整 apiclient_key.pem 内容；保存后以 AES-GCM 密文存储，编辑时留空不会覆盖。</div>
-      </el-form-item>
-      <el-form-item label="支付回调地址">
-        <el-input v-model="form.wxPayNotifyUrl" placeholder="https://域名/api/callback/wxpay/商户代码" maxlength="255" clearable />
-        <div class="hint">必须为无参数 HTTPS 完整地址：/api/callback/wxpay/{{ row?.merchantCode || '商户代码' }}。</div>
-      </el-form-item>
-      <el-form-item label="启用微信支付">
-        <el-switch v-model="form.wxPayEnabled" :active-value="1" :inactive-value="0" />
       </el-form-item>
       <el-form-item label="店铺 Logo">
         <ImageUploader v-model="form.logo" scope="admin" :limit="1" label="上传 Logo" />

@@ -15,7 +15,7 @@ import com.shop.merchant.entity.MerchantUser;
 import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.merchant.mapper.MerchantUserMapper;
 import com.shop.merchant.service.MerchantManagementService;
-import com.shop.merchant.service.PaymentCredentialCipher;
+import com.shop.merchant.service.MerchantWechatConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
 
     private final MerchantMapper merchantMapper;
     private final MerchantUserMapper merchantUserMapper;
-    private final PaymentCredentialCipher paymentCredentialCipher;
+    private final MerchantWechatConfigService merchantWechatConfigService;
 
     @Override
     @Transactional
@@ -63,17 +62,11 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         m.setAddress(req.getAddress());
         m.setContactName(req.getContactName());
         m.setContactPhone(req.getContactPhone());
-        m.setWxAppId(req.getWxAppId() == null ? "" : req.getWxAppId());
-        m.setWxSecret(req.getWxSecret() == null ? "" : req.getWxSecret());
-        m.setWxMchId(req.getWxMchId() == null ? "" : req.getWxMchId());
         m.setMerchantCode(generateMerchantCode());
-        applyPaymentConfig(m, req.getWxPayApiV3Key(), req.getWxPayMchSerialNo(),
-                req.getWxPayPrivateKey(), req.getWxPayNotifyUrl());
-        m.setWxPayEnabled(req.getWxPayEnabled() != null && req.getWxPayEnabled() == 1 ? 1 : 0);
-        validateEnabledPaymentConfig(m);
         m.setStatus(1);
         m.setCreatedByAdminId(adminUserId);
         merchantMapper.insert(m);
+        merchantWechatConfigService.ensureConfig(m.getId());
 
         // 插首个 merchant_user
         MerchantUser mu = new MerchantUser();
@@ -149,91 +142,13 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         if (req.getAddress() != null) m.setAddress(req.getAddress());
         if (req.getContactName() != null) m.setContactName(req.getContactName());
         if (req.getContactPhone() != null) m.setContactPhone(req.getContactPhone());
-        if (req.getWxAppId() != null) m.setWxAppId(req.getWxAppId());
-        if (req.getWxSecret() != null && !req.getWxSecret().isBlank()) m.setWxSecret(req.getWxSecret());
-        if (req.getWxMchId() != null) m.setWxMchId(req.getWxMchId());
-        applyPaymentConfig(m, req.getWxPayApiV3Key(), req.getWxPayMchSerialNo(),
-                req.getWxPayPrivateKey(), req.getWxPayNotifyUrl());
-        if (req.getWxPayEnabled() != null) m.setWxPayEnabled(req.getWxPayEnabled() == 1 ? 1 : 0);
-        validateEnabledPaymentConfig(m);
         merchantMapper.updateById(m);
     }
 
     private MerchantVO toVO(Merchant m) {
         MerchantVO vo = new MerchantVO();
         BeanUtils.copyProperties(m, vo);
-        boolean hasAppId = hasText(m.getWxAppId());
-        boolean hasMchId = hasText(m.getWxMchId());
-        boolean hasApiV3Key = hasText(m.getWxPayApiV3Key());
-        boolean hasSerialNo = hasText(m.getWxPayMchSerialNo());
-        boolean hasPrivateKey = hasText(m.getWxPayPrivateKey());
-        boolean hasNotifyUrl = hasText(m.getWxPayNotifyUrl());
-        vo.setWxSecretConfigured(hasText(m.getWxSecret()));
-        vo.setWxPayApiV3KeyConfigured(hasApiV3Key);
-        vo.setWxPayPrivateKeyConfigured(hasPrivateKey);
-        vo.setWxPayConfigured(hasAppId && hasMchId && hasApiV3Key && hasSerialNo && hasPrivateKey && hasNotifyUrl
-                && m.getWxPayEnabled() != null && m.getWxPayEnabled() == 1);
         return vo;
-    }
-
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
-    }
-
-    private void applyPaymentConfig(Merchant merchant, String apiV3Key, String serialNo,
-                                    String privateKey, String notifyUrl) {
-        if (apiV3Key != null && !apiV3Key.isBlank()) {
-            String normalized = apiV3Key.trim();
-            if (!normalized.matches("[A-Za-z0-9]{32}")) {
-                throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "API v3 密钥必须为 32 位字母或数字");
-            }
-            merchant.setWxPayApiV3Key(paymentCredentialCipher.encrypt(normalized));
-        }
-        if (serialNo != null) {
-            String normalized = serialNo.trim();
-            if (!normalized.isEmpty() && !normalized.matches("[A-Fa-f0-9]{16,128}")) {
-                throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "商户证书序列号格式不正确");
-            }
-            merchant.setWxPayMchSerialNo(normalized);
-        }
-        if (privateKey != null && !privateKey.isBlank()) {
-            String normalized = privateKey.trim().replace("\\r\\n", "\\n").replace("\\n", "\n");
-            if (!normalized.contains("-----BEGIN PRIVATE KEY-----") || !normalized.contains("-----END PRIVATE KEY-----")) {
-                throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "商户私钥必须为 apiclient_key.pem 的 PEM 内容");
-            }
-            merchant.setWxPayPrivateKey(paymentCredentialCipher.encrypt(normalized));
-        }
-        if (notifyUrl != null) {
-            String normalized = notifyUrl.trim();
-            if (!normalized.isEmpty()) {
-                try {
-                    URI uri = URI.create(normalized);
-                    String expectedPath = "/api/callback/wxpay/" + merchant.getMerchantCode();
-                    if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null
-                            || uri.getQuery() != null || !expectedPath.equals(uri.getPath())) {
-                        throw new IllegalArgumentException("invalid notify url");
-                    }
-                } catch (Exception e) {
-                    throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(),
-                            "支付回调地址必须为无参数的 HTTPS 地址，且路径为 /api/callback/wxpay/" + merchant.getMerchantCode());
-                }
-            }
-            merchant.setWxPayNotifyUrl(normalized);
-        }
-    }
-
-    private void validateEnabledPaymentConfig(Merchant merchant) {
-        if (merchant.getWxPayEnabled() == null || merchant.getWxPayEnabled() != 1) {
-            return;
-        }
-        if (!hasText(merchant.getWxAppId()) || !hasText(merchant.getWxMchId())
-                || !hasText(merchant.getWxPayApiV3Key()) || !hasText(merchant.getWxPayMchSerialNo())
-                || !hasText(merchant.getWxPayPrivateKey()) || !hasText(merchant.getWxPayNotifyUrl())) {
-            throw new BusinessException(ErrorCode.WX_PAY_CONFIG_INCOMPLETE);
-        }
-        // Also fail configuration early if an old plaintext record has not been rotated.
-        paymentCredentialCipher.decrypt(merchant.getWxPayApiV3Key());
-        paymentCredentialCipher.decrypt(merchant.getWxPayPrivateKey());
     }
 
     private String generateMerchantCode() {

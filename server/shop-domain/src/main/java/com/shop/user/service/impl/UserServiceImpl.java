@@ -6,7 +6,9 @@ import com.shop.common.exception.ErrorCode;
 import com.shop.common.security.JwtUtil;
 import com.shop.common.security.UserType;
 import com.shop.merchant.entity.Merchant;
+import com.shop.merchant.entity.MerchantWechatConfig;
 import com.shop.merchant.mapper.MerchantMapper;
+import com.shop.merchant.service.MerchantWechatConfigService;
 import com.shop.user.dto.WxLoginResponse;
 import com.shop.user.dto.WxUserProfileVO;
 import com.shop.user.entity.User;
@@ -31,6 +33,7 @@ public class UserServiceImpl implements UserService {
     private final WxApiClient wxApiClient;
     private final WxPhoneApiClient wxPhoneApiClient;
     private final MerchantMapper merchantMapper;
+    private final MerchantWechatConfigService merchantWechatConfigService;
     private final JwtUtil jwtUtil;
 
     @Override
@@ -46,12 +49,12 @@ public class UserServiceImpl implements UserService {
         if (!Integer.valueOf(1).equals(merchant.getStatus())) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
-        if (merchant.getWxAppId() == null || merchant.getWxAppId().isBlank()
-            || merchant.getWxSecret() == null || merchant.getWxSecret().isBlank()) {
+        MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
+        if (!hasText(config.getWxAppId()) || !hasText(config.getWxSecret())) {
             throw new BusinessException(ErrorCode.WX_LOGIN_FAILED);
         }
 
-        String openid = wxApiClient.code2Openid(merchant.getWxAppId(), merchant.getWxSecret(), code);
+        String openid = wxApiClient.code2Openid(config.getWxAppId(), config.getWxSecret(), code);
         if (openid == null || openid.isBlank()) {
             throw new BusinessException(ErrorCode.WX_LOGIN_FAILED);
         }
@@ -75,7 +78,7 @@ public class UserServiceImpl implements UserService {
                 "openid", openid,
                 "merchantId", merchant.getId(),
                 "merchantCode", merchant.getMerchantCode(),
-                "appid", merchant.getWxAppId()
+                "appid", config.getWxAppId()
             )
         );
         boolean hasPhone = user.getPhone() != null && !user.getPhone().isBlank();
@@ -85,11 +88,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public String bindPhone(Long userId, Long merchantId, String code) {
         Merchant merchant = merchantMapper.selectById(merchantId);
-        if (merchant == null || merchant.getWxAppId() == null || merchant.getWxAppId().isBlank()
-                || merchant.getWxSecret() == null || merchant.getWxSecret().isBlank()) {
+        if (merchant == null) {
             throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
-        String phone = wxPhoneApiClient.code2Phone(merchant.getWxAppId(), merchant.getWxSecret(), code);
+        MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchantId);
+        if (!hasText(config.getWxAppId()) || !hasText(config.getWxSecret())) {
+            throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
+        }
+        String phone = wxPhoneApiClient.code2Phone(config.getWxAppId(), config.getWxSecret(), code);
         if (phone == null || !PHONE_PATTERN.matcher(phone).matches()) {
             throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
@@ -145,5 +151,9 @@ public class UserServiceImpl implements UserService {
         return avatar.startsWith("wxfile://")
                 || avatar.startsWith("blob:")
                 || avatar.startsWith("data:");
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

@@ -32,6 +32,7 @@ const adminMenus: MenuItem[] = [
   { index: 'admin', label: '首页', path: '/admin', desc: '经营概览', icon: '店' },
   { index: 'admin-merchants', label: '商家管理', path: '/admin/merchants', desc: '入驻与状态', icon: '商' },
   { index: 'admin-categories', label: '平台分类', path: '/admin/categories', desc: '类目层级', icon: '类' },
+  { index: 'admin-wechat-settings', label: '微信设置', path: '/admin/wechat-settings', desc: '商户微信配置', icon: '微' },
 ]
 
 const merchantMenus: MenuItem[] = [

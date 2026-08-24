@@ -36,9 +36,6 @@ shop:
     admin-ttl-hours: 8
     merchant-ttl-hours: 8
     wx-ttl-days: 7
-  wechat:
-    appid: ${WX_APPID:wx-dev-placeholder}
-    secret: ${WX_SECRET:wx-dev-secret-placeholder}
   file:
     upload-dir: ${SHOP_FILE_UPLOAD_DIR:uploads}
     public-prefix: ${SHOP_FILE_PUBLIC_PREFIX:/uploads}

@@ -61,18 +61,6 @@ async function onToggleStatus(row: MerchantVO) {
   fetchList()
 }
 
-function payStatusType(row: MerchantVO) {
-  if (row.wxPayConfigured) return 'success'
-  if (row.wxPayEnabled === 1) return 'warning'
-  return 'info'
-}
-
-function payStatusText(row: MerchantVO) {
-  if (row.wxPayConfigured) return '已启用'
-  if (row.wxPayEnabled === 1) return '未完整'
-  return '未启用'
-}
-
 onMounted(fetchList)
 </script>
 
@@ -107,33 +95,6 @@ onMounted(fetchList)
         <el-table-column prop="username" label="登录账号" width="96" show-overflow-tooltip />
         <el-table-column prop="contactName" label="联系人" width="80" show-overflow-tooltip />
         <el-table-column prop="contactPhone" label="联系电话" width="108" />
-        <el-table-column prop="wxAppId" label="小程序 AppID" min-width="120" show-overflow-tooltip />
-        <el-table-column label="微信支付商户号" min-width="130" show-overflow-tooltip>
-          <template #default="{ row }">
-            {{ (row as MerchantVO).wxMchId || '未配置' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="AppSecret" width="86">
-          <template #default="{ row }">
-            <el-tag :type="(row as MerchantVO).wxSecretConfigured ? 'success' : 'info'">
-              {{ (row as MerchantVO).wxSecretConfigured ? '已配置' : '未配置' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="支付状态" width="86">
-          <template #default="{ row }">
-            <el-tag :type="payStatusType(row as MerchantVO)">
-              {{ payStatusText(row as MerchantVO) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="API v3" width="86">
-          <template #default="{ row }">
-            <el-tag :type="(row as MerchantVO).wxPayApiV3KeyConfigured ? 'success' : 'info'">
-              {{ (row as MerchantVO).wxPayApiV3KeyConfigured ? '已配置' : '未配置' }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column label="状态" width="72">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">

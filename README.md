@@ -20,7 +20,7 @@ cd ../server && ./mvnw -pl shop-admin-app -am spring-boot:run -Dspring-boot.run.
 # 3. 另开终端，起小程序接口服务（wx/public/callback，端口 8082）
 cd server && ./mvnw -pl shop-wx-app -am spring-boot:run -Dspring-boot.run.profiles=dev
 
-# 4. 起管理后台
+# 4. 起管理后台（本地前端固定端口 5180）
 cd ../admin && pnpm install && pnpm dev
 
 # 5. miniap 用微信开发者工具导入 miniap/ 目录

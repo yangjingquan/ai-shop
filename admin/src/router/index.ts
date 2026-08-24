@@ -40,6 +40,12 @@ const routes: RouteRecordRaw[] = [
         meta: { roles: ['admin'] },
       },
       {
+        path: 'admin/wechat-settings',
+        name: 'AdminWechatSettings',
+        component: () => import('@/views/admin/WechatSettings.vue'),
+        meta: { roles: ['admin'] },
+      },
+      {
         path: 'merchant',
         name: 'MerchantDashboard',
         component: () => import('@/views/merchant/Dashboard.vue'),

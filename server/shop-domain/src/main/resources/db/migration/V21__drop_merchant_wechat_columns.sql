@@ -1,0 +1,9 @@
+ALTER TABLE merchant
+    DROP COLUMN wx_app_id,
+    DROP COLUMN wx_secret,
+    DROP COLUMN wx_mch_id,
+    DROP COLUMN wx_pay_api_v3_key,
+    DROP COLUMN wx_pay_mch_serial_no,
+    DROP COLUMN wx_pay_private_key,
+    DROP COLUMN wx_pay_notify_url,
+    DROP COLUMN wx_pay_enabled;

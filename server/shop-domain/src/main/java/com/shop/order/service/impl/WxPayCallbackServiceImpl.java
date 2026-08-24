@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.merchant.entity.Merchant;
+import com.shop.merchant.entity.MerchantWechatConfig;
 import com.shop.merchant.mapper.MerchantMapper;
+import com.shop.merchant.service.MerchantWechatConfigService;
 import com.shop.merchant.service.PaymentCredentialCipher;
 import com.shop.order.entity.Order;
 import com.shop.order.service.OrderPaymentService;
@@ -30,6 +32,7 @@ public class WxPayCallbackServiceImpl implements WxPayCallbackService {
     private final com.shop.order.mapper.OrderMapper orderMapper;
     private final OrderPaymentService orderPaymentService;
     private final PaymentCredentialCipher paymentCredentialCipher;
+    private final MerchantWechatConfigService merchantWechatConfigService;
 
     @Override
     public void handle(String merchantCode, WxPayCallbackHeaders headers, String rawBody) {
@@ -46,11 +49,12 @@ public class WxPayCallbackServiceImpl implements WxPayCallbackService {
     }
 
     private Transaction parseTransaction(Merchant merchant, WxPayCallbackHeaders headers, String rawBody) {
+        MerchantWechatConfig wechatConfig = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
         AutoCertificateNotificationConfig config = new AutoCertificateNotificationConfig.Builder()
-                .merchantId(merchant.getWxMchId().trim())
-                .privateKey(normalizePrivateKey(paymentCredentialCipher.decrypt(merchant.getWxPayPrivateKey())))
-                .merchantSerialNumber(merchant.getWxPayMchSerialNo().trim())
-                .apiV3Key(paymentCredentialCipher.decrypt(merchant.getWxPayApiV3Key()).trim())
+                .merchantId(wechatConfig.getWxMchId().trim())
+                .privateKey(normalizePrivateKey(paymentCredentialCipher.decrypt(wechatConfig.getWxPayPrivateKey())))
+                .merchantSerialNumber(wechatConfig.getWxPayMchSerialNo().trim())
+                .apiV3Key(paymentCredentialCipher.decrypt(wechatConfig.getWxPayApiV3Key()).trim())
                 .build();
 
         RequestParam requestParam = new RequestParam.Builder()
@@ -77,7 +81,9 @@ public class WxPayCallbackServiceImpl implements WxPayCallbackService {
         if (!hasText(transaction.getOutTradeNo()) || !hasText(transaction.getTransactionId())) {
             throw new BusinessException(ErrorCode.WX_PAY_CALLBACK_VERIFY_FAILED.getCode(), "微信支付回调订单号或交易号为空");
         }
-        if (!merchant.getWxAppId().equals(transaction.getAppid()) || !merchant.getWxMchId().equals(transaction.getMchid())) {
+        MerchantWechatConfig wechatConfig = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
+        if (!wechatConfig.getWxAppId().equals(transaction.getAppid())
+                || !wechatConfig.getWxMchId().equals(transaction.getMchid())) {
             log.error("微信支付回调商户不匹配, merchantCode={}, orderNo={}, appid={}, mchid={}",
                     merchant.getMerchantCode(), transaction.getOutTradeNo(), transaction.getAppid(), transaction.getMchid());
             throw new BusinessException(ErrorCode.WX_PAY_CALLBACK_VERIFY_FAILED.getCode(), "微信支付回调商户不匹配");
@@ -114,13 +120,14 @@ public class WxPayCallbackServiceImpl implements WxPayCallbackService {
         if (merchant == null) {
             throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
         }
-        if (merchant.getWxPayEnabled() == null || merchant.getWxPayEnabled() != 1
-                || !hasText(merchant.getWxAppId())
-                || !hasText(merchant.getWxMchId())
-                || !hasText(merchant.getWxPayApiV3Key())
-                || !hasText(merchant.getWxPayMchSerialNo())
-                || !hasText(merchant.getWxPayPrivateKey())
-                || !hasText(merchant.getWxPayNotifyUrl())) {
+        MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
+        if (!Integer.valueOf(1).equals(config.getWxPayEnabled())
+                || !hasText(config.getWxAppId())
+                || !hasText(config.getWxMchId())
+                || !hasText(config.getWxPayApiV3Key())
+                || !hasText(config.getWxPayMchSerialNo())
+                || !hasText(config.getWxPayPrivateKey())
+                || !hasText(config.getWxPayNotifyUrl())) {
             throw new BusinessException(ErrorCode.WX_PAY_CONFIG_INCOMPLETE);
         }
         return merchant;

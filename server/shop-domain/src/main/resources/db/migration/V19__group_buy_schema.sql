@@ -10,7 +10,7 @@ ALTER TABLE `order`
   ADD KEY idx_group_buy_group (group_buy_group_id, deleted),
   ADD KEY idx_order_type_status (order_type, status, deleted);
 
-CREATE TABLE group_buy_group (
+CREATE TABLE IF NOT EXISTS group_buy_group (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   merchant_id BIGINT UNSIGNED NOT NULL,
   product_id BIGINT UNSIGNED NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE group_buy_group (
   KEY idx_merchant_status (merchant_id, status, deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='团购团实例';
 
-CREATE TABLE group_buy_member (
+CREATE TABLE IF NOT EXISTS group_buy_member (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   group_id BIGINT UNSIGNED NOT NULL,
   user_id BIGINT UNSIGNED NOT NULL,

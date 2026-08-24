@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.merchant.entity.Merchant;
+import com.shop.merchant.entity.MerchantWechatConfig;
 import com.shop.merchant.mapper.MerchantMapper;
+import com.shop.merchant.service.MerchantWechatConfigService;
 import com.shop.merchant.service.PaymentCredentialCipher;
 import com.shop.order.dto.OrderCreateVO;
 import com.shop.order.entity.Order;
@@ -38,10 +40,12 @@ public class WxPayServiceImpl implements WxPayService {
     private final MerchantMapper merchantMapper;
     private final UserMapper userMapper;
     private final PaymentCredentialCipher paymentCredentialCipher;
+    private final MerchantWechatConfigService merchantWechatConfigService;
 
     @Override
     public OrderCreateVO.PayParams createJsapiPayParams(Order order) {
         Merchant merchant = getPayReadyMerchant(order.getMerchantId());
+        MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
         User user = userMapper.selectById(order.getUserId());
         if (user == null || !hasText(user.getOpenid())) {
             throw new BusinessException(ErrorCode.WX_PAY_PREPAY_FAILED.getCode(), "用户 openid 缺失，请重新登录");
@@ -49,15 +53,15 @@ public class WxPayServiceImpl implements WxPayService {
 
         try {
             JsapiServiceExtension service = new JsapiServiceExtension.Builder()
-                    .config(buildConfig(merchant))
+                    .config(buildConfig(config))
                     .build();
 
             PrepayRequest request = new PrepayRequest();
-            request.setAppid(merchant.getWxAppId());
-            request.setMchid(merchant.getWxMchId());
+            request.setAppid(config.getWxAppId());
+            request.setMchid(config.getWxMchId());
             request.setDescription("商城订单 " + order.getOrderNo());
             request.setOutTradeNo(order.getOrderNo());
-            request.setNotifyUrl(merchant.getWxPayNotifyUrl());
+            request.setNotifyUrl(config.getWxPayNotifyUrl());
             request.setTimeExpire(OffsetDateTime.now(ZoneOffset.ofHours(8)).plusMinutes(30)
                     .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
@@ -90,11 +94,12 @@ public class WxPayServiceImpl implements WxPayService {
     @Override
     public Transaction queryOrder(Order order) {
         Merchant merchant = getPayReadyMerchant(order.getMerchantId());
+        MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
         try {
             QueryOrderByOutTradeNoRequest request = new QueryOrderByOutTradeNoRequest();
-            request.setMchid(merchant.getWxMchId().trim());
+            request.setMchid(config.getWxMchId().trim());
             request.setOutTradeNo(order.getOrderNo());
-            return new JsapiServiceExtension.Builder().config(buildConfig(merchant)).build()
+            return new JsapiServiceExtension.Builder().config(buildConfig(config)).build()
                     .queryOrderByOutTradeNo(request);
         } catch (BusinessException e) {
             throw e;
@@ -107,11 +112,12 @@ public class WxPayServiceImpl implements WxPayService {
     @Override
     public void closeOrder(Order order) {
         Merchant merchant = getPayReadyMerchant(order.getMerchantId());
+        MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
         try {
             CloseOrderRequest request = new CloseOrderRequest();
-            request.setMchid(merchant.getWxMchId().trim());
+            request.setMchid(config.getWxMchId().trim());
             request.setOutTradeNo(order.getOrderNo());
-            new JsapiServiceExtension.Builder().config(buildConfig(merchant)).build().closeOrder(request);
+            new JsapiServiceExtension.Builder().config(buildConfig(config)).build().closeOrder(request);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -129,24 +135,25 @@ public class WxPayServiceImpl implements WxPayService {
         if (merchant.getStatus() == null || merchant.getStatus() != 1) {
             throw new BusinessException(ErrorCode.MERCHANT_FROZEN);
         }
-        if (merchant.getWxPayEnabled() == null || merchant.getWxPayEnabled() != 1
-                || !hasText(merchant.getWxAppId())
-                || !hasText(merchant.getWxMchId())
-                || !hasText(merchant.getWxPayApiV3Key())
-                || !hasText(merchant.getWxPayMchSerialNo())
-                || !hasText(merchant.getWxPayPrivateKey())
-                || !hasText(merchant.getWxPayNotifyUrl())) {
+        MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
+        if (!Integer.valueOf(1).equals(config.getWxPayEnabled())
+                || !hasText(config.getWxAppId())
+                || !hasText(config.getWxMchId())
+                || !hasText(config.getWxPayApiV3Key())
+                || !hasText(config.getWxPayMchSerialNo())
+                || !hasText(config.getWxPayPrivateKey())
+                || !hasText(config.getWxPayNotifyUrl())) {
             throw new BusinessException(ErrorCode.WX_PAY_CONFIG_INCOMPLETE);
         }
         return merchant;
     }
 
-    private RSAAutoCertificateConfig buildConfig(Merchant merchant) {
+    private RSAAutoCertificateConfig buildConfig(MerchantWechatConfig config) {
         return new RSAAutoCertificateConfig.Builder()
-                .merchantId(merchant.getWxMchId().trim())
-                .privateKey(normalizePrivateKey(paymentCredentialCipher.decrypt(merchant.getWxPayPrivateKey())))
-                .merchantSerialNumber(merchant.getWxPayMchSerialNo().trim())
-                .apiV3Key(paymentCredentialCipher.decrypt(merchant.getWxPayApiV3Key()).trim())
+                .merchantId(config.getWxMchId().trim())
+                .privateKey(normalizePrivateKey(paymentCredentialCipher.decrypt(config.getWxPayPrivateKey())))
+                .merchantSerialNumber(config.getWxPayMchSerialNo().trim())
+                .apiV3Key(paymentCredentialCipher.decrypt(config.getWxPayApiV3Key()).trim())
                 .build();
     }
 

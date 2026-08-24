@@ -14,15 +14,6 @@ public class MerchantVO {
     private String address;
     private String contactName;
     private String contactPhone;
-    private String wxAppId;
-    private String wxMchId;
-    private Boolean wxSecretConfigured;
-    private String wxPayMchSerialNo;
-    private String wxPayNotifyUrl;
-    private Integer wxPayEnabled;
-    private Boolean wxPayApiV3KeyConfigured;
-    private Boolean wxPayPrivateKeyConfigured;
-    private Boolean wxPayConfigured;
     private Integer status;
     private String username;
     private LocalDateTime createdAt;

@@ -16,14 +16,6 @@ public class Merchant extends BaseEntity {
     private String address;
     private String contactName;
     private String contactPhone;
-    private String wxAppId;
-    private String wxSecret;
-    private String wxMchId;
-    private String wxPayApiV3Key;
-    private String wxPayMchSerialNo;
-    private String wxPayPrivateKey;
-    private String wxPayNotifyUrl;
-    private Integer wxPayEnabled;
     private Integer status;
     private Long createdByAdminId;
 }
