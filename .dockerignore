@@ -1,8 +1,0 @@
-.git
-.DS_Store
-**/node_modules
-**/dist
-**/target
-deploy/admin-dist
-deploy/logs
-deploy/uploads

@@ -109,8 +109,8 @@ services:
 
   nginx:
     build:
-      context: ..
-      dockerfile: deploy/nginx/Dockerfile
+      context: .
+      dockerfile: nginx/Dockerfile
     image: shop-nginx:local
     container_name: shop-nginx
     restart: unless-stopped

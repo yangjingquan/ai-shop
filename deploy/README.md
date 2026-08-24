@@ -1,6 +1,6 @@
 # deploy
 
-服务器上保留完整仓库，部署目录为 `/opt/shop/deploy`。请在该目录执行 Compose；Nginx 镜像构建会读取上一级的 `admin/` 源码并在镜像内生成前端产物。
+Jenkins 会把 `deploy/` 中准备好的发布产物同步到服务器 `/opt/shop`；请在该目录执行 Compose。后台前端由 Jenkins 构建为 `admin-dist/`，随后与 Nginx 配置一起打包进镜像。
 
 ## 结构
 
@@ -52,12 +52,11 @@ https://你的支付回调域名/api/callback/wxpay/该商户代码
 ## 后续更新
 
 ```bash
-# 拉取完整仓库的最新代码后，在 deploy/ 目录执行：
+# Jenkins 已构建并同步 jar 与 admin-dist 后，在 /opt/shop 执行：
 docker compose up -d --build shop-admin-app shop-wx-app nginx
-../scripts/verify-console-deploy.sh
 ```
 
-前端产物由 `deploy/nginx/Dockerfile` 在镜像构建阶段从 `admin/` 自动生成。不要再手工复制或挂载 `admin-dist`；这样一次部署中的 Nginx 配置和静态文件始终来自同一份代码。
+`deploy/nginx/Dockerfile` 会把 Jenkins 生成的 `admin-dist/` 与 Nginx 配置打包进同一个镜像。不要将 `admin-dist` 作为运行时挂载；若首页或其引用的静态资源缺失，镜像构建会失败，旧容器会继续运行而不是发布 403 页面。
 
 ## 域名
 
