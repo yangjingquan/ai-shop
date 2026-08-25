@@ -15,6 +15,16 @@ public class OrderListVO {
 
     private String statusText;
 
+    private Integer orderType;
+
+    private Long groupBuyGroupId;
+
+    private Integer groupBuyRequiredCount;
+
+    private Integer groupBuyPaidCount;
+
+    private Long groupBuyExpireAt;
+
     private BigDecimal payAmount;
 
     private Long merchantId;

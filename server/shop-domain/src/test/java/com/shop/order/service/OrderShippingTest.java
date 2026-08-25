@@ -107,6 +107,26 @@ class OrderShippingTest {
         assertEquals("REFUNDED", after.getCancelReason());
     }
 
+
+    @Test
+    void shipGroupBuyFormedOrderSuccess() {
+        Order order = createGroupBuyOrder(OrderStatus.GROUP_SUCCESS.getCode());
+
+        orderService.ship(MERCHANT, order.getOrderNo(), "SF12345678");
+
+        Order after = orderMapper.selectById(order.getId());
+        assertEquals(OrderStatus.WAIT_RECEIVE.getCode(), after.getStatus());
+    }
+
+    @Test
+    void shipGroupBuyWaitingOrderThrows() {
+        Order order = createGroupBuyOrder(OrderStatus.WAIT_GROUP.getCode());
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> orderService.ship(MERCHANT, order.getOrderNo(), "SF12345678"));
+        assertEquals(ErrorCode.ORDER_NOT_WAIT_SHIP.getCode(), ex.getCode());
+    }
+
     // helpers
 
     private Order createWaitShipOrder() {
@@ -116,6 +136,7 @@ class OrderShippingTest {
         order.setUserId(WX_USER);
         order.setMerchantId(MERCHANT);
         order.setStatus(OrderStatus.WAIT_SHIP.getCode());
+        order.setOrderType(0);
         order.setTotalAmount(java.math.BigDecimal.valueOf(99));
         order.setPayAmount(java.math.BigDecimal.valueOf(99));
         order.setFreightAmount(java.math.BigDecimal.ZERO);
@@ -131,6 +152,7 @@ class OrderShippingTest {
         order.setUserId(WX_USER);
         order.setMerchantId(MERCHANT);
         order.setStatus(OrderStatus.WAIT_RECEIVE.getCode());
+        order.setOrderType(0);
         order.setTotalAmount(java.math.BigDecimal.valueOf(99));
         order.setPayAmount(java.math.BigDecimal.valueOf(99));
         order.setFreightAmount(java.math.BigDecimal.ZERO);
@@ -140,4 +162,22 @@ class OrderShippingTest {
         orderMapper.insert(order);
         return order;
     }
+
+    private Order createGroupBuyOrder(int status) {
+        Order order = new Order();
+        order.setOrderNo("GB_SHIP_" + System.nanoTime());
+        order.setUserId(WX_USER);
+        order.setMerchantId(MERCHANT);
+        order.setStatus(status);
+        order.setOrderType(1);
+        order.setGroupBuyGroupId(1L);
+        order.setTotalAmount(java.math.BigDecimal.valueOf(99));
+        order.setPayAmount(java.math.BigDecimal.valueOf(99));
+        order.setFreightAmount(java.math.BigDecimal.ZERO);
+        order.setDiscountAmount(java.math.BigDecimal.ZERO);
+        order.setAddressSnapshot("{}");
+        orderMapper.insert(order);
+        return order;
+    }
+
 }

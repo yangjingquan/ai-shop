@@ -1,5 +1,6 @@
 const productApi = require('../../api/product')
 const cartApi = require('../../api/cart')
+const groupBuyApi = require('../../api/group-buy')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
@@ -17,6 +18,9 @@ Page({
     skuAction: 'buy',
     initialSkuId: 0,
     initialAction: '',
+    groupBuyMode: false,
+    groupBuyGroups: [],
+    selectedGroupId: 0,
   },
 
   onLoad(opts) {
@@ -29,6 +33,8 @@ Page({
       productId: id,
       initialSkuId: Number(opts.skuId || 0),
       initialAction: opts.action || '',
+      groupBuyMode: opts.groupBuy === '1',
+      selectedGroupId: Number(opts.groupId || 0),
     })
     this.loadDetail()
   },
@@ -36,8 +42,14 @@ Page({
   async loadDetail() {
     this.setData({ loading: true })
     try {
-      const res = await productApi.get(this.data.productId)
-      const rawProduct = (res && res.data) || null
+      let res = this.data.groupBuyMode
+        ? await groupBuyApi.productDetail(this.data.productId)
+        : await productApi.get(this.data.productId)
+      let rawProduct = this.data.groupBuyMode ? ((res && res.data && res.data.product) || null) : ((res && res.data) || null)
+      if (!this.data.groupBuyMode && rawProduct && Number(rawProduct.isGroupBuy) === 1) {
+        res = await groupBuyApi.productDetail(this.data.productId)
+        rawProduct = (res && res.data && res.data.product) || null
+      }
       const product = rawProduct ? { ...rawProduct } : null
       if (!product) {
         wx.showToast({ title: '商品不存在', icon: 'none' })
@@ -71,9 +83,11 @@ Page({
       product.minPrice = this.fmtPrice(product.minPrice)
       product.maxPrice = this.fmtPrice(product.maxPrice)
       const selected = new Array(specs.length).fill(null)
+      const groups = Number(product.isGroupBuy) === 1 ? ((res && res.data && res.data.groups) || []) : []
       this.setData({
         product,
         banners,
+        groupBuyGroups: groups,
         selectedValueIds: selected,
         selectedSku: null,
         selectedSkuText: '',
@@ -131,6 +145,16 @@ Page({
     const action = rawAction === 'cart' ? 'cart' : 'buy'
     this.setData({ skuOpen: true, skuAction: action })
   },
+
+  openGroupBuySku() {
+    this.setData({ skuOpen: true, skuAction: 'group-open', selectedGroupId: 0 })
+  },
+
+  joinGroup(e) {
+    const groupId = Number(e.currentTarget.dataset.groupid || 0)
+    this.setData({ skuOpen: true, skuAction: 'group-join', selectedGroupId: groupId })
+  },
+
   closeSku() {
     this.setData({ skuOpen: false })
   },
@@ -207,6 +231,13 @@ Page({
       return
     }
     if (this.data.addingCart) return
+
+    if (this.data.skuAction === 'group-open' || this.data.skuAction === 'group-join') {
+      const url = `/pages/order/confirm?mode=groupBuy&productId=${this.data.productId}&skuId=${this.data.selectedSku.id}&quantity=${this.data.qty}&groupId=${this.data.selectedGroupId || ''}`
+      this.setData({ skuOpen: false })
+      wx.navigateTo({ url })
+      return
+    }
 
     this.setData({ addingCart: true })
     cartApi

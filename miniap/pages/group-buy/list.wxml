@@ -1,0 +1,28 @@
+<view class="group-list-page">
+  <view class="search-row">
+    <view class="search-box">
+      <input value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" placeholder="搜索团购商品" />
+      <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">✕</view>
+    </view>
+    <view class="search-btn" bindtap="onSearch">搜索</view>
+  </view>
+
+  <view wx:if="{{!loading && products.length === 0}}" class="empty-card">暂无团购商品</view>
+
+  <view class="product-list">
+    <view class="product-card" wx:for="{{products}}" wx:key="id" data-id="{{item.id}}" bindtap="goProduct">
+      <image class="thumb" src="{{item.mainImage}}" mode="aspectFill" />
+      <view class="info">
+        <view class="name">{{item.name}}</view>
+        <view class="meta">{{item.groupBuyRequiredCount}} 人成团</view>
+        <view class="price-row">
+          <text class="price">¥{{item.groupBuyPriceText}}</text>
+          <text class="ordinary">普通价 ¥{{item.minPrice}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading-text">加载中...</view>
+  <view wx:if="{{products.length > 0 && !hasMore}}" class="end-text">没有更多了</view>
+</view>

@@ -48,5 +48,12 @@ public class Product extends BaseEntity {
     /** 1 推荐 / 0 不推荐 */
     private Integer isRecommend;
 
+    /** 1 参加团购 / 0 不参加 */
+    private Integer isGroupBuy;
+
+    private BigDecimal groupBuyPrice;
+
+    private Integer groupBuyRequiredCount;
+
     private Integer sort;
 }

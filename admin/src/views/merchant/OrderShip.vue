@@ -97,11 +97,15 @@ function onSearch() {
 }
 
 function statusTagType(status: number): 'primary' | 'success' | 'warning' | 'info' | 'danger' {
-  if (status === 1) return 'warning'
+  if (status === 1 || status === 5) return 'warning'
   if (status === 2) return 'primary'
-  if (status === 3) return 'success'
-  if (status === 4) return 'danger'
+  if (status === 3 || status === 6) return 'success'
+  if (status === 4 || status === 7) return 'danger'
   return 'info'
+}
+
+function canShip(row: OrderRow) {
+  return row.status === 1 || row.status === 6
 }
 
 function displayValue(value?: string | number | null) {
@@ -169,6 +173,9 @@ onMounted(loadOrders)
           <el-option label="待收货" :value="2" />
           <el-option label="已完成" :value="3" />
           <el-option label="已取消" :value="4" />
+          <el-option label="待成团" :value="5" />
+          <el-option label="已成团" :value="6" />
+          <el-option label="拼团失败/待退款" :value="7" />
         </el-select>
         <el-button type="primary" @click="onSearch">搜索</el-button>
       </div>
@@ -190,7 +197,7 @@ onMounted(loadOrders)
         <el-table-column prop="createdAt" label="创建时间" width="180" />
         <el-table-column label="发货操作" min-width="320" fixed="right">
           <template #default="{ row }">
-            <div v-if="row.status === 1" class="ship-action">
+            <div v-if="canShip(row as OrderRow)" class="ship-action">
               <el-input
                 v-model="shipNos[row.orderNo]"
                 placeholder="输入物流单号"

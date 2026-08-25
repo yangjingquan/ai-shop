@@ -99,6 +99,10 @@ Page({
     await this.loadProducts(this.data.keyword)
   },
 
+  async onClearSearch() {
+    await this.loadProducts('')
+  },
+
   async loadProducts(keyword) {
     this.setData({ loading: true })
     try {
@@ -140,6 +144,10 @@ Page({
 
   onMoreRecommend() {
     wx.navigateTo({ url: '/pages/recommend/index' })
+  },
+
+  onGroupBuy() {
+    wx.navigateTo({ url: '/pages/group-buy/list' })
   },
 
   onProduct(e) {

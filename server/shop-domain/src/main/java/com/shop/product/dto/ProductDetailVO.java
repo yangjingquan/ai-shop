@@ -26,6 +26,9 @@ public class ProductDetailVO {
     private Integer totalSales;
     private Integer status;
     private Integer isRecommend;
+    private Integer isGroupBuy;
+    private BigDecimal groupBuyPrice;
+    private Integer groupBuyRequiredCount;
     private Integer sort;
 
     private List<SpecVO> specs = new ArrayList<>();

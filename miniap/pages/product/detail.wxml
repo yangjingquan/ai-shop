@@ -16,6 +16,14 @@
       <view class="price">¥ {{ product.salePriceText || product.minPrice }}</view>
       <view wx:if="{{ product.hasOriginalPrice }}" class="original-price">¥ {{ product.originalPriceText }}</view>
     </view>
+    <view wx:if="{{product.isGroupBuy === 1}}" class="group-buy-panel">
+      <view class="group-buy-price">团购价 ¥{{product.groupBuyPrice}}</view>
+      <view class="group-buy-meta">{{product.groupBuyRequiredCount}} 人成团</view>
+      <view class="group-row" wx:for="{{groupBuyGroups}}" wx:key="id">
+        <text>{{item.paidCount}}/{{item.requiredCount}} 人</text>
+        <button size="mini" data-groupid="{{item.id}}" bindtap="joinGroup">去参团</button>
+      </view>
+    </view>
     <view class="name">{{ product.name }}</view>
     <view wx:if="{{ product.subtitle }}" class="subtitle">{{ product.subtitle }}</view>
     <view class="meta">
@@ -36,13 +44,14 @@
     </view>
   </view>
 
-  <view class="bottom-bar">
+  <view class="bottom-bar {{product.isGroupBuy === 1 ? 'has-group-buy' : ''}}">
     <button class="cart-tab" bindtap="onCartTab">
       <image class="btn-icon" src="/assets/icons/cart.png" mode="aspectFit" />
       <text>购物车</text>
     </button>
     <button class="action add-cart" data-action="cart" bindtap="openSku">加入购物车</button>
     <button class="action buy-now" data-action="buy" bindtap="openSku">立即购买</button>
+    <button wx:if="{{product.isGroupBuy === 1}}" class="action group-buy" bindtap="openGroupBuySku">发起团购</button>
   </view>
 
   <view wx:if="{{ skuOpen }}" class="sku-mask" bindtap="closeSku">

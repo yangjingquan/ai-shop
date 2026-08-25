@@ -3,6 +3,7 @@ package com.shop.order.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
+import com.shop.groupbuy.service.GroupBuyService;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.entity.PaymentLog;
@@ -33,6 +34,8 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     private final OrderItemMapper orderItemMapper;
     private final PaymentLogMapper paymentLogMapper;
     private final ProductService productService;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final GroupBuyService groupBuyService;
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaidCallback(String orderNo, String transactionId, String rawPayload) {
@@ -64,13 +67,33 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
             if (existing != null && !orderNo.equals(existing.getOrderNo())) {
                 throw new BusinessException(ErrorCode.WX_PAY_CALLBACK_VERIFY_FAILED.getCode(), "微信交易号已关联其他订单");
             }
-            return;
-        }
-        order.setStatus(OrderStatus.WAIT_SHIP.getCode());
-        order.setPayTime(LocalDateTime.now());
-        order.setPayTransactionId(transactionId);
-        order.setPayMethod(1);
-        orderMapper.updateById(order);
+            // 3. 状态检查（幂等）
+            if (order.getStatus() != OrderStatus.WAIT_PAY.getCode()) {
+                return; // 已处理
+            }
+            // 4. 写 payment_log（UNIQUE 幂等）
+            PaymentLog log = new PaymentLog();
+            log.setOrderNo(orderNo);
+            log.setTransactionId(transactionId);
+            log.setAmount(order.getPayAmount());
+            log.setRawPayload(rawPayload);
+            try {
+                paymentLogMapper.insert(log);
+            } catch (DuplicateKeyException e) {
+                return; // 已处理过
+            }
+            // 5. 更新订单状态
+            order.setPayTime(LocalDateTime.now());
+            order.setPayTransactionId(transactionId);
+            order.setPayMethod(1);
+            if (Integer.valueOf(1).equals(order.getOrderType())) {
+                order.setStatus(OrderStatus.WAIT_GROUP.getCode());
+                orderMapper.updateById(order);
+                groupBuyService.handleOrderPaid(orderNo);
+            } else {
+                order.setStatus(OrderStatus.WAIT_SHIP.getCode());
+                orderMapper.updateById(order);
+            }
 
         List<OrderItem> items = orderItemMapper.selectList(
                 new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, order.getId()));

@@ -27,6 +27,15 @@ public class ProductSaveRequest {
     /** 1 推荐 / 0 不推荐 */
     private Integer isRecommend;
 
+    /** 1 参加团购 / 0 不参加 */
+    private Integer isGroupBuy;
+
+    @DecimalMin("0.01")
+    private BigDecimal groupBuyPrice;
+
+    @Min(2)
+    private Integer groupBuyRequiredCount;
+
     @NotEmpty
     @Valid
     private List<SpecInput> specs;

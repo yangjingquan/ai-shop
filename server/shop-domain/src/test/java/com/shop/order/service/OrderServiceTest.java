@@ -6,6 +6,12 @@ import com.shop.cart.service.CartService;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.response.PageResult;
+import com.shop.groupbuy.entity.GroupBuyGroup;
+import com.shop.groupbuy.entity.GroupBuyMember;
+import com.shop.groupbuy.enums.GroupBuyGroupStatus;
+import com.shop.groupbuy.enums.GroupBuyMemberStatus;
+import com.shop.groupbuy.mapper.GroupBuyGroupMapper;
+import com.shop.groupbuy.mapper.GroupBuyMemberMapper;
 import com.shop.order.dto.*;
 import com.shop.order.entity.Order;
 import com.shop.order.enums.OrderStatus;
@@ -17,6 +23,7 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,6 +42,12 @@ class OrderServiceTest {
 
     @Autowired
     private OrderMapper orderMapper;
+
+    @Autowired
+    private GroupBuyGroupMapper groupMapper;
+
+    @Autowired
+    private GroupBuyMemberMapper memberMapper;
 
     private static final Long WX_USER = 3L;
     private static final Long ADDR_ID = 12L;
@@ -98,9 +111,80 @@ class OrderServiceTest {
     }
 
     @Test
+    void cancelGroupBuyWaitPayOrderMarksMemberCancelled() {
+        GroupBuyGroup group = createGroup();
+        Order order = createGroupBuyWaitPayOrder(group.getId());
+        GroupBuyMember member = createMember(group.getId(), order.getOrderNo());
+
+        orderService.cancelByUser(WX_USER, order.getOrderNo());
+
+        Order afterOrder = orderMapper.selectById(order.getId());
+        GroupBuyMember afterMember = memberMapper.selectById(member.getId());
+        assertEquals(OrderStatus.CANCELLED.getCode(), afterOrder.getStatus());
+        assertEquals(GroupBuyMemberStatus.CANCELLED.getCode(), afterMember.getStatus());
+    }
+
+    @Test
+    void cancelExpiredGroupBuyWaitPayOrderMarksMemberCancelled() {
+        GroupBuyGroup group = createGroup();
+        Order order = createGroupBuyWaitPayOrder(group.getId());
+        order.setCreatedAt(LocalDateTime.now().minusMinutes(31));
+        orderMapper.updateById(order);
+        GroupBuyMember member = createMember(group.getId(), order.getOrderNo());
+
+        int count = orderService.cancelExpired(100);
+
+        Order afterOrder = orderMapper.selectById(order.getId());
+        GroupBuyMember afterMember = memberMapper.selectById(member.getId());
+        assertTrue(count >= 1);
+        assertEquals(OrderStatus.CANCELLED.getCode(), afterOrder.getStatus());
+        assertEquals(GroupBuyMemberStatus.CANCELLED.getCode(), afterMember.getStatus());
+    }
+
+    @Test
     void cancelNotOwnedThrows() {
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> orderService.cancelByUser(WX_USER, "NONEXIST_NO"));
         assertEquals(ErrorCode.ORDER_NOT_FOUND.getCode(), ex.getCode());
+    }
+
+    private GroupBuyGroup createGroup() {
+        GroupBuyGroup group = new GroupBuyGroup();
+        group.setMerchantId(1L);
+        group.setProductId(1L);
+        group.setLeaderUserId(WX_USER);
+        group.setRequiredCount(2);
+        group.setPaidCount(0);
+        group.setStatus(GroupBuyGroupStatus.WAIT_GROUP.getCode());
+        group.setExpireAt(LocalDateTime.now().plusHours(1));
+        groupMapper.insert(group);
+        return group;
+    }
+
+    private Order createGroupBuyWaitPayOrder(Long groupId) {
+        Order order = new Order();
+        order.setOrderNo("GB_CANCEL_" + System.nanoTime());
+        order.setUserId(WX_USER);
+        order.setMerchantId(1L);
+        order.setStatus(OrderStatus.WAIT_PAY.getCode());
+        order.setOrderType(1);
+        order.setGroupBuyGroupId(groupId);
+        order.setTotalAmount(java.math.BigDecimal.valueOf(99));
+        order.setPayAmount(java.math.BigDecimal.valueOf(99));
+        order.setFreightAmount(java.math.BigDecimal.ZERO);
+        order.setDiscountAmount(java.math.BigDecimal.ZERO);
+        order.setAddressSnapshot("{}");
+        orderMapper.insert(order);
+        return order;
+    }
+
+    private GroupBuyMember createMember(Long groupId, String orderNo) {
+        GroupBuyMember member = new GroupBuyMember();
+        member.setGroupId(groupId);
+        member.setUserId(WX_USER);
+        member.setOrderNo(orderNo);
+        member.setStatus(GroupBuyMemberStatus.WAIT_PAY.getCode());
+        memberMapper.insert(member);
+        return member;
     }
 }

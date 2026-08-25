@@ -12,6 +12,7 @@
           bindconfirm="onSearch"
           confirm-type="search"
         />
+        <view wx:if="{{ keyword }}" class="search-clear" bindtap="onClearSearch">✕</view>
       </view>
       <view class="search-btn" bindtap="onSearch">搜索</view>
     </view>
@@ -84,11 +85,11 @@
       <view class="more">11:00 更新</view>
     </view>
     <view class="deal-row">
-      <view class="group-card">
+      <view class="group-card" bindtap="onGroupBuy">
         <view class="deal-title">团购商品</view>
-        <view class="deal-desc">3 人成团 · 省更多</view>
+        <view class="deal-desc">N人成团·省更多</view>
         <view class="avatars"><view></view><view></view><view></view></view>
-        <view class="group-price">拼团价 ¥89</view>
+        <view class="group-price">享受拼团价</view>
         <view class="headphone"></view>
       </view>
       <view class="flash-card">

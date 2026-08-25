@@ -14,6 +14,9 @@ export interface ProductListVO {
   totalSales: number
   status: number
   isRecommend?: number
+  isGroupBuy?: number
+  groupBuyPrice?: number | null
+  groupBuyRequiredCount?: number | null
   categoryId: number
   categoryName?: string
 }
@@ -60,6 +63,9 @@ export interface ProductDetailVO {
   totalSales: number
   status: number
   isRecommend?: number
+  isGroupBuy?: number
+  groupBuyPrice?: number | null
+  groupBuyRequiredCount?: number | null
   sort?: number
   specs: ProductSpecVO[]
   skus: ProductSkuVO[]
@@ -87,6 +93,9 @@ export interface ProductSavePayload {
   images?: string[]
   description?: string
   isRecommend: number
+  isGroupBuy?: number
+  groupBuyPrice?: number | null
+  groupBuyRequiredCount?: number | null
   specs: ProductSpecInput[]
   skus: ProductSkuInput[]
 }
@@ -98,6 +107,7 @@ export interface ProductPageQuery {
   keyword?: string
   status?: number
   isRecommend?: number
+  isGroupBuy?: number
 }
 
 export const productApi = {

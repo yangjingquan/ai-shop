@@ -5,12 +5,17 @@
   color: #17191f;
 }
 
+.tabs-scroll {
+  width: 100%;
+  margin-bottom: 18rpx;
+  white-space: nowrap;
+}
+
 .tabs {
   height: 76rpx;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18rpx;
+  min-width: 100%;
 }
 
 .tab-chip {
@@ -26,6 +31,11 @@
   box-shadow: 0 10rpx 24rpx rgba(50, 44, 36, 0.05);
   font-size: 24rpx;
   font-weight: 800;
+  white-space: nowrap;
+}
+
+.tab-chip:last-child {
+  margin-right: 0;
 }
 
 .tab-chip.active {
@@ -72,6 +82,11 @@
 .s4 {
   color: #8b8e97;
 }
+
+.group-progress { margin-left: 12rpx; color: #ff6600; font-size: 24rpx; }
+.state-text.s5 { color: #f59e0b; }
+.state-text.s6 { color: #16a34a; }
+.state-text.s7 { color: #dc2626; }
 
 .goods-list {
   border-radius: 14rpx;

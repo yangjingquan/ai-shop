@@ -58,6 +58,21 @@ page {
   font-weight: 650;
 }
 
+.search-clear {
+  width: 30rpx;
+  height: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: #c8ccd4;
+  font-size: 18rpx;
+  line-height: 30rpx;
+  font-weight: 900;
+}
+
 .search-mark {
   font-size: 30rpx;
   font-weight: 900;

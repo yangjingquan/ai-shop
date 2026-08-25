@@ -8,6 +8,11 @@ import com.shop.cart.mapper.CartItemMapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.response.PageResult;
+import com.shop.groupbuy.entity.GroupBuyGroup;
+import com.shop.groupbuy.entity.GroupBuyMember;
+import com.shop.groupbuy.enums.GroupBuyMemberStatus;
+import com.shop.groupbuy.mapper.GroupBuyGroupMapper;
+import com.shop.groupbuy.mapper.GroupBuyMemberMapper;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.order.dto.*;
@@ -65,6 +70,8 @@ public class OrderServiceImpl implements OrderService {
     private final OrderPaymentService orderPaymentService;
     private final WxPayService wxPayService;
     private final StringRedisTemplate stringRedisTemplate;
+    private final GroupBuyGroupMapper groupBuyGroupMapper;
+    private final GroupBuyMemberMapper groupBuyMemberMapper;
 
     private static final java.util.regex.Pattern SHIP_NO_PATTERN =
             java.util.regex.Pattern.compile("^[A-Za-z0-9]{5,30}$");
@@ -420,6 +427,20 @@ public class OrderServiceImpl implements OrderService {
         locked.setCancelTime(LocalDateTime.now());
         locked.setCancelReason(reason);
         orderMapper.updateById(locked);
+        markGroupBuyMemberCancelled(locked);
+    }
+
+    private void markGroupBuyMemberCancelled(Order order) {
+        if (!Integer.valueOf(1).equals(order.getOrderType())) {
+            return;
+        }
+        GroupBuyMember member = groupBuyMemberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>()
+                .eq(GroupBuyMember::getOrderNo, order.getOrderNo())
+                .eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.WAIT_PAY.getCode()));
+        if (member != null) {
+            member.setStatus(GroupBuyMemberStatus.CANCELLED.getCode());
+            groupBuyMemberMapper.updateById(member);
+        }
     }
 
     private void closeWechatPaymentBeforeCancellation(Order order) {
@@ -486,12 +507,32 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
+        List<Long> groupIds = result.getRecords().stream()
+                .filter(o -> Integer.valueOf(1).equals(o.getOrderType()) && o.getGroupBuyGroupId() != null)
+                .map(Order::getGroupBuyGroupId)
+                .distinct()
+                .collect(Collectors.toList());
+        final Map<Long, GroupBuyGroup> groupMap = new HashMap<>();
+        if (!groupIds.isEmpty()) {
+            groupBuyGroupMapper.selectBatchIds(groupIds).forEach(g -> groupMap.put(g.getId(), g));
+        }
+
         List<OrderListVO> list = result.getRecords().stream().map(o -> {
             OrderListVO vo = new OrderListVO();
             vo.setOrderNo(o.getOrderNo());
             vo.setStatus(o.getStatus());
             vo.setStatusText(OrderStatus.statusText(o.getStatus()));
             vo.setPayAmount(o.getPayAmount());
+            vo.setOrderType(o.getOrderType());
+            vo.setGroupBuyGroupId(o.getGroupBuyGroupId());
+            GroupBuyGroup group = groupMap.get(o.getGroupBuyGroupId());
+            if (group != null) {
+                vo.setGroupBuyRequiredCount(group.getRequiredCount());
+                vo.setGroupBuyPaidCount(group.getPaidCount());
+                if (group.getExpireAt() != null) {
+                    vo.setGroupBuyExpireAt(group.getExpireAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
+                }
+            }
             vo.setMerchantId(o.getMerchantId());
             vo.setMerchantName(merchantNames.getOrDefault(o.getMerchantId(), ""));
             vo.setCreatedAt(o.getCreatedAt());
@@ -577,6 +618,18 @@ public class OrderServiceImpl implements OrderService {
         vo.setFreightAmount(order.getFreightAmount());
         vo.setDiscountAmount(order.getDiscountAmount());
         vo.setPayAmount(order.getPayAmount());
+        vo.setOrderType(order.getOrderType());
+        vo.setGroupBuyGroupId(order.getGroupBuyGroupId());
+        if (Integer.valueOf(1).equals(order.getOrderType()) && order.getGroupBuyGroupId() != null) {
+            GroupBuyGroup group = groupBuyGroupMapper.selectById(order.getGroupBuyGroupId());
+            if (group != null) {
+                vo.setGroupBuyRequiredCount(group.getRequiredCount());
+                vo.setGroupBuyPaidCount(group.getPaidCount());
+                if (group.getExpireAt() != null) {
+                    vo.setGroupBuyExpireAt(group.getExpireAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
+                }
+            }
+        }
         vo.setMerchantId(order.getMerchantId());
         vo.setMerchantName(merchant != null ? merchant.getName() : "");
         vo.setCreatedAt(order.getCreatedAt());
