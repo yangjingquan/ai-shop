@@ -2,7 +2,7 @@ const ENV = 'dev'
 
 const CONFIGS = {
   dev: {
-    BASE_URL: 'http://192.168.0.100:8082',
+    BASE_URL: 'http://localhost:8082',
   },
   prod: {
     BASE_URL: 'https://miniapi.nexbyte.top',
