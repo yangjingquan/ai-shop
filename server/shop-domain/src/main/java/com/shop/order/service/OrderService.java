@@ -28,8 +28,14 @@ public interface OrderService {
     /** 商家订单详情 */
     OrderDetailVO merchantDetail(Long merchantId, String orderNo);
 
+    /** 运营端订单详情，不受商家范围限制，仅供管理员查询。 */
+    OrderDetailVO adminDetail(String orderNo);
+
     /** 商家发货 */
     void ship(Long merchantId, String orderNo, String shipNo);
+
+    /** 商家发货（带物流公司） */
+    void ship(Long merchantId, String orderNo, String shipCompany, String shipNo);
 
     /** 用户确认收货 */
     void confirmReceive(Long userId, String orderNo);

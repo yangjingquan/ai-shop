@@ -22,6 +22,11 @@ public interface ProductService {
     PageResult<ProductListVO> publicPage(int page, int size, Long merchantId, Long categoryId,
                                          String keyword, Integer isRecommend, Integer isGroupBuy);
 
+    PageResult<ProductListVO> adminAuditPage(int page, int size, Integer auditStatus, String keyword,
+                                             Long merchantId);
+
+    void audit(Long productId, int auditStatus, String auditReason, Long adminId);
+
     void setStatus(Long id, int status, Long merchantId);
 
     void delete(Long id, Long merchantId);

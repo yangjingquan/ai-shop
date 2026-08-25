@@ -12,6 +12,7 @@ import com.shop.merchant.dto.UpdateMerchantRequest;
 import com.shop.merchant.service.MerchantManagementService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -60,10 +61,11 @@ public class AdminMerchantController {
     @Data
     public static class ResetPasswordRequest {
         @NotBlank
+        @Size(min = 8, max = 32)
         private String newPassword;
     }
 
-    @OpLog(action = "MERCHANT_RESET_PWD", targetType = "MERCHANT")
+    @OpLog(action = "MERCHANT_RESET_PWD", targetType = "MERCHANT", targetIdExpr = "#id")
     @PutMapping("/{id}/password")
     public ApiResult<Void> resetPassword(@PathVariable Long id,
                                          @RequestBody @Valid ResetPasswordRequest req) {

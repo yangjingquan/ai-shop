@@ -35,6 +35,8 @@ public class MerchantOrderController {
 
     @Data
     public static class ShipRequest {
+        private String shipCompany;
+
         @NotBlank
         @Pattern(regexp = "^[A-Za-z0-9]{5,30}$")
         private String shipNo;
@@ -44,7 +46,7 @@ public class MerchantOrderController {
     @PostMapping("/order/ship")
     public ApiResult<Void> ship(@RequestParam String orderNo, @RequestBody @Valid ShipRequest req) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
-        orderService.ship(merchantId, orderNo, req.getShipNo());
+        orderService.ship(merchantId, orderNo, req.getShipCompany(), req.getShipNo());
         return ApiResult.success(null);
     }
 

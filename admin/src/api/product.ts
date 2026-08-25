@@ -13,6 +13,10 @@ export interface ProductListVO {
   totalStock: number
   totalSales: number
   status: number
+  auditStatus?: number
+  auditReason?: string
+  auditedBy?: number | null
+  auditedAt?: string | null
   isRecommend?: number
   isGroupBuy?: number
   groupBuyPrice?: number | null
@@ -62,6 +66,10 @@ export interface ProductDetailVO {
   totalStock: number
   totalSales: number
   status: number
+  auditStatus?: number
+  auditReason?: string
+  auditedBy?: number | null
+  auditedAt?: string | null
   isRecommend?: number
   isGroupBuy?: number
   groupBuyPrice?: number | null
@@ -125,4 +133,11 @@ export const productApi = {
     }),
   remove: (id: number) =>
     request.delete<unknown, void>(`/api/merchant/products/${id}`),
+}
+
+export const adminProductApi = {
+  auditPage: (params: { page: number; size: number; auditStatus?: number; keyword?: string; merchantId?: number }) =>
+    request.get<unknown, PageResult<ProductListVO>>('/api/admin/products/audit/page', { params }),
+  audit: (id: number, auditStatus: number, auditReason?: string) =>
+    request.put<unknown, void>(`/api/admin/products/${id}/audit`, { auditStatus, auditReason }),
 }

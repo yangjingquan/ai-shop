@@ -1,7 +1,21 @@
 <view class="group-page" wx:if="{{group}}">
   <view class="panel">
     <view class="status">{{group.statusText}}</view>
+    <view class="leader" wx:if="{{group.leaderNickname}}">团长：{{group.leaderNickname}}</view>
     <view class="count">{{group.paidCount}} / {{group.requiredCount}} 人</view>
+    <view class="remaining" wx:if="{{group.status === 0}}">
+      还差 {{group.remainingCount}} 人 · 剩余 {{remainingText}}
+    </view>
+    <view class="members" wx:if="{{group.members.length}}">
+      <view class="member" wx:for="{{group.members}}" wx:key="index">
+        <image wx:if="{{item.avatar}}" class="avatar" src="{{item.avatar}}" mode="aspectFill" />
+        <view wx:else class="avatar fallback">拼</view>
+        <view class="member-name">{{item.nickname}}{{item.leader ? '（团长）' : ''}}</view>
+      </view>
+    </view>
     <button wx:if="{{group.status === 0}}" bindtap="goProduct">去参团</button>
+    <button wx:if="{{group.status === 0}}" open-type="share" class="share-button">邀请好友参团</button>
+    <button wx:if="{{group.status === 1}}" bindtap="goProduct">查看商品</button>
   </view>
 </view>
+<view wx:if="{{!group && !loading}}" class="empty">拼团不存在或已被删除</view>

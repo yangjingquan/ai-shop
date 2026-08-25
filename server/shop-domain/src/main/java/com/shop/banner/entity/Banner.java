@@ -10,6 +10,8 @@ import lombok.EqualsAndHashCode;
 @TableName("banner")
 public class Banner extends BaseEntity {
 
+    private Long merchantId;
+
     private String imageUrl;
 
     /** 0=NONE 1=PRODUCT 2=CATEGORY 3=URL */

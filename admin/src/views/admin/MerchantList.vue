@@ -12,6 +12,11 @@ const query = reactive({ page: 1, size: 10, keyword: '' })
 const dialogVisible = ref(false)
 const dialogMode = ref<'create' | 'edit'>('create')
 const dialogRow = ref<MerchantVO | null>(null)
+const resetVisible = ref(false)
+const resetRow = ref<MerchantVO | null>(null)
+const resetPassword = ref('')
+const resetPasswordConfirm = ref('')
+const resetting = ref(false)
 
 async function fetchList() {
   loading.value = true
@@ -61,6 +66,33 @@ async function onToggleStatus(row: MerchantVO) {
   fetchList()
 }
 
+function onResetPassword(row: MerchantVO) {
+  resetRow.value = row
+  resetPassword.value = ''
+  resetPasswordConfirm.value = ''
+  resetVisible.value = true
+}
+
+async function submitResetPassword() {
+  if (resetPassword.value.length < 8 || resetPassword.value.length > 32) {
+    ElMessage.warning('密码长度需为 8-32 位')
+    return
+  }
+  if (resetPassword.value !== resetPasswordConfirm.value) {
+    ElMessage.warning('两次输入的密码不一致')
+    return
+  }
+  if (!resetRow.value) return
+  resetting.value = true
+  try {
+    await merchantApi.resetPassword(resetRow.value.id, resetPassword.value)
+    ElMessage.success('密码已重置')
+    resetVisible.value = false
+  } finally {
+    resetting.value = false
+  }
+}
+
 onMounted(fetchList)
 </script>
 
@@ -103,9 +135,10 @@ onMounted(fetchList)
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="132" />
-        <el-table-column label="操作" width="108">
+        <el-table-column label="操作" width="184">
           <template #default="{ row }">
             <el-button link type="primary" @click="onEdit(row as MerchantVO)">编辑</el-button>
+            <el-button link type="warning" @click="onResetPassword(row as MerchantVO)">重置密码</el-button>
             <el-button
               link
               :type="row.status === 1 ? 'danger' : 'success'"
@@ -137,6 +170,24 @@ onMounted(fetchList)
       :row="dialogRow"
       @success="fetchList"
     />
+
+    <el-dialog v-model="resetVisible" title="重置商家密码" width="460px">
+      <el-form label-width="110px">
+        <el-form-item label="商家">
+          <span>{{ resetRow?.name || '-' }}</span>
+        </el-form-item>
+        <el-form-item label="新密码" required>
+          <el-input v-model="resetPassword" type="password" show-password maxlength="32" />
+        </el-form-item>
+        <el-form-item label="确认密码" required>
+          <el-input v-model="resetPasswordConfirm" type="password" show-password maxlength="32" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="resetVisible = false">取消</el-button>
+        <el-button type="primary" :loading="resetting" @click="submitResetPassword">确认重置</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

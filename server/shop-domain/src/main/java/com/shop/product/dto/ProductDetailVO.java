@@ -25,6 +25,10 @@ public class ProductDetailVO {
     private Integer totalStock;
     private Integer totalSales;
     private Integer status;
+    private Integer auditStatus;
+    private String auditReason;
+    private Long auditedBy;
+    private java.time.LocalDateTime auditedAt;
     private Integer isRecommend;
     private Integer isGroupBuy;
     private BigDecimal groupBuyPrice;

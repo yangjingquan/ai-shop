@@ -25,6 +25,8 @@ public class OrderListVO {
 
     private Long groupBuyExpireAt;
 
+    private Integer refundStatus;
+
     private BigDecimal payAmount;
 
     private Long merchantId;

@@ -37,7 +37,7 @@ const rules: FormRules = {
   ],
   password: [
     { required: true, message: '请输入初始密码', trigger: 'blur' },
-    { min: 6, max: 32, message: '6-32 位', trigger: 'blur' },
+    { min: 8, max: 32, message: '8-32 位', trigger: 'blur' },
   ],
 }
 

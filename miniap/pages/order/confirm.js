@@ -152,7 +152,9 @@ Page({
         if (res.code === 0) {
           return orderApi.mockPay(res.data.orderNo).then(() => {
             wx.showToast({ title: '下单成功', icon: 'success' });
-            setTimeout(() => wx.switchTab({ url: '/pages/order/list' }), 1000);
+            setTimeout(() => wx.redirectTo({
+              url: `/pages/group-buy/group?groupId=${res.data.groupId}`,
+            }), 1000);
           }).catch(() => {
             wx.showToast({ title: '支付失败', icon: 'none' });
             this.setData({ submitting: false });

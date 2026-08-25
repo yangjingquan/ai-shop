@@ -1,6 +1,24 @@
 <script setup lang="ts">
-import { useUserStore } from '@/stores/user'
-const userStore = useUserStore()
+import { onMounted, ref } from 'vue'
+import { dashboardApi, type DashboardOverview } from '@/api/dashboard'
+
+const loading = ref(false)
+const overview = ref<DashboardOverview | null>(null)
+
+async function load() {
+  loading.value = true
+  try {
+    overview.value = await dashboardApi.adminOverview()
+  } finally {
+    loading.value = false
+  }
+}
+
+function money(value?: number) {
+  return `¥${Number(value || 0).toFixed(2)}`
+}
+
+onMounted(load)
 </script>
 
 <template>
@@ -13,21 +31,36 @@ const userStore = useUserStore()
       </div>
     </div>
 
-    <div class="overview-grid">
+    <div v-loading="loading" class="overview-grid">
       <el-card class="metric-card">
-        <span>当前角色</span>
-        <strong>admin</strong>
-        <p>平台运营权限</p>
+        <span>启用商家</span>
+        <strong>{{ overview?.activeMerchantCount ?? '-' }}</strong>
+        <p>共 {{ overview?.merchantCount ?? '-' }} 家商家</p>
       </el-card>
       <el-card class="metric-card">
-        <span>商家服务</span>
-        <strong>入驻管理</strong>
-        <p>维护商家账号与状态</p>
+        <span>今日订单</span>
+        <strong>{{ overview?.orderCountToday ?? '-' }}</strong>
+        <p>平台今日创建订单</p>
       </el-card>
       <el-card class="metric-card">
-        <span>类目体系</span>
-        <strong>平台分类</strong>
-        <p>管理商品展示层级</p>
+        <span>今日支付金额</span>
+        <strong>{{ overview ? money(overview.paidAmountToday) : '-' }}</strong>
+        <p>按支付时间统计</p>
+      </el-card>
+      <el-card class="metric-card">
+        <span>待发货</span>
+        <strong>{{ overview?.pendingShipCount ?? '-' }}</strong>
+        <p>包含普通单和成团订单</p>
+      </el-card>
+      <el-card class="metric-card">
+        <span>待处理退款</span>
+        <strong>{{ overview?.pendingRefundCount ?? '-' }}</strong>
+        <p>仅统计待审核申请</p>
+      </el-card>
+      <el-card class="metric-card">
+        <span>库存预警 SKU</span>
+        <strong>{{ overview?.lowStockSkuCount ?? '-' }}</strong>
+        <p>库存不高于 5 件</p>
       </el-card>
     </div>
 
@@ -38,12 +71,8 @@ const userStore = useUserStore()
           <el-tag type="primary">M1</el-tag>
         </div>
       </template>
-      <div class="token-row">
-        <span>Token 前 20 位</span>
-        <code>{{ userStore.token.slice(0, 20) }}...</code>
-      </div>
       <el-alert
-        title="M1 阶段：已完成登录与基础脚手架，后续业务模块将继续完善。"
+        title="指标用于平台日常巡检；资金退款仍需以真实退款回调和对账结果为准。"
         type="info"
         :closable="false"
         show-icon
@@ -92,28 +121,6 @@ const userStore = useUserStore()
 
 .workbench-card {
   max-width: 840px;
-}
-
-.token-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: #fff8ed;
-}
-
-.token-row span {
-  color: var(--shop-text-muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.token-row code {
-  color: var(--shop-primary-dark);
-  font-weight: 800;
 }
 
 @media (max-width: 900px) {

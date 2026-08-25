@@ -67,6 +67,12 @@ onMounted(loadRefunds)
       <el-table v-loading="loading" :data="refunds" stripe>
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="orderNo" label="订单号" min-width="200" />
+        <el-table-column label="类型" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.reason === '拼团未成团'" type="warning" size="small">拼团退款</el-tag>
+            <span v-else>普通退款</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="reason" label="退款原因" min-width="180" />
         <el-table-column label="状态" width="110">
           <template #default="{ row }">

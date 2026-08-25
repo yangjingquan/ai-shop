@@ -120,19 +120,45 @@ Page({
     const banner = e.currentTarget.dataset.banner
     if (!banner || Number(banner.linkType) === 0 || !banner.linkValue) return
     const linkType = Number(banner.linkType)
-    const linkValue = banner.linkValue
+    const linkValue = String(banner.linkValue).trim()
     if (linkType === 1) {
-      const tabPages = ['/pages/home/index', '/pages/category/index', '/pages/cart/index', '/pages/order/list', '/pages/my/index']
-      const targetPath = linkValue.split('?')[0]
-      if (tabPages.includes(targetPath)) {
-        wx.switchTab({ url: targetPath })
-      } else {
-        wx.navigateTo({ url: linkValue })
+      // 兼容旧版本将 linkValue 保存为小程序页面路径的 Banner。
+      if (linkValue.indexOf('/pages/') === 0) {
+        this.navigateMiniProgramPath(linkValue)
+        return
       }
+      if (!/^[1-9][0-9]*$/.test(linkValue)) {
+        wx.showToast({ title: '商品链接无效', icon: 'none' })
+        return
+      }
+      wx.navigateTo({ url: `/pages/product/detail?id=${linkValue}` })
+      return
+    }
+    if (linkType === 2) {
+      if (!/^[1-9][0-9]*$/.test(linkValue)) {
+        wx.showToast({ title: '分类链接无效', icon: 'none' })
+        return
+      }
+      wx.setStorageSync('home_jump_category_id', Number(linkValue))
+      wx.switchTab({ url: '/pages/category/index' })
       return
     }
     if (linkType === 3) {
+      if (!/^https:\/\/[^\s]+$/i.test(linkValue)) {
+        wx.showToast({ title: '外部链接无效', icon: 'none' })
+        return
+      }
       wx.navigateTo({ url: `/pages/webview/index?url=${encodeURIComponent(linkValue)}` })
+    }
+  },
+
+  navigateMiniProgramPath(linkValue) {
+    const tabPages = ['/pages/home/index', '/pages/category/index', '/pages/cart/index', '/pages/order/list', '/pages/my/index']
+    const targetPath = linkValue.split('?')[0]
+    if (tabPages.includes(targetPath)) {
+      wx.switchTab({ url: targetPath })
+    } else {
+      wx.navigateTo({ url: linkValue })
     }
   },
 

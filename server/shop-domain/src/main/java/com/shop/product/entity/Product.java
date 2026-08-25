@@ -45,6 +45,15 @@ public class Product extends BaseEntity {
     /** 1 上架 / 0 下架 */
     private Integer status;
 
+    /** 0 待审核 / 1 通过 / 2 驳回 */
+    private Integer auditStatus;
+
+    private String auditReason;
+
+    private Long auditedBy;
+
+    private java.time.LocalDateTime auditedAt;
+
     /** 1 推荐 / 0 不推荐 */
     private Integer isRecommend;
 

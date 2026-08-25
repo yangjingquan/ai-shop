@@ -17,6 +17,7 @@
       <view>团购进度：{{order.groupBuyProgress}}</view>
       <view wx:if="{{order.groupBuyExpireText}}">有效期至：{{order.groupBuyExpireText}}</view>
       <view wx:if="{{order.status === 7}}">拼团失败，等待商家处理退款</view>
+      <view wx:if="{{order.refundStatusText}}">{{order.refundStatusText}}</view>
     </view>
 
     <view
@@ -80,6 +81,14 @@
       <text>发货时间</text>
       <text>{{order.shipTime}}</text>
     </view>
+    <view class="info-row" wx:if="{{order.shipCompany}}">
+      <text>物流公司</text>
+      <text>{{order.shipCompany}}</text>
+    </view>
+    <view class="info-row" wx:if="{{order.shipNo}}">
+      <text>物流单号</text>
+      <text>{{order.shipNo}}</text>
+    </view>
     <view class="info-row" wx:if="{{order.finishTime}}">
       <text>完成时间</text>
       <text>{{order.finishTime}}</text>
@@ -97,14 +106,29 @@
   <view class="actions" wx:elif="{{order.status === 1}}">
     <view class="btn" catchtap="showTodo" data-title="联系商家功能开发中">联系商家</view>
     <view class="btn dark" catchtap="showTodo" data-title="提醒发货功能开发中">提醒发货</view>
+    <view wx:if="{{order.canRefund}}" class="btn" catchtap="refundApply">申请退款</view>
+  </view>
+  <view class="actions" wx:elif="{{order.status === 5}}">
+    <button class="btn dark share-btn" open-type="share">邀请参团</button>
+    <view class="btn" catchtap="goGroup">查看拼团</view>
+  </view>
+  <view class="actions" wx:elif="{{order.status === 6}}">
+    <view class="btn" catchtap="goGroup">查看拼团</view>
+    <view wx:if="{{order.canRefund}}" class="btn" catchtap="refundApply">申请退款</view>
   </view>
   <view class="actions" wx:elif="{{order.status === 2}}">
     <view class="btn" catchtap="viewLogistics">查看物流</view>
     <view class="btn primary" catchtap="confirmReceive">确认收货</view>
+    <view wx:if="{{order.canRefund}}" class="btn" catchtap="refundApply">申请退款</view>
   </view>
   <view class="actions" wx:elif="{{order.status === 3}}">
     <view class="btn" catchtap="viewLogistics">查看物流</view>
     <view class="btn dark" catchtap="buyAgain">再来一单</view>
+    <view wx:if="{{order.canRefund}}" class="btn" catchtap="refundApply">申请退款</view>
+  </view>
+  <view class="actions" wx:elif="{{order.status === 7}}">
+    <view class="btn" catchtap="goGroup">查看拼团</view>
+    <view wx:if="{{order.refundStatus === 2}}" class="btn primary" catchtap="refundApply">重新申请退款</view>
   </view>
 </view>
 

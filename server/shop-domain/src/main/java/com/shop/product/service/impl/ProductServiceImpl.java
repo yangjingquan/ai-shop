@@ -70,6 +70,8 @@ public class ProductServiceImpl implements ProductService {
         p.setTotalStock(0);
         p.setTotalSales(0);
         p.setStatus(0);
+        p.setAuditStatus(0);
+        p.setAuditReason("");
         p.setIsRecommend(normalizeFlag(req.getIsRecommend()));
         p.setIsGroupBuy(normalizeGroupBuyFlag(req.getIsGroupBuy()));
         p.setGroupBuyPrice(Integer.valueOf(1).equals(p.getIsGroupBuy()) ? req.getGroupBuyPrice() : null);
@@ -97,6 +99,11 @@ public class ProductServiceImpl implements ProductService {
         p.setMainImage(req.getMainImage());
         p.setImages(req.getImages());
         p.setDescription(XssSanitizer.sanitize(req.getDescription()));
+        p.setStatus(0);
+        p.setAuditStatus(0);
+        p.setAuditReason("");
+        p.setAuditedBy(null);
+        p.setAuditedAt(null);
         p.setIsRecommend(normalizeFlag(req.getIsRecommend()));
         p.setIsGroupBuy(normalizeGroupBuyFlag(req.getIsGroupBuy()));
         p.setGroupBuyPrice(Integer.valueOf(1).equals(p.getIsGroupBuy()) ? req.getGroupBuyPrice() : null);
@@ -139,6 +146,10 @@ public class ProductServiceImpl implements ProductService {
         vo.setTotalStock(p.getTotalStock());
         vo.setTotalSales(p.getTotalSales());
         vo.setStatus(p.getStatus());
+        vo.setAuditStatus(p.getAuditStatus());
+        vo.setAuditReason(p.getAuditReason());
+        vo.setAuditedBy(p.getAuditedBy());
+        vo.setAuditedAt(p.getAuditedAt());
         vo.setIsRecommend(p.getIsRecommend());
         vo.setIsGroupBuy(p.getIsGroupBuy());
         vo.setGroupBuyPrice(p.getGroupBuyPrice());
@@ -220,7 +231,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductDetailVO publicGet(Long id, Long merchantId) {
         ProductDetailVO vo = get(id, merchantId);
-        if (vo.getStatus() == null || vo.getStatus() != 1) {
+        if (vo.getStatus() == null || vo.getStatus() != 1
+                || !Integer.valueOf(1).equals(vo.getAuditStatus())) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
         return vo;
@@ -248,6 +260,9 @@ public class ProductServiceImpl implements ProductService {
         }
         if (status != null) {
             q.eq(Product::getStatus, status);
+        }
+        if (Integer.valueOf(1).equals(status)) {
+            q.eq(Product::getAuditStatus, 1);
         }
         if (isRecommend != null) {
             q.eq(Product::getIsRecommend, normalizeFlag(isRecommend));
@@ -293,6 +308,10 @@ public class ProductServiceImpl implements ProductService {
             v.setTotalStock(p.getTotalStock());
             v.setTotalSales(p.getTotalSales());
             v.setStatus(p.getStatus());
+            v.setAuditStatus(p.getAuditStatus());
+            v.setAuditReason(p.getAuditReason());
+            v.setAuditedBy(p.getAuditedBy());
+            v.setAuditedAt(p.getAuditedAt());
             v.setIsRecommend(p.getIsRecommend());
             v.setIsGroupBuy(p.getIsGroupBuy());
             v.setGroupBuyPrice(p.getGroupBuyPrice());
@@ -306,9 +325,69 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public PageResult<ProductListVO> adminAuditPage(int page, int size, Integer auditStatus,
+                                                    String keyword, Long merchantId) {
+        LambdaQueryWrapper<Product> q = new LambdaQueryWrapper<Product>()
+                .orderByDesc(Product::getUpdatedAt).orderByDesc(Product::getId);
+        if (auditStatus != null) {
+            q.eq(Product::getAuditStatus, auditStatus);
+        }
+        if (merchantId != null) {
+            q.eq(Product::getMerchantId, merchantId);
+        }
+        if (StringUtils.hasText(keyword)) {
+            q.like(Product::getName, keyword.trim());
+        }
+        IPage<Product> result = productMapper.selectPage(new Page<>(page, size), q);
+        Map<Long, String> catNames = new HashMap<>();
+        result.getRecords().stream().map(Product::getCategoryId).distinct()
+                .forEach(id -> catNames.put(id, merchantCategoryService.getCategoryName(null, id)));
+        List<ProductListVO> list = result.getRecords().stream().map(p -> {
+            ProductListVO v = new ProductListVO();
+            v.setId(p.getId());
+            v.setMerchantId(p.getMerchantId());
+            v.setName(p.getName());
+            v.setMainImage(p.getMainImage());
+            v.setMinPrice(p.getMinPrice());
+            v.setMaxPrice(p.getMaxPrice());
+            v.setTotalStock(p.getTotalStock());
+            v.setTotalSales(p.getTotalSales());
+            v.setStatus(p.getStatus());
+            v.setAuditStatus(p.getAuditStatus());
+            v.setAuditReason(p.getAuditReason());
+            v.setAuditedBy(p.getAuditedBy());
+            v.setAuditedAt(p.getAuditedAt());
+            v.setCategoryId(p.getCategoryId());
+            v.setCategoryName(catNames.get(p.getCategoryId()));
+            return v;
+        }).collect(Collectors.toList());
+        return PageResult.of(list, result.getTotal(), page, size);
+    }
+
+    @Override
+    @Transactional
+    public void audit(Long productId, int auditStatus, String auditReason, Long adminId) {
+        if (auditStatus != 1 && auditStatus != 2) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "审核结果不合法");
+        }
+        Product p = productMapper.selectById(productId);
+        if (p == null) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+        p.setAuditStatus(auditStatus);
+        p.setAuditReason(auditReason == null ? "" : auditReason.trim());
+        p.setAuditedBy(adminId);
+        p.setAuditedAt(java.time.LocalDateTime.now());
+        productMapper.updateById(p);
+    }
+
+    @Override
     @Transactional
     public void setStatus(Long id, int status, Long merchantId) {
         Product p = mustOwn(id, merchantId);
+        if (status == 1 && !Integer.valueOf(1).equals(p.getAuditStatus())) {
+            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "商品尚未审核通过");
+        }
         p.setStatus(status == 1 ? 1 : 0);
         productMapper.updateById(p);
     }

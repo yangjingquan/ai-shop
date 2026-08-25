@@ -19,10 +19,12 @@ public interface OrderMapper extends BaseMapper<Order> {
     @Update("UPDATE product_sku SET stock = stock + #{qty} WHERE id = #{skuId}")
     void releaseStock(@Param("skuId") Long skuId, @Param("qty") int qty);
 
-    @Update("UPDATE `order` SET status = 2, ship_no = #{shipNo}, ship_time = #{now}, updated_at = #{now} " +
+    @Update("UPDATE `order` SET status = 2, ship_company = #{shipCompany}, ship_no = #{shipNo}, ship_time = #{now}, updated_at = #{now} " +
             "WHERE order_no = #{orderNo} AND merchant_id = #{merchantId} AND deleted = 0 " +
             "AND ((order_type = 0 AND status = 1) OR (order_type = 1 AND status = 6))")
-    int ship(@Param("merchantId") Long merchantId, @Param("orderNo") String orderNo, @Param("shipNo") String shipNo, @Param("now") LocalDateTime now);
+    int ship(@Param("merchantId") Long merchantId, @Param("orderNo") String orderNo,
+             @Param("shipCompany") String shipCompany, @Param("shipNo") String shipNo,
+             @Param("now") LocalDateTime now);
 
     @Update("UPDATE `order` SET status = 3, finish_time = #{now}, updated_at = #{now} WHERE order_no = #{orderNo} AND user_id = #{userId} AND status = 2 AND deleted = 0")
     int confirmReceive(@Param("userId") Long userId, @Param("orderNo") String orderNo, @Param("now") LocalDateTime now);

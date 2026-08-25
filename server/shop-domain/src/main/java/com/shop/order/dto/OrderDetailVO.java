@@ -47,7 +47,15 @@ public class OrderDetailVO {
 
     private String shipNo;
 
+    private String shipCompany;
+
     private LocalDateTime shipTime;
+
+    private Integer refundStatus;
+
+    private String refundReason;
+
+    private String refundRejectReason;
 
     private LocalDateTime finishTime;
 

@@ -53,6 +53,7 @@ Page({
           ...item,
           firstItemImage: resolveImageUrl(item.firstItemImage || ''),
           groupBuyProgress: item.groupBuyRequiredCount ? `${item.groupBuyPaidCount || 0}/${item.groupBuyRequiredCount} 人` : '',
+          refundStatusText: item.refundStatus === 0 ? '退款处理中' : item.refundStatus === 1 ? '退款已同意' : item.refundStatus === 2 ? '退款已拒绝' : '',
           totalLabel: item.status === 0 ? '需支付' : '实付',
           items: (item.items || []).map((goods) => ({
             ...goods,
@@ -168,8 +169,14 @@ Page({
     })
   },
 
-  viewLogistics() {
-    wx.showToast({ title: '物流功能开发中', icon: 'none' })
+  viewLogistics(e) {
+    this.goDetail(e)
+  },
+
+  goGroup(e) {
+    const groupId = e.currentTarget.dataset.groupid
+    if (!groupId) return
+    wx.navigateTo({ url: `/pages/group-buy/group?groupId=${groupId}` })
   },
 
   showTodo(e) {

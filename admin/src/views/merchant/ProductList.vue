@@ -32,6 +32,7 @@ const query = reactive<{
 
 const catTree = ref<MerchantCategoryVO[]>([])
 const selectedCount = computed(() => selectedRows.value.length)
+const auditText: Record<number, string> = { 0: '待审核', 1: '已通过', 2: '已驳回' }
 const catOptions = computed(() =>
   catTree.value.map((t) => ({
     value: t.id,
@@ -86,7 +87,13 @@ async function onBatchSetStatus(status: number) {
     return
   }
   const action = status === 1 ? '上架' : '下架'
-  const rows = [...selectedRows.value]
+  const rows = status === 1
+    ? selectedRows.value.filter((row) => row.auditStatus === 1)
+    : [...selectedRows.value]
+  if (status === 1 && rows.length !== selectedRows.value.length) {
+    ElMessage.warning('仅审核通过的商品可以上架，已跳过未通过审核的商品')
+  }
+  if (!rows.length) return
   await ElMessageBox.confirm(`确定要批量${action}选中的 ${rows.length} 个商品？`, '提示', {
     type: 'warning',
   })
@@ -102,6 +109,10 @@ async function onBatchSetStatus(status: number) {
 
 async function onToggleStatus(row: ProductListVO) {
   const next = row.status === 1 ? 0 : 1
+  if (next === 1 && row.auditStatus !== 1) {
+    ElMessage.warning(`当前商品${auditText[row.auditStatus ?? 0]}，请等待平台审核通过`)
+    return
+  }
   const action = next === 1 ? '上架' : '下架'
   await ElMessageBox.confirm(`确定要${action}商品「${row.name}」？`, '提示', {
     type: 'warning',
@@ -277,12 +288,23 @@ onMounted(async () => {
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="审核" width="100">
+          <template #default="{ row }">
+            <el-tooltip v-if="(row as ProductListVO).auditStatus === 2 && (row as ProductListVO).auditReason" :content="(row as ProductListVO).auditReason" placement="top">
+              <el-tag type="danger">已驳回</el-tag>
+            </el-tooltip>
+            <el-tag v-else :type="(row as ProductListVO).auditStatus === 1 ? 'success' : 'warning'">
+              {{ auditText[(row as ProductListVO).auditStatus ?? 0] }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="onEdit(row as ProductListVO)">编辑</el-button>
             <el-button
               link
               :type="(row as ProductListVO).status === 1 ? 'warning' : 'success'"
+              :disabled="(row as ProductListVO).status !== 1 && (row as ProductListVO).auditStatus !== 1"
               @click="onToggleStatus(row as ProductListVO)"
             >
               {{ (row as ProductListVO).status === 1 ? '下架' : '上架' }}

@@ -11,8 +11,11 @@ import com.shop.groupbuy.mapper.GroupBuyGroupMapper;
 import com.shop.groupbuy.mapper.GroupBuyMemberMapper;
 import com.shop.groupbuy.service.GroupBuyService;
 import com.shop.order.entity.Order;
+import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
 import com.shop.order.mapper.OrderMapper;
+import com.shop.order.mapper.RefundApplicationMapper;
+import com.shop.order.enums.RefundStatus;
 import com.shop.order.service.OrderPaymentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +39,7 @@ class GroupBuyTimeoutJobTest {
     @Autowired private GroupBuyGroupMapper groupMapper;
     @Autowired private GroupBuyMemberMapper memberMapper;
     @Autowired private OrderMapper orderMapper;
+    @Autowired private RefundApplicationMapper refundApplicationMapper;
 
     private static final Long USER_A = 3L;
     private static final Long ADDR_ID = 12L;
@@ -56,10 +60,15 @@ class GroupBuyTimeoutJobTest {
         GroupBuyGroup afterGroup = groupMapper.selectById(opened.getGroupId());
         Order afterOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, opened.getOrderNo()));
         GroupBuyMember afterMember = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>().eq(GroupBuyMember::getOrderNo, opened.getOrderNo()));
+        RefundApplication refund = refundApplicationMapper.selectOne(new LambdaQueryWrapper<RefundApplication>()
+                .eq(RefundApplication::getOrderNo, opened.getOrderNo()));
 
         assertEquals(GroupBuyGroupStatus.FAILED_WAIT_REFUND.getCode(), afterGroup.getStatus());
         assertEquals(OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode(), afterOrder.getStatus());
         assertEquals(GroupBuyMemberStatus.WAIT_REFUND.getCode(), afterMember.getStatus());
+        assertNotNull(refund);
+        assertEquals(RefundStatus.PENDING.getCode(), refund.getStatus());
+        assertEquals("拼团未成团", refund.getReason());
     }
 
     @Test

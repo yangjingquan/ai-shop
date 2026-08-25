@@ -8,14 +8,34 @@ import java.util.List;
 
 public interface BannerService {
 
-    Long create(BannerSaveRequest req);
+    default Long create(BannerSaveRequest req) {
+        return create(null, req);
+    }
 
-    void update(Long id, BannerSaveRequest req);
+    default void update(Long id, BannerSaveRequest req) {
+        update(null, id, req);
+    }
 
-    void delete(Long id);
+    default void delete(Long id) {
+        delete(null, id);
+    }
 
-    PageResult<BannerVO> page(int page, int size);
+    default PageResult<BannerVO> page(int page, int size) {
+        return page(null, page, size);
+    }
 
-    /** 给 /api/public/banner/list 返回 status=1 的活跃轮播 */
-    List<BannerVO> listActive();
+    /** 给 /api/public/banner/list 返回当前商家的 status=1 活跃轮播。 */
+    default List<BannerVO> listActive() {
+        return listActive(null);
+    }
+
+    Long create(Long merchantId, BannerSaveRequest req);
+
+    void update(Long merchantId, Long id, BannerSaveRequest req);
+
+    void delete(Long merchantId, Long id);
+
+    PageResult<BannerVO> page(Long merchantId, int page, int size);
+
+    List<BannerVO> listActive(Long merchantId);
 }

@@ -138,11 +138,14 @@ Page({
   },
 
   switchTopCategory(id) {
-    const topId = this.resolveTopId(this.data.topCats, Number(id))
+    const categoryId = Number(id)
+    const topId = this.resolveTopId(this.data.topCats, categoryId)
     if (!topId || !this.data.topCats.find((c) => c.id === topId)) return
-    if (topId === this.data.activeTopId) return
-    this.setData({ activeTopId: topId })
-    this.renderTop(topId)
+    if (topId !== this.data.activeTopId) {
+      this.setData({ activeTopId: topId })
+    }
+    // 即使目标仍属于当前一级分类，也要重新选中目标二级分类。
+    this.renderTop(topId, categoryId)
   },
 
   onTopTab(e) {

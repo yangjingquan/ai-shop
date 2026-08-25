@@ -88,6 +88,18 @@ class GroupBuyServiceTest {
     }
 
     @Test
+    void joinGroupRejectsDuplicateUserInSameGroup() {
+        enableGroupBuySeedProduct();
+        GroupBuyCreateVO opened = groupBuyService.openGroup(WX_USER, request());
+        groupBuyService.joinGroup(4L, opened.getGroupId(), request());
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> groupBuyService.joinGroup(4L, opened.getGroupId(), request()));
+
+        assertEquals(ErrorCode.GROUP_BUY_ORDER_INVALID.getCode(), ex.getCode());
+    }
+
+    @Test
     void joinGroupRejectsMismatchedProduct() {
         enableGroupBuySeedProduct();
         GroupBuyCreateVO opened = groupBuyService.openGroup(WX_USER, request());

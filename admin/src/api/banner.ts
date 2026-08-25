@@ -34,3 +34,14 @@ export const bannerApi = {
   remove: (id: number) =>
     request.delete<unknown, void>(`/api/merchant/banner/${id}`),
 }
+
+export const adminBannerApi = {
+  page: (params: BannerPageQuery) =>
+    request.get<unknown, PageResult<BannerVO>>('/api/admin/banner/page', { params }),
+  create: (data: BannerPayload) =>
+    request.post<unknown, { id: number }>('/api/admin/banner', data),
+  update: (id: number, data: BannerPayload) =>
+    request.put<unknown, void>(`/api/admin/banner/${id}`, data),
+  remove: (id: number) =>
+    request.delete<unknown, void>(`/api/admin/banner/${id}`),
+}

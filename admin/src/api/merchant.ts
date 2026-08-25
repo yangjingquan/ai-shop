@@ -46,4 +46,6 @@ export const merchantApi = {
     request.put<unknown, void>(`/api/admin/merchants/${id}`, data),
   setStatus: (id: number, status: number) =>
     request.put<unknown, void>(`/api/admin/merchants/${id}/status`, { status }),
+  resetPassword: (id: number, newPassword: string) =>
+    request.put<unknown, void>(`/api/admin/merchants/${id}/password`, { newPassword }),
 }

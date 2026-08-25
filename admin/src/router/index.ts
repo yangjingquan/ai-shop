@@ -40,6 +40,36 @@ const routes: RouteRecordRaw[] = [
         meta: { roles: ['admin'] },
       },
       {
+        path: 'admin/orders',
+        name: 'AdminOrderList',
+        component: () => import('@/views/admin/OrderList.vue'),
+        meta: { roles: ['admin'] },
+      },
+      {
+        path: 'admin/refunds',
+        name: 'AdminRefundList',
+        component: () => import('@/views/admin/RefundList.vue'),
+        meta: { roles: ['admin'] },
+      },
+      {
+        path: 'admin/banners',
+        name: 'AdminBannerList',
+        component: () => import('@/views/admin/BannerList.vue'),
+        meta: { roles: ['admin'] },
+      },
+      {
+        path: 'admin/product-audit',
+        name: 'AdminProductAudit',
+        component: () => import('@/views/admin/ProductAudit.vue'),
+        meta: { roles: ['admin'] },
+      },
+      {
+        path: 'admin/op-logs',
+        name: 'AdminOpLogList',
+        component: () => import('@/views/admin/OpLogList.vue'),
+        meta: { roles: ['admin'] },
+      },
+      {
         path: 'admin/wechat-settings',
         name: 'AdminWechatSettings',
         component: () => import('@/views/admin/WechatSettings.vue'),

@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { bannerApi, type BannerPayload, type BannerVO } from '@/api/banner'
+import { merchantCategoryApi, type MerchantCategoryVO } from '@/api/category'
+import { productApi, type ProductListVO } from '@/api/product'
 import ImageUploader from '@/components/upload/ImageUploader.vue'
 
 const loading = ref(false)
@@ -11,6 +13,9 @@ const editingId = ref<number | null>(null)
 const list = ref<BannerVO[]>([])
 const total = ref(0)
 const query = reactive({ page: 1, size: 10 })
+const categories = ref<MerchantCategoryVO[]>([])
+const products = ref<ProductListVO[]>([])
+const productSearching = ref(false)
 const form = reactive<BannerPayload>({
   imageUrl: '',
   linkType: 0,
@@ -23,9 +28,23 @@ const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
 
 const linkTypeText: Record<number, string> = {
   0: '不跳转',
-  1: '小程序页面',
+  1: '商品',
+  2: '分类',
   3: '外部链接',
 }
+
+const categoryOptions = computed(() => {
+  const options: Array<{ value: string; label: string }> = []
+  function append(items: MerchantCategoryVO[], parentName = '') {
+    items.forEach((item) => {
+      const label = parentName ? `${parentName} / ${item.name}` : item.name
+      options.push({ value: String(item.id), label })
+      append(item.children ?? [], label)
+    })
+  }
+  append(categories.value)
+  return options
+})
 
 function resolveImageUrl(url: string) {
   if (/^(https?:)?\/\//.test(url) || url.startsWith('data:') || url.startsWith('blob:')) return url
@@ -52,6 +71,42 @@ function resetForm() {
   form.status = 1
 }
 
+async function loadCategories() {
+  categories.value = (await merchantCategoryApi.enabledTree().catch(() => [])) ?? []
+}
+
+async function searchProducts(keyword = '') {
+  productSearching.value = true
+  try {
+    const data = await productApi.page({
+      page: 1,
+      size: 20,
+      status: 1,
+      keyword: keyword.trim() || undefined,
+    })
+    products.value = data.list
+  } finally {
+    productSearching.value = false
+  }
+}
+
+async function loadEditingProduct(id: number) {
+  if (!id || products.value.some((item) => item.id === id)) return
+  try {
+    const product = await productApi.get(id)
+    products.value = [product, ...products.value]
+  } catch {
+    // 后端保存时仍会校验商品归属与状态，这里只负责回显。
+  }
+}
+
+function onLinkTypeChange() {
+  form.linkValue = ''
+  if (form.linkType === 1 && products.value.length === 0) {
+    searchProducts()
+  }
+}
+
 function onCreate() {
   resetForm()
   dialogVisible.value = true
@@ -64,6 +119,9 @@ function onEdit(row: BannerVO) {
   form.linkValue = row.linkValue || ''
   form.sort = row.sort ?? 0
   form.status = row.status ?? 1
+  if (form.linkType === 1) {
+    loadEditingProduct(Number(form.linkValue))
+  }
   dialogVisible.value = true
 }
 
@@ -74,6 +132,14 @@ async function onSave() {
   }
   if (form.linkType !== 0 && !form.linkValue) {
     ElMessage.warning('请填写跳转地址')
+    return
+  }
+  if ((form.linkType === 1 || form.linkType === 2) && !/^[1-9][0-9]*$/.test(form.linkValue || '')) {
+    ElMessage.warning('商品或分类请选择有效目标')
+    return
+  }
+  if (form.linkType === 3 && !/^https:\/\/[^\s]+$/i.test(form.linkValue || '')) {
+    ElMessage.warning('外部链接必须使用 HTTPS')
     return
   }
 
@@ -101,7 +167,9 @@ async function onRemove(row: BannerVO) {
   fetchList()
 }
 
-onMounted(fetchList)
+onMounted(async () => {
+  await Promise.all([fetchList(), loadCategories()])
+})
 </script>
 
 <template>
@@ -173,16 +241,42 @@ onMounted(fetchList)
           <ImageUploader v-model="form.imageUrl" scope="merchant" :limit="1" label="上传 Banner" />
         </el-form-item>
         <el-form-item label="跳转类型" required>
-          <el-radio-group v-model="form.linkType">
+          <el-radio-group v-model="form.linkType" @change="onLinkTypeChange">
             <el-radio-button :value="0">不跳转</el-radio-button>
-            <el-radio-button :value="1">小程序页面</el-radio-button>
+            <el-radio-button :value="1">商品</el-radio-button>
+            <el-radio-button :value="2">分类</el-radio-button>
             <el-radio-button :value="3">外部链接</el-radio-button>
           </el-radio-group>
         </el-form-item>
         <el-form-item v-if="form.linkType !== 0" label="跳转地址" required>
-          <el-input
+          <el-select
+            v-if="form.linkType === 1"
             v-model="form.linkValue"
-            :placeholder="form.linkType === 1 ? '/pages/product/detail?id=1' : 'https://example.com'"
+            filterable
+            remote
+            clearable
+            reserve-keyword
+            :remote-method="searchProducts"
+            :loading="productSearching"
+            placeholder="搜索并选择商品"
+            style="width: 100%"
+          >
+            <el-option v-for="item in products" :key="item.id" :label="`${item.name}（ID: ${item.id}）`" :value="String(item.id)" />
+          </el-select>
+          <el-select
+            v-else-if="form.linkType === 2"
+            v-model="form.linkValue"
+            filterable
+            clearable
+            placeholder="选择分类"
+            style="width: 100%"
+          >
+            <el-option v-for="item in categoryOptions" :key="item.value" :label="`${item.label}（ID: ${item.value}）`" :value="item.value" />
+          </el-select>
+          <el-input
+            v-else
+            v-model="form.linkValue"
+            placeholder="https://example.com"
           />
         </el-form-item>
         <el-form-item label="排序" required>

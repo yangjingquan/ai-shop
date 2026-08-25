@@ -29,6 +29,8 @@ Page({
           payAmountText: this.fmtPrice(raw.payAmount),
           groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
+          refundStatusText: raw.refundStatus === 0 ? '退款处理中' : raw.refundStatus === 1 ? '退款已同意' : raw.refundStatus === 2 ? '退款已拒绝' : '',
+          canRefund: [1, 2, 3].includes(raw.status) || (raw.orderType === 1 && raw.status === 6),
           totalLabel: raw.status === 0 ? '需支付' : '实付款',
           items: (raw.items || []).map((item) => ({
             ...item,
@@ -128,7 +130,40 @@ Page({
   },
 
   viewLogistics() {
-    wx.showToast({ title: '物流功能开发中', icon: 'none' })
+    const order = this.data.order || {}
+    if (!order.shipNo) {
+      wx.showToast({ title: '商家尚未发货', icon: 'none' })
+      return
+    }
+    wx.showModal({
+      title: '物流信息',
+      content: `${order.shipCompany || '物流'}\n运单号：${order.shipNo}\n发货时间：${order.shipTime || '-'}`,
+      showCancel: false,
+    })
+  },
+
+  goGroup() {
+    const groupId = this.data.order && this.data.order.groupBuyGroupId
+    if (!groupId) return
+    wx.navigateTo({ url: `/pages/group-buy/group?groupId=${groupId}` })
+  },
+
+  refundApply() {
+    const orderNo = this.data.order && this.data.order.orderNo
+    if (!orderNo) return
+    wx.showModal({
+      title: '申请退款',
+      editable: true,
+      placeholderText: '请输入退款原因（可选）',
+      confirmColor: '#ff4b43',
+      success: (modalRes) => {
+        if (!modalRes.confirm) return
+        orderApi.refund(orderNo, modalRes.content || '').then(() => {
+          wx.showToast({ title: '已提交退款申请', icon: 'success' })
+          this.reloadDetail()
+        }).catch(() => this.reloadDetail())
+      },
+    })
   },
 
   showTodo(e) {
@@ -143,6 +178,17 @@ Page({
       return
     }
     wx.navigateTo({ url: `/pages/product/detail?id=${firstItem.productId}&skuId=${firstItem.skuId}&action=buy` })
+  },
+
+  onShareAppMessage() {
+    const order = this.data.order || {}
+    if (order.orderType === 1 && order.groupBuyGroupId) {
+      return {
+        title: '快来参加我的拼团',
+        path: `/pages/group-buy/group?groupId=${order.groupBuyGroupId}`,
+      }
+    }
+    return { title: '潮选商城' }
   },
 
   goProductDetail(e) {

@@ -7,6 +7,7 @@ interface OrderRow {
   orderNo: string
   status: number
   statusText: string
+  orderType?: number
   payAmount: number | string
   createdAt: string
 }
@@ -50,6 +51,7 @@ interface OrderDetail {
   createdAt: string
   payTime?: string
   payTransactionId?: string
+  shipCompany?: string
   shipNo?: string
   shipTime?: string
   finishTime?: string
@@ -63,6 +65,7 @@ const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
 
 const orders = ref<OrderRow[]>([])
 const shipNos = ref<Record<string, string>>({})
+const shipCompanies = ref<Record<string, string>>({})
 const loading = ref(false)
 const total = ref(0)
 const detailVisible = ref(false)
@@ -140,7 +143,10 @@ async function doShip(orderNo: string) {
     ElMessage.error('物流单号格式不合法（5-30位字母数字）')
     return
   }
-  await request.post<unknown, void>('/api/merchant/order/ship', { shipNo: sn }, { params: { orderNo } })
+  await request.post<unknown, void>('/api/merchant/order/ship', {
+    shipCompany: shipCompanies.value[orderNo] || '',
+    shipNo: sn,
+  }, { params: { orderNo } })
   ElMessage.success('发货成功')
   await loadOrders()
 }
@@ -193,11 +199,22 @@ onMounted(loadOrders)
             <el-tag :type="statusTagType(row.status)">{{ row.statusText }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="类型" width="90">
+          <template #default="{ row }">
+            <el-tag v-if="row.orderType === 1" type="warning" size="small">拼团</el-tag>
+            <span v-else>普通</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="payAmount" label="金额" width="120" />
         <el-table-column prop="createdAt" label="创建时间" width="180" />
         <el-table-column label="发货操作" min-width="320" fixed="right">
           <template #default="{ row }">
             <div v-if="canShip(row as OrderRow)" class="ship-action">
+              <el-input
+                v-model="shipCompanies[row.orderNo]"
+                placeholder="物流公司（可选）"
+                size="small"
+              />
               <el-input
                 v-model="shipNos[row.orderNo]"
                 placeholder="输入物流单号"
@@ -296,6 +313,7 @@ onMounted(loadOrders)
           <div class="detail-section">
             <div class="section-title">履约信息</div>
             <el-descriptions :column="2" border>
+              <el-descriptions-item label="物流公司">{{ displayValue(orderDetail.shipCompany) }}</el-descriptions-item>
               <el-descriptions-item label="物流单号">{{ displayValue(orderDetail.shipNo) }}</el-descriptions-item>
               <el-descriptions-item label="发货时间">{{ displayValue(orderDetail.shipTime) }}</el-descriptions-item>
               <el-descriptions-item label="完成时间">{{ displayValue(orderDetail.finishTime) }}</el-descriptions-item>
@@ -313,7 +331,7 @@ onMounted(loadOrders)
 <style scoped>
 .ship-action {
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) auto;
+  grid-template-columns: minmax(120px, 1fr) minmax(140px, 1fr) auto;
   gap: 10px;
   align-items: center;
 }

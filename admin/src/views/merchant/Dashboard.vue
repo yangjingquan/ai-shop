@@ -1,6 +1,23 @@
 <script setup lang="ts">
-import { useUserStore } from '@/stores/user'
-const userStore = useUserStore()
+import { onMounted, ref } from 'vue'
+import { dashboardApi, type DashboardOverview } from '@/api/dashboard'
+const loading = ref(false)
+const overview = ref<DashboardOverview | null>(null)
+
+async function load() {
+  loading.value = true
+  try {
+    overview.value = await dashboardApi.merchantOverview()
+  } finally {
+    loading.value = false
+  }
+}
+
+function money(value?: number) {
+  return `¥${Number(value || 0).toFixed(2)}`
+}
+
+onMounted(load)
 </script>
 
 <template>
@@ -13,21 +30,31 @@ const userStore = useUserStore()
       </div>
     </div>
 
-    <div class="overview-grid">
+    <div v-loading="loading" class="overview-grid">
       <el-card class="metric-card">
-        <span>当前角色</span>
-        <strong>merchant</strong>
-        <p>店铺经营权限</p>
+        <span>今日订单</span>
+        <strong>{{ overview?.orderCountToday ?? '-' }}</strong>
+        <p>今日创建订单</p>
       </el-card>
       <el-card class="metric-card">
-        <span>商家 ID</span>
-        <strong>{{ userStore.merchantId ?? '-' }}</strong>
-        <p>用于关联商品与订单</p>
+        <span>今日销售额</span>
+        <strong>{{ overview ? money(overview.paidAmountToday) : '-' }}</strong>
+        <p>按支付时间统计</p>
       </el-card>
       <el-card class="metric-card">
         <span>待办提醒</span>
-        <strong>履约 / 售后</strong>
-        <p>关注发货与退款处理</p>
+        <strong>{{ (overview?.pendingShipCount ?? 0) + (overview?.pendingRefundCount ?? 0) }}</strong>
+        <p>待发货 {{ overview?.pendingShipCount ?? '-' }} · 待退款 {{ overview?.pendingRefundCount ?? '-' }}</p>
+      </el-card>
+      <el-card class="metric-card">
+        <span>在售商品</span>
+        <strong>{{ overview?.onSaleProductCount ?? '-' }}</strong>
+        <p>审核通过且已上架</p>
+      </el-card>
+      <el-card class="metric-card">
+        <span>库存预警 SKU</span>
+        <strong>{{ overview?.lowStockSkuCount ?? '-' }}</strong>
+        <p>库存不高于 5 件</p>
       </el-card>
     </div>
 
@@ -38,12 +65,8 @@ const userStore = useUserStore()
           <el-tag type="primary">M1</el-tag>
         </div>
       </template>
-      <div class="token-row">
-        <span>Token 前 20 位</span>
-        <code>{{ userStore.token.slice(0, 20) }}...</code>
-      </div>
       <el-alert
-        title="M1 阶段：已完成登录与基础脚手架，商品、订单、售后能力将持续完善。"
+        title="请优先处理待发货、待退款和库存预警；退款金额以支付渠道最终结果为准。"
         type="info"
         :closable="false"
         show-icon
@@ -92,28 +115,6 @@ const userStore = useUserStore()
 
 .workbench-card {
   max-width: 840px;
-}
-
-.token-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: #fff8ed;
-}
-
-.token-row span {
-  color: var(--shop-text-muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.token-row code {
-  color: var(--shop-primary-dark);
-  font-weight: 800;
 }
 
 @media (max-width: 900px) {

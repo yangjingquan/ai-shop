@@ -2,4 +2,12 @@
 .panel { padding: 32rpx; border-radius: 8rpx; background: #fff; }
 .status { color: #222; font-size: 34rpx; font-weight: 700; }
 .count { margin: 24rpx 0; color: #ff6600; font-size: 30rpx; }
+.leader, .remaining { color: #666; font-size: 25rpx; line-height: 1.6; }
+.remaining { color: #d9480f; }
+.members { display: flex; flex-wrap: wrap; gap: 18rpx; margin: 24rpx 0; }
+.member { display: flex; align-items: center; width: 100%; color: #555; font-size: 24rpx; }
+.avatar { width: 54rpx; height: 54rpx; margin-right: 14rpx; border-radius: 50%; background: #ffe8d9; }
+.fallback { display: flex; align-items: center; justify-content: center; color: #d9480f; }
+.share-button { margin-top: 16rpx; background: #fff; color: #ff6600; border: 1rpx solid #ff6600; }
+.empty { padding: 120rpx 32rpx; color: #888; text-align: center; }
 button { background: #ff6600; color: #fff; border-radius: 8rpx; }

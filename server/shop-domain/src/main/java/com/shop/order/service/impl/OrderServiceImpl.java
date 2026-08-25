@@ -563,6 +563,10 @@ public class OrderServiceImpl implements OrderService {
                 vo.setExpireAt(o.getCreatedAt().plusMinutes(30)
                         .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
             }
+            RefundApplication refund = latestRefund(o.getOrderNo());
+            if (refund != null) {
+                vo.setRefundStatus(refund.getStatus());
+            }
             return vo;
         }).collect(Collectors.toList());
 
@@ -585,6 +589,16 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                 .eq(Order::getOrderNo, orderNo)
                 .eq(Order::getMerchantId, merchantId));
+        if (order == null) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        return buildOrderDetailVO(order);
+    }
+
+    @Override
+    public OrderDetailVO adminDetail(String orderNo) {
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                .eq(Order::getOrderNo, orderNo));
         if (order == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
@@ -636,12 +650,20 @@ public class OrderServiceImpl implements OrderService {
         vo.setPayTime(order.getPayTime());
         vo.setPayTransactionId(order.getPayTransactionId());
         vo.setShipNo(order.getShipNo());
+        vo.setShipCompany(order.getShipCompany());
         vo.setShipTime(order.getShipTime());
         vo.setFinishTime(order.getFinishTime());
         vo.setCancelTime(order.getCancelTime());
         vo.setCancelReason(order.getCancelReason());
         vo.setRemark(order.getRemark());
         vo.setItems(itemVOs);
+
+        RefundApplication refund = latestRefund(order.getOrderNo());
+        if (refund != null) {
+            vo.setRefundStatus(refund.getStatus());
+            vo.setRefundReason(refund.getReason());
+            vo.setRefundRejectReason(refund.getRejectReason());
+        }
 
         // 解析地址快照
         try {
@@ -663,11 +685,17 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void ship(Long merchantId, String orderNo, String shipNo) {
+        ship(merchantId, orderNo, "", shipNo);
+    }
+
+    @Override
+    @Transactional
+    public void ship(Long merchantId, String orderNo, String shipCompany, String shipNo) {
         if (shipNo == null || !SHIP_NO_PATTERN.matcher(shipNo).matches()) {
             throw new BusinessException(ErrorCode.SHIP_NO_INVALID);
         }
         LocalDateTime now = LocalDateTime.now();
-        int affected = orderMapper.ship(merchantId, orderNo, shipNo, now);
+        int affected = orderMapper.ship(merchantId, orderNo, shipCompany == null ? "" : shipCompany.trim(), shipNo, now);
         if (affected == 0) {
             Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                     .eq(Order::getOrderNo, orderNo));
@@ -706,15 +734,18 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
 
-        // 检查是否已有退款申请（任意状态，防止重复申请）
+        // 只有待处理申请阻止再次申请；被拒绝的申请允许用户重新提交。
         Long count = refundApplicationMapper.selectCount(new LambdaQueryWrapper<RefundApplication>()
-                .eq(RefundApplication::getOrderNo, orderNo));
+                .eq(RefundApplication::getOrderNo, orderNo)
+                .in(RefundApplication::getStatus, RefundStatus.PENDING.getCode(), RefundStatus.APPROVED.getCode()));
         if (count > 0) {
             throw new BusinessException(ErrorCode.REFUND_ALREADY_EXISTS);
         }
 
         int st = order.getStatus();
         if (st != OrderStatus.WAIT_SHIP.getCode()
+                && st != OrderStatus.GROUP_SUCCESS.getCode()
+                && st != OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode()
                 && st != OrderStatus.WAIT_RECEIVE.getCode()
                 && st != OrderStatus.FINISHED.getCode()) {
             throw new BusinessException(ErrorCode.REFUND_ORDER_NOT_REFUNDABLE);
@@ -753,8 +784,9 @@ public class OrderServiceImpl implements OrderService {
             Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                     .eq(Order::getOrderNo, app.getOrderNo()));
             if (order != null) {
-                // 仅 WAIT_SHIP 的退款回滚库存（货未发）
-                if (order.getStatus() == OrderStatus.WAIT_SHIP.getCode()) {
+                // 发货前退款回滚库存；拼团已成团但尚未发货时状态为 GROUP_SUCCESS。
+                if (order.getStatus() == OrderStatus.WAIT_SHIP.getCode()
+                        || order.getStatus() == OrderStatus.GROUP_SUCCESS.getCode()) {
                     List<OrderItem> items = orderItemMapper.selectList(
                             new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, order.getId()));
                     for (OrderItem item : items) {
@@ -777,6 +809,13 @@ public class OrderServiceImpl implements OrderService {
             app.setUpdatedAt(now);
             refundApplicationMapper.updateById(app);
         }
+    }
+
+    private RefundApplication latestRefund(String orderNo) {
+        return refundApplicationMapper.selectOne(new LambdaQueryWrapper<RefundApplication>()
+                .eq(RefundApplication::getOrderNo, orderNo)
+                .orderByDesc(RefundApplication::getId)
+                .last("LIMIT 1"));
     }
 
     // ==================== repay ====================

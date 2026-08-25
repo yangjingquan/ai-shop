@@ -1,6 +1,10 @@
 package com.shop.common.aop;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.shop.common.security.CurrentUser;
 import com.shop.common.security.CurrentUserHolder;
 import com.shop.oplog.mapper.OpLogMapper;
@@ -63,13 +67,15 @@ public class OpLogAspect {
     private String resolveTargetId(JoinPoint joinPoint, OpLog opLog) {
         String expr = opLog.targetIdExpr();
         if (expr == null || expr.isEmpty()) return "";
-        // 简单实现：从第 1 个 String 参数取（若 SpEL 以 # 开头则忽略，直接取第 1 个 String 参数）
+        String name = expr.startsWith("#") ? expr.substring(1) : expr;
         Object[] args = joinPoint.getArgs();
-        if (args.length > 0) {
-            for (Object arg : args) {
-                if (arg instanceof String s) return s;
+        Parameter[] params = ((MethodSignature) joinPoint.getSignature()).getMethod().getParameters();
+        for (int i = 0; i < params.length && i < args.length; i++) {
+            if (params[i].getName().equals(name) && args[i] != null) {
+                return String.valueOf(args[i]);
             }
         }
+        if (args.length > 0 && args[0] != null) return String.valueOf(args[0]);
         return "";
     }
 
@@ -83,9 +89,7 @@ public class OpLogAspect {
                 String key = params[i].getName();
                 Object val = args[i];
                 try {
-                    // 先序列化再反序列化，避免循环引用 / 不可序列化对象
-                    String json = objectMapper.writeValueAsString(val);
-                    map.put(key, objectMapper.readTree(json));
+                    map.put(key, sanitize(objectMapper.valueToTree(val), key));
                 } catch (Exception e) {
                     map.put(key, String.valueOf(val));
                 }
@@ -98,6 +102,32 @@ public class OpLogAspect {
         } catch (Exception e) {
             return "{}";
         }
+    }
+
+    private JsonNode sanitize(JsonNode node, String fieldName) {
+        if (isSensitive(fieldName)) return TextNode.valueOf("***");
+        if (node == null || node.isNull()) return node;
+        if (node.isObject()) {
+            ObjectNode object = (ObjectNode) node;
+            object.fieldNames().forEachRemaining(name -> {
+                JsonNode value = object.get(name);
+                object.set(name, sanitize(value, name));
+            });
+            return object;
+        }
+        if (node.isArray()) {
+            ArrayNode array = (ArrayNode) node;
+            for (int i = 0; i < array.size(); i++) {
+                array.set(i, sanitize(array.get(i), fieldName));
+            }
+        }
+        return node;
+    }
+
+    private boolean isSensitive(String fieldName) {
+        String key = fieldName == null ? "" : fieldName.toLowerCase(java.util.Locale.ROOT);
+        return key.contains("password") || key.contains("secret") || key.contains("token")
+                || key.contains("privatekey") || key.contains("api_v3_key") || key.contains("apiv3key");
     }
 
     private int mapUserType(String type) {

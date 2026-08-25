@@ -45,6 +45,8 @@ public class Order extends BaseEntity {
 
     private String shipNo;
 
+    private String shipCompany;
+
     private LocalDateTime shipTime;
 
     private LocalDateTime finishTime;
