@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class RefundApplyRequest {
@@ -17,4 +18,7 @@ public class RefundApplyRequest {
     @DecimalMin(value = "0.01", message = "退款金额必须大于 0")
     @Digits(integer = 12, fraction = 2, message = "退款金额最多保留两位小数")
     private BigDecimal refundAmount;
+
+    @Size(max = 6, message = "退款凭证最多6张")
+    private List<@Size(max = 500, message = "退款凭证地址过长") String> evidenceUrls;
 }

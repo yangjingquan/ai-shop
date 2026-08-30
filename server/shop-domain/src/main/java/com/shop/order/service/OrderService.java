@@ -52,8 +52,14 @@ public interface OrderService {
 
     void refundApply(Long userId, String orderNo, RefundApplyRequest req);
 
+    /** 已发货订单的退款申请经商家同意后，用户提交退货物流。 */
+    void submitReturnShipment(Long userId, Long refundId, ReturnShipmentRequest req);
+
     /** 商家审批退款 */
     void refundApprove(Long merchantId, Long refundId, boolean approved, String rejectReason);
+
+    /** 商家验货后触发原路退款。 */
+    void confirmReturnReceived(Long merchantId, Long refundId, String note);
 
     /** 重新支付（仅 WAIT_PAY 且未超时），返新 PayParams */
     OrderCreateVO repay(Long userId, String orderNo);

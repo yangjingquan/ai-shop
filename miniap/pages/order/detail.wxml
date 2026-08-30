@@ -19,6 +19,7 @@
       <view wx:if="{{order.status === 7}}">拼团失败，等待商家处理退款</view>
     </view>
     <view wx:if="{{order.refundStatusText}}" class="refund-status">{{order.refundStatusText}}</view>
+    <view wx:if="{{order.refundReturnShipNo}}" class="refund-status">退货物流：{{order.refundReturnShipCompany}} {{order.refundReturnShipNo}}</view>
 
     <view
       class="goods"
@@ -120,11 +121,13 @@
     <view class="btn" catchtap="viewLogistics">查看物流</view>
     <view class="btn primary" catchtap="confirmReceive">确认收货</view>
     <view wx:if="{{order.canRefund}}" class="btn" catchtap="refundApply">申请退款</view>
+    <view wx:if="{{order.refundStatus === 5}}" class="btn primary" catchtap="submitReturnShipment">填写退货物流</view>
   </view>
   <view class="actions" wx:elif="{{order.status === 3}}">
     <view class="btn" catchtap="viewLogistics">查看物流</view>
     <view class="btn dark" catchtap="buyAgain">再来一单</view>
     <view wx:if="{{order.canRefund}}" class="btn" catchtap="refundApply">申请退款</view>
+    <view wx:if="{{order.refundStatus === 5}}" class="btn primary" catchtap="submitReturnShipment">填写退货物流</view>
   </view>
   <view class="actions" wx:elif="{{order.status === 7}}">
     <view class="btn" catchtap="goGroup">查看拼团</view>

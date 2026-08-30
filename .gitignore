@@ -27,8 +27,9 @@ miniprogram_npm/
 .env.production
 docker/.env
 
-# TLS private keys must be injected by the deployment secret store.
-deploy/nginx/ssl/*.key
+# TLS material must be injected by the deployment secret store, never versioned.
+deploy/nginx/ssl/*
+!deploy/nginx/ssl/README.md
 
 # Logs
 logs/

@@ -8,11 +8,11 @@ Jenkins 会把 `deploy/` 中准备好的发布产物同步到服务器 `/opt/sho
 deploy/
 ├── admin-app/            # 后台管理接口服务 Dockerfile + jar
 ├── wx-app/               # 小程序接口服务 Dockerfile + jar
-├── init/                 # 首次启动 MySQL 时导入的 sql（dump）
+├── init/                 # MySQL 初始化钩子的说明目录；结构由 Flyway 迁移管理
 ├── nginx/
 │   ├── Dockerfile        # 构建并托管后台管理前端的 Nginx 镜像
 │   ├── conf.d/*.conf     # console / conapi / miniapi 三个域名
-│   └── ssl/              # 仅保留兼容性证书文件；生产 TLS 文件放在 /etc/shop/tls
+│   └── ssl/              # 仅含说明；生产 TLS 文件放在 /etc/shop/tls
 ├── uploads/              # 后端上传文件持久化
 ├── logs/                 # 三个组件的日志目录
 ├── docker-compose.yml

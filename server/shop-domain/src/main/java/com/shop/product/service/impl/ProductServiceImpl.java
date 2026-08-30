@@ -505,8 +505,13 @@ public class ProductServiceImpl implements ProductService {
         }
         Set<String> combinations = new HashSet<>();
         for (ProductSaveRequest.SkuInput sku : skus) {
+            if (sku.getPrice() == null || sku.getPrice().compareTo(BigDecimal.ZERO) < 0
+                    || sku.getStock() == null || sku.getStock() < 0) {
+                throw new BusinessException(ErrorCode.INVALID_SPEC);
+            }
             if (sku.getOriginalPrice() != null && sku.getPrice() != null
-                    && sku.getOriginalPrice().compareTo(sku.getPrice()) < 0) {
+                    && (sku.getOriginalPrice().compareTo(BigDecimal.ZERO) < 0
+                    || sku.getOriginalPrice().compareTo(sku.getPrice()) < 0)) {
                 throw new BusinessException(ErrorCode.INVALID_SPEC);
             }
             if (sku.getSpecValueIndexes() == null || sku.getSpecValueIndexes().size() != specs.size()

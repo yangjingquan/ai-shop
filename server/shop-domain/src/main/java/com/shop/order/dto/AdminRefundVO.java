@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class AdminRefundVO {
@@ -16,6 +17,7 @@ public class AdminRefundVO {
     private Long merchantId;
     private String merchantName;
     private String reason;
+    private List<String> evidenceUrls;
     private Integer status;
     private String statusText;
     private String rejectReason;
@@ -23,6 +25,12 @@ public class AdminRefundVO {
     private String refundFailReason;
     private LocalDateTime refundTime;
     private Integer autoRefund;
+    private Integer returnRequired;
+    private String returnShipCompany;
+    private String returnShipNo;
+    private LocalDateTime returnShipTime;
+    private LocalDateTime returnReceivedTime;
+    private String returnReceiveNote;
     private LocalDateTime refundReconcileAt;
     private Integer refundReconcileAttempts;
     private String refundReconcileError;

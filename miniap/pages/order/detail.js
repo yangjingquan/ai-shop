@@ -29,8 +29,8 @@ Page({
           payAmountText: this.fmtPrice(raw.payAmount),
           groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
-          refundStatusText: raw.refundStatus === 0 ? '退款申请处理中' : raw.refundStatus === 1 ? '退款处理中' : raw.refundStatus === 2 ? '退款申请已拒绝' : raw.refundStatus === 3 ? '退款成功' : raw.refundStatus === 4 ? '退款失败，可重新申请' : '',
-          canRefund: ![0, 1].includes(raw.refundStatus)
+          refundStatusText: raw.refundStatus === 0 ? '退款申请处理中' : raw.refundStatus === 1 ? '退款处理中' : raw.refundStatus === 2 ? '退款申请已拒绝' : raw.refundStatus === 3 ? '退款成功' : raw.refundStatus === 4 ? '退款失败，可重新申请' : raw.refundStatus === 5 ? '请填写退货物流' : raw.refundStatus === 6 ? '商家正在验货' : '',
+          canRefund: ![0, 1, 5, 6].includes(raw.refundStatus)
             && ([1, 2, 3].includes(raw.status) || (raw.orderType === 1 && raw.status === 6)),
           totalLabel: raw.status === 0 ? '需支付' : '实付款',
           items: (raw.items || []).map((item) => ({
@@ -189,6 +189,30 @@ Page({
           wx.showToast({ title: '已提交退款申请', icon: 'success' })
           this.reloadDetail()
         }).catch(() => this.reloadDetail())
+      },
+    })
+  },
+
+  submitReturnShipment() {
+    const order = this.data.order || {}
+    if (!order.refundId) return
+    wx.showModal({
+      title: '填写退货物流',
+      editable: true,
+      placeholderText: '承运商,单号，例如 顺丰,SF12345678',
+      success: (modalRes) => {
+        if (!modalRes.confirm) return
+        const parts = String(modalRes.content || '').split(',').map((v) => v.trim())
+        if (parts.length !== 2 || !parts[0] || !/^[A-Za-z0-9]{5,30}$/.test(parts[1])) {
+          wx.showToast({ title: '请按“承运商,单号”填写', icon: 'none' })
+          return
+        }
+        orderApi.submitReturnShipment(order.refundId, { shipCompany: parts[0], shipNo: parts[1] })
+          .then(() => {
+            wx.showToast({ title: '退货物流已提交', icon: 'success' })
+            this.reloadDetail()
+          })
+          .catch(() => this.reloadDetail())
       },
     })
   },

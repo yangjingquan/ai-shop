@@ -84,6 +84,13 @@ public class WxOrderController {
         return ApiResult.success(null);
     }
 
+    @PostMapping("/refund/{refundId}/return-shipment")
+    public ApiResult<Void> submitReturnShipment(@PathVariable Long refundId,
+                                                @RequestBody @Valid ReturnShipmentRequest req) {
+        orderService.submitReturnShipment(CurrentUserHolder.get().getUserId(), refundId, req);
+        return ApiResult.success(null);
+    }
+
     @PostMapping("/{orderNo}/repay")
     public ApiResult<OrderCreateVO> repay(@PathVariable String orderNo, HttpServletRequest request) {
         Long userId = CurrentUserHolder.get().getUserId();

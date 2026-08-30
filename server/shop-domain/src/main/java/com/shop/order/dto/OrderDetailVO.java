@@ -5,6 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.List;
 
 @Data
 public class OrderDetailVO {
@@ -64,6 +65,22 @@ public class OrderDetailVO {
     private BigDecimal refundAmount;
 
     private String refundFailReason;
+
+    private Long refundId;
+
+    private List<String> refundEvidenceUrls;
+
+    private Integer refundReturnRequired;
+
+    private String refundReturnShipCompany;
+
+    private String refundReturnShipNo;
+
+    private LocalDateTime refundReturnShipTime;
+
+    private LocalDateTime refundReturnReceivedTime;
+
+    private String refundReturnReceiveNote;
 
     private LocalDateTime finishTime;
 

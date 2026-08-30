@@ -1,15 +1,18 @@
 package com.shop.order.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-@TableName("refund_application")
+@TableName(value = "refund_application", autoResultMap = true)
 public class RefundApplication {
 
     @TableId(type = IdType.AUTO)
@@ -29,6 +32,9 @@ public class RefundApplication {
 
     private String reason;
 
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<String> evidenceUrls;
+
     private Integer status;
 
     private String rejectReason;
@@ -43,6 +49,18 @@ public class RefundApplication {
 
     /** 是否由系统自动发起退款（例如拼团失败）。 */
     private Integer autoRefund;
+
+    private Integer returnRequired;
+
+    private String returnShipCompany;
+
+    private String returnShipNo;
+
+    private LocalDateTime returnShipTime;
+
+    private LocalDateTime returnReceivedTime;
+
+    private String returnReceiveNote;
 
     private LocalDateTime refundReconcileAt;
 

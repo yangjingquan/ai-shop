@@ -104,11 +104,18 @@ public class MerchantOrderController {
             vo.setUserId(r.getUserId());
             vo.setMerchantId(r.getMerchantId());
             vo.setReason(r.getReason());
+            vo.setEvidenceUrls(r.getEvidenceUrls());
             vo.setStatus(r.getStatus());
             vo.setRejectReason(r.getRejectReason());
             vo.setRefundAmount(r.getRefundAmount());
             vo.setRefundFailReason(r.getRefundFailReason());
             vo.setRefundTime(r.getRefundTime());
+            vo.setReturnRequired(r.getReturnRequired());
+            vo.setReturnShipCompany(r.getReturnShipCompany());
+            vo.setReturnShipNo(r.getReturnShipNo());
+            vo.setReturnShipTime(r.getReturnShipTime());
+            vo.setReturnReceivedTime(r.getReturnReceivedTime());
+            vo.setReturnReceiveNote(r.getReturnReceiveNote());
             vo.setCreatedAt(r.getCreatedAt());
             vo.setUpdatedAt(r.getUpdatedAt());
             return vo;
@@ -128,6 +135,21 @@ public class MerchantOrderController {
                                          @RequestBody RefundApproveRequest req) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
         orderService.refundApprove(merchantId, refundId, req.isApproved(), req.getRejectReason());
+        return ApiResult.success(null);
+    }
+
+    @Data
+    public static class ReturnReceiveRequest {
+        @jakarta.validation.constraints.Size(max = 255)
+        private String note;
+    }
+
+    @OpLog(action = "REFUND_RETURN_RECEIVE", targetType = "REFUND", targetIdExpr = "#refundId")
+    @PostMapping("/refund/{refundId}/return-received")
+    public ApiResult<Void> confirmReturnReceived(@PathVariable Long refundId,
+                                                  @RequestBody(required = false) @Valid ReturnReceiveRequest req) {
+        Long merchantId = CurrentUserHolder.get().getMerchantId();
+        orderService.confirmReturnReceived(merchantId, refundId, req == null ? "" : req.getNote());
         return ApiResult.success(null);
     }
 }

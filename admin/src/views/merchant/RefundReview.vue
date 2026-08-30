@@ -10,13 +10,16 @@ interface RefundRow {
   status: number
   statusText?: string
   rejectReason?: string
+  returnRequired?: number
+  returnShipCompany?: string
+  returnShipNo?: string
 }
 
 const refunds = ref<RefundRow[]>([])
 const currentTab = ref<0 | -1>(0)
 const rejectReasons = ref<Record<number, string>>({})
 const loading = ref(false)
-const statusLabels: Record<number, string> = { 0: '待处理', 1: '退款处理中', 2: '已拒绝', 3: '退款成功', 4: '退款失败' }
+const statusLabels: Record<number, string> = { 0: '待处理', 1: '退款处理中', 2: '已拒绝', 3: '退款成功', 4: '退款失败', 5: '待退货', 6: '待验货' }
 
 function refundStatusText(row: { status?: number; statusText?: string }) {
   return row.statusText || (row.status === undefined ? '未知状态' : statusLabels[row.status] || '未知状态')
@@ -46,6 +49,12 @@ async function doReject(id: number) {
     rejectReason: rejectReasons.value[id] || '',
   })
   ElMessage.success('已拒绝退款')
+  await loadRefunds()
+}
+
+async function confirmReturn(id: number) {
+  await request.post<unknown, void>(`/api/merchant/refund/${id}/return-received`, { note: '' })
+  ElMessage.success('已确认收货，正在发起原路退款')
   await loadRefunds()
 }
 
@@ -81,6 +90,11 @@ onMounted(loadRefunds)
         </el-table-column>
         <el-table-column prop="reason" label="退款原因" min-width="180" />
         <el-table-column prop="refundAmount" label="退款金额" width="110" />
+        <el-table-column label="退货物流" min-width="160">
+          <template #default="{ row }">
+            {{ row.returnShipNo ? `${row.returnShipCompany || '物流'} ${row.returnShipNo}` : '-' }}
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
             <el-tag
@@ -91,9 +105,9 @@ onMounted(loadRefunds)
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column v-if="currentTab === 0" label="审批操作" min-width="360" fixed="right">
+        <el-table-column label="售后操作" min-width="360" fixed="right">
           <template #default="{ row }">
-            <div class="review-action">
+            <div v-if="row.status === 0" class="review-action">
               <el-input
                 v-model="rejectReasons[row.id]"
                 placeholder="拒绝原因（可选）"
@@ -106,11 +120,10 @@ onMounted(loadRefunds)
                 拒绝
               </el-button>
             </div>
-          </template>
-        </el-table-column>
-        <el-table-column v-else label="退款结果" min-width="190">
-          <template #default="{ row }">
-            {{ row.wxRefundId || row.rejectReason || '-' }}
+            <el-button v-else-if="row.status === 6" type="primary" size="small" @click="confirmReturn(row.id)">
+              验货并退款
+            </el-button>
+            <span v-else>-</span>
           </template>
         </el-table-column>
       </el-table>
