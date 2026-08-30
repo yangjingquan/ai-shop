@@ -28,6 +28,7 @@ public enum ErrorCode {
     ORDER_NOT_WAIT_SHIP(144, "当前状态不可发货"),
     ORDER_NOT_WAIT_RECEIVE(145, "当前状态不可确认收货"),
     ORDER_NOT_REPAYABLE(146, "订单不可重新支付"),
+    ORDER_REMINDER_TOO_FREQUENT(153, "请稍后再提醒发货"),
     WX_PAY_CONFIG_INCOMPLETE(147, "商户微信支付配置未完成"),
     WX_PAY_PREPAY_FAILED(148, "微信支付预下单失败"),
     WX_PAY_CALLBACK_VERIFY_FAILED(149, "微信支付回调验签失败"),

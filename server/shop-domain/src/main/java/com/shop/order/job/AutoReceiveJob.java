@@ -32,13 +32,13 @@ public class AutoReceiveJob {
         LocalDateTime now = LocalDateTime.now();
         for (Order order : expired) {
             try {
-                orderMapper.update(null, new LambdaUpdateWrapper<Order>()
+                int affected = orderMapper.update(null, new LambdaUpdateWrapper<Order>()
                         .eq(Order::getId, order.getId())
                         .eq(Order::getStatus, OrderStatus.WAIT_RECEIVE.getCode())
                         .set(Order::getStatus, OrderStatus.FINISHED.getCode())
                         .set(Order::getFinishTime, now)
                         .set(Order::getUpdatedAt, now));
-                count++;
+                count += affected;
             } catch (Exception e) {
                 log.error("超时自动确认收货失败 orderNo={}", order.getOrderNo(), e);
             }

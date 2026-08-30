@@ -17,7 +17,9 @@ Page({
   loadList() {
     addressApi.list().then((res) => {
       this.setData({ list: res.data || [] })
-    }).catch(() => {})
+    }).catch(() => {
+      wx.showToast({ title: '地址加载失败，请重试', icon: 'none' })
+    })
   },
 
   onSelect(e) {
@@ -46,7 +48,9 @@ Page({
         addressApi.remove(id).then(() => {
           wx.showToast({ title: '已删除' })
           this.loadList()
-        }).catch(() => {})
+        }).catch(() => {
+          wx.showToast({ title: '地址删除失败，请重试', icon: 'none' })
+        })
       },
     })
   },
@@ -56,6 +60,8 @@ Page({
     addressApi.setDefault(id).then(() => {
       wx.showToast({ title: '已设为默认' })
       this.loadList()
-    }).catch(() => {})
+    }).catch(() => {
+      wx.showToast({ title: '设置默认地址失败，请重试', icon: 'none' })
+    })
   },
 })

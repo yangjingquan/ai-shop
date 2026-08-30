@@ -174,6 +174,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
     }
 
     @Override
+    @Transactional
     public void setStatus(Long id, int status) {
         Merchant m = merchantMapper.selectById(id);
         if (m == null) {
@@ -181,6 +182,9 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         }
         m.setStatus(status);
         merchantMapper.updateById(m);
+        merchantUserMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<MerchantUser>()
+                .eq(MerchantUser::getMerchantId, id)
+                .setSql("token_version = COALESCE(token_version, 0) + 1"));
     }
 
     @Override
@@ -196,6 +200,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
             throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
         }
         mu.setPasswordHash(ENCODER.encode(newPassword));
+        mu.setTokenVersion((mu.getTokenVersion() == null ? 0 : mu.getTokenVersion()) + 1);
         merchantUserMapper.updateById(mu);
     }
 

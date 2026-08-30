@@ -248,6 +248,26 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public PageResult<ProductListVO> publicTopSalesPage(int page, int size, Long merchantId, Long categoryId) {
+        LambdaQueryWrapper<Product> q = new LambdaQueryWrapper<Product>()
+                .eq(Product::getStatus, 1)
+                .eq(Product::getAuditStatus, 1)
+                .orderByDesc(Product::getTotalSales)
+                .orderByDesc(Product::getId);
+        if (merchantId != null) {
+            q.eq(Product::getMerchantId, merchantId);
+        }
+        if (categoryId != null) {
+            List<Long> scopeCategoryIds = merchantCategoryService.resolveCategoryScopeIds(merchantId, categoryId);
+            if (scopeCategoryIds.isEmpty()) {
+                return PageResult.of(List.of(), 0, page, size);
+            }
+            q.in(Product::getCategoryId, scopeCategoryIds);
+        }
+        return buildProductPage(productMapper.selectPage(new Page<>(page, size), q), merchantId);
+    }
+
+    @Override
     public PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId,
                                           String keyword, Integer status, Integer isRecommend, Integer isGroupBuy) {
         LambdaQueryWrapper<Product> q = new LambdaQueryWrapper<>();
@@ -292,11 +312,16 @@ public class ProductServiceImpl implements ProductService {
         IPage<Product> pageReq = new Page<>(page, size);
         IPage<Product> result = productMapper.selectPage(pageReq, q);
 
-        Map<Long, String> catNames = new HashMap<>();
-        result.getRecords().stream()
+        return buildProductPage(result, merchantId);
+    }
+
+    private PageResult<ProductListVO> buildProductPage(IPage<Product> result, Long merchantId) {
+        List<Long> categoryIds = result.getRecords().stream()
                 .map(Product::getCategoryId)
+                .filter(java.util.Objects::nonNull)
                 .distinct()
-                .forEach(id -> catNames.put(id, merchantCategoryService.getCategoryName(merchantId, id)));
+                .collect(Collectors.toList());
+        Map<Long, String> catNames = merchantCategoryService.getCategoryNames(merchantId, categoryIds);
 
         List<ProductListVO> list = result.getRecords().stream().map(p -> {
             ProductListVO v = new ProductListVO();
@@ -324,7 +349,7 @@ public class ProductServiceImpl implements ProductService {
             return v;
         }).collect(Collectors.toList());
 
-        return PageResult.of(list, result.getTotal(), page, size);
+        return PageResult.of(list, result.getTotal(), (int) result.getCurrent(), (int) result.getSize());
     }
 
     @Override
@@ -342,9 +367,12 @@ public class ProductServiceImpl implements ProductService {
             q.like(Product::getName, keyword.trim());
         }
         IPage<Product> result = productMapper.selectPage(new Page<>(page, size), q);
-        Map<Long, String> catNames = new HashMap<>();
-        result.getRecords().stream().map(Product::getCategoryId).distinct()
-                .forEach(id -> catNames.put(id, merchantCategoryService.getCategoryName(null, id)));
+        List<Long> categoryIds = result.getRecords().stream()
+                .map(Product::getCategoryId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, String> catNames = merchantCategoryService.getCategoryNames(null, categoryIds);
         List<ProductListVO> list = result.getRecords().stream().map(p -> {
             ProductListVO v = new ProductListVO();
             v.setId(p.getId());
@@ -454,8 +482,16 @@ public class ProductServiceImpl implements ProductService {
             if (!StringUtils.hasText(s.getName()) || s.getValues() == null || s.getValues().isEmpty()) {
                 throw new BusinessException(ErrorCode.INVALID_SPEC);
             }
-            if (!names.add(s.getName())) {
+            String specName = s.getName().trim().toLowerCase(java.util.Locale.ROOT);
+            if (!names.add(specName)) {
                 throw new BusinessException(ErrorCode.INVALID_SPEC);
+            }
+            Set<String> values = new HashSet<>();
+            for (String value : s.getValues()) {
+                if (!StringUtils.hasText(value)
+                        || !values.add(value.trim().toLowerCase(java.util.Locale.ROOT))) {
+                    throw new BusinessException(ErrorCode.INVALID_SPEC);
+                }
             }
         }
     }
@@ -467,12 +503,20 @@ public class ProductServiceImpl implements ProductService {
         if (skus.size() > SKU_LIMIT) {
             throw new BusinessException(ErrorCode.SKU_LIMIT_EXCEEDED);
         }
+        Set<String> combinations = new HashSet<>();
         for (ProductSaveRequest.SkuInput sku : skus) {
             if (sku.getOriginalPrice() != null && sku.getPrice() != null
                     && sku.getOriginalPrice().compareTo(sku.getPrice()) < 0) {
                 throw new BusinessException(ErrorCode.INVALID_SPEC);
             }
-            if (sku.getSpecValueIndexes() == null || sku.getSpecValueIndexes().size() != specs.size()) {
+            if (sku.getSpecValueIndexes() == null || sku.getSpecValueIndexes().size() != specs.size()
+                    || sku.getSpecValueIndexes().stream().anyMatch(java.util.Objects::isNull)) {
+                throw new BusinessException(ErrorCode.INVALID_SPEC);
+            }
+            String combination = sku.getSpecValueIndexes().stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining("/"));
+            if (!combinations.add(combination)) {
                 throw new BusinessException(ErrorCode.INVALID_SPEC);
             }
             for (int i = 0; i < specs.size(); i++) {

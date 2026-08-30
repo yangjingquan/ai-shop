@@ -42,7 +42,9 @@ public class AdminUserServiceImpl implements AdminUserService {
         if (user == null || (!bootstrapLogin && !ENCODER.matches(password, user.getPasswordHash()))) {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
-        String token = jwtUtil.generateToken(UserType.ADMIN, Map.of("userId", user.getId()));
+        int tokenVersion = user.getTokenVersion() == null ? 0 : user.getTokenVersion();
+        String token = jwtUtil.generateToken(UserType.ADMIN,
+                Map.of("userId", user.getId(), "tokenVersion", tokenVersion));
         return new LoginResponse(token, user.getRole(), null);
     }
 

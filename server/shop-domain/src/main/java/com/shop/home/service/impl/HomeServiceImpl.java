@@ -28,12 +28,8 @@ public class HomeServiceImpl implements HomeService {
 
         // 最近上架（按 id 倒序即按时间倒序）
         var recent = productService.publicPage(1, 10, merchantId, null, null, null, null).getList();
-        // 销量 Top
-        var topSales = productService.publicPage(1, 10, merchantId, null, null, null, null);
-
-        // 但 page API 不支持 ORDER BY total_sales。用内置规则拿到 recent 再手动取销量高的。
-        // 简化：取 page 2 page 不同排序，只用 recent + 同一个 page 的 list 去重。
-        // 实际效果：最近的 10 个上架商品，部分会被销量高的替换。
+        // 销量 Top 必须由数据库按 total_sales 排序，不能复用最新商品排序。
+        var topSales = productService.publicTopSalesPage(1, 10, merchantId, null);
         List<ProductListVO> all = Stream.concat(recent.stream(), topSales.getList().stream())
                 .collect(Collectors.toList());
 

@@ -51,6 +51,10 @@ public class OrderDetailVO {
 
     private LocalDateTime shipTime;
 
+    private LocalDateTime shipReminderAt;
+
+    private String merchantContactPhone;
+
     private Integer refundStatus;
 
     private String refundReason;

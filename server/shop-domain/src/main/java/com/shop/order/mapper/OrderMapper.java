@@ -29,6 +29,11 @@ public interface OrderMapper extends BaseMapper<Order> {
     @Update("UPDATE `order` SET status = 3, finish_time = #{now}, updated_at = #{now} WHERE order_no = #{orderNo} AND user_id = #{userId} AND status = 2 AND deleted = 0")
     int confirmReceive(@Param("userId") Long userId, @Param("orderNo") String orderNo, @Param("now") LocalDateTime now);
 
+    @Update("UPDATE `order` SET ship_reminder_at = #{now}, updated_at = #{now} " +
+            "WHERE order_no = #{orderNo} AND user_id = #{userId} AND deleted = 0 " +
+            "AND status IN (1, 6) AND (ship_reminder_at IS NULL OR ship_reminder_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE))")
+    int remindShip(@Param("userId") Long userId, @Param("orderNo") String orderNo, @Param("now") LocalDateTime now);
+
     @Select("SELECT * FROM `order` WHERE status = 2 AND ship_time < DATE_SUB(NOW(), INTERVAL 7 DAY) ORDER BY id ASC LIMIT #{limit}")
     List<Order> selectAutoReceiveOrders(@Param("limit") int limit);
 }

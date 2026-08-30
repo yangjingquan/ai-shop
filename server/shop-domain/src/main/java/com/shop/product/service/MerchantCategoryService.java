@@ -6,6 +6,7 @@ import com.shop.product.dto.MerchantCategoryRequest;
 import com.shop.product.dto.MerchantCategoryVO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface MerchantCategoryService {
 
@@ -30,4 +31,6 @@ public interface MerchantCategoryService {
     List<Long> findMatchedCategoryIds(Long merchantId, String keyword);
 
     String getCategoryName(Long merchantId, Long categoryId);
+
+    Map<Long, String> getCategoryNames(Long merchantId, List<Long> categoryIds);
 }

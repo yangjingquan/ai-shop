@@ -238,6 +238,22 @@ public class MerchantCategoryServiceImpl implements MerchantCategoryService {
         return c.getName();
     }
 
+    @Override
+    public Map<Long, String> getCategoryNames(Long merchantId, List<Long> categoryIds) {
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return Map.of();
+        }
+        LambdaQueryWrapper<MerchantCategory> q = new LambdaQueryWrapper<MerchantCategory>()
+                .select(MerchantCategory::getId, MerchantCategory::getName)
+                .in(MerchantCategory::getId, categoryIds);
+        if (merchantId != null) {
+            q.eq(MerchantCategory::getMerchantId, merchantId);
+        }
+        Map<Long, String> result = new HashMap<>();
+        merchantCategoryMapper.selectList(q).forEach(c -> result.put(c.getId(), c.getName()));
+        return result;
+    }
+
     private MerchantCategory importOne(Long merchantId, Category source, Long parentId) {
         MerchantCategory exist = findBySource(merchantId, source.getId());
         if (exist != null) {

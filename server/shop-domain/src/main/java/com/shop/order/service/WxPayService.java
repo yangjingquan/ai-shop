@@ -12,8 +12,13 @@ public interface WxPayService {
 
     void closeOrder(Order order);
 
-    /** 发起全额原路退款；outRefundNo 必须对同一业务退款保持不变。 */
-    Refund createRefund(Order order, String outRefundNo, String reason);
+    /** 兼容旧调用，默认发起全额原路退款。 */
+    default Refund createRefund(Order order, String outRefundNo, String reason) {
+        return createRefund(order, outRefundNo, reason, order.getPayAmount());
+    }
+
+    /** 发起指定金额的原路退款；outRefundNo 必须对同一业务退款保持不变。 */
+    Refund createRefund(Order order, String outRefundNo, String reason, java.math.BigDecimal refundAmount);
 
     /** 查询退款单，用于补偿任务或人工重试。 */
     Refund queryRefund(Order order, String outRefundNo);

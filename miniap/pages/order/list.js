@@ -65,7 +65,7 @@ Page({
         const newOrders = this.data.page === 1 ? list : this.data.orders.concat(list)
         this.setData({
           orders: newOrders,
-          hasMore: list.length === 10,
+          hasMore: newOrders.length < Number((res.data && res.data.total) || 0),
         })
       })
       .finally(() => {
@@ -189,6 +189,15 @@ Page({
 
   viewLogistics(e) {
     this.goDetail(e)
+  },
+
+  remindShip(e) {
+    const orderNo = e.currentTarget.dataset.orderno
+    if (!orderNo) return
+    orderApi.remindShip(orderNo).then(() => {
+      wx.showToast({ title: '已提醒商家发货', icon: 'success' })
+      this.refreshList()
+    }).catch(() => this.refreshList())
   },
 
   goGroup(e) {

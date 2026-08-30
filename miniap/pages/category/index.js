@@ -48,7 +48,9 @@ Page({
           this.renderTop(activeTopId, targetCategoryId)
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        wx.showToast({ title: '分类加载失败，请重试', icon: 'none' })
+      })
       .then(() => this.setData({ loading: false }))
   },
 
@@ -110,7 +112,10 @@ Page({
         }))
         this.setData({ products })
       })
-      .catch(() => this.setData({ products: [] }))
+      .catch(() => {
+        this.setData({ products: [] })
+        wx.showToast({ title: '商品加载失败，请重试', icon: 'none' })
+      })
       .then(() => this.setData({ productLoading: false }))
   },
 

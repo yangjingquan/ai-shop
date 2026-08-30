@@ -13,36 +13,43 @@ interface LoginResponse {
 export const useUserStore = defineStore(
   'user',
   () => {
-    const token = ref<string>(localStorage.getItem('token') || '')
+    const storage = window.sessionStorage
+    // 清理旧版本持久化凭证，避免令牌长期残留在浏览器磁盘中。
+    localStorage.removeItem('token')
+    localStorage.removeItem('role')
+    localStorage.removeItem('merchantId')
+    localStorage.removeItem('merchantName')
+
+    const token = ref<string>(storage.getItem('token') || '')
     const role = ref<UserRole | ''>(
-      (localStorage.getItem('role') as UserRole) || '',
+      (storage.getItem('role') as UserRole) || '',
     )
     const merchantId = ref<number | null>(
-      localStorage.getItem('merchantId')
-        ? Number(localStorage.getItem('merchantId'))
+      storage.getItem('merchantId')
+        ? Number(storage.getItem('merchantId'))
         : null,
     )
-    const merchantName = ref<string>(localStorage.getItem('merchantName') || '')
+    const merchantName = ref<string>(storage.getItem('merchantName') || '')
 
     function setAuth(payload: LoginResponse) {
       token.value = payload.token
       role.value = payload.role
       merchantId.value = payload.merchantId ?? null
-      localStorage.setItem('token', payload.token)
-      localStorage.setItem('role', payload.role)
+      storage.setItem('token', payload.token)
+      storage.setItem('role', payload.role)
       if (payload.merchantId != null) {
-        localStorage.setItem('merchantId', String(payload.merchantId))
+        storage.setItem('merchantId', String(payload.merchantId))
       } else {
-        localStorage.removeItem('merchantId')
+        storage.removeItem('merchantId')
       }
     }
 
     function setMerchantName(name: string) {
       merchantName.value = name
       if (name) {
-        localStorage.setItem('merchantName', name)
+        storage.setItem('merchantName', name)
       } else {
-        localStorage.removeItem('merchantName')
+        storage.removeItem('merchantName')
       }
     }
 
@@ -51,10 +58,10 @@ export const useUserStore = defineStore(
       role.value = ''
       merchantId.value = null
       merchantName.value = ''
-      localStorage.removeItem('token')
-      localStorage.removeItem('role')
-      localStorage.removeItem('merchantId')
-      localStorage.removeItem('merchantName')
+      storage.removeItem('token')
+      storage.removeItem('role')
+      storage.removeItem('merchantId')
+      storage.removeItem('merchantName')
     }
 
     async function loginAdmin(username: string, password: string) {

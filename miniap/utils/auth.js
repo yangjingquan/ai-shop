@@ -1,7 +1,10 @@
 const config = require('./config')
 
+let loginPromise = null
+
 function silentLogin() {
-  return new Promise((resolve, reject) => {
+  if (loginPromise) return loginPromise
+  loginPromise = new Promise((resolve, reject) => {
     wx.login({
       success(loginRes) {
         if (!loginRes.code) {
@@ -27,7 +30,7 @@ function silentLogin() {
           header: { 'content-type': 'application/json', Accept: 'application/json' },
           success(res) {
             const data = res.data
-            if (data.code === 0 && data.data && data.data.token) {
+            if (data && data.code === 0 && data.data && data.data.token) {
               wx.setStorageSync('wx_token', data.data.token)
               wx.setStorageSync('wx_openid', data.data.openid || '')
               wx.setStorageSync('has_phone', data.data.hasPhone)
@@ -45,7 +48,10 @@ function silentLogin() {
       },
       fail: reject,
     })
+  }).finally(() => {
+    loginPromise = null
   })
+  return loginPromise
 }
 
 module.exports = { silentLogin }

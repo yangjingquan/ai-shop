@@ -14,6 +14,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class MerchantAuthInterceptor implements HandlerInterceptor {
 
     private final JwtUtil jwtUtil;
+    private final TokenVersionService tokenVersionService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -30,8 +31,13 @@ public class MerchantAuthInterceptor implements HandlerInterceptor {
         if (!UserType.MERCHANT.name().equals(userType)) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
+        Long userId = claims.get("userId", Long.class);
+        Number tokenVersion = claims.get("tokenVersion", Number.class);
+        if (tokenVersion == null || !tokenVersionService.isCurrent(UserType.MERCHANT, userId, tokenVersion.intValue())) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         CurrentUser user = CurrentUser.builder()
-                .userId(claims.get("userId", Long.class))
+                .userId(userId)
                 .merchantId(claims.get("merchantId", Long.class))
                 .userType(UserType.MERCHANT)
                 .build();

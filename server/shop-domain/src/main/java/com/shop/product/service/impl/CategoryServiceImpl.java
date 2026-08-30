@@ -6,7 +6,9 @@ import com.shop.common.exception.ErrorCode;
 import com.shop.product.dto.CategoryRequest;
 import com.shop.product.dto.CategoryVO;
 import com.shop.product.entity.Category;
+import com.shop.product.entity.MerchantCategory;
 import com.shop.product.mapper.CategoryMapper;
+import com.shop.product.mapper.MerchantCategoryMapper;
 import com.shop.product.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -24,6 +26,7 @@ import java.util.Map;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryMapper categoryMapper;
+    private final MerchantCategoryMapper merchantCategoryMapper;
 
     @Override
     public List<CategoryVO> tree() {
@@ -141,7 +144,12 @@ public class CategoryServiceImpl implements CategoryService {
                 throw new BusinessException(ErrorCode.CATEGORY_HAS_CHILDREN);
             }
         }
-        // TODO M4：检查无关联商品
+        Long imported = merchantCategoryMapper.selectCount(
+                new LambdaQueryWrapper<MerchantCategory>()
+                        .eq(MerchantCategory::getSourceCategoryId, id));
+        if (imported != null && imported > 0) {
+            throw new BusinessException(ErrorCode.CATEGORY_HAS_CHILDREN);
+        }
         categoryMapper.deleteById(id);
     }
 }

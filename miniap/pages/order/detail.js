@@ -30,7 +30,8 @@ Page({
           groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
           refundStatusText: raw.refundStatus === 0 ? '退款申请处理中' : raw.refundStatus === 1 ? '退款处理中' : raw.refundStatus === 2 ? '退款申请已拒绝' : raw.refundStatus === 3 ? '退款成功' : raw.refundStatus === 4 ? '退款失败，可重新申请' : '',
-          canRefund: [1, 2, 3].includes(raw.status) || (raw.orderType === 1 && raw.status === 6),
+          canRefund: ![0, 1].includes(raw.refundStatus)
+            && ([1, 2, 3].includes(raw.status) || (raw.orderType === 1 && raw.status === 6)),
           totalLabel: raw.status === 0 ? '需支付' : '实付款',
           items: (raw.items || []).map((item) => ({
             ...item,
@@ -138,8 +139,34 @@ Page({
     wx.showModal({
       title: '物流信息',
       content: `${order.shipCompany || '物流'}\n运单号：${order.shipNo}\n发货时间：${order.shipTime || '-'}`,
+      confirmText: '复制单号',
       showCancel: false,
+      success: () => wx.setClipboardData({ data: String(order.shipNo) }),
     })
+  },
+
+  copyOrderNo() {
+    const orderNo = this.data.order && this.data.order.orderNo
+    if (!orderNo) return
+    wx.setClipboardData({ data: String(orderNo) })
+  },
+
+  contactMerchant() {
+    const phone = this.data.order && this.data.order.merchantContactPhone
+    if (!phone) {
+      wx.showToast({ title: '商家暂未提供联系电话', icon: 'none' })
+      return
+    }
+    wx.makePhoneCall({ phoneNumber: String(phone) })
+  },
+
+  remindShip() {
+    const orderNo = this.data.order && this.data.order.orderNo
+    if (!orderNo) return
+    orderApi.remindShip(orderNo).then(() => {
+      wx.showToast({ title: '已提醒商家发货', icon: 'success' })
+      this.reloadDetail()
+    }).catch(() => this.reloadDetail())
   },
 
   goGroup() {

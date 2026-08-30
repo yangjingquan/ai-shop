@@ -26,7 +26,9 @@ Page({
             isDefault: !!d.isDefault,
           },
         })
-      }).catch(() => {})
+      }).catch(() => {
+        wx.showToast({ title: '地址加载失败，请重试', icon: 'none' })
+      })
     }
   },
 
@@ -85,6 +87,8 @@ Page({
     promise.then(() => {
       wx.showToast({ title: '保存成功' })
       setTimeout(() => wx.navigateBack(), 600)
-    }).catch(() => {})
+    }).catch(() => {
+      wx.showToast({ title: '地址保存失败，请重试', icon: 'none' })
+    })
   },
 })

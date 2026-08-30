@@ -425,7 +425,8 @@ public class OrderServiceImpl implements OrderService {
     public void cancelByUser(Long userId, String orderNo) {
         Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                 .eq(Order::getOrderNo, orderNo)
-                .eq(Order::getUserId, userId));
+                .eq(Order::getUserId, userId)
+                .last("FOR UPDATE"));
         if (order == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
@@ -710,6 +711,8 @@ public class OrderServiceImpl implements OrderService {
         vo.setShipNo(order.getShipNo());
         vo.setShipCompany(order.getShipCompany());
         vo.setShipTime(order.getShipTime());
+        vo.setShipReminderAt(order.getShipReminderAt());
+        vo.setMerchantContactPhone(merchant == null ? "" : merchant.getContactPhone());
         vo.setFinishTime(order.getFinishTime());
         vo.setCancelTime(order.getCancelTime());
         vo.setCancelReason(order.getCancelReason());
@@ -786,7 +789,33 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    public void remindShip(Long userId, String orderNo) {
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                .eq(Order::getOrderNo, orderNo)
+                .eq(Order::getUserId, userId));
+        if (order == null) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        if (order.getStatus() != OrderStatus.WAIT_SHIP.getCode()
+                && order.getStatus() != OrderStatus.GROUP_SUCCESS.getCode()) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_NOT_ALLOWED);
+        }
+        if (orderMapper.remindShip(userId, orderNo, LocalDateTime.now()) == 0) {
+            throw new BusinessException(ErrorCode.ORDER_REMINDER_TOO_FREQUENT);
+        }
+    }
+
+    @Override
+    @Transactional
     public void refundApply(Long userId, String orderNo, String reason) {
+        RefundApplyRequest req = new RefundApplyRequest();
+        req.setReason(reason);
+        refundApply(userId, orderNo, req);
+    }
+
+    @Override
+    @Transactional
+    public void refundApply(Long userId, String orderNo, RefundApplyRequest req) {
         Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                 .eq(Order::getOrderNo, orderNo)
                 .eq(Order::getUserId, userId));
@@ -815,14 +844,31 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.REFUND_ORDER_NOT_REFUNDABLE);
         }
 
+        BigDecimal refundAmount = req == null || req.getRefundAmount() == null
+                ? order.getPayAmount() : req.getRefundAmount();
+        if (refundAmount.compareTo(BigDecimal.ZERO) <= 0
+                || refundAmount.compareTo(order.getPayAmount()) > 0) {
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "退款金额不能超过订单实付金额");
+        }
+        BigDecimal refundedAmount = refundApplicationMapper.selectList(new LambdaQueryWrapper<RefundApplication>()
+                        .eq(RefundApplication::getOrderNo, orderNo)
+                        .eq(RefundApplication::getStatus, RefundStatus.SUCCESS.getCode()))
+                .stream()
+                .map(RefundApplication::getRefundAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (refundAmount.add(refundedAmount).compareTo(order.getPayAmount()) > 0) {
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "退款金额超过剩余可退金额");
+        }
+
         RefundApplication app = new RefundApplication();
         app.setOrderNo(orderNo);
         app.setOutRefundNo("RF_" + orderNo + "_"
                 + UUID.randomUUID().toString().replace("-", ""));
         app.setUserId(userId);
         app.setMerchantId(order.getMerchantId());
-        app.setReason(reason != null ? reason : "");
-        app.setRefundAmount(order.getPayAmount());
+        app.setReason(req == null || req.getReason() == null ? "" : req.getReason().trim());
+        app.setRefundAmount(refundAmount);
         app.setStatus(RefundStatus.PENDING.getCode());
         refundApplicationMapper.insert(app);
     }
@@ -868,25 +914,32 @@ public class OrderServiceImpl implements OrderService {
             outRefundNo = "RF_" + app.getId() + "_" + order.getOrderNo();
             app.setOutRefundNo(outRefundNo);
         }
-        app.setRefundAmount(order.getPayAmount());
+        if (app.getRefundAmount() == null) {
+            app.setRefundAmount(order.getPayAmount());
+        }
+        if (app.getRefundAmount().compareTo(BigDecimal.ZERO) <= 0
+                || app.getRefundAmount().compareTo(order.getPayAmount()) > 0) {
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "退款金额不合法");
+        }
         app.setStatus(RefundStatus.REFUNDING.getCode());
         app.setUpdatedAt(now);
         refundApplicationMapper.updateById(app);
 
         // 微信退款请求使用固定 out_refund_no，可安全重试；只有微信受理后才推进订单状态。
-        Refund refund = wxPayService.createRefund(order, outRefundNo, app.getReason());
+        Refund refund = wxPayService.createRefund(order, outRefundNo, app.getReason(), app.getRefundAmount());
         if (refund == null || refund.getStatus() == null) {
             throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "微信未返回退款状态");
         }
         app.setWxRefundId(refund.getRefundId() == null ? "" : refund.getRefundId());
+        boolean fullRefund = app.getRefundAmount().compareTo(order.getPayAmount()) >= 0;
         if (refund.getStatus() == com.wechat.pay.java.service.refund.model.Status.SUCCESS) {
             app.setStatus(RefundStatus.SUCCESS.getCode());
             app.setRefundTime(now);
-            finalizeRefundedOrder(order, now);
+            if (fullRefund) finalizeRefundedOrder(order, now);
         } else if (refund.getStatus() == com.wechat.pay.java.service.refund.model.Status.PROCESSING) {
             app.setStatus(RefundStatus.REFUNDING.getCode());
             // 微信已受理，订单停止履约；最终资金结果由退款通知更新。
-            finalizeRefundedOrder(order, now);
+            if (fullRefund) finalizeRefundedOrder(order, now);
         } else {
             app.setStatus(RefundStatus.FAILED.getCode());
             app.setRefundFailReason("微信退款状态：" + refund.getStatus().name());

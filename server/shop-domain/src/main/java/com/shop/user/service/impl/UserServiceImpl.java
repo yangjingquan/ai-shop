@@ -71,6 +71,7 @@ public class UserServiceImpl implements UserService {
             user.setLastLoginAt(LocalDateTime.now());
             userMapper.updateById(user);
         }
+        int tokenVersion = user.getTokenVersion() == null ? 0 : user.getTokenVersion();
         String token = jwtUtil.generateToken(
             UserType.WX,
             Map.of(
@@ -78,7 +79,8 @@ public class UserServiceImpl implements UserService {
                 "openid", openid,
                 "merchantId", merchant.getId(),
                 "merchantCode", merchant.getMerchantCode(),
-                "appid", config.getWxAppId()
+                "appid", config.getWxAppId(),
+                "tokenVersion", tokenVersion
             )
         );
         boolean hasPhone = user.getPhone() != null && !user.getPhone().isBlank();

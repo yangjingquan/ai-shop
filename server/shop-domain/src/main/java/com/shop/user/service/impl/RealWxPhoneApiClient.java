@@ -13,6 +13,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
+import java.nio.charset.StandardCharsets;
+import java.net.URLEncoder;
 
 /**
  * 真实微信手机号接口：使用 getPhoneNumber code 换取用户绑定手机号。
@@ -32,7 +34,8 @@ public class RealWxPhoneApiClient implements WxPhoneApiClient {
             throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
         String accessToken = getAccessToken(appid, secret);
-        String url = "https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=" + accessToken;
+        String url = "https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token="
+                + URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
         String body = JSONUtil.createObj().set("code", code).toString();
         String resp = HttpRequest.post(url)
                 .header("Content-Type", "application/json")
@@ -49,7 +52,8 @@ public class RealWxPhoneApiClient implements WxPhoneApiClient {
         JSONObject phoneInfo = json.getJSONObject("phone_info");
         String phone = phoneInfo == null ? null : phoneInfo.getStr("phoneNumber");
         if (phone == null || phone.isBlank()) {
-            log.warn("wx getuserphonenumber missing phoneNumber, appid={}, resp={}", maskAppid(appid), resp);
+            log.warn("wx getuserphonenumber missing phoneNumber, appid={}, errcode={}, errmsg={}",
+                    maskAppid(appid), json.getInt("errcode"), json.getStr("errmsg"));
             throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
         return phone;
@@ -63,7 +67,8 @@ public class RealWxPhoneApiClient implements WxPhoneApiClient {
         }
         String url = String.format(
                 "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s",
-                appid, secret);
+                URLEncoder.encode(appid, StandardCharsets.UTF_8),
+                URLEncoder.encode(secret, StandardCharsets.UTF_8));
         String resp = HttpUtil.get(url, 5000);
         JSONObject json = JSONUtil.parseObj(resp);
         String token = json.getStr("access_token");

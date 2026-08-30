@@ -160,8 +160,16 @@ Page({
               url: `/pages/group-buy/group?groupId=${res.data.groupId}`,
             }), 1000);
           }).catch(() => {
-            wx.showToast({ title: '支付失败', icon: 'none' });
             this.setData({ submitting: false });
+            wx.showModal({
+              title: '支付未完成',
+              content: '订单已创建，可在订单列表中重新支付。',
+              confirmText: '去订单',
+              cancelText: '留在这里',
+              success: (modalRes) => {
+                if (modalRes.confirm) wx.switchTab({ url: '/pages/order/list' });
+              },
+            });
           });
         }
         wx.showToast({ title: res.msg, icon: 'none' });
@@ -187,6 +195,7 @@ Page({
       }
     }).catch(() => {
       this.setData({ submitting: false });
+      wx.showToast({ title: '订单创建失败，请重试', icon: 'none' });
     });
   },
 
@@ -205,8 +214,16 @@ Page({
         wx.switchTab({ url: '/pages/order/list' });
       }, 1000);
     }).catch(() => {
-      wx.showToast({ title: '支付未完成', icon: 'none' });
       this.setData({ submitting: false });
+      wx.showModal({
+        title: '支付未完成',
+        content: '订单已创建，可在订单列表中重新支付。',
+        confirmText: '去订单',
+        cancelText: '留在这里',
+        success: (modalRes) => {
+          if (modalRes.confirm) wx.switchTab({ url: '/pages/order/list' });
+        },
+      });
     });
   },
 

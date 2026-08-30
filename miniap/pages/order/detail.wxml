@@ -65,9 +65,9 @@
       <text>订单信息</text>
       <text class="muted">复制</text>
     </view>
-    <view class="info-row">
+    <view class="info-row" bindtap="copyOrderNo">
       <text>订单号</text>
-      <text>{{order.orderNo}}</text>
+      <text>{{order.orderNo}}（点击复制）</text>
     </view>
     <view class="info-row">
       <text>创建时间</text>
@@ -104,8 +104,8 @@
     <view class="btn primary" catchtap="payOrder">去支付</view>
   </view>
   <view class="actions" wx:elif="{{order.status === 1}}">
-    <view class="btn" catchtap="showTodo" data-title="联系商家功能开发中">联系商家</view>
-    <view class="btn dark" catchtap="showTodo" data-title="提醒发货功能开发中">提醒发货</view>
+    <view class="btn" catchtap="contactMerchant">联系商家</view>
+    <view class="btn dark" catchtap="remindShip">提醒发货</view>
     <view wx:if="{{order.canRefund}}" class="btn" catchtap="refundApply">申请退款</view>
   </view>
   <view class="actions" wx:elif="{{order.status === 5}}">

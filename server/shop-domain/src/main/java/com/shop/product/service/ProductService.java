@@ -22,6 +22,8 @@ public interface ProductService {
     PageResult<ProductListVO> publicPage(int page, int size, Long merchantId, Long categoryId,
                                          String keyword, Integer isRecommend, Integer isGroupBuy);
 
+    PageResult<ProductListVO> publicTopSalesPage(int page, int size, Long merchantId, Long categoryId);
+
     PageResult<ProductListVO> adminAuditPage(int page, int size, Integer auditStatus, String keyword,
                                              Long merchantId);
 

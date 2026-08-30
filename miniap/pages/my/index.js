@@ -36,17 +36,23 @@ Page({
         wx.setStorageSync('user_avatar', profile.avatar)
       }
       this.setData(data)
-    }).catch(() => {})
+    }).catch(() => {
+      wx.showToast({ title: '个人资料加载失败，请重试', icon: 'none' })
+    })
   },
 
   onChooseAvatar(e) {
     const tempPath = e.detail.avatarUrl || ''
     if (!tempPath) return
     this.setData({ avatarUrl: tempPath })
+    const previousAvatar = this.data.avatarUrl
     userApi.uploadAvatar(tempPath).then((avatar) => {
       this.setData({ avatar, avatarUrl: resolveImageUrl(avatar) })
       this.saveProfile({ fields: ['avatar'] })
-    }).catch(() => {})
+    }).catch(() => {
+      this.setData({ avatarUrl: previousAvatar })
+      wx.showToast({ title: '头像上传失败，请重试', icon: 'none' })
+    })
   },
 
   onNicknameInput(e) {
@@ -75,7 +81,10 @@ Page({
       if (!options.silent) {
         wx.showToast({ title: '已保存' })
       }
-    }).catch(() => {})
+    }).catch(() => {
+      wx.showToast({ title: '资料保存失败，请重试', icon: 'none' })
+      this.loadProfile()
+    })
   },
 
   onGetPhone(e) {

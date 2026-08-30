@@ -18,6 +18,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +36,9 @@ public class LocalFileStorageService {
 
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "gif", "webp");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
+    private static final int MAX_IMAGE_SIDE = 10000;
+    private static final long MAX_IMAGE_PIXELS = 40_000_000L;
 
     @Value("${shop.file.upload-dir:uploads}")
     private String uploadDir;
@@ -53,10 +59,14 @@ public class LocalFileStorageService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("请选择图片文件");
         }
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("图片大小不能超过 10MB");
+        }
         String extension = getExtension(file.getOriginalFilename());
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
             throw new IllegalArgumentException("仅支持 jpg、jpeg、png、gif、webp 图片");
         }
+        validateImageContent(file, extension);
 
         String dateDir = LocalDate.now().format(DATE_FORMATTER);
         Path baseDir = Paths.get(uploadDir).toAbsolutePath().normalize();
@@ -123,6 +133,43 @@ public class LocalFileStorageService {
             return "";
         }
         return cleanName.substring(dotIndex + 1).toLowerCase(Locale.ROOT);
+    }
+
+    private void validateImageContent(MultipartFile file, String extension) throws IOException {
+        byte[] header = new byte[12];
+        int read;
+        try (InputStream input = file.getInputStream()) {
+            read = input.read(header);
+        }
+        if (!matchesSignature(header, read, extension)) {
+            throw new IllegalArgumentException("文件内容与扩展名不匹配");
+        }
+
+        // ImageIO 能解析的格式进一步限制尺寸，避免超大像素图片造成内存压力。
+        try (InputStream input = file.getInputStream()) {
+            BufferedImage image = ImageIO.read(input);
+            if (image != null && (image.getWidth() > MAX_IMAGE_SIDE || image.getHeight() > MAX_IMAGE_SIDE
+                    || (long) image.getWidth() * image.getHeight() > MAX_IMAGE_PIXELS)) {
+                throw new IllegalArgumentException("图片尺寸过大");
+            }
+        }
+    }
+
+    private boolean matchesSignature(byte[] header, int length, String extension) {
+        if ("jpg".equals(extension) || "jpeg".equals(extension)) {
+            return length >= 3 && (header[0] & 0xff) == 0xff
+                    && (header[1] & 0xff) == 0xd8 && (header[2] & 0xff) == 0xff;
+        }
+        if ("png".equals(extension)) {
+            return length >= 8 && (header[0] & 0xff) == 0x89 && header[1] == 0x50
+                    && header[2] == 0x4e && header[3] == 0x47;
+        }
+        if ("gif".equals(extension)) {
+            return length >= 6 && header[0] == 'G' && header[1] == 'I' && header[2] == 'F'
+                    && header[3] == '8';
+        }
+        return length >= 12 && header[0] == 'R' && header[1] == 'I' && header[2] == 'F'
+                && header[8] == 'W' && header[9] == 'E' && header[10] == 'B' && header[11] == 'P';
     }
 
     private String normalizePrefix() {

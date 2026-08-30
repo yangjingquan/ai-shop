@@ -134,7 +134,7 @@ public class WxPayServiceImpl implements WxPayService {
     }
 
     @Override
-    public Refund createRefund(Order order, String outRefundNo, String reason) {
+    public Refund createRefund(Order order, String outRefundNo, String reason, BigDecimal refundAmount) {
         Merchant merchant = getPayReadyMerchant(order.getMerchantId());
         MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
         try {
@@ -151,8 +151,12 @@ public class WxPayServiceImpl implements WxPayService {
 
             AmountReq amount = new AmountReq();
             long totalFen = yuanToFen(order.getPayAmount());
+            long refundFen = yuanToFen(refundAmount);
+            if (refundFen <= 0 || refundFen > totalFen) {
+                throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "退款金额不合法");
+            }
             amount.setTotal(totalFen);
-            amount.setRefund(totalFen);
+            amount.setRefund(refundFen);
             amount.setCurrency("CNY");
             request.setAmount(amount);
 

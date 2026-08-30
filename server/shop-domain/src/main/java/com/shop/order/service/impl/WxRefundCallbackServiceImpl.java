@@ -87,8 +87,10 @@ public class WxRefundCallbackServiceImpl implements WxRefundCallbackService {
                 && !order.getPayTransactionId().equals(notification.getTransactionId()))) {
             throw new BusinessException(ErrorCode.WX_PAY_CALLBACK_VERIFY_FAILED.getCode(), "退款订单交易信息不匹配");
         }
+        BigDecimal expectedRefundAmount = app.getRefundAmount() == null
+                ? order.getPayAmount() : app.getRefundAmount();
         if (notification.getAmount() == null || notification.getAmount().getRefund() == null
-                || notification.getAmount().getRefund() != yuanToFen(order.getPayAmount())) {
+                || notification.getAmount().getRefund() != yuanToFen(expectedRefundAmount)) {
             throw new BusinessException(ErrorCode.WX_PAY_CALLBACK_AMOUNT_MISMATCH);
         }
 

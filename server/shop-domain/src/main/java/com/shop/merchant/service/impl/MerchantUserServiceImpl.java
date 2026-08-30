@@ -49,9 +49,10 @@ public class MerchantUserServiceImpl implements MerchantUserService {
         if (merchant == null || merchant.getStatus() == null || merchant.getStatus() == 0) {
             throw new BusinessException(ErrorCode.MERCHANT_FROZEN);
         }
+        int tokenVersion = user.getTokenVersion() == null ? 0 : user.getTokenVersion();
         String token = jwtUtil.generateToken(
             UserType.MERCHANT,
-            Map.of("userId", user.getId(), "merchantId", user.getMerchantId())
+            Map.of("userId", user.getId(), "merchantId", user.getMerchantId(), "tokenVersion", tokenVersion)
         );
         return new LoginResponse(token, user.getRole(), user.getMerchantId());
     }

@@ -49,6 +49,8 @@ public class Order extends BaseEntity {
 
     private LocalDateTime shipTime;
 
+    private LocalDateTime shipReminderAt;
+
     private LocalDateTime finishTime;
 
     private LocalDateTime cancelTime;

@@ -40,14 +40,15 @@ class AuthInterceptorTest {
         wf.setAccessible(true);
         wf.set(jwtUtil, 7);
 
-        adminInterceptor = new AdminAuthInterceptor(jwtUtil);
-        merchantInterceptor = new MerchantAuthInterceptor(jwtUtil);
-        wxInterceptor = new WxAuthInterceptor(jwtUtil);
+        TokenVersionService tokenVersionService = (userType, userId, tokenVersion) -> true;
+        adminInterceptor = new AdminAuthInterceptor(jwtUtil, tokenVersionService);
+        merchantInterceptor = new MerchantAuthInterceptor(jwtUtil, tokenVersionService);
+        wxInterceptor = new WxAuthInterceptor(jwtUtil, tokenVersionService);
     }
 
     @Test
     void adminInterceptorAcceptsValidAdminToken() {
-        String token = jwtUtil.generateToken(UserType.ADMIN, Map.of("userId", 1L));
+        String token = jwtUtil.generateToken(UserType.ADMIN, Map.of("userId", 1L, "tokenVersion", 0));
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         assertTrue(adminInterceptor.preHandle(request, response, new Object()));
         assertEquals(UserType.ADMIN, CurrentUserHolder.get().getUserType());
@@ -56,7 +57,7 @@ class AuthInterceptorTest {
 
     @Test
     void adminInterceptorRejectsMerchantToken() {
-        String token = jwtUtil.generateToken(UserType.MERCHANT, Map.of("userId", 2L, "merchantId", 10L));
+        String token = jwtUtil.generateToken(UserType.MERCHANT, Map.of("userId", 2L, "merchantId", 10L, "tokenVersion", 0));
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         assertThrows(BusinessException.class, () -> adminInterceptor.preHandle(request, response, new Object()));
     }
@@ -69,7 +70,7 @@ class AuthInterceptorTest {
 
     @Test
     void merchantInterceptorAcceptsValidMerchantToken() {
-        String token = jwtUtil.generateToken(UserType.MERCHANT, Map.of("userId", 2L, "merchantId", 10L));
+        String token = jwtUtil.generateToken(UserType.MERCHANT, Map.of("userId", 2L, "merchantId", 10L, "tokenVersion", 0));
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         assertTrue(merchantInterceptor.preHandle(request, response, new Object()));
         assertEquals(10L, CurrentUserHolder.get().getMerchantId());
@@ -78,7 +79,7 @@ class AuthInterceptorTest {
 
     @Test
     void wxInterceptorAcceptsValidWxToken() {
-        String token = jwtUtil.generateToken(UserType.WX, Map.of("userId", 3L, "openid", "ox123"));
+        String token = jwtUtil.generateToken(UserType.WX, Map.of("userId", 3L, "openid", "ox123", "tokenVersion", 0));
         when(request.getHeader("wx-token")).thenReturn(token);
         assertTrue(wxInterceptor.preHandle(request, response, new Object()));
         assertEquals(UserType.WX, CurrentUserHolder.get().getUserType());

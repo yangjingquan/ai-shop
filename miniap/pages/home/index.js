@@ -1,6 +1,7 @@
 const categoryApi = require('../../api/category')
 const productApi = require('../../api/product')
 const bannerApi = require('../../api/banner')
+const homeApi = require('../../api/home')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
@@ -19,12 +20,18 @@ Page({
   async loadAll() {
     this.setData({ loading: true })
     try {
-      const [bannerRes, treeRes, pageRes] = await Promise.all([
-        bannerApi.list().catch(() => ({ data: [] })),
+      const [homeRes, treeRes] = await Promise.all([
+        homeApi.get().catch(() => null),
         categoryApi.tree().catch(() => ({ data: [] })),
-        this.fetchProducts(),
       ])
-      const banners = ((bannerRes && bannerRes.data) || []).map((b) => ({
+      const homeData = (homeRes && homeRes.data) || {}
+      const bannerData = homeData.banners || await bannerApi.list().then((res) => res.data || []).catch(() => [])
+      let productData = homeData.recommends || []
+      if (!productData.length) {
+        const fallback = await this.fetchProducts()
+        productData = (fallback && fallback.data && fallback.data.list) || []
+      }
+      const banners = bannerData.map((b) => ({
         ...b,
         imageUrl: resolveImageUrl(b.imageUrl || ''),
       }))
@@ -36,7 +43,7 @@ Page({
         symbol: this.categorySymbol(idx),
         tone: `tone-${(idx % 5) + 1}`,
       }))
-      const list = this.normalizeProducts(pageRes)
+      const list = this.normalizeProducts({ data: { list: productData } })
       this.setData({ banners, topCategories: top, products: list })
     } finally {
       this.setData({ loading: false })

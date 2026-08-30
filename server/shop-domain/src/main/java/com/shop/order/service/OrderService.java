@@ -44,8 +44,13 @@ public interface OrderService {
     /** 用户确认收货 */
     void confirmReceive(Long userId, String orderNo);
 
+    /** 用户提醒商家发货，短时间内限频。 */
+    void remindShip(Long userId, String orderNo);
+
     /** 用户申请退款 */
     void refundApply(Long userId, String orderNo, String reason);
+
+    void refundApply(Long userId, String orderNo, RefundApplyRequest req);
 
     /** 商家审批退款 */
     void refundApprove(Long merchantId, Long refundId, boolean approved, String rejectReason);

@@ -12,4 +12,6 @@ public class AdminUser extends BaseEntity {
     private String username;
     private String passwordHash;
     private String role;
+
+    private Integer tokenVersion;
 }

@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/wx/order")
@@ -69,11 +68,19 @@ public class WxOrderController {
         return ApiResult.success(null);
     }
 
-    @PostMapping("/{orderNo}/refund")
-    public ApiResult<Void> refundApply(@PathVariable String orderNo, @RequestBody Map<String, String> body) {
+    @OpLog(action = "ORDER_REMIND_SHIP", targetType = "ORDER", targetIdExpr = "#orderNo")
+    @PostMapping("/{orderNo}/remind-ship")
+    public ApiResult<Void> remindShip(@PathVariable String orderNo) {
         Long userId = CurrentUserHolder.get().getUserId();
-        String reason = body != null ? body.getOrDefault("reason", "") : "";
-        orderService.refundApply(userId, orderNo, reason);
+        orderService.remindShip(userId, orderNo);
+        return ApiResult.success(null);
+    }
+
+    @RateLimit(key = "refund_apply", limit = 3, windowSec = 60, by = RateLimit.By.USER)
+    @PostMapping("/{orderNo}/refund")
+    public ApiResult<Void> refundApply(@PathVariable String orderNo, @RequestBody(required = false) @Valid RefundApplyRequest req) {
+        Long userId = CurrentUserHolder.get().getUserId();
+        orderService.refundApply(userId, orderNo, req == null ? new RefundApplyRequest() : req);
         return ApiResult.success(null);
     }
 
