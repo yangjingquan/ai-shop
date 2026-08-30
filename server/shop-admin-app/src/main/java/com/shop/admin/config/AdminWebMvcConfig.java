@@ -18,9 +18,9 @@ public class AdminWebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(adminAuthInterceptor)
                 .addPathPatterns("/api/admin/**")
-                .excludePathPatterns("/api/admin/auth/**");
+                .excludePathPatterns("/api/admin/auth/login", "/api/admin/auth/public-key");
         registry.addInterceptor(merchantAuthInterceptor)
                 .addPathPatterns("/api/merchant/**")
-                .excludePathPatterns("/api/merchant/auth/**");
+                .excludePathPatterns("/api/merchant/auth/login", "/api/merchant/auth/public-key");
     }
 }

@@ -1,13 +1,40 @@
-import axios, { type AxiosInstance, type AxiosResponse } from 'axios'
+import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 
+const defaultApiBaseUrl = import.meta.env.PROD
+  ? 'https://conapi.nexbyte.top'
+  : 'http://localhost:8081'
+
 const request: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081',
+  baseURL: import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl,
   timeout: 15000,
 })
 
 let redirectingToLogin = false
+
+function isLocalHost(hostname: string) {
+  return hostname === 'localhost'
+    || hostname === '127.0.0.1'
+    || hostname === '[::1]'
+    || hostname === '::1'
+}
+
+function isCredentialEndpoint(config: InternalAxiosRequestConfig) {
+  if (!config.url) return false
+  const url = new URL(config.url, config.baseURL || window.location.origin)
+  return /^\/api\/(admin|merchant)\/auth\/(login|password|public-key)$/.test(url.pathname)
+}
+
+function ensureSecureCredentialTransport(config: InternalAxiosRequestConfig) {
+  if (!isCredentialEndpoint(config)) return
+
+  const url = new URL(config.url!, config.baseURL || window.location.origin)
+  const localDevelopment = isLocalHost(url.hostname) && isLocalHost(window.location.hostname)
+  if (!localDevelopment && url.protocol !== 'https:') {
+    throw new Error('登录接口必须通过 HTTPS 访问，已阻止明文传输密码')
+  }
+}
 
 function redirectToLogin() {
   const userStore = useUserStore()
@@ -20,6 +47,7 @@ function redirectToLogin() {
 }
 
 request.interceptors.request.use((config) => {
+  ensureSecureCredentialTransport(config)
   const userStore = useUserStore()
   if (userStore.token) {
     config.headers.Authorization = `Bearer ${userStore.token}`

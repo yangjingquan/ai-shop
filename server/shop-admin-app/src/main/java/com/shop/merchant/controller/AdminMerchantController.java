@@ -9,6 +9,7 @@ import com.shop.merchant.dto.CreateMerchantRequest;
 import com.shop.merchant.dto.MerchantVO;
 import com.shop.merchant.dto.SetStatusRequest;
 import com.shop.merchant.dto.UpdateMerchantRequest;
+import com.shop.merchant.security.PasswordCipher;
 import com.shop.merchant.service.MerchantManagementService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -25,10 +26,12 @@ import java.util.Map;
 public class AdminMerchantController {
 
     private final MerchantManagementService service;
+    private final PasswordCipher passwordCipher;
 
     @PostMapping
     public ApiResult<Map<String, Long>> create(@RequestBody @Valid CreateMerchantRequest req) {
         CurrentUser cu = CurrentUserHolder.get();
+        req.setPassword(passwordCipher.decrypt(req.getPassword()));
         Long id = service.createMerchant(req, cu.getUserId());
         return ApiResult.success(Map.of("merchantId", id));
     }
@@ -61,7 +64,7 @@ public class AdminMerchantController {
     @Data
     public static class ResetPasswordRequest {
         @NotBlank
-        @Size(min = 8, max = 32)
+        @Size(max = 1024, message = "密码参数过长")
         private String newPassword;
     }
 
@@ -69,7 +72,7 @@ public class AdminMerchantController {
     @PutMapping("/{id}/password")
     public ApiResult<Void> resetPassword(@PathVariable Long id,
                                          @RequestBody @Valid ResetPasswordRequest req) {
-        service.resetPassword(id, req.getNewPassword());
+        service.resetPassword(id, passwordCipher.decrypt(req.getNewPassword()));
         return ApiResult.success(null);
     }
 }

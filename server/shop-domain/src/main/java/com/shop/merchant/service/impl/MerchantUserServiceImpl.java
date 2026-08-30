@@ -10,6 +10,7 @@ import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.entity.MerchantUser;
 import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.merchant.mapper.MerchantUserMapper;
+import com.shop.merchant.security.PasswordPolicy;
 import com.shop.merchant.service.MerchantUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -55,6 +56,25 @@ public class MerchantUserServiceImpl implements MerchantUserService {
             Map.of("userId", user.getId(), "merchantId", user.getMerchantId(), "tokenVersion", tokenVersion)
         );
         return new LoginResponse(token, user.getRole(), user.getMerchantId());
+    }
+
+    @Override
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        PasswordPolicy.validate(newPassword);
+        MerchantUser user = merchantUserMapper.selectById(userId);
+        if (user == null || !matchesPassword(user, currentPassword)) {
+            throw new BusinessException(ErrorCode.CURRENT_PASSWORD_INCORRECT);
+        }
+        user.setPasswordHash(ENCODER.encode(newPassword));
+        user.setTokenVersion((user.getTokenVersion() == null ? 0 : user.getTokenVersion()) + 1);
+        merchantUserMapper.updateById(user);
+    }
+
+    private boolean matchesPassword(MerchantUser user, String password) {
+        boolean bootstrapLogin = isProduction() && "merchant01".equalsIgnoreCase(user.getUsername())
+                && bootstrapPassword != null && !bootstrapPassword.isBlank()
+                && bootstrapPassword.equals(password) && !"merchant123".equals(password);
+        return bootstrapLogin || ENCODER.matches(password, user.getPasswordHash());
     }
 
     private boolean isProduction() {

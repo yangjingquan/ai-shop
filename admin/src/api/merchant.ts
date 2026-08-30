@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { encryptAdminPassword } from '@/api/auth'
 
 export interface MerchantVO {
   id: number
@@ -40,12 +41,17 @@ export const merchantApi = {
     request.get<unknown, PageResult<MerchantVO>>('/api/admin/merchants', { params }),
   get: (id: number) =>
     request.get<unknown, MerchantVO>(`/api/admin/merchants/${id}`),
-  create: (data: CreateMerchantPayload) =>
-    request.post<unknown, { id: number }>('/api/admin/merchants', data),
+  create: async (data: CreateMerchantPayload) =>
+    request.post<unknown, { id: number }>('/api/admin/merchants', {
+      ...data,
+      password: await encryptAdminPassword(data.password),
+    }),
   update: (id: number, data: UpdateMerchantPayload) =>
     request.put<unknown, void>(`/api/admin/merchants/${id}`, data),
   setStatus: (id: number, status: number) =>
     request.put<unknown, void>(`/api/admin/merchants/${id}/status`, { status }),
-  resetPassword: (id: number, newPassword: string) =>
-    request.put<unknown, void>(`/api/admin/merchants/${id}/password`, { newPassword }),
+  resetPassword: async (id: number, newPassword: string) =>
+    request.put<unknown, void>(`/api/admin/merchants/${id}/password`, {
+      newPassword: await encryptAdminPassword(newPassword),
+    }),
 }

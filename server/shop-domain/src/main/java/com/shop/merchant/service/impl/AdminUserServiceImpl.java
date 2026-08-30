@@ -8,6 +8,7 @@ import com.shop.common.security.UserType;
 import com.shop.merchant.dto.LoginResponse;
 import com.shop.merchant.entity.AdminUser;
 import com.shop.merchant.mapper.AdminUserMapper;
+import com.shop.merchant.security.PasswordPolicy;
 import com.shop.merchant.service.AdminUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -46,6 +47,25 @@ public class AdminUserServiceImpl implements AdminUserService {
         String token = jwtUtil.generateToken(UserType.ADMIN,
                 Map.of("userId", user.getId(), "tokenVersion", tokenVersion));
         return new LoginResponse(token, user.getRole(), null);
+    }
+
+    @Override
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        PasswordPolicy.validate(newPassword);
+        AdminUser user = adminUserMapper.selectById(userId);
+        if (user == null || !matchesPassword(user, currentPassword)) {
+            throw new BusinessException(ErrorCode.CURRENT_PASSWORD_INCORRECT);
+        }
+        user.setPasswordHash(ENCODER.encode(newPassword));
+        user.setTokenVersion((user.getTokenVersion() == null ? 0 : user.getTokenVersion()) + 1);
+        adminUserMapper.updateById(user);
+    }
+
+    private boolean matchesPassword(AdminUser user, String password) {
+        boolean bootstrapLogin = isProduction() && "admin".equalsIgnoreCase(user.getUsername())
+                && bootstrapPassword != null && !bootstrapPassword.isBlank()
+                && bootstrapPassword.equals(password) && !"admin123".equals(password);
+        return bootstrapLogin || ENCODER.matches(password, user.getPasswordHash());
     }
 
     private boolean isProduction() {

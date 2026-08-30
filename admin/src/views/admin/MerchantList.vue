@@ -138,7 +138,7 @@ onMounted(fetchList)
         <el-table-column label="操作" width="184">
           <template #default="{ row }">
             <el-button link type="primary" @click="onEdit(row as MerchantVO)">编辑</el-button>
-            <el-button link type="warning" @click="onResetPassword(row as MerchantVO)">重置密码</el-button>
+            <el-button link type="warning" @click="onResetPassword(row as MerchantVO)">修改登录密码</el-button>
             <el-button
               link
               :type="row.status === 1 ? 'danger' : 'success'"
@@ -171,7 +171,7 @@ onMounted(fetchList)
       @success="fetchList"
     />
 
-    <el-dialog v-model="resetVisible" title="重置商家密码" width="460px">
+    <el-dialog v-model="resetVisible" title="修改商家登录密码" width="460px">
       <el-form label-width="110px">
         <el-form-item label="商家">
           <span>{{ resetRow?.name || '-' }}</span>
@@ -185,7 +185,7 @@ onMounted(fetchList)
       </el-form>
       <template #footer>
         <el-button @click="resetVisible = false">取消</el-button>
-        <el-button type="primary" :loading="resetting" @click="submitResetPassword">确认重置</el-button>
+        <el-button type="primary" :loading="resetting" @click="submitResetPassword">确认修改</el-button>
       </template>
     </el-dialog>
   </div>

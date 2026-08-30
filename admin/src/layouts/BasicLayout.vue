@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { profileApi } from '@/api/profile'
+import ChangePasswordDialog from '@/components/ChangePasswordDialog.vue'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const passwordDialogVisible = ref(false)
 
 const title = computed(() =>
   userStore.role === 'admin' ? '商城运营后台' : '商家管理后台',
@@ -80,6 +83,12 @@ function handleLogout() {
   userStore.logout()
   router.replace('/login')
 }
+
+function handlePasswordChanged() {
+  userStore.logout()
+  ElMessage.success('密码修改成功，请使用新密码重新登录')
+  router.replace('/login')
+}
 onMounted(loadMerchantName)
 </script>
 
@@ -122,6 +131,7 @@ onMounted(loadMerchantName)
         </div>
         <div class="actions">
           <span class="role-tag">{{ roleLabel }}</span>
+          <el-button class="password-btn" plain @click="passwordDialogVisible = true">修改密码</el-button>
           <el-button class="logout-btn" plain @click="handleLogout">退出登录</el-button>
         </div>
       </el-header>
@@ -130,6 +140,11 @@ onMounted(loadMerchantName)
       </el-main>
     </el-container>
   </el-container>
+
+  <ChangePasswordDialog
+    v-model="passwordDialogVisible"
+    @changed="handlePasswordChanged"
+  />
 </template>
 
 <style scoped>
@@ -322,6 +337,19 @@ onMounted(loadMerchantName)
   border-color: rgba(255, 255, 255, 0.92) !important;
   color: var(--shop-text) !important;
   background: #fff !important;
+}
+
+.password-btn {
+  border-color: #f0c89a !important;
+  color: var(--shop-primary-dark) !important;
+  background: var(--shop-primary-soft) !important;
+}
+
+.password-btn:hover,
+.password-btn:focus {
+  border-color: var(--shop-primary) !important;
+  color: var(--shop-primary-dark) !important;
+  background: #fff1dc !important;
 }
 
 .logout-btn:hover,

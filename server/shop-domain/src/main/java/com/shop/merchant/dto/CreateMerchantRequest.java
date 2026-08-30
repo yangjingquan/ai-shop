@@ -19,7 +19,7 @@ public class CreateMerchantRequest {
     private String username;
 
     @NotBlank
-    @Size(min = 8, max = 32)
+    @Size(max = 1024, message = "密码参数过长")
     private String password;
 
     private String contactName;

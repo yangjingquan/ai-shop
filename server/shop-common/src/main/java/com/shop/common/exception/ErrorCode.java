@@ -37,6 +37,8 @@ public enum ErrorCode {
     MERCHANT_FROZEN(151, "商家已被冻结"),
     USERNAME_EXISTS(160, "用户名已存在"),
     MERCHANT_NOT_FOUND(161, "商家不存在"),
+    CURRENT_PASSWORD_INCORRECT(162, "当前密码错误"),
+    ENCRYPTED_PASSWORD_INVALID(163, "密码参数无效，请刷新页面后重试"),
     ADDRESS_NOT_FOUND(170, "收货地址不存在"),
     ADDRESS_LIMIT_EXCEEDED(171, "收货地址数量超限"),
     BIND_PHONE_FAILED(180, "手机号绑定失败"),

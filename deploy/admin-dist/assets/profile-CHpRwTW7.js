@@ -1,0 +1,1 @@
+import{a as e}from"./index-CN7_gcQA.js";var t={get:()=>e.get(`/api/merchant/profile`),update:t=>e.put(`/api/merchant/profile`,t)};export{t};

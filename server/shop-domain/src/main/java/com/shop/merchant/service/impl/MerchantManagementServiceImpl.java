@@ -16,6 +16,7 @@ import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.merchant.mapper.MerchantUserMapper;
 import com.shop.merchant.service.MerchantManagementService;
 import com.shop.merchant.service.MerchantWechatConfigService;
+import com.shop.merchant.security.PasswordPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -46,6 +47,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
     @Override
     @Transactional
     public Long createMerchant(CreateMerchantRequest req, Long adminUserId) {
+        PasswordPolicy.validate(req.getPassword());
         // 校验用户名唯一
         Long existing = merchantUserMapper.selectCount(
                 new LambdaQueryWrapper<MerchantUser>().eq(MerchantUser::getUsername, req.getUsername())
@@ -190,6 +192,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
     @Override
     @Transactional
     public void resetPassword(Long id, String newPassword) {
+        PasswordPolicy.validate(newPassword);
         Merchant m = merchantMapper.selectById(id);
         if (m == null) {
             throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import request from '@/utils/request'
+import { adminAuthApi, merchantAuthApi } from '@/api/auth'
 
 export type UserRole = 'admin' | 'merchant'
 
@@ -65,19 +65,13 @@ export const useUserStore = defineStore(
     }
 
     async function loginAdmin(username: string, password: string) {
-      const data = await request.post<unknown, LoginResponse>(
-        '/api/admin/auth/login',
-        { username, password },
-      )
+      const data = await adminAuthApi.login(username, password) as LoginResponse
       setAuth({ ...data, role: 'admin' })
       return data
     }
 
     async function loginMerchant(username: string, password: string) {
-      const data = await request.post<unknown, LoginResponse>(
-        '/api/merchant/auth/login',
-        { username, password },
-      )
+      const data = await merchantAuthApi.login(username, password) as LoginResponse
       setAuth({ ...data, role: 'merchant' })
       return data
     }
