@@ -12,7 +12,7 @@ deploy/
 ├── nginx/
 │   ├── Dockerfile        # 构建并托管后台管理前端的 Nginx 镜像
 │   ├── conf.d/*.conf     # console / conapi / miniapi 三个域名
-│   └── ssl/              # 仅放证书链；私钥由部署密钥挂载提供，不进仓库
+│   └── ssl/              # 仅保留兼容性证书文件；生产 TLS 文件放在 /etc/shop/tls
 ├── uploads/              # 后端上传文件持久化
 ├── logs/                 # 三个组件的日志目录
 ├── docker-compose.yml
@@ -58,7 +58,16 @@ docker compose up -d --build shop-admin-app shop-wx-app nginx
 
 `deploy/nginx/Dockerfile` 会把 Jenkins 生成的 `admin-dist/` 与 Nginx 配置打包进同一个镜像。不要将 `admin-dist` 作为运行时挂载；若首页或其引用的静态资源缺失，镜像构建会失败，旧容器会继续运行而不是发布 403 页面。
 
-部署前必须通过 secret store 或受限文件挂载提供三个 Nginx 私钥：`console.nexbyte.top.key`、`conapi.nexbyte.top.key`、`miniapi.nexbyte.top.key`。私钥不得提交 Git；首次上线前请轮换仓库历史中曾出现过的旧私钥。
+部署前必须通过 secret store 或受限文件挂载提供三个 Nginx 私钥：`console.nexbyte.top.key`、`conapi.nexbyte.top.key`、`miniapi.nexbyte.top.key`。生产环境统一放在发布目录之外的 `/etc/shop/tls`，并在 `.env` 中配置 `SHOP_TLS_DIR=/etc/shop/tls`。Compose 会将该目录只读挂载到容器 `/etc/nginx/ssl`；代码发布同步不会触碰它。私钥不得提交 Git；首次上线前请轮换仓库历史中曾出现过的旧私钥。
+
+每次发布前先执行 TLS 预检，确认文件存在、可读且证书与私钥匹配：
+
+```bash
+bash verify-tls.sh
+docker compose up -d --build shop-admin-app shop-wx-app nginx
+```
+
+`verify-tls.sh` 失败时不要启动或重建 Nginx；先补齐 `/etc/shop/tls` 中的六个文件。
 
 生产环境不要使用迁移文件中的测试账号密码。可临时通过 secret store 设置 `SHOP_BOOTSTRAP_ADMIN_PASSWORD` 和 `SHOP_BOOTSTRAP_MERCHANT_PASSWORD` 完成首次登录并立即重置密码，重置后删除这两个环境变量。
 

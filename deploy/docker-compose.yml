@@ -129,7 +129,8 @@ services:
       - "127.0.0.1:8082:82"
       - "443:443"
     volumes:
-      - ./nginx/ssl:/etc/nginx/ssl:ro
+      # Keep TLS material outside the release directory so code syncs cannot remove it.
+      - ${SHOP_TLS_DIR:-/etc/shop/tls}:/etc/nginx/ssl:ro
       - ./uploads:/usr/share/nginx/html/uploads:ro
       - ./logs/nginx:/var/log/nginx
     healthcheck:
