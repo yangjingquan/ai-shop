@@ -50,6 +50,23 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
         MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
+        return loginWithMerchant(code, merchant, config);
+    }
+
+    @Override
+    public WxLoginResponse wxLoginByAppId(String code, String appId) {
+        MerchantWechatConfig config = merchantWechatConfigService.getRequiredByAppId(appId);
+        Merchant merchant = merchantMapper.selectById(config.getMerchantId());
+        if (merchant == null) {
+            throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
+        }
+        if (!Integer.valueOf(1).equals(merchant.getStatus())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return loginWithMerchant(code, merchant, config);
+    }
+
+    private WxLoginResponse loginWithMerchant(String code, Merchant merchant, MerchantWechatConfig config) {
         if (!hasText(config.getWxAppId()) || !hasText(config.getWxSecret())) {
             throw new BusinessException(ErrorCode.WX_LOGIN_FAILED);
         }
@@ -84,7 +101,7 @@ public class UserServiceImpl implements UserService {
             )
         );
         boolean hasPhone = user.getPhone() != null && !user.getPhone().isBlank();
-        return new WxLoginResponse(token, openid, isNewUser, hasPhone);
+        return new WxLoginResponse(token, openid, isNewUser, hasPhone, merchant.getMerchantCode());
     }
 
     @Override

@@ -8,6 +8,7 @@ import com.shop.common.response.PageResult;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.order.dto.AdminRefundVO;
+import com.shop.order.dto.AdminPaymentVO;
 import com.shop.order.dto.OrderDetailVO;
 import com.shop.order.dto.OrderListVO;
 import com.shop.order.entity.Order;
@@ -15,8 +16,11 @@ import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
 import com.shop.order.enums.RefundStatus;
 import com.shop.order.mapper.OrderMapper;
+import com.shop.order.mapper.PaymentLogMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderService;
+import com.shop.order.service.PaymentReconciliationService;
+import com.shop.order.service.RefundReconciliationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -40,6 +45,33 @@ public class AdminOrderController {
     private final RefundApplicationMapper refundApplicationMapper;
     private final MerchantMapper merchantMapper;
     private final OrderService orderService;
+    private final PaymentLogMapper paymentLogMapper;
+    private final PaymentReconciliationService paymentReconciliationService;
+    private final RefundReconciliationService refundReconciliationService;
+
+    @GetMapping("/payments/page")
+    public ApiResult<PageResult<AdminPaymentVO>> payments(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long merchantId,
+            @RequestParam(required = false) String orderNo,
+            @RequestParam(required = false) String transactionId,
+            @RequestParam(required = false) LocalDateTime createdFrom,
+            @RequestParam(required = false) LocalDateTime createdTo) {
+        IPage<AdminPaymentVO> result = paymentLogMapper.selectAdminPage(new Page<>(page, size), merchantId,
+                normalize(orderNo), normalize(transactionId), createdFrom, createdTo);
+        return ApiResult.success(PageResult.of(result.getRecords(), result.getTotal(), page, size));
+    }
+
+    @PostMapping("/payments/reconcile")
+    public ApiResult<Map<String, Integer>> reconcilePayments() {
+        return ApiResult.success(Map.of("paidCount", paymentReconciliationService.reconcilePending(100)));
+    }
+
+    @PostMapping("/refunds/reconcile")
+    public ApiResult<Map<String, Integer>> reconcileRefunds() {
+        return ApiResult.success(Map.of("successCount", refundReconciliationService.reconcilePending(100)));
+    }
 
     @GetMapping("/orders/page")
     public ApiResult<PageResult<OrderListVO>> orders(
@@ -118,6 +150,10 @@ public class AdminOrderController {
             vo.setRefundAmount(r.getRefundAmount());
             vo.setRefundFailReason(r.getRefundFailReason());
             vo.setRefundTime(r.getRefundTime());
+            vo.setAutoRefund(r.getAutoRefund());
+            vo.setRefundReconcileAt(r.getRefundReconcileAt());
+            vo.setRefundReconcileAttempts(r.getRefundReconcileAttempts());
+            vo.setRefundReconcileError(r.getRefundReconcileError());
             vo.setCreatedAt(r.getCreatedAt());
             vo.setUpdatedAt(r.getUpdatedAt());
             return vo;
@@ -131,5 +167,9 @@ public class AdminOrderController {
             if (item.getCode() == status) return item.getText();
         }
         return "未知";
+    }
+
+    private String normalize(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
     }
 }

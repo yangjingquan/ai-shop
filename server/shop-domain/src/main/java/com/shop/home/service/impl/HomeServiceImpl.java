@@ -24,7 +24,7 @@ public class HomeServiceImpl implements HomeService {
     @Override
     public HomeVO getHome(Long merchantId) {
         HomeVO vo = new HomeVO();
-        vo.setBanners(bannerService.listActive());
+        vo.setBanners(bannerService.listActive(merchantId));
 
         // 最近上架（按 id 倒序即按时间倒序）
         var recent = productService.publicPage(1, 10, merchantId, null, null, null, null).getList();

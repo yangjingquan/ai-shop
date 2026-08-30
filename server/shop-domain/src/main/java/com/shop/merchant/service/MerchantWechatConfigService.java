@@ -11,6 +11,8 @@ public interface MerchantWechatConfigService {
 
     MerchantWechatConfig getRequiredByMerchantId(Long merchantId);
 
+    MerchantWechatConfig getRequiredByAppId(String appId);
+
     void ensureConfig(Long merchantId);
 
     PageResult<MerchantWechatSettingsVO> page(int page, int size, String keyword);

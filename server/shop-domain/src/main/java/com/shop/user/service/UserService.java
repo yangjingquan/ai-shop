@@ -6,6 +6,8 @@ import com.shop.user.dto.WxUserProfileVO;
 public interface UserService {
     WxLoginResponse wxLogin(String code, String merchantCode);
 
+    WxLoginResponse wxLoginByAppId(String code, String appId);
+
     String bindPhone(Long userId, Long merchantId, String code);
 
     WxUserProfileVO getProfile(Long userId);

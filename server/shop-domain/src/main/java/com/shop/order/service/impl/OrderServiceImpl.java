@@ -42,7 +42,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -74,6 +76,7 @@ public class OrderServiceImpl implements OrderService {
     private final StringRedisTemplate stringRedisTemplate;
     private final GroupBuyGroupMapper groupBuyGroupMapper;
     private final GroupBuyMemberMapper groupBuyMemberMapper;
+    private final PlatformTransactionManager transactionManager;
 
     private static final java.util.regex.Pattern SHIP_NO_PATTERN =
             java.util.regex.Pattern.compile("^[A-Za-z0-9]{5,30}$");
@@ -208,13 +211,11 @@ public class OrderServiceImpl implements OrderService {
     // ==================== create ====================
 
     @Override
-    @Transactional
     public List<OrderCreateVO> create(Long userId, OrderCreateRequest req) {
         return create(userId, null, req);
     }
 
     @Override
-    @Transactional
     public List<OrderCreateVO> create(Long userId, Long merchantId, OrderCreateRequest req) {
         // Redis 防连点
         String lockKey = "order:create:" + userId;
@@ -226,6 +227,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         try {
+            List<OrderCreateVO> results = new TransactionTemplate(transactionManager).execute(status -> {
             // 校验地址
             UserAddress address = userAddressMapper.selectOne(new LambdaQueryWrapper<UserAddress>()
                     .eq(UserAddress::getId, req.getAddressId())
@@ -282,7 +284,7 @@ public class OrderServiceImpl implements OrderService {
             Map<Long, List<CartItem>> grouped = cartItems.stream()
                     .collect(Collectors.groupingBy(CartItem::getMerchantId));
 
-            List<OrderCreateVO> results = new ArrayList<>();
+            List<OrderCreateVO> createdOrders = new ArrayList<>();
 
             for (Map.Entry<Long, List<CartItem>> entry : grouped.entrySet()) {
                 Long mid = entry.getKey();
@@ -356,12 +358,30 @@ public class OrderServiceImpl implements OrderService {
                 OrderCreateVO vo = new OrderCreateVO();
                 vo.setOrderNo(orderNo);
                 vo.setPayAmount(totalAmount);
-                // 创建订单后立即完成微信 JSAPI 预下单，前端可直接拉起支付。
-                // 该调用仍在当前事务内：预下单失败时回滚订单、库存和购物车变更，避免留下无法支付的订单。
-                vo.setPayParams(wxPayService.createJsapiPayParams(order));
-                results.add(vo);
+                createdOrders.add(vo);
             }
 
+            return createdOrders;
+            });
+            if (results == null) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+            }
+
+            // 订单、库存和购物车变更提交后再调用微信，避免第三方预下单成功而本地事务回滚。
+            // 预下单暂时失败时仍返回已落库订单，用户可从订单列表重新支付。
+            for (OrderCreateVO vo : results) {
+                Order committedOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                        .eq(Order::getOrderNo, vo.getOrderNo()));
+                if (committedOrder == null) {
+                    log.error("订单事务已提交但无法读取订单, orderNo={}", vo.getOrderNo());
+                    continue;
+                }
+                try {
+                    vo.setPayParams(wxPayService.createJsapiPayParams(committedOrder));
+                } catch (RuntimeException e) {
+                    log.warn("订单已创建但微信预下单失败，可稍后重新支付, orderNo={}", vo.getOrderNo(), e);
+                }
+            }
             return results;
         } finally {
             stringRedisTemplate.execute(RELEASE_LOCK_SCRIPT, List.of(lockKey), lockToken);

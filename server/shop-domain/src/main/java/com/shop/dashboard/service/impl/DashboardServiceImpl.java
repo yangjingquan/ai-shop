@@ -3,6 +3,8 @@ package com.shop.dashboard.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.shop.dashboard.dto.DashboardOverviewVO;
+import com.shop.dashboard.dto.DashboardTrendVO;
+import com.shop.dashboard.dto.DailyAmountRow;
 import com.shop.dashboard.service.DashboardService;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
@@ -22,6 +24,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +52,27 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public DashboardOverviewVO merchantOverview(Long merchantId) {
         return overview(merchantId);
+    }
+
+    @Override
+    public List<DashboardTrendVO> adminTrend(int days) {
+        int safeDays = Math.min(Math.max(days, 7), 90);
+        LocalDate firstDay = LocalDate.now().minusDays(safeDays - 1L);
+        LocalDateTime from = firstDay.atStartOfDay();
+        Map<LocalDate, DailyAmountRow> paid = orderMapper.selectAdminDailyPaid(from).stream()
+                .collect(Collectors.toMap(DailyAmountRow::getDay, Function.identity()));
+        Map<LocalDate, DailyAmountRow> refunds = refundApplicationMapper.selectAdminDailyRefund(from).stream()
+                .collect(Collectors.toMap(DailyAmountRow::getDay, Function.identity()));
+        return java.util.stream.IntStream.range(0, safeDays).mapToObj(offset -> {
+            LocalDate day = firstDay.plusDays(offset);
+            DailyAmountRow paidRow = paid.get(day);
+            DailyAmountRow refundRow = refunds.get(day);
+            long count = paidRow == null || paidRow.getCount() == null ? 0 : paidRow.getCount();
+            BigDecimal paidAmount = paidRow == null || paidRow.getAmount() == null ? BigDecimal.ZERO : paidRow.getAmount();
+            BigDecimal refundAmount = refundRow == null || refundRow.getAmount() == null ? BigDecimal.ZERO : refundRow.getAmount();
+            return new DashboardTrendVO(day.toString(), count, paidAmount, refundAmount,
+                    paidAmount.subtract(refundAmount));
+        }).toList();
     }
 
     private DashboardOverviewVO overview(Long merchantId) {
@@ -82,7 +108,6 @@ public class DashboardServiceImpl implements DashboardService {
         QueryWrapper<Order> q = new QueryWrapper<>();
         q.select("COALESCE(SUM(pay_amount), 0)")
                 .ge("pay_time", today)
-                .notIn("status", 0, 4)
                 .eq("deleted", 0);
         if (merchantId != null) {
             q.eq("merchant_id", merchantId);

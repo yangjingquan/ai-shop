@@ -26,6 +26,13 @@ cd ../admin && pnpm install && pnpm dev
 # 5. miniap 用微信开发者工具导入 miniap/ 目录
 ```
 
+## 小程序多商户配置
+
+- 小程序不再写死商户编码；启动时读取当前编译包的 AppID，后端通过商户微信配置自动解析商户。
+- 每个商户仍需使用其后台配置的 AppID/AppSecret 分别构建小程序包，这是微信 `wx.login` 的应用边界。
+- 小程序默认请求生产地址。开发联调可在开发者工具控制台执行 `wx.setStorageSync('shop_api_env', 'dev')` 后重新启动，或通过 `extConfig` 提供 `env`、`baseUrl`、`merchantCode` 覆盖值。
+- 商户微信配置中的 AppID 必须唯一，否则无法确定当前小程序所属商户。
+
 ## 文档
 - 设计：`docs/superpowers/specs/`
 - 实施计划：`docs/superpowers/plans/`

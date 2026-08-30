@@ -13,6 +13,7 @@
     "pages/order/detail",
     "pages/group-buy/list",
     "pages/group-buy/group",
+    "pages/notification/list",
     "pages/webview/index"
   ],
   "window": {

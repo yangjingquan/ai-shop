@@ -1,4 +1,5 @@
 const userApi = require('../../api/user')
+const notificationApi = require('../../api/notification')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
@@ -7,6 +8,7 @@ Page({
     nickname: '',
     avatar: '',
     avatarUrl: '',
+    unreadCount: 0,
   },
 
   onShow() {
@@ -15,6 +17,14 @@ Page({
     const avatar = wx.getStorageSync('user_avatar') || ''
     this.setData({ phone, nickname, avatar, avatarUrl: resolveImageUrl(avatar) })
     this.loadProfile()
+    this.loadUnreadCount()
+  },
+
+  loadUnreadCount() {
+    notificationApi.unreadCount().then((res) => {
+      const count = Number(res && res.data && res.data.count || 0)
+      this.setData({ unreadCount: count })
+    }).catch(() => this.setData({ unreadCount: 0 }))
   },
 
   loadProfile() {
@@ -108,5 +118,9 @@ Page({
 
   goOrders() {
     wx.switchTab({ url: '/pages/order/list' })
+  },
+
+  goNotifications() {
+    wx.navigateTo({ url: '/pages/notification/list' })
   },
 })

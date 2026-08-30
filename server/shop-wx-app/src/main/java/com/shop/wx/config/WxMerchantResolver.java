@@ -9,6 +9,8 @@ import com.shop.common.security.JwtUtil;
 import com.shop.common.security.UserType;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
+import com.shop.merchant.entity.MerchantWechatConfig;
+import com.shop.merchant.service.MerchantWechatConfigService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class WxMerchantResolver {
 
     private final JwtUtil jwtUtil;
     private final MerchantMapper merchantMapper;
+    private final MerchantWechatConfigService merchantWechatConfigService;
 
     public Long currentMerchantId(HttpServletRequest request) {
         CurrentUser current = CurrentUserHolder.get();
@@ -45,7 +48,15 @@ public class WxMerchantResolver {
             merchantCode = request.getParameter("merchantCode");
         }
         if (!StringUtils.hasText(merchantCode)) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "缺少商家编码");
+            String miniAppId = request.getHeader("miniapp-appid");
+            if (!StringUtils.hasText(miniAppId)) {
+                miniAppId = request.getParameter("miniAppId");
+            }
+            if (!StringUtils.hasText(miniAppId)) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "缺少商家编码或小程序 AppID");
+            }
+            MerchantWechatConfig config = merchantWechatConfigService.getRequiredByAppId(miniAppId);
+            return requireActiveMerchant(config.getMerchantId());
         }
 
         Merchant merchant = merchantMapper.selectOne(

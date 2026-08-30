@@ -40,6 +40,12 @@ public class Order extends BaseEntity {
 
     private String payTransactionId;
 
+    private LocalDateTime payReconcileAt;
+
+    private Integer payReconcileAttempts;
+
+    private String payReconcileError;
+
     /** JSON string，service 层序列化 AddressSnapshot */
     private String addressSnapshot;
 

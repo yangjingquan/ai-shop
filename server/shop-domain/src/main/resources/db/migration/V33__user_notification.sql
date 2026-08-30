@@ -1,0 +1,20 @@
+CREATE TABLE user_notification (
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    merchant_id BIGINT NOT NULL,
+    type VARCHAR(32) NOT NULL COMMENT '消息类型',
+    title VARCHAR(100) NOT NULL,
+    content VARCHAR(500) NOT NULL,
+    biz_type VARCHAR(32) NOT NULL DEFAULT '',
+    biz_id VARCHAR(64) NOT NULL DEFAULT '',
+    link VARCHAR(255) NOT NULL DEFAULT '',
+    is_read TINYINT NOT NULL DEFAULT 0,
+    read_at DATETIME DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT NOT NULL DEFAULT 0,
+    UNIQUE KEY uk_user_notification_biz (user_id, merchant_id, type, biz_type, biz_id),
+    KEY idx_user_notification_list (user_id, merchant_id, is_read, created_at),
+    CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES `user`(id),
+    CONSTRAINT fk_notification_merchant FOREIGN KEY (merchant_id) REFERENCES merchant(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户站内消息';

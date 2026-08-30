@@ -1,17 +1,40 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { dashboardApi, type DashboardOverview } from '@/api/dashboard'
+import { dashboardApi, type DashboardOverview, type DashboardTrendRow } from '@/api/dashboard'
 
 const loading = ref(false)
 const overview = ref<DashboardOverview | null>(null)
+const trend = ref<DashboardTrendRow[]>([])
+const trendDays = ref(30)
 
 async function load() {
   loading.value = true
   try {
-    overview.value = await dashboardApi.adminOverview()
+    const [overviewData, trendData] = await Promise.all([
+      dashboardApi.adminOverview(),
+      dashboardApi.adminTrend(trendDays.value),
+    ])
+    overview.value = overviewData
+    trend.value = trendData
   } finally {
     loading.value = false
   }
+}
+
+async function changeTrendDays() {
+  trend.value = await dashboardApi.adminTrend(trendDays.value)
+}
+
+function exportTrend() {
+  const header = ['日期', '支付订单数', '支付金额', '退款金额', '净收入']
+  const rows = trend.value.map((row) => [row.date, row.paidOrderCount, row.paidAmount, row.refundAmount, row.netAmount])
+  const csv = '\ufeff' + [header, ...rows].map((row) => row.join(',')).join('\n')
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `平台经营趋势-${trendDays.value}天.csv`
+  anchor.click()
+  URL.revokeObjectURL(url)
 }
 
 function money(value?: number) {
@@ -64,19 +87,27 @@ onMounted(load)
       </el-card>
     </div>
 
-    <el-card class="workbench-card">
+    <el-card class="trend-card">
       <template #header>
         <div class="card-header">
-          <span>工作台状态</span>
-          <el-tag type="primary">M1</el-tag>
+          <span>经营趋势</span>
+          <div class="trend-actions">
+            <el-select v-model="trendDays" style="width: 120px" @change="changeTrendDays">
+              <el-option label="最近 7 天" :value="7" />
+              <el-option label="最近 30 天" :value="30" />
+              <el-option label="最近 90 天" :value="90" />
+            </el-select>
+            <el-button @click="exportTrend">导出 CSV</el-button>
+          </div>
         </div>
       </template>
-      <el-alert
-        title="指标用于平台日常巡检；资金退款仍需以真实退款回调和对账结果为准。"
-        type="info"
-        :closable="false"
-        show-icon
-      />
+      <el-table :data="trend" max-height="420" stripe>
+        <el-table-column prop="date" label="日期" min-width="130" />
+        <el-table-column prop="paidOrderCount" label="支付订单" min-width="110" />
+        <el-table-column label="支付金额" min-width="130"><template #default="{ row }">{{ money(row.paidAmount) }}</template></el-table-column>
+        <el-table-column label="退款金额" min-width="130"><template #default="{ row }">{{ money(row.refundAmount) }}</template></el-table-column>
+        <el-table-column label="净收入" min-width="130"><template #default="{ row }"><strong :class="{ negative: row.netAmount < 0 }">{{ money(row.netAmount) }}</strong></template></el-table-column>
+      </el-table>
     </el-card>
   </div>
 </template>
@@ -119,9 +150,9 @@ onMounted(load)
   font-size: 13px;
 }
 
-.workbench-card {
-  max-width: 840px;
-}
+.trend-card { width: 100%; }
+.trend-actions { display: flex; align-items: center; gap: 10px; }
+.negative { color: var(--shop-danger); }
 
 @media (max-width: 900px) {
   .overview-grid {

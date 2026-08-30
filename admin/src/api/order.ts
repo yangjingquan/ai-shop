@@ -50,6 +50,30 @@ export interface AdminRefundRow {
   rejectReason?: string
   createdAt?: string
   updatedAt?: string
+  outRefundNo?: string
+  wxRefundId?: string
+  refundAmount?: number
+  refundFailReason?: string
+  refundTime?: string
+  autoRefund?: number
+  refundReconcileAt?: string
+  refundReconcileAttempts?: number
+  refundReconcileError?: string
+}
+
+export interface AdminPaymentRow {
+  id: number
+  orderNo: string
+  transactionId: string
+  amount: number
+  merchantId?: number
+  merchantName?: string
+  orderStatus?: number
+  payTime?: string
+  createdAt?: string
+  payReconcileAt?: string
+  payReconcileAttempts?: number
+  payReconcileError?: string
 }
 
 export const adminOrderApi = {
@@ -59,4 +83,10 @@ export const adminOrderApi = {
     request.get<unknown, AdminOrderDetail>(`/api/admin/orders/${orderNo}`),
   refunds: (params: Record<string, unknown>) =>
     request.get<unknown, PageResult<AdminRefundRow>>('/api/admin/refunds/page', { params }),
+  payments: (params: Record<string, unknown>) =>
+    request.get<unknown, PageResult<AdminPaymentRow>>('/api/admin/payments/page', { params }),
+  reconcilePayments: () =>
+    request.post<unknown, { paidCount: number }>('/api/admin/payments/reconcile'),
+  reconcileRefunds: () =>
+    request.post<unknown, { successCount: number }>('/api/admin/refunds/reconcile'),
 }

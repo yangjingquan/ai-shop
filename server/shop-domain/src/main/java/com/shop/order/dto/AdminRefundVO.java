@@ -22,6 +22,10 @@ public class AdminRefundVO {
     private BigDecimal refundAmount;
     private String refundFailReason;
     private LocalDateTime refundTime;
+    private Integer autoRefund;
+    private LocalDateTime refundReconcileAt;
+    private Integer refundReconcileAttempts;
+    private String refundReconcileError;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

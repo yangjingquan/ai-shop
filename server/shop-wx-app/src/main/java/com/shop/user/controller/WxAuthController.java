@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class WxAuthController {
 
     private static final Pattern MERCHANT_CODE_PATTERN = Pattern.compile("^M[A-Z0-9]{6,31}$");
+    private static final Pattern MINI_APP_ID_PATTERN = Pattern.compile("^wx[A-Za-z0-9_-]{6,62}$");
 
     private final UserService userService;
 
@@ -29,19 +30,26 @@ public class WxAuthController {
     @PostMapping("/login")
     public ApiResult<WxLoginResponse> login(@RequestBody(required = false) WxLoginRequest req,
                                             @RequestParam(required = false) String code,
-                                            @RequestParam(required = false) String merchantCode) {
+                                            @RequestParam(required = false) String merchantCode,
+                                            @RequestParam(required = false) String miniAppId) {
         String finalCode = firstText(req == null ? null : req.getCode(), code);
         String finalMerchantCode = firstText(req == null ? null : req.getMerchantCode(), merchantCode);
+        String finalMiniAppId = firstText(req == null ? null : req.getMiniAppId(), miniAppId);
         if (finalCode == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "code不能为空，请传JSON body或query/form参数");
         }
-        if (finalMerchantCode == null) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "商户代码不能为空，请传JSON body或query/form参数");
+        if (finalMerchantCode == null && finalMiniAppId == null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "商户代码和小程序 AppID 至少传一个");
         }
-        if (!MERCHANT_CODE_PATTERN.matcher(finalMerchantCode).matches()) {
+        if (finalMerchantCode != null && !MERCHANT_CODE_PATTERN.matcher(finalMerchantCode).matches()) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "商户代码格式错误");
         }
-        return ApiResult.success(userService.wxLogin(finalCode, finalMerchantCode));
+        if (finalMiniAppId != null && !MINI_APP_ID_PATTERN.matcher(finalMiniAppId).matches()) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "小程序 AppID 格式错误");
+        }
+        return ApiResult.success(finalMerchantCode != null
+                ? userService.wxLogin(finalCode, finalMerchantCode)
+                : userService.wxLoginByAppId(finalCode, finalMiniAppId));
     }
 
     private String firstText(String first, String second) {

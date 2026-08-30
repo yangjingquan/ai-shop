@@ -44,3 +44,5 @@ shop:
   jobs:
     order-timeout-enabled: true
     auto-receive-enabled: true
+    payment-reconcile-enabled: true
+    refund-reconcile-enabled: true

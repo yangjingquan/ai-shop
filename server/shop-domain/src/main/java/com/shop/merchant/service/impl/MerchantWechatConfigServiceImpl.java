@@ -48,6 +48,20 @@ public class MerchantWechatConfigServiceImpl implements MerchantWechatConfigServ
     }
 
     @Override
+    public MerchantWechatConfig getRequiredByAppId(String appId) {
+        if (appId == null || appId.isBlank()) {
+            throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
+        }
+        MerchantWechatConfig config = configMapper.selectOne(new LambdaQueryWrapper<MerchantWechatConfig>()
+                .eq(MerchantWechatConfig::getWxAppId, appId.trim())
+                .last("LIMIT 1"));
+        if (config == null) {
+            throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
+        }
+        return config;
+    }
+
+    @Override
     public void ensureConfig(Long merchantId) {
         if (getByMerchantId(merchantId) != null) {
             return;

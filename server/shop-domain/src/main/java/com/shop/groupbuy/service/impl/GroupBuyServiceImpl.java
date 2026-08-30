@@ -28,6 +28,7 @@ import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.WxPayService;
+import com.shop.notification.service.UserNotificationService;
 import com.shop.product.dto.ProductDetailVO;
 import com.shop.product.dto.ProductListVO;
 import com.shop.product.entity.Product;
@@ -40,8 +41,11 @@ import com.shop.user.entity.UserAddress;
 import com.shop.user.mapper.UserAddressMapper;
 import com.shop.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -56,6 +60,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GroupBuyServiceImpl implements GroupBuyService {
     private final ProductService productService;
     private final ProductMapper productMapper;
@@ -68,6 +73,8 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     private final RefundApplicationMapper refundApplicationMapper;
     private final UserMapper userMapper;
     private final WxPayService wxPayService;
+    private final UserNotificationService notificationService;
+    private final PlatformTransactionManager transactionManager;
 
     @Override
     public PageResult<ProductListVO> productPage(int page, int size, Long merchantId, Long categoryId, String keyword) {
@@ -95,27 +102,23 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     }
 
     @Override
-    @Transactional
     public GroupBuyCreateVO openGroup(Long userId, GroupBuyCreateRequest req) {
-        return createGroupOrder(userId, null, null, req, true);
+        return createGroupOrderWithPayment(userId, null, null, req, true);
     }
 
     @Override
-    @Transactional
     public GroupBuyCreateVO openGroup(Long userId, Long merchantId, GroupBuyCreateRequest req) {
-        return createGroupOrder(userId, merchantId, null, req, true);
+        return createGroupOrderWithPayment(userId, merchantId, null, req, true);
     }
 
     @Override
-    @Transactional
     public GroupBuyCreateVO joinGroup(Long userId, Long groupId, GroupBuyCreateRequest req) {
-        return createGroupOrder(userId, null, groupId, req, false);
+        return createGroupOrderWithPayment(userId, null, groupId, req, false);
     }
 
     @Override
-    @Transactional
     public GroupBuyCreateVO joinGroup(Long userId, Long merchantId, Long groupId, GroupBuyCreateRequest req) {
-        return createGroupOrder(userId, merchantId, groupId, req, false);
+        return createGroupOrderWithPayment(userId, merchantId, groupId, req, false);
     }
 
     @Override
@@ -187,6 +190,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             order.setStatus(OrderStatus.GROUP_SUCCESS.getCode());
             orderMapper.updateById(order);
             refreshPaidCount(group);
+            notificationService.notifyGroupFormed(group, List.of(member));
             return;
         }
         if (group.getStatus() != GroupBuyGroupStatus.WAIT_GROUP.getCode()) {
@@ -221,6 +225,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
                     orderMapper.updateById(paidOrder);
                 }
             }
+            notificationService.notifyGroupFormed(group, paidMembers);
         } else {
             groupMapper.updateById(group);
         }
@@ -285,6 +290,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
                 cancelUnpaidOrder(member, order);
             }
         }
+        notificationService.notifyGroupFailed(group, members);
     }
 
     private void markPaidOrderWaitRefund(GroupBuyMember member, Order order) {
@@ -317,6 +323,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         app.setReason("拼团未成团");
         app.setRefundAmount(order.getPayAmount());
         app.setStatus(RefundStatus.PENDING.getCode());
+        app.setAutoRefund(1);
         refundApplicationMapper.insert(app);
     }
 
@@ -459,8 +466,29 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         vo.setGroupId(group.getId());
         vo.setOrderNo(orderNo);
         vo.setPayAmount(total);
-        if (merchantId != null) {
-            vo.setPayParams(wxPayService.createJsapiPayParams(order));
+        return vo;
+    }
+
+    private GroupBuyCreateVO createGroupOrderWithPayment(Long userId, Long merchantId, Long groupId,
+                                                         GroupBuyCreateRequest req, boolean openNewGroup) {
+        GroupBuyCreateVO vo = new TransactionTemplate(transactionManager)
+                .execute(status -> createGroupOrder(userId, merchantId, groupId, req, openNewGroup));
+        if (vo == null) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+        }
+        if (merchantId == null) {
+            return vo;
+        }
+        Order committedOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                .eq(Order::getOrderNo, vo.getOrderNo()));
+        if (committedOrder == null) {
+            log.error("拼团订单事务已提交但无法读取订单, orderNo={}", vo.getOrderNo());
+            return vo;
+        }
+        try {
+            vo.setPayParams(wxPayService.createJsapiPayParams(committedOrder));
+        } catch (RuntimeException e) {
+            log.warn("拼团订单已创建但微信预下单失败，可稍后重新支付, orderNo={}", vo.getOrderNo(), e);
         }
         return vo;
     }

@@ -11,17 +11,19 @@ function silentLogin() {
           reject(new Error('wx.login failed'))
           return
         }
-        const merchantCode = String(config.MERCHANT_CODE || '').trim()
-        if (!merchantCode) {
-          console.warn('silentLogin skipped: MERCHANT_CODE is empty')
+        const merchantCode = config.getMerchantCode()
+        const miniAppId = String(config.MINIAPP_APP_ID || '').trim()
+        if (!merchantCode && !miniAppId) {
+          console.warn('silentLogin skipped: merchant identity is empty')
           resolve(null)
           return
         }
-        const payload = { code: String(loginRes.code || ''), merchantCode }
+        const payload = { code: String(loginRes.code || ''), merchantCode, miniAppId }
         console.info('wx login request:', {
           url: config.BASE_URL + '/api/wx/auth/login',
           hasCode: !!loginRes.code,
           merchantCode,
+          miniAppId,
         })
         wx.request({
           url: config.BASE_URL + '/api/wx/auth/login',
@@ -34,6 +36,7 @@ function silentLogin() {
               wx.setStorageSync('wx_token', data.data.token)
               wx.setStorageSync('wx_openid', data.data.openid || '')
               wx.setStorageSync('has_phone', data.data.hasPhone)
+              if (data.data.merchantCode) wx.setStorageSync('merchant_code', data.data.merchantCode)
               resolve(data.data)
             } else {
               console.warn('silentLogin failed:', data)

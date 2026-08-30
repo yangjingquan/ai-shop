@@ -11,9 +11,19 @@ export interface DashboardOverview {
   lowStockSkuCount: number
 }
 
+export interface DashboardTrendRow {
+  date: string
+  paidOrderCount: number
+  paidAmount: number
+  refundAmount: number
+  netAmount: number
+}
+
 export const dashboardApi = {
   adminOverview: () =>
     request.get<unknown, DashboardOverview>('/api/admin/dashboard/overview'),
+  adminTrend: (days = 30) =>
+    request.get<unknown, DashboardTrendRow[]>('/api/admin/dashboard/trend', { params: { days } }),
   merchantOverview: () =>
     request.get<unknown, DashboardOverview>('/api/merchant/dashboard/overview'),
 }

@@ -14,6 +14,7 @@ import com.shop.order.enums.RefundStatus;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.WxRefundCallbackService;
+import com.shop.order.service.RefundCompletionService;
 import com.shop.order.service.WxPayCallbackService.WxPayCallbackHeaders;
 import com.wechat.pay.java.core.RSAAutoCertificateConfig;
 import com.wechat.pay.java.core.RSAPublicKeyConfig;
@@ -42,6 +43,7 @@ public class WxRefundCallbackServiceImpl implements WxRefundCallbackService {
     private final RefundApplicationMapper refundApplicationMapper;
     private final PaymentCredentialCipher paymentCredentialCipher;
     private final MerchantWechatConfigService merchantWechatConfigService;
+    private final RefundCompletionService refundCompletionService;
 
     @Override
     @Transactional
@@ -97,6 +99,8 @@ public class WxRefundCallbackServiceImpl implements WxRefundCallbackService {
         // 微信会重复通知；成功状态是终态，重复成功通知直接幂等返回。
         if (app.getStatus() == RefundStatus.SUCCESS.getCode()
                 && notification.getRefundStatus() == Status.SUCCESS) {
+            refundCompletionService.completeIfFullRefund(app, order,
+                    app.getRefundTime() == null ? LocalDateTime.now() : app.getRefundTime());
             return;
         }
 
@@ -113,6 +117,9 @@ public class WxRefundCallbackServiceImpl implements WxRefundCallbackService {
         }
         app.setUpdatedAt(LocalDateTime.now());
         refundApplicationMapper.updateById(app);
+        if (app.getStatus() == RefundStatus.SUCCESS.getCode()) {
+            refundCompletionService.completeIfFullRefund(app, order, app.getRefundTime());
+        }
         log.info("微信退款回调处理成功, merchantCode={}, orderNo={}, outRefundNo={}, status={}",
                 merchantCode, app.getOrderNo(), app.getOutRefundNo(), notification.getRefundStatus());
     }

@@ -13,7 +13,8 @@ function request(options, retryCount = 0) {
       header: {
         'content-type': 'application/json',
         'wx-token': token,
-        'merchant-code': config.MERCHANT_CODE,
+        'merchant-code': config.getMerchantCode(),
+        'miniapp-appid': config.MINIAPP_APP_ID,
         ...options.header,
       },
       success(res) {

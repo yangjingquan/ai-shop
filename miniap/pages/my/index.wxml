@@ -31,6 +31,16 @@
   </view>
 
   <view class="menu card">
+    <view class="menu-item" hover-class="menu-item-hover" bindtap="goNotifications">
+      <view class="menu-left">
+        <view class="message-icon">消</view>
+        <text>消息中心</text>
+      </view>
+      <view class="menu-right">
+        <text wx:if="{{unreadCount > 0}}" class="unread-badge">{{unreadCount > 99 ? '99+' : unreadCount}}</text>
+        <image class="icon icon-sm arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" />
+      </view>
+    </view>
     <navigator class="menu-item" url="/pages/address/list" hover-class="menu-item-hover">
       <view class="menu-left">
         <image class="menu-icon" src="/assets/icons/location.png" mode="aspectFit" />

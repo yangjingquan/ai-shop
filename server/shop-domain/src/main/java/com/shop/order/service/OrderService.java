@@ -12,7 +12,7 @@ public interface OrderService {
 
     OrderPreviewVO preview(Long userId, Long merchantId, OrderPreviewRequest req);
 
-    /** 下单并完成微信 JSAPI 预下单：单个商家订单的库存扣减、快照和支付参数 */
+    /** 下单：先提交单商家订单、库存和快照，再尝试微信 JSAPI 预下单；预下单失败可重新支付 */
     List<OrderCreateVO> create(Long userId, OrderCreateRequest req);
 
     List<OrderCreateVO> create(Long userId, Long merchantId, OrderCreateRequest req);

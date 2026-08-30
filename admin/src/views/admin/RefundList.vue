@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { adminOrderApi, type AdminRefundRow } from '@/api/order'
 
 const loading = ref(false)
+const reconciling = ref(false)
 const list = ref<AdminRefundRow[]>([])
 const total = ref(0)
 const query = reactive({ page: 1, size: 10, status: undefined as number | undefined, merchantId: undefined as number | undefined })
@@ -20,13 +22,23 @@ async function fetchList() {
 }
 
 function search() { query.page = 1; fetchList() }
+async function reconcile() {
+  reconciling.value = true
+  try {
+    const result = await adminOrderApi.reconcileRefunds()
+    ElMessage.success(result.successCount ? `确认 ${result.successCount} 笔退款成功` : '对账完成，暂无新增成功退款')
+    await fetchList()
+  } finally {
+    reconciling.value = false
+  }
+}
 onMounted(fetchList)
 </script>
 
 <template>
   <div class="page">
-    <div class="page-header"><div><span class="page-kicker">REFUND MONITOR</span><h1 class="page-title">平台退款</h1><p class="page-desc">查看各商家的售后申请与处理状态；资金退款以支付渠道结果为准。</p></div></div>
-    <el-alert title="当前页面仅提供查询，不开放会改变退款资金状态的审批操作。" type="warning" :closable="false" show-icon class="notice" />
+    <div class="page-header"><div><span class="page-kicker">REFUND MONITOR</span><h1 class="page-title">平台退款</h1><p class="page-desc">查看退款申请、微信资金状态与主动对账结果；审批仍由所属商家处理。</p></div><el-button type="primary" :loading="reconciling" @click="reconcile">立即对账</el-button></div>
+    <el-alert title="立即对账会查询处理中退款，并自动推进拼团失败退款；不会代替商家审批普通售后。" type="info" :closable="false" show-icon class="notice" />
     <el-card>
       <div class="toolbar">
         <el-input-number v-model="query.merchantId" :min="1" :controls="false" placeholder="商家 ID" style="width: 150px" />
@@ -35,12 +47,17 @@ onMounted(fetchList)
       </div>
       <el-table v-loading="loading" :data="list" stripe>
         <el-table-column prop="orderNo" label="订单号" min-width="190" />
+        <el-table-column prop="outRefundNo" label="商户退款单号" min-width="220" show-overflow-tooltip />
         <el-table-column prop="merchantName" label="商家" width="150" />
+        <el-table-column label="来源" width="100"><template #default="{ row }"><el-tag :type="row.autoRefund ? 'primary' : 'info'">{{ row.autoRefund ? '系统自动' : '用户申请' }}</el-tag></template></el-table-column>
         <el-table-column prop="reason" label="申请原因" min-width="240" show-overflow-tooltip />
         <el-table-column prop="refundAmount" label="退款金额" width="110" />
         <el-table-column label="状态" width="110"><template #default="{ row }"><el-tag :type="row.status === 0 ? 'warning' : row.status === 1 ? 'primary' : row.status === 3 ? 'success' : 'danger'">{{ row.statusText || statusText[row.status] }}</el-tag></template></el-table-column>
+        <el-table-column label="对账次数" width="100"><template #default="{ row }">{{ row.refundReconcileAttempts || 0 }}</template></el-table-column>
+        <el-table-column prop="refundReconcileAt" label="最近对账" width="180" />
+        <el-table-column prop="refundReconcileError" label="对账异常" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="refundFailReason" label="渠道失败原因" min-width="180" show-overflow-tooltip />
         <el-table-column prop="createdAt" label="申请时间" width="180" />
-        <el-table-column prop="rejectReason" label="拒绝原因" min-width="180" show-overflow-tooltip />
       </el-table>
       <div class="pagination"><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" background layout="total, sizes, prev, pager, next" @current-change="fetchList" @size-change="fetchList" /></div>
     </el-card>

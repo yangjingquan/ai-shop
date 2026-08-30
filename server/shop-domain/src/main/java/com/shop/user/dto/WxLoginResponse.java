@@ -10,4 +10,5 @@ public class WxLoginResponse {
     private String openid;
     private Boolean isNewUser;
     private Boolean hasPhone;
+    private String merchantCode;
 }

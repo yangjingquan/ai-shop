@@ -100,6 +100,34 @@
   align-items: center;
   gap: 14rpx;
 }
+.menu-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.message-icon {
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 10rpx;
+  background: #fff1e6;
+  color: #ff6600;
+  font-size: 20rpx;
+  line-height: 34rpx;
+  text-align: center;
+  font-weight: 700;
+}
+.unread-badge {
+  min-width: 34rpx;
+  height: 34rpx;
+  padding: 0 8rpx;
+  border-radius: 17rpx;
+  background: #ff4d4f;
+  color: #fff;
+  font-size: 20rpx;
+  line-height: 34rpx;
+  text-align: center;
+  box-sizing: border-box;
+}
 .menu-icon {
   width: 34rpx;
   height: 34rpx;

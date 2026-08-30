@@ -9,7 +9,8 @@ public enum GroupBuyMemberStatus {
     WAIT_PAY(0, "待支付"),
     PAID(1, "已支付"),
     CANCELLED(2, "已取消"),
-    WAIT_REFUND(3, "待退款");
+    WAIT_REFUND(3, "待退款"),
+    REFUNDED(4, "已退款");
 
     private final int code;
     private final String text;

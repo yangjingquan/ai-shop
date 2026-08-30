@@ -41,6 +41,15 @@ public class RefundApplication {
 
     private LocalDateTime refundTime;
 
+    /** 是否由系统自动发起退款（例如拼团失败）。 */
+    private Integer autoRefund;
+
+    private LocalDateTime refundReconcileAt;
+
+    private Integer refundReconcileAttempts;
+
+    private String refundReconcileError;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
