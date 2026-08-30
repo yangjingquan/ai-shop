@@ -8,6 +8,7 @@ interface RefundRow {
   orderNo: string
   reason: string
   status: number
+  statusText?: string
   rejectReason?: string
 }
 
@@ -15,6 +16,11 @@ const refunds = ref<RefundRow[]>([])
 const currentTab = ref<0 | -1>(0)
 const rejectReasons = ref<Record<number, string>>({})
 const loading = ref(false)
+const statusLabels: Record<number, string> = { 0: '待处理', 1: '退款处理中', 2: '已拒绝', 3: '退款成功', 4: '退款失败' }
+
+function refundStatusText(row: { status?: number; statusText?: string }) {
+  return row.statusText || (row.status === undefined ? '未知状态' : statusLabels[row.status] || '未知状态')
+}
 
 async function loadRefunds() {
   loading.value = true
@@ -81,7 +87,7 @@ onMounted(loadRefunds)
               :type="row.status === 0 ? 'warning' : row.status === 1 ? 'primary' : row.status === 2 ? 'danger' : row.status === 3 ? 'success' : 'danger'"
               size="small"
             >
-              {{ row.status === 0 ? '待处理' : row.status === 1 ? '退款处理中' : row.status === 2 ? '已拒绝' : row.status === 3 ? '退款成功' : '退款失败' }}
+              {{ refundStatusText(row) }}
             </el-tag>
           </template>
         </el-table-column>

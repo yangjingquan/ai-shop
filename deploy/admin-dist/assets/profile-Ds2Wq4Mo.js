@@ -1,1 +1,0 @@
-import{n as e}from"./index-CX7tcTHJ.js";var t={get:()=>e.get(`/api/merchant/profile`),update:t=>e.put(`/api/merchant/profile`,t)};export{t};
