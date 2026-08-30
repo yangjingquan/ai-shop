@@ -24,7 +24,7 @@ public interface RefundApplicationMapper extends BaseMapper<RefundApplication> {
                              @Param("error") String error);
 
     @Select("SELECT DATE(refund_time) AS day, COUNT(*) AS count, COALESCE(SUM(refund_amount), 0) AS amount " +
-            "FROM refund_application WHERE status = 3 AND refund_time &gt;= #{from} " +
+            "FROM refund_application WHERE status = 3 AND refund_time >= #{from} " +
             "GROUP BY DATE(refund_time) ORDER BY day")
     List<DailyAmountRow> selectAdminDailyRefund(@Param("from") LocalDateTime from);
 }

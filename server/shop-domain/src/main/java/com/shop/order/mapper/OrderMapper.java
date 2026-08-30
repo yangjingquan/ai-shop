@@ -54,7 +54,7 @@ public interface OrderMapper extends BaseMapper<Order> {
     List<Order> selectAutoReceiveOrders(@Param("limit") int limit);
 
     @Select("SELECT DATE(pay_time) AS day, COUNT(*) AS count, COALESCE(SUM(pay_amount), 0) AS amount " +
-            "FROM `order` WHERE deleted = 0 AND pay_time &gt;= #{from} " +
+            "FROM `order` WHERE deleted = 0 AND pay_time >= #{from} " +
             "GROUP BY DATE(pay_time) ORDER BY day")
     List<DailyAmountRow> selectAdminDailyPaid(@Param("from") LocalDateTime from);
 }
