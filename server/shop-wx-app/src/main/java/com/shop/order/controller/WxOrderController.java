@@ -5,6 +5,8 @@ import com.shop.common.aop.RateLimit;
 import com.shop.common.response.ApiResult;
 import com.shop.common.response.PageResult;
 import com.shop.common.security.CurrentUserHolder;
+import com.shop.wx.config.WxMerchantResolver;
+import jakarta.servlet.http.HttpServletRequest;
 import com.shop.order.dto.*;
 import com.shop.order.service.OrderService;
 import jakarta.validation.Valid;
@@ -20,21 +22,24 @@ import java.util.Map;
 public class WxOrderController {
 
     private final OrderService orderService;
+    private final WxMerchantResolver wxMerchantResolver;
 
     @PostMapping("/preview")
-    public ApiResult<OrderPreviewVO> preview(@RequestBody @Valid OrderPreviewRequest req) {
+    public ApiResult<OrderPreviewVO> preview(@RequestBody @Valid OrderPreviewRequest req, HttpServletRequest request) {
         Long userId = CurrentUserHolder.get().getUserId();
-        return ApiResult.success(orderService.preview(userId, req));
+        Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
+        return ApiResult.success(orderService.preview(userId, merchantId, req));
     }
 
     @RateLimit(key = "order_create", limit = 1, windowSec = 5, by = RateLimit.By.USER)
     @PostMapping("/create")
-    public ApiResult<List<OrderCreateVO>> create(@RequestBody @Valid OrderCreateRequest req) {
+    public ApiResult<List<OrderCreateVO>> create(@RequestBody @Valid OrderCreateRequest req, HttpServletRequest request) {
         Long userId = CurrentUserHolder.get().getUserId();
-        return ApiResult.success(orderService.create(userId, req));
+        Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
+        return ApiResult.success(orderService.create(userId, merchantId, req));
     }
 
-    @OpLog(action = "ORDER_CANCEL", targetType = "ORDER")
+    @OpLog(action = "ORDER_CANCEL", targetType = "ORDER", targetIdExpr = "#orderNo")
     @PostMapping("/{orderNo}/cancel")
     public ApiResult<Void> cancel(@PathVariable String orderNo) {
         Long userId = CurrentUserHolder.get().getUserId();
@@ -73,8 +78,9 @@ public class WxOrderController {
     }
 
     @PostMapping("/{orderNo}/repay")
-    public ApiResult<OrderCreateVO> repay(@PathVariable String orderNo) {
+    public ApiResult<OrderCreateVO> repay(@PathVariable String orderNo, HttpServletRequest request) {
         Long userId = CurrentUserHolder.get().getUserId();
-        return ApiResult.success(orderService.repay(userId, orderNo));
+        Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
+        return ApiResult.success(orderService.repay(userId, merchantId, orderNo));
     }
 }

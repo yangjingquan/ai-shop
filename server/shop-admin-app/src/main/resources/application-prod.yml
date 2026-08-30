@@ -26,6 +26,10 @@ knife4j:
   enabled: false
 
 shop:
+  jwt:
+    secret: ${SHOP_JWT_SECRET}
+  security:
+    trusted-proxies: ${SHOP_TRUSTED_PROXIES:172.16.0.0/12,127.0.0.1,::1}
   file:
     upload-dir: ${SHOP_FILE_UPLOAD_DIR:/data/shop/uploads}
     public-prefix: ${SHOP_FILE_PUBLIC_PREFIX:/uploads}

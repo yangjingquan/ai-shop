@@ -10,8 +10,12 @@ public interface OrderService {
     /** 结算预览：单个商家内计算金额，只读；跨商家商品直接拒绝 */
     OrderPreviewVO preview(Long userId, OrderPreviewRequest req);
 
+    OrderPreviewVO preview(Long userId, Long merchantId, OrderPreviewRequest req);
+
     /** 下单并完成微信 JSAPI 预下单：单个商家订单的库存扣减、快照和支付参数 */
     List<OrderCreateVO> create(Long userId, OrderCreateRequest req);
+
+    List<OrderCreateVO> create(Long userId, Long merchantId, OrderCreateRequest req);
 
     /** 用户主动取消（仅 WAIT_PAY） */
     void cancelByUser(Long userId, String orderNo);
@@ -48,4 +52,6 @@ public interface OrderService {
 
     /** 重新支付（仅 WAIT_PAY 且未超时），返新 PayParams */
     OrderCreateVO repay(Long userId, String orderNo);
+
+    OrderCreateVO repay(Long userId, Long merchantId, String orderNo);
 }

@@ -27,6 +27,7 @@ import com.shop.order.enums.RefundStatus;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
+import com.shop.order.service.WxPayService;
 import com.shop.product.dto.ProductDetailVO;
 import com.shop.product.dto.ProductListVO;
 import com.shop.product.entity.Product;
@@ -66,6 +67,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     private final GroupBuyMemberMapper memberMapper;
     private final RefundApplicationMapper refundApplicationMapper;
     private final UserMapper userMapper;
+    private final WxPayService wxPayService;
 
     @Override
     public PageResult<ProductListVO> productPage(int page, int size, Long merchantId, Long categoryId, String keyword) {
@@ -83,6 +85,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         vo.setProduct(product);
         List<GroupBuyGroup> active = groupMapper.selectList(new LambdaQueryWrapper<GroupBuyGroup>()
                 .eq(GroupBuyGroup::getProductId, productId)
+                .eq(merchantId != null, GroupBuyGroup::getMerchantId, merchantId)
                 .eq(GroupBuyGroup::getStatus, GroupBuyGroupStatus.WAIT_GROUP.getCode())
                 .gt(GroupBuyGroup::getExpireAt, LocalDateTime.now())
                 .orderByAsc(GroupBuyGroup::getExpireAt)
@@ -94,19 +97,39 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     @Override
     @Transactional
     public GroupBuyCreateVO openGroup(Long userId, GroupBuyCreateRequest req) {
-        return createGroupOrder(userId, null, req, true);
+        return createGroupOrder(userId, null, null, req, true);
+    }
+
+    @Override
+    @Transactional
+    public GroupBuyCreateVO openGroup(Long userId, Long merchantId, GroupBuyCreateRequest req) {
+        return createGroupOrder(userId, merchantId, null, req, true);
     }
 
     @Override
     @Transactional
     public GroupBuyCreateVO joinGroup(Long userId, Long groupId, GroupBuyCreateRequest req) {
-        return createGroupOrder(userId, groupId, req, false);
+        return createGroupOrder(userId, null, groupId, req, false);
+    }
+
+    @Override
+    @Transactional
+    public GroupBuyCreateVO joinGroup(Long userId, Long merchantId, Long groupId, GroupBuyCreateRequest req) {
+        return createGroupOrder(userId, merchantId, groupId, req, false);
     }
 
     @Override
     public GroupBuyGroupVO groupDetail(Long groupId) {
+        return groupDetail(groupId, null);
+    }
+
+    @Override
+    public GroupBuyGroupVO groupDetail(Long groupId, Long merchantId) {
         GroupBuyGroup group = groupMapper.selectById(groupId);
         if (group == null) {
+            throw new BusinessException(ErrorCode.GROUP_BUY_GROUP_NOT_FOUND);
+        }
+        if (merchantId != null && !merchantId.equals(group.getMerchantId())) {
             throw new BusinessException(ErrorCode.GROUP_BUY_GROUP_NOT_FOUND);
         }
         GroupBuyGroupVO vo = toGroupVO(group);
@@ -330,15 +353,20 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         }
     }
 
-    private GroupBuyCreateVO createGroupOrder(Long userId, Long groupId, GroupBuyCreateRequest req, boolean openNewGroup) {
+    private GroupBuyCreateVO createGroupOrder(Long userId, Long merchantId, Long groupId,
+                                              GroupBuyCreateRequest req, boolean openNewGroup) {
         Product product = productMapper.selectById(req.getProductId());
         if (product == null || product.getStatus() == null || product.getStatus() != 1
                 || product.getIsGroupBuy() == null || product.getIsGroupBuy() != 1) {
             throw new BusinessException(ErrorCode.GROUP_BUY_PRODUCT_NOT_FOUND);
         }
+        if (merchantId != null && !merchantId.equals(product.getMerchantId())) {
+            throw new BusinessException(ErrorCode.GROUP_BUY_PRODUCT_NOT_FOUND);
+        }
         validateGroupBuyConfig(product.getGroupBuyPrice(), product.getGroupBuyRequiredCount());
         ProductSku sku = skuMapper.selectById(req.getSkuId());
-        if (sku == null || !product.getId().equals(sku.getProductId()) || sku.getStock() < req.getQuantity()) {
+        if (sku == null || !Integer.valueOf(1).equals(sku.getActive())
+                || !product.getId().equals(sku.getProductId()) || sku.getStock() < req.getQuantity()) {
             throw new BusinessException(ErrorCode.CART_ITEM_INVALID);
         }
         UserAddress address = userAddressMapper.selectOne(new LambdaQueryWrapper<UserAddress>()
@@ -361,7 +389,8 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             groupMapper.insert(group);
         } else {
             group = groupMapper.selectByIdForUpdate(groupId);
-            if (group == null || !group.getProductId().equals(product.getId())) {
+            if (group == null || !group.getProductId().equals(product.getId())
+                    || (merchantId != null && !merchantId.equals(group.getMerchantId()))) {
                 throw new BusinessException(ErrorCode.GROUP_BUY_GROUP_NOT_FOUND);
             }
             if (group.getStatus() != GroupBuyGroupStatus.WAIT_GROUP.getCode()) {
@@ -430,7 +459,9 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         vo.setGroupId(group.getId());
         vo.setOrderNo(orderNo);
         vo.setPayAmount(total);
-        vo.setPayParams(mockPayParams(orderNo));
+        if (merchantId != null) {
+            vo.setPayParams(wxPayService.createJsapiPayParams(order));
+        }
         return vo;
     }
 
@@ -490,14 +521,4 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         }
     }
 
-    private OrderCreateVO.PayParams mockPayParams(String orderNo) {
-        OrderCreateVO.PayParams pp = new OrderCreateVO.PayParams();
-        pp.setAppId("wx_mock");
-        pp.setTimeStamp(String.valueOf(System.currentTimeMillis() / 1000));
-        pp.setNonceStr(UUID.randomUUID().toString().substring(0, 16));
-        pp.setPackageStr("prepay_id=mock_" + orderNo);
-        pp.setSignType("MD5");
-        pp.setPaySign("MOCK_SIGN");
-        return pp;
-    }
 }

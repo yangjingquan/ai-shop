@@ -24,5 +24,7 @@ knife4j:
   enabled: true
 
 shop:
+  jwt:
+    secret: ${SHOP_JWT_SECRET:dev-only-shop-jwt-secret-min-32-bytes-change-me}
   cors:
     allowed-origin-patterns: http://localhost:5180,http://127.0.0.1:5180

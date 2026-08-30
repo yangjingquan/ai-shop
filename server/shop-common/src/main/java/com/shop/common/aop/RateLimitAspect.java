@@ -4,6 +4,7 @@ import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.security.CurrentUser;
 import com.shop.common.security.CurrentUserHolder;
+import com.shop.common.security.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -14,7 +15,6 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
 import java.util.List;
 
 @Aspect
@@ -23,6 +23,7 @@ import java.util.List;
 public class RateLimitAspect {
 
     private final StringRedisTemplate stringRedisTemplate;
+    private final ClientIpResolver clientIpResolver;
 
     private static final String LUA = """
             local key = KEYS[1]
@@ -59,10 +60,9 @@ public class RateLimitAspect {
             CurrentUser user = CurrentUserHolder.get();
             resolved = String.valueOf(user != null ? user.getUserId() : "anon");
         } else {
-            String ip = request.getHeader("X-Forwarded-For");
-            if (ip == null || ip.isEmpty()) ip = request.getRemoteAddr();
-            resolved = ip;
+            resolved = clientIpResolver.resolve(request);
         }
         return "rate:" + ann.key() + ":" + path + ":" + resolved;
     }
+
 }

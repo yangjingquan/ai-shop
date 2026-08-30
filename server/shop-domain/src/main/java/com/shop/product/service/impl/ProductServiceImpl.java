@@ -19,6 +19,7 @@ import com.shop.product.mapper.ProductMapper;
 import com.shop.product.mapper.ProductSkuMapper;
 import com.shop.product.mapper.ProductSpecMapper;
 import com.shop.product.mapper.ProductSpecValueMapper;
+import com.shop.order.mapper.OrderItemMapper;
 import com.shop.product.service.MerchantCategoryService;
 import com.shop.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductSpecValueMapper specValueMapper;
     private final ProductSkuMapper skuMapper;
     private final MerchantCategoryService merchantCategoryService;
+    private final OrderItemMapper orderItemMapper;
 
     @Override
     @Transactional
@@ -110,8 +112,8 @@ public class ProductServiceImpl implements ProductService {
         p.setGroupBuyRequiredCount(Integer.valueOf(1).equals(p.getIsGroupBuy()) ? req.getGroupBuyRequiredCount() : null);
         productMapper.updateById(p);
 
-        // 先删后插
-        deleteSpecsAndSkus(id);
+        // 已被订单引用的商品不能物理替换旧 SKU；保留历史 SKU，并将其标记为不可售。
+        replaceSpecsAndSkus(id);
         persistSpecsAndSkus(id, req);
         recalcProduct(id);
     }
@@ -195,6 +197,7 @@ public class ProductServiceImpl implements ProductService {
         List<ProductSku> skus = skuMapper.selectList(
                 new LambdaQueryWrapper<ProductSku>()
                         .eq(ProductSku::getProductId, id)
+                        .eq(ProductSku::getActive, 1)
                         .orderByAsc(ProductSku::getId));
         for (ProductSku sk : skus) {
             ProductDetailVO.SkuVO svo = new ProductDetailVO.SkuVO();
@@ -396,7 +399,11 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void delete(Long id, Long merchantId) {
         mustOwn(id, merchantId);
-        deleteSpecsAndSkus(id);
+        if (orderItemMapper.countActiveOrderReferences(id) > 0) {
+            deactivateSkus(id);
+        } else {
+            deleteSpecsAndSkus(id);
+        }
         productMapper.deleteById(id);
     }
 
@@ -522,6 +529,7 @@ public class ProductServiceImpl implements ProductService {
             entity.setOriginalPrice(sku.getOriginalPrice());
             entity.setStock(sku.getStock());
             entity.setImage(sku.getImage() == null ? "" : sku.getImage());
+            entity.setActive(1);
             skuMapper.insert(entity);
         }
     }
@@ -539,10 +547,27 @@ public class ProductServiceImpl implements ProductService {
         skuMapper.delete(new LambdaQueryWrapper<ProductSku>().eq(ProductSku::getProductId, productId));
     }
 
+    private void replaceSpecsAndSkus(Long productId) {
+        if (orderItemMapper.countActiveOrderReferences(productId) > 0) {
+            deactivateSkus(productId);
+        } else {
+            deleteSpecsAndSkus(productId);
+        }
+    }
+
+    private void deactivateSkus(Long productId) {
+        skuMapper.update(null, new LambdaUpdateWrapper<ProductSku>()
+                .eq(ProductSku::getProductId, productId)
+                .eq(ProductSku::getActive, 1)
+                .set(ProductSku::getActive, 0));
+    }
+
     @Override
     public void recalcProduct(Long productId) {
         List<ProductSku> skus = skuMapper.selectList(
-                new LambdaQueryWrapper<ProductSku>().eq(ProductSku::getProductId, productId));
+                new LambdaQueryWrapper<ProductSku>()
+                        .eq(ProductSku::getProductId, productId)
+                        .eq(ProductSku::getActive, 1));
         BigDecimal min = BigDecimal.ZERO;
         BigDecimal max = BigDecimal.ZERO;
         BigDecimal minOriginal = null;

@@ -42,7 +42,7 @@ public class MerchantOrderController {
         private String shipNo;
     }
 
-    @OpLog(action = "ORDER_SHIP", targetType = "ORDER")
+    @OpLog(action = "ORDER_SHIP", targetType = "ORDER", targetIdExpr = "#orderNo")
     @PostMapping("/order/ship")
     public ApiResult<Void> ship(@RequestParam String orderNo, @RequestBody @Valid ShipRequest req) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
@@ -122,7 +122,7 @@ public class MerchantOrderController {
         private String rejectReason;
     }
 
-    @OpLog(action = "REFUND_APPROVE", targetType = "REFUND")
+    @OpLog(action = "REFUND_APPROVE", targetType = "REFUND", targetIdExpr = "#refundId")
     @PostMapping("/refund/{refundId}/approve")
     public ApiResult<Void> refundApprove(@PathVariable Long refundId,
                                          @RequestBody RefundApproveRequest req) {

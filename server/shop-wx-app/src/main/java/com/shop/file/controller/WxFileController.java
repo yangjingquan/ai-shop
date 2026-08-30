@@ -1,6 +1,7 @@
 package com.shop.file.controller;
 
 import com.shop.common.response.ApiResult;
+import com.shop.common.security.CurrentUserHolder;
 import com.shop.file.service.LocalFileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +22,8 @@ public class WxFileController {
 
     @PostMapping("/upload")
     public ApiResult<Map<String, String>> upload(@RequestParam("file") MultipartFile file) throws IOException {
-        return ApiResult.success(Map.of("url", localFileStorageService.save(file)));
+        Long userId = CurrentUserHolder.get().getUserId();
+        Long merchantId = CurrentUserHolder.get().getMerchantId();
+        return ApiResult.success(Map.of("url", localFileStorageService.save(file, "USER", userId, merchantId)));
     }
 }

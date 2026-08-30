@@ -1,1 +1,0 @@
-import{n as e}from"./index-uzem97uv.js";var t={page:t=>e.get(`/api/admin/orders/page`,{params:t}),detail:t=>e.get(`/api/admin/orders/${t}`),refunds:t=>e.get(`/api/admin/refunds/page`,{params:t})};export{t};

@@ -98,6 +98,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     private long lowStockSkuCount(Long merchantId) {
         LambdaQueryWrapper<ProductSku> q = new LambdaQueryWrapper<ProductSku>()
+                .eq(ProductSku::getActive, 1)
                 .le(ProductSku::getStock, LOW_STOCK_THRESHOLD);
         List<Long> productIds = productMapper.selectList(new LambdaQueryWrapper<Product>()
                         .select(Product::getId)

@@ -4,12 +4,14 @@ set -e
 
 ADMIN_BASE=${ADMIN_BASE:-http://127.0.0.1:8081}
 WX_BASE=${WX_BASE:-http://127.0.0.1:8082}
+ADMIN_PASSWORD=${ADMIN_PASSWORD:?请提供管理员密码（不要使用代码中的历史默认密码）}
+MERCHANT_PASSWORD=${MERCHANT_PASSWORD:?请提供商家密码（不要使用代码中的历史默认密码）}
 SUFFIX=$(date +%s)
 
 echo "=== 1. Admin 登录 ==="
 ATOKEN=$(curl -s -X POST "$ADMIN_BASE/api/admin/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}' | jq -r .data.token)
+  -d "{\"username\":\"admin\",\"password\":\"$ADMIN_PASSWORD\"}" | jq -r .data.token)
 test -n "$ATOKEN" && test "$ATOKEN" != "null" || { echo "admin 登录失败"; exit 1; }
 
 echo "=== 2. Admin 建一级分类 ==="
@@ -32,8 +34,8 @@ curl -s "$WX_BASE/api/public/categories/tree" | jq "[.data[] | select(.id == $CA
 echo "=== 5. Merchant 登录（依赖 M2 已建的 merchant01） ==="
 MTOKEN=$(curl -s -X POST "$ADMIN_BASE/api/merchant/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"merchant01","password":"merchant123"}' | jq -r .data.token)
-test -n "$MTOKEN" && test "$MTOKEN" != "null" || { echo "merchant 登录失败（请确认 M2 已创建 merchant01/merchant123）"; exit 1; }
+  -d "{\"username\":\"merchant01\",\"password\":\"$MERCHANT_PASSWORD\"}" | jq -r .data.token)
+test -n "$MTOKEN" && test "$MTOKEN" != "null" || { echo "merchant 登录失败"; exit 1; }
 
 echo "=== 6. Merchant 发商品 ==="
 PID=$(curl -s -X POST "$ADMIN_BASE/api/merchant/products" \

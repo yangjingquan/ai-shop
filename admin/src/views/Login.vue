@@ -108,9 +108,6 @@ async function handleLogin() {
             进入控制台
           </el-button>
         </el-form>
-        <p class="hint">
-          默认账号：admin / admin123 ；merchant01 / merchant123
-        </p>
       </el-card>
     </div>
   </div>

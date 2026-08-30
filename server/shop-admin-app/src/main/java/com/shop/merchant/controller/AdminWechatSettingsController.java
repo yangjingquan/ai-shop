@@ -36,7 +36,7 @@ public class AdminWechatSettingsController {
         return ApiResult.success(service.getSettings(merchantId));
     }
 
-    @OpLog(action = "MERCHANT_WECHAT_CONFIG_UPDATE", targetType = "MERCHANT")
+    @OpLog(action = "MERCHANT_WECHAT_CONFIG_UPDATE", targetType = "MERCHANT", targetIdExpr = "#merchantId")
     @PutMapping("/{merchantId}")
     public ApiResult<Void> update(@PathVariable Long merchantId,
                                   @RequestBody @Valid UpdateWechatSettingsRequest request) {

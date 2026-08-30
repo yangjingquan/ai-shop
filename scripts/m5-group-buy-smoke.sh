@@ -4,9 +4,9 @@ set -euo pipefail
 ADMIN_BASE=${ADMIN_BASE:-http://localhost:8081}
 WX_BASE=${WX_BASE:-http://localhost:8082}
 ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+ADMIN_PASSWORD=${ADMIN_PASSWORD:?Set ADMIN_PASSWORD to a non-default password}
 MERCHANT_USERNAME=${MERCHANT_USERNAME:-m5_smoke_$(date +%s)}
-MERCHANT_PASSWORD=${MERCHANT_PASSWORD:-merchant123}
+MERCHANT_PASSWORD=${MERCHANT_PASSWORD:?Set MERCHANT_PASSWORD to a non-default password}
 SUFFIX=$(date +%s)
 
 hr() { echo; echo "=== $* ==="; }
@@ -18,7 +18,7 @@ hr "Login admin"
 ADMIN_LOGIN_JSON=$(post_json "$ADMIN_BASE/api/admin/auth/login" \
   -d "{\"username\":\"$ADMIN_USERNAME\",\"password\":\"$ADMIN_PASSWORD\"}")
 echo "$ADMIN_LOGIN_JSON" | require_json '.code == 0 and (.data.token | length > 0)' \
-  || fail "admin login failed; set ADMIN_USERNAME/ADMIN_PASSWORD or start shop-admin-app with seeded admin/admin123"
+  || fail "admin login failed; set ADMIN_USERNAME/ADMIN_PASSWORD"
 ATOKEN=$(echo "$ADMIN_LOGIN_JSON" | jq -r '.data.token')
 
 hr "Create smoke merchant"
@@ -114,12 +114,9 @@ GROUP_WAIT_JSON=$(curl -s "$WX_BASE/api/wx/group-buy/groups/$GROUP_ID" -H "wx-to
 echo "$GROUP_WAIT_JSON" | require_json '.code == 0 and .data.status == 0 and .data.paidCount == 0' \
   || fail "opened group did not start at waiting state; response: $GROUP_WAIT_JSON"
 
-hr "Mock pay opener and verify wait-group order"
-PAY_A_JSON=$(post_json "$WX_BASE/api/wx/order/$ORDER_A/mock-pay" -H "wx-token: $WTOKEN_A" "${WX_HEADERS[@]}")
-echo "$PAY_A_JSON" | require_json '.code == 0' || fail "mock-pay opener failed; response: $PAY_A_JSON"
-ORDER_A_JSON=$(curl -s "$WX_BASE/api/wx/order/$ORDER_A" -H "wx-token: $WTOKEN_A" "${WX_HEADERS[@]}")
-echo "$ORDER_A_JSON" | require_json '.code == 0 and .data.status == 5 and .data.orderType == 1 and .data.groupBuyPaidCount == 1 and .data.groupBuyRequiredCount == 2' \
-  || fail "opener order did not reach WAIT_GROUP with progress 1/2; response: $ORDER_A_JSON"
+hr "Verify real payment params for opener"
+echo "$OPEN_JSON" | require_json '.code == 0 and .data.payParams != null' \
+  || fail "opener did not return real payment params; response: $OPEN_JSON"
 
 hr "Join group"
 JOIN_BODY="{\"productId\":$PID,\"skuId\":$SKUID,\"quantity\":1,\"addressId\":$ADDR_B,\"remark\":\"M5 smoke join $SUFFIX\"}"
@@ -128,30 +125,12 @@ echo "$JOIN_JSON" | require_json '.code == 0 and .data.groupId != null and (.dat
   || fail "joining group failed; response: $JOIN_JSON"
 ORDER_B=$(echo "$JOIN_JSON" | jq -r '.data.orderNo')
 
-hr "Mock pay joiner and verify formation"
-PAY_B_JSON=$(post_json "$WX_BASE/api/wx/order/$ORDER_B/mock-pay" -H "wx-token: $WTOKEN_B" "${WX_HEADERS[@]}")
-echo "$PAY_B_JSON" | require_json '.code == 0' || fail "mock-pay joiner failed; response: $PAY_B_JSON"
-GROUP_DONE_JSON=$(curl -s "$WX_BASE/api/wx/group-buy/groups/$GROUP_ID" -H "wx-token: $WTOKEN_A" "${WX_HEADERS[@]}")
-echo "$GROUP_DONE_JSON" | require_json '.code == 0 and .data.status == 1 and .data.paidCount == 2' \
-  || fail "group did not form after second paid member; response: $GROUP_DONE_JSON"
-ORDER_A_DONE_JSON=$(curl -s "$WX_BASE/api/wx/order/$ORDER_A" -H "wx-token: $WTOKEN_A" "${WX_HEADERS[@]}")
-ORDER_B_DONE_JSON=$(curl -s "$WX_BASE/api/wx/order/$ORDER_B" -H "wx-token: $WTOKEN_B" "${WX_HEADERS[@]}")
-echo "$ORDER_A_DONE_JSON" | require_json '.code == 0 and .data.status == 6 and .data.groupBuyPaidCount == 2' \
-  || fail "opener order did not reach GROUP_SUCCESS; response: $ORDER_A_DONE_JSON"
-echo "$ORDER_B_DONE_JSON" | require_json '.code == 0 and .data.status == 6 and .data.groupBuyPaidCount == 2' \
-  || fail "joiner order did not reach GROUP_SUCCESS; response: $ORDER_B_DONE_JSON"
+hr "Verify real payment params for joiner"
+echo "$JOIN_JSON" | require_json '.code == 0 and .data.payParams != null' \
+  || fail "joiner did not return real payment params; response: $JOIN_JSON"
 
-hr "Verify merchant shipping readiness"
-SHIP_PAGE_JSON=$(curl -s "$ADMIN_BASE/api/merchant/order/page?status=6&page=1&size=20" -H "Authorization: Bearer $MTOKEN")
-echo "$SHIP_PAGE_JSON" | jq -e --arg orderA "$ORDER_A" --arg orderB "$ORDER_B" '.code == 0 and ([.data.list[]?.orderNo] | index($orderA) != null and index($orderB) != null)' >/dev/null \
-  || fail "merchant status=6 page does not contain both formed orders; response: $SHIP_PAGE_JSON"
-SHIP_JSON=$(post_json "$ADMIN_BASE/api/merchant/order/ship?orderNo=$ORDER_A" \
-  -H "Authorization: Bearer $MTOKEN" \
-  -d "{\"shipNo\":\"M5$SUFFIX\"}")
-echo "$SHIP_JSON" | require_json '.code == 0' || fail "shipping formed group-buy order failed; response: $SHIP_JSON"
-SHIPPED_JSON=$(curl -s "$WX_BASE/api/wx/order/$ORDER_A" -H "wx-token: $WTOKEN_A" "${WX_HEADERS[@]}")
-echo "$SHIPPED_JSON" | require_json '.code == 0 and .data.status == 2 and (.data.shipNo | length > 0)' \
-  || fail "shipped order did not reach WAIT_RECEIVE; response: $SHIPPED_JSON"
+hr "Payment callback required for group formation"
+echo "Created two unpaid group-buy orders with real WeChat payment params; complete payment in WeChat and verify callback-driven formation separately."
 
 hr "Smoke complete"
 echo "merchant=$MERCHANT_ID product=$PID category=$CAT2 group=$GROUP_ID openerOrder=$ORDER_A joinerOrder=$ORDER_B"

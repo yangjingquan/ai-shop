@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.shop.common.security.CurrentUser;
 import com.shop.common.security.CurrentUserHolder;
+import com.shop.common.security.ClientIpResolver;
 import com.shop.oplog.mapper.OpLogMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ import java.lang.reflect.Parameter;
 public class OpLogAspect {
 
     private final OpLogMapper opLogMapper;
+    private final ClientIpResolver clientIpResolver;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final int MAX_PAYLOAD_BYTES = 10240; // 10KB
@@ -43,8 +45,7 @@ public class OpLogAspect {
 
         HttpServletRequest request = ((ServletRequestAttributes)
                 RequestContextHolder.currentRequestAttributes()).getRequest();
-        String xfwd = request.getHeader("X-Forwarded-For");
-        final String ip = (xfwd != null && !xfwd.isBlank()) ? xfwd : request.getRemoteAddr();
+        final String ip = clientIpResolver.resolve(request);
 
         String targetId = resolveTargetId(joinPoint, opLog);
         String payload = safePayload(joinPoint);

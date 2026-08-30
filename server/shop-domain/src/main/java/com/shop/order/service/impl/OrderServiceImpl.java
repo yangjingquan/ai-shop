@@ -40,6 +40,7 @@ import com.shop.user.service.UserAddressService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,11 +77,23 @@ public class OrderServiceImpl implements OrderService {
 
     private static final java.util.regex.Pattern SHIP_NO_PATTERN =
             java.util.regex.Pattern.compile("^[A-Za-z0-9]{5,30}$");
+    private static final int CREATE_LOCK_TTL_SECONDS = 60;
+    private static final DefaultRedisScript<Long> RELEASE_LOCK_SCRIPT = new DefaultRedisScript<>("""
+            if redis.call('GET', KEYS[1]) == ARGV[1] then
+                return redis.call('DEL', KEYS[1])
+            end
+            return 0
+            """, Long.class);
 
     // ==================== preview ====================
 
     @Override
     public OrderPreviewVO preview(Long userId, OrderPreviewRequest req) {
+        return preview(userId, null, req);
+    }
+
+    @Override
+    public OrderPreviewVO preview(Long userId, Long merchantId, OrderPreviewRequest req) {
         // 校验地址
         UserAddress address = userAddressMapper.selectOne(new LambdaQueryWrapper<UserAddress>()
                 .eq(UserAddress::getId, req.getAddressId())
@@ -99,6 +112,7 @@ public class OrderServiceImpl implements OrderService {
                 throw new BusinessException(ErrorCode.CART_ITEM_NOT_OWNED);
             }
         }
+        validateMerchantScope(merchantId, cartItems);
 
         // 本项目只支持单个商家结算；预览接口也必须与创建订单保持一致。
         validateSingleMerchantCheckout(cartItems);
@@ -146,7 +160,7 @@ public class OrderServiceImpl implements OrderService {
                 Product product = productMap.get(ci.getProductId());
 
                 // 可用性算法
-                if (sku == null) {
+                if (sku == null || !Integer.valueOf(1).equals(sku.getActive())) {
                     pi.setAvailable(false);
                     pi.setUnavailableReason("规格已下架");
                 } else if (product == null) {
@@ -196,10 +210,17 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public List<OrderCreateVO> create(Long userId, OrderCreateRequest req) {
+        return create(userId, null, req);
+    }
+
+    @Override
+    @Transactional
+    public List<OrderCreateVO> create(Long userId, Long merchantId, OrderCreateRequest req) {
         // Redis 防连点
         String lockKey = "order:create:" + userId;
+        String lockToken = UUID.randomUUID().toString();
         Boolean locked = stringRedisTemplate.opsForValue()
-                .setIfAbsent(lockKey, "1", 5, java.util.concurrent.TimeUnit.SECONDS);
+                .setIfAbsent(lockKey, lockToken, CREATE_LOCK_TTL_SECONDS, TimeUnit.SECONDS);
         if (locked == null || !locked) {
             throw new BusinessException(ErrorCode.BIZ_ERROR);
         }
@@ -214,8 +235,9 @@ public class OrderServiceImpl implements OrderService {
             }
 
             // 查购物车项 + 归属校验
-            List<CartItem> cartItems = cartItemMapper.selectBatchIds(req.getCartItemIds());
-            if (cartItems.isEmpty() || cartItems.size() != req.getCartItemIds().size()) {
+            List<Long> cartItemIds = req.getCartItemIds().stream().distinct().collect(Collectors.toList());
+            List<CartItem> cartItems = cartItemMapper.selectOwnedForUpdate(userId, cartItemIds);
+            if (cartItems.isEmpty() || cartItems.size() != cartItemIds.size()) {
                 throw new BusinessException(ErrorCode.CART_ITEM_NOT_OWNED);
             }
             for (CartItem ci : cartItems) {
@@ -223,6 +245,7 @@ public class OrderServiceImpl implements OrderService {
                     throw new BusinessException(ErrorCode.CART_ITEM_NOT_OWNED);
                 }
             }
+            validateMerchantScope(merchantId, cartItems);
 
             // 本项目只支持单个商家结算，不能依赖前端拦截跨商家请求。
             validateSingleMerchantCheckout(cartItems);
@@ -240,7 +263,7 @@ public class OrderServiceImpl implements OrderService {
             for (CartItem ci : cartItems) {
                 ProductSku sku = skuMap.get(ci.getSkuId());
                 Product product = productMap.get(ci.getProductId());
-                if (sku == null || product == null
+                if (sku == null || !Integer.valueOf(1).equals(sku.getActive()) || product == null
                         || !Objects.equals(sku.getProductId(), product.getId())
                         || !Objects.equals(ci.getMerchantId(), product.getMerchantId())
                         || product.getStatus() == null || product.getStatus() != 1
@@ -341,7 +364,7 @@ public class OrderServiceImpl implements OrderService {
 
             return results;
         } finally {
-            stringRedisTemplate.delete(lockKey);
+            stringRedisTemplate.execute(RELEASE_LOCK_SCRIPT, List.of(lockKey), lockToken);
         }
     }
 
@@ -368,6 +391,22 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toSet());
         if (merchantIds.size() != 1 || merchantIds.contains(null)) {
             throw new BusinessException(ErrorCode.CART_ITEM_CROSS_MERCHANT);
+        }
+    }
+
+    private void validateMerchantScope(Long merchantId, List<CartItem> cartItems) {
+        if (merchantId == null) {
+            return;
+        }
+        Merchant merchant = merchantMapper.selectById(merchantId);
+        if (merchant == null) {
+            throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
+        }
+        if (!Integer.valueOf(1).equals(merchant.getStatus())) {
+            throw new BusinessException(ErrorCode.MERCHANT_FROZEN);
+        }
+        if (cartItems.stream().anyMatch(item -> !merchantId.equals(item.getMerchantId()))) {
+            throw new BusinessException(ErrorCode.CART_ITEM_NOT_OWNED);
         }
     }
 
@@ -890,10 +929,27 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderCreateVO repay(Long userId, String orderNo) {
+        return repay(userId, null, orderNo);
+    }
+
+    @Override
+    public OrderCreateVO repay(Long userId, Long merchantId, String orderNo) {
+        if (merchantId != null) {
+            Merchant merchant = merchantMapper.selectById(merchantId);
+            if (merchant == null) {
+                throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
+            }
+            if (!Integer.valueOf(1).equals(merchant.getStatus())) {
+                throw new BusinessException(ErrorCode.MERCHANT_FROZEN);
+            }
+        }
         Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                 .eq(Order::getOrderNo, orderNo)
                 .eq(Order::getUserId, userId));
         if (order == null) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        if (merchantId != null && !merchantId.equals(order.getMerchantId())) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
         if (order.getStatus() != OrderStatus.WAIT_PAY.getCode()) {

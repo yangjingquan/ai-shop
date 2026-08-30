@@ -4,6 +4,7 @@ set -e
 
 ADMIN_BASE=${ADMIN_BASE:-http://127.0.0.1:8081}
 WX_BASE=${WX_BASE:-http://127.0.0.1:8082}
+ADMIN_PASSWORD=${ADMIN_PASSWORD:?请提供管理员密码（不要使用代码中的历史默认密码）}
 WX_MERCHANT_CODE=${WX_MERCHANT_CODE:?请提供已配置微信小程序的商户代码}
 WX_LOGIN_CODE=${WX_LOGIN_CODE:?请提供 wx.login 获取的一次性 code}
 WX_PHONE_CODE=${WX_PHONE_CODE:?请提供 getPhoneNumber 获取的一次性 code}
@@ -11,7 +12,7 @@ WX_PHONE_CODE=${WX_PHONE_CODE:?请提供 getPhoneNumber 获取的一次性 code}
 echo "=== 1. Admin 登录 ==="
 ATOKEN=$(curl -s -X POST "$ADMIN_BASE/api/admin/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}' | jq -r .data.token)
+  -d "{\"username\":\"admin\",\"password\":\"$ADMIN_PASSWORD\"}" | jq -r .data.token)
 test -n "$ATOKEN" && test "$ATOKEN" != "null" || { echo "admin 登录失败"; exit 1; }
 
 echo "=== 2. Admin 创建冒烟商家 ==="

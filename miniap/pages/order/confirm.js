@@ -1,7 +1,6 @@
 const app = getApp();
 const { resolveImageUrl } = require('../../utils/url')
 const groupBuyApi = require('../../api/group-buy')
-const orderApi = require('../../api/order')
 
 Page({
   data: {
@@ -155,7 +154,7 @@ Page({
         : groupBuyApi.open(payload);
       request.then((res) => {
         if (res.code === 0) {
-          return orderApi.mockPay(res.data.orderNo).then(() => {
+          return this.payOrder(res.data).then(() => {
             wx.showToast({ title: '下单成功', icon: 'success' });
             setTimeout(() => wx.redirectTo({
               url: `/pages/group-buy/group?groupId=${res.data.groupId}`,

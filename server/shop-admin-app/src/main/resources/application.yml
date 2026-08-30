@@ -32,13 +32,15 @@ shop:
   payment-credentials:
     encryption-key: ${SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY:}
   jwt:
-    secret: ${SHOP_JWT_SECRET:dev-shop-jwt-secret-please-change-in-prod-min-32-bytes}
+    secret: ${SHOP_JWT_SECRET}
     admin-ttl-hours: 8
     merchant-ttl-hours: 8
     wx-ttl-days: 7
   file:
     upload-dir: ${SHOP_FILE_UPLOAD_DIR:uploads}
     public-prefix: ${SHOP_FILE_PUBLIC_PREFIX:/uploads}
+  security:
+    trusted-proxies: ${SHOP_TRUSTED_PROXIES:127.0.0.1,::1}
   jobs:
     order-timeout-enabled: false
     auto-receive-enabled: false

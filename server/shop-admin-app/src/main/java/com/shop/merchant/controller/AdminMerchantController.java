@@ -51,7 +51,7 @@ public class AdminMerchantController {
         return ApiResult.success(null);
     }
 
-    @OpLog(action = "MERCHANT_STATUS_CHANGE", targetType = "MERCHANT")
+    @OpLog(action = "MERCHANT_STATUS_CHANGE", targetType = "MERCHANT", targetIdExpr = "#id")
     @PutMapping("/{id}/status")
     public ApiResult<Void> setStatus(@PathVariable Long id, @RequestBody @Valid SetStatusRequest req) {
         service.setStatus(id, req.getStatus());

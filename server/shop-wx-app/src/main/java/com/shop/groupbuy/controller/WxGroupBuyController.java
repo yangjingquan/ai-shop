@@ -38,17 +38,21 @@ public class WxGroupBuyController {
     }
 
     @PostMapping("/groups")
-    public ApiResult<GroupBuyCreateVO> open(@RequestBody @Valid GroupBuyCreateRequest req) {
-        return ApiResult.success(groupBuyService.openGroup(CurrentUserHolder.get().getUserId(), req));
+    public ApiResult<GroupBuyCreateVO> open(@RequestBody @Valid GroupBuyCreateRequest req, HttpServletRequest request) {
+        Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
+        return ApiResult.success(groupBuyService.openGroup(CurrentUserHolder.get().getUserId(), merchantId, req));
     }
 
     @PostMapping("/groups/{groupId}/join")
-    public ApiResult<GroupBuyCreateVO> join(@PathVariable Long groupId, @RequestBody @Valid GroupBuyCreateRequest req) {
-        return ApiResult.success(groupBuyService.joinGroup(CurrentUserHolder.get().getUserId(), groupId, req));
+    public ApiResult<GroupBuyCreateVO> join(@PathVariable Long groupId, @RequestBody @Valid GroupBuyCreateRequest req,
+                                            HttpServletRequest request) {
+        Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
+        return ApiResult.success(groupBuyService.joinGroup(CurrentUserHolder.get().getUserId(), merchantId, groupId, req));
     }
 
     @GetMapping("/groups/{groupId}")
-    public ApiResult<GroupBuyGroupVO> group(@PathVariable Long groupId) {
-        return ApiResult.success(groupBuyService.groupDetail(groupId));
+    public ApiResult<GroupBuyGroupVO> group(@PathVariable Long groupId, HttpServletRequest request) {
+        Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
+        return ApiResult.success(groupBuyService.groupDetail(groupId, merchantId));
     }
 }

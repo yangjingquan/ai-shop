@@ -25,7 +25,7 @@ public class WxMerchantResolver {
     public Long currentMerchantId(HttpServletRequest request) {
         CurrentUser current = CurrentUserHolder.get();
         if (current != null && current.getMerchantId() != null) {
-            return current.getMerchantId();
+            return requireActiveMerchant(current.getMerchantId());
         }
 
         String token = request.getHeader("wx-token");
@@ -35,7 +35,7 @@ public class WxMerchantResolver {
             if (UserType.WX.name().equals(userType)) {
                 Long merchantId = claims.get("merchantId", Long.class);
                 if (merchantId != null) {
-                    return merchantId;
+                    return requireActiveMerchant(merchantId);
                 }
             }
         }
@@ -57,5 +57,24 @@ public class WxMerchantResolver {
             throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
         }
         return merchant.getId();
+    }
+
+    /** 受保护的 C 端写操作必须重新读取商家状态，不能只信任 JWT 中的 merchantId。 */
+    public Long requireActiveMerchant(HttpServletRequest request) {
+        return requireActiveMerchant(currentMerchantId(request));
+    }
+
+    public Long requireActiveMerchant(Long merchantId) {
+        if (merchantId == null) {
+            throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
+        }
+        Merchant merchant = merchantMapper.selectById(merchantId);
+        if (merchant == null) {
+            throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
+        }
+        if (!Integer.valueOf(1).equals(merchant.getStatus())) {
+            throw new BusinessException(ErrorCode.MERCHANT_FROZEN);
+        }
+        return merchantId;
     }
 }

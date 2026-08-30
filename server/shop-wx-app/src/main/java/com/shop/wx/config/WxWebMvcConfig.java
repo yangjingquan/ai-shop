@@ -11,10 +11,14 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WxWebMvcConfig implements WebMvcConfigurer {
 
     private final WxAuthInterceptor wxAuthInterceptor;
+    private final WxMerchantStatusInterceptor wxMerchantStatusInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(wxAuthInterceptor)
+                .addPathPatterns("/api/wx/**")
+                .excludePathPatterns("/api/wx/auth/**");
+        registry.addInterceptor(wxMerchantStatusInterceptor)
                 .addPathPatterns("/api/wx/**")
                 .excludePathPatterns("/api/wx/auth/**");
     }

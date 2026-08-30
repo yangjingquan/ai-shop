@@ -60,13 +60,16 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       SHOP_JWT_SECRET: ${SHOP_JWT_SECRET}
+      SHOP_TRUSTED_PROXIES: ${SHOP_TRUSTED_PROXIES:-172.16.0.0/12,127.0.0.1,::1}
+      SHOP_BOOTSTRAP_ADMIN_PASSWORD: ${SHOP_BOOTSTRAP_ADMIN_PASSWORD:-}
+      SHOP_BOOTSTRAP_MERCHANT_PASSWORD: ${SHOP_BOOTSTRAP_MERCHANT_PASSWORD:-}
       SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY: ${SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY}
       WX_APPID: ${WX_APPID}
       WX_SECRET: ${WX_SECRET}
       SHOP_FILE_UPLOAD_DIR: /data/shop/uploads
       SHOP_FILE_PUBLIC_PREFIX: /uploads
       SHOP_LOG_FILE: /data/shop/logs/shop-admin-app.log
-      SHOP_CORS_ALLOWED_ORIGIN_PATTERNS: "http://103.47.83.185:8080,https://console.nexbyte.top,https://conapi.nexbyte.top"
+      SHOP_CORS_ALLOWED_ORIGIN_PATTERNS: "https://console.nexbyte.top"
       TZ: Asia/Shanghai
     volumes:
       - ./uploads:/data/shop/uploads
@@ -94,6 +97,9 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       SHOP_JWT_SECRET: ${SHOP_JWT_SECRET}
+      SHOP_TRUSTED_PROXIES: ${SHOP_TRUSTED_PROXIES:-172.16.0.0/12,127.0.0.1,::1}
+      SHOP_BOOTSTRAP_ADMIN_PASSWORD: ${SHOP_BOOTSTRAP_ADMIN_PASSWORD:-}
+      SHOP_BOOTSTRAP_MERCHANT_PASSWORD: ${SHOP_BOOTSTRAP_MERCHANT_PASSWORD:-}
       SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY: ${SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY}
       WX_APPID: ${WX_APPID}
       WX_SECRET: ${WX_SECRET}
@@ -118,16 +124,16 @@ services:
       - shop-admin-app
       - shop-wx-app
     ports:
-      - "8080:80"
-      - "8081:81"
-      - "8082:82"
+      - "127.0.0.1:8080:80"
+      - "127.0.0.1:8081:81"
+      - "127.0.0.1:8082:82"
       - "443:443"
     volumes:
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./uploads:/usr/share/nginx/html/uploads:ro
       - ./logs/nginx:/var/log/nginx
     healthcheck:
-      test: ["CMD-SHELL", "test -s /usr/share/nginx/html/console/index.html && wget -q -O /dev/null http://127.0.0.1/"]
+      test: ["CMD-SHELL", "test -s /usr/share/nginx/html/console/index.html && wget -q --no-check-certificate -O /dev/null --header='Host: console.nexbyte.top' https://127.0.0.1/"]
       interval: 10s
       timeout: 5s
       retries: 3

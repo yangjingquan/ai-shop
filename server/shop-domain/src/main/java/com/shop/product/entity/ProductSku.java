@@ -31,4 +31,7 @@ public class ProductSku extends BaseEntity {
     private Integer stock;
 
     private String image;
+
+    /** 1=当前商品规格，0=历史规格。历史 SKU 保留给订单库存回滚使用。 */
+    private Integer active;
 }

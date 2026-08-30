@@ -1,1 +1,0 @@
-import{n as e}from"./index-uzem97uv.js";var t={adminOverview:()=>e.get(`/api/admin/dashboard/overview`),merchantOverview:()=>e.get(`/api/merchant/dashboard/overview`)};export{t};

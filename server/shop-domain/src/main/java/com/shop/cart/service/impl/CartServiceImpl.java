@@ -31,6 +31,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
 
+    private static final int MAX_CART_ITEM_QUANTITY = 99;
+    private static final int MAX_CART_ITEM_COUNT = 100;
+
     private final CartItemMapper cartItemMapper;
     private final ProductSkuMapper skuMapper;
     private final ProductMapper productMapper;
@@ -39,8 +42,15 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public Long add(Long userId, CartAddRequest req) {
+        return add(userId, null, req);
+    }
+
+    @Override
+    @Transactional
+    public Long add(Long userId, Long merchantId, CartAddRequest req) {
+        validateQuantity(req.getQuantity());
         ProductSku sku = skuMapper.selectById(req.getSkuId());
-        if (sku == null) {
+        if (sku == null || !Integer.valueOf(1).equals(sku.getActive())) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
         Product product = productMapper.selectById(sku.getProductId());
@@ -50,17 +60,33 @@ public class CartServiceImpl implements CartService {
         if (product.getStatus() == null || product.getStatus() != 1) {
             throw new BusinessException(ErrorCode.PRODUCT_OFF_SHELF);
         }
+        if (merchantId != null && !merchantId.equals(product.getMerchantId())) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+        if (sku.getStock() == null || sku.getStock() < req.getQuantity()) {
+            throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
+        }
 
-        // 已有未删则累加
+        // 行锁 + 数据库唯一约束保证并发加购不会插入重复行。
         CartItem exist = cartItemMapper.selectOne(new LambdaQueryWrapper<CartItem>()
                 .eq(CartItem::getUserId, userId)
                 .eq(CartItem::getSkuId, req.getSkuId())
-                .last("limit 1"));
+                .last("FOR UPDATE"));
         if (exist != null) {
             int newQty = exist.getQuantity() + req.getQuantity();
+            if (newQty > MAX_CART_ITEM_QUANTITY || newQty > sku.getStock()) {
+                throw new BusinessException(newQty > sku.getStock()
+                        ? ErrorCode.STOCK_NOT_ENOUGH : ErrorCode.CART_QUANTITY_EXCEEDED);
+            }
             exist.setQuantity(newQty);
             cartItemMapper.updateById(exist);
             return exist.getId();
+        }
+
+        Long activeCount = cartItemMapper.selectCount(new LambdaQueryWrapper<CartItem>()
+                .eq(CartItem::getUserId, userId));
+        if (activeCount != null && activeCount >= MAX_CART_ITEM_COUNT) {
+            throw new BusinessException(ErrorCode.CART_FULL);
         }
 
         CartItem item = new CartItem();
@@ -129,7 +155,7 @@ public class CartServiceImpl implements CartService {
             if (product == null || product.getStatus() == null || product.getStatus() != 1) {
                 vo.setAvailable(false);
                 vo.setUnavailableReason("OFF_SHELF");
-            } else if (sku == null) {
+            } else if (sku == null || !Integer.valueOf(1).equals(sku.getActive())) {
                 vo.setAvailable(false);
                 vo.setUnavailableReason("SKU_GONE");
             } else if (!Objects.equals(sku.getProductId(), product.getId())
@@ -151,10 +177,26 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public void update(Long userId, Long cartItemId, CartUpdateRequest req) {
-        CartItem item = mustOwn(userId, cartItemId);
+        update(userId, null, cartItemId, req);
+    }
+
+    @Override
+    @Transactional
+    public void update(Long userId, Long merchantId, Long cartItemId, CartUpdateRequest req) {
+        if (req.getQuantity() > MAX_CART_ITEM_QUANTITY) {
+            throw new BusinessException(ErrorCode.CART_QUANTITY_EXCEEDED);
+        }
+        CartItem item = mustOwn(userId, merchantId, cartItemId);
         if (req.getQuantity() == 0) {
             cartItemMapper.deleteById(item.getId());
             return;
+        }
+        ProductSku sku = skuMapper.selectById(item.getSkuId());
+        if (sku == null || !Integer.valueOf(1).equals(sku.getActive())) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+        if (sku.getStock() == null || sku.getStock() < req.getQuantity()) {
+            throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
         }
         item.setQuantity(req.getQuantity());
         cartItemMapper.updateById(item);
@@ -163,13 +205,25 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public void delete(Long userId, Long cartItemId) {
-        CartItem item = mustOwn(userId, cartItemId);
+        delete(userId, null, cartItemId);
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long userId, Long merchantId, Long cartItemId) {
+        CartItem item = mustOwn(userId, merchantId, cartItemId);
         cartItemMapper.deleteById(item.getId());
     }
 
     @Override
     @Transactional
     public void deleteBatch(Long userId, List<Long> cartItemIds) {
+        deleteBatch(userId, null, cartItemIds);
+    }
+
+    @Override
+    @Transactional
+    public void deleteBatch(Long userId, Long merchantId, List<Long> cartItemIds) {
         List<Long> distinctIds = cartItemIds.stream()
                 .filter(Objects::nonNull)
                 .distinct()
@@ -181,7 +235,8 @@ public class CartServiceImpl implements CartService {
         List<CartItem> items = cartItemMapper.selectList(new LambdaQueryWrapper<CartItem>()
                 .eq(CartItem::getUserId, userId)
                 .in(CartItem::getId, distinctIds));
-        if (items.size() != distinctIds.size()) {
+        if (items.size() != distinctIds.size()
+                || (merchantId != null && items.stream().anyMatch(item -> !merchantId.equals(item.getMerchantId())))) {
             throw new BusinessException(ErrorCode.CART_ITEM_NOT_OWNED);
         }
 
@@ -190,11 +245,21 @@ public class CartServiceImpl implements CartService {
                 .in(CartItem::getId, distinctIds));
     }
 
-    private CartItem mustOwn(Long userId, Long cartItemId) {
+    private CartItem mustOwn(Long userId, Long merchantId, Long cartItemId) {
         CartItem item = cartItemMapper.selectById(cartItemId);
-        if (item == null || !userId.equals(item.getUserId())) {
+        if (item == null || !userId.equals(item.getUserId())
+                || (merchantId != null && !merchantId.equals(item.getMerchantId()))) {
             throw new BusinessException(ErrorCode.CART_ITEM_NOT_OWNED);
         }
         return item;
+    }
+
+    private void validateQuantity(Integer quantity) {
+        if (quantity == null || quantity < 1) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR);
+        }
+        if (quantity > MAX_CART_ITEM_QUANTITY) {
+            throw new BusinessException(ErrorCode.CART_QUANTITY_EXCEEDED);
+        }
     }
 }

@@ -10,6 +10,6 @@ import org.apache.ibatis.annotations.Update;
 public interface ProductSkuMapper extends BaseMapper<ProductSku> {
 
     /** 乐观锁扣库存，返回受影响行数（0 表示库存不足或行不存在） */
-    @Update("UPDATE product_sku SET stock = stock - #{qty} WHERE id = #{skuId} AND deleted = 0 AND stock >= #{qty}")
+    @Update("UPDATE product_sku SET stock = stock - #{qty} WHERE id = #{skuId} AND deleted = 0 AND active = 1 AND stock >= #{qty}")
     int deductStock(@Param("skuId") Long skuId, @Param("qty") int qty);
 }
