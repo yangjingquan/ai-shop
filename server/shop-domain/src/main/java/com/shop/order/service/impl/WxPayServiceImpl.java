@@ -32,6 +32,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 
 @Slf4j
@@ -64,8 +65,7 @@ public class WxPayServiceImpl implements WxPayService {
             request.setDescription("商城订单 " + order.getOrderNo());
             request.setOutTradeNo(order.getOrderNo());
             request.setNotifyUrl(config.getWxPayNotifyUrl());
-            request.setTimeExpire(OffsetDateTime.now(ZoneOffset.ofHours(8)).plusMinutes(30)
-                    .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            request.setTimeExpire(formatWxPayDateTime(OffsetDateTime.now(ZoneOffset.ofHours(8)).plusMinutes(30)));
 
             Amount amount = new Amount();
             amount.setTotal(yuanToFen(order.getPayAmount()));
@@ -180,6 +180,10 @@ public class WxPayServiceImpl implements WxPayService {
         return amount.movePointRight(2)
                 .setScale(0, RoundingMode.UNNECESSARY)
                 .intValueExact();
+    }
+
+    static String formatWxPayDateTime(OffsetDateTime value) {
+        return value.truncatedTo(ChronoUnit.SECONDS).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 
     private String normalizePrivateKey(String privateKey) {
