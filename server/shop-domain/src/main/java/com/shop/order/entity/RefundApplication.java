@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -16,6 +17,12 @@ public class RefundApplication {
 
     private String orderNo;
 
+    /** 商户退款单号，作为微信退款接口的幂等键。 */
+    private String outRefundNo;
+
+    /** 微信退款单号。 */
+    private String wxRefundId;
+
     private Long userId;
 
     private Long merchantId;
@@ -25,6 +32,14 @@ public class RefundApplication {
     private Integer status;
 
     private String rejectReason;
+
+    private BigDecimal refundAmount;
+
+    private String refundFailReason;
+
+    private String refundRawPayload;
+
+    private LocalDateTime refundTime;
 
     private LocalDateTime createdAt;
 

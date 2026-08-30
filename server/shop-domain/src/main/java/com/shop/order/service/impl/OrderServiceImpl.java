@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import com.wechat.pay.java.service.payments.model.Transaction;
 import com.wechat.pay.java.service.payments.model.Transaction.TradeStateEnum;
+import com.wechat.pay.java.service.refund.model.Refund;
 
 @Slf4j
 @Service
@@ -663,6 +664,8 @@ public class OrderServiceImpl implements OrderService {
             vo.setRefundStatus(refund.getStatus());
             vo.setRefundReason(refund.getReason());
             vo.setRefundRejectReason(refund.getRejectReason());
+            vo.setRefundAmount(refund.getRefundAmount());
+            vo.setRefundFailReason(refund.getRefundFailReason());
         }
 
         // 解析地址快照
@@ -737,13 +740,17 @@ public class OrderServiceImpl implements OrderService {
         // 只有待处理申请阻止再次申请；被拒绝的申请允许用户重新提交。
         Long count = refundApplicationMapper.selectCount(new LambdaQueryWrapper<RefundApplication>()
                 .eq(RefundApplication::getOrderNo, orderNo)
-                .in(RefundApplication::getStatus, RefundStatus.PENDING.getCode(), RefundStatus.APPROVED.getCode()));
+                .in(RefundApplication::getStatus, RefundStatus.PENDING.getCode(), RefundStatus.REFUNDING.getCode()));
         if (count > 0) {
             throw new BusinessException(ErrorCode.REFUND_ALREADY_EXISTS);
         }
 
         int st = order.getStatus();
-        if (st != OrderStatus.WAIT_SHIP.getCode()
+        RefundApplication latest = latestRefund(orderNo);
+        boolean retryAfterRefundFailure = st == OrderStatus.CANCELLED.getCode()
+                && "REFUNDED".equals(order.getCancelReason())
+                && latest != null && latest.getStatus() == RefundStatus.FAILED.getCode();
+        if (!retryAfterRefundFailure && st != OrderStatus.WAIT_SHIP.getCode()
                 && st != OrderStatus.GROUP_SUCCESS.getCode()
                 && st != OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode()
                 && st != OrderStatus.WAIT_RECEIVE.getCode()
@@ -753,9 +760,12 @@ public class OrderServiceImpl implements OrderService {
 
         RefundApplication app = new RefundApplication();
         app.setOrderNo(orderNo);
+        app.setOutRefundNo("RF_" + orderNo + "_"
+                + UUID.randomUUID().toString().replace("-", ""));
         app.setUserId(userId);
         app.setMerchantId(order.getMerchantId());
         app.setReason(reason != null ? reason : "");
+        app.setRefundAmount(order.getPayAmount());
         app.setStatus(RefundStatus.PENDING.getCode());
         refundApplicationMapper.insert(app);
     }
@@ -763,7 +773,9 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void refundApprove(Long merchantId, Long refundId, boolean approved, String rejectReason) {
-        RefundApplication app = refundApplicationMapper.selectById(refundId);
+        RefundApplication app = refundApplicationMapper.selectOne(new LambdaQueryWrapper<RefundApplication>()
+                .eq(RefundApplication::getId, refundId)
+                .last("FOR UPDATE"));
         if (app == null) {
             throw new BusinessException(ErrorCode.REFUND_NOT_FOUND);
         }
@@ -775,39 +787,77 @@ public class OrderServiceImpl implements OrderService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        if (approved) {
-            app.setStatus(RefundStatus.APPROVED.getCode());
-            app.setUpdatedAt(now);
-            refundApplicationMapper.updateById(app);
-
-            // 订单状态改 CANCELLED
-            Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
-                    .eq(Order::getOrderNo, app.getOrderNo()));
-            if (order != null) {
-                // 发货前退款回滚库存；拼团已成团但尚未发货时状态为 GROUP_SUCCESS。
-                if (order.getStatus() == OrderStatus.WAIT_SHIP.getCode()
-                        || order.getStatus() == OrderStatus.GROUP_SUCCESS.getCode()) {
-                    List<OrderItem> items = orderItemMapper.selectList(
-                            new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, order.getId()));
-                    for (OrderItem item : items) {
-                        orderMapper.releaseStock(item.getSkuId(), item.getQuantity());
-                    }
-                    Set<Long> pids = items.stream().map(OrderItem::getProductId).collect(Collectors.toSet());
-                    for (Long pid : pids) {
-                        productService.recalcProduct(pid);
-                    }
-                }
-                order.setStatus(OrderStatus.CANCELLED.getCode());
-                order.setCancelReason("REFUNDED");
-                order.setCancelTime(now);
-                order.setUpdatedAt(now);
-                orderMapper.updateById(order);
-            }
-        } else {
+        if (!approved) {
             app.setStatus(RefundStatus.REJECTED.getCode());
             app.setRejectReason(rejectReason != null ? rejectReason : "");
             app.setUpdatedAt(now);
             refundApplicationMapper.updateById(app);
+            return;
+        }
+
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                .eq(Order::getOrderNo, app.getOrderNo())
+                .last("FOR UPDATE"));
+        if (order == null) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        if (order.getPayAmount() == null || order.getPayAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "订单没有可退款的支付金额");
+        }
+
+        // 退款单号在申请创建时生成，重试时保持不变，微信侧以此保证幂等。
+        String outRefundNo = app.getOutRefundNo();
+        if (outRefundNo == null || outRefundNo.isBlank()) {
+            outRefundNo = "RF_" + app.getId() + "_" + order.getOrderNo();
+            app.setOutRefundNo(outRefundNo);
+        }
+        app.setRefundAmount(order.getPayAmount());
+        app.setStatus(RefundStatus.REFUNDING.getCode());
+        app.setUpdatedAt(now);
+        refundApplicationMapper.updateById(app);
+
+        // 微信退款请求使用固定 out_refund_no，可安全重试；只有微信受理后才推进订单状态。
+        Refund refund = wxPayService.createRefund(order, outRefundNo, app.getReason());
+        if (refund == null || refund.getStatus() == null) {
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "微信未返回退款状态");
+        }
+        app.setWxRefundId(refund.getRefundId() == null ? "" : refund.getRefundId());
+        if (refund.getStatus() == com.wechat.pay.java.service.refund.model.Status.SUCCESS) {
+            app.setStatus(RefundStatus.SUCCESS.getCode());
+            app.setRefundTime(now);
+            finalizeRefundedOrder(order, now);
+        } else if (refund.getStatus() == com.wechat.pay.java.service.refund.model.Status.PROCESSING) {
+            app.setStatus(RefundStatus.REFUNDING.getCode());
+            // 微信已受理，订单停止履约；最终资金结果由退款通知更新。
+            finalizeRefundedOrder(order, now);
+        } else {
+            app.setStatus(RefundStatus.FAILED.getCode());
+            app.setRefundFailReason("微信退款状态：" + refund.getStatus().name());
+        }
+        app.setUpdatedAt(now);
+        refundApplicationMapper.updateById(app);
+    }
+
+    /** 退款请求已被微信接受后，订单不再继续履约；库存回补仅执行一次。 */
+    private void finalizeRefundedOrder(Order order, LocalDateTime now) {
+        if (order.getStatus() == OrderStatus.WAIT_SHIP.getCode()
+                || order.getStatus() == OrderStatus.GROUP_SUCCESS.getCode()) {
+            List<OrderItem> items = orderItemMapper.selectList(
+                    new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, order.getId()));
+            for (OrderItem item : items) {
+                orderMapper.releaseStock(item.getSkuId(), item.getQuantity());
+            }
+            Set<Long> pids = items.stream().map(OrderItem::getProductId).collect(Collectors.toSet());
+            for (Long pid : pids) {
+                productService.recalcProduct(pid);
+            }
+        }
+        if (order.getStatus() != OrderStatus.CANCELLED.getCode()) {
+            order.setStatus(OrderStatus.CANCELLED.getCode());
+            order.setCancelReason("REFUNDED");
+            order.setCancelTime(now);
+            order.setUpdatedAt(now);
+            orderMapper.updateById(order);
         }
     }
 

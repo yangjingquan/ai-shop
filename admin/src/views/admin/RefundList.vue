@@ -6,7 +6,7 @@ const loading = ref(false)
 const list = ref<AdminRefundRow[]>([])
 const total = ref(0)
 const query = reactive({ page: 1, size: 10, status: undefined as number | undefined, merchantId: undefined as number | undefined })
-const statusText: Record<number, string> = { 0: '待处理', 1: '已同意', 2: '已拒绝' }
+const statusText: Record<number, string> = { 0: '待处理', 1: '退款处理中', 2: '已拒绝', 3: '退款成功', 4: '退款失败' }
 
 async function fetchList() {
   loading.value = true
@@ -37,7 +37,8 @@ onMounted(fetchList)
         <el-table-column prop="orderNo" label="订单号" min-width="190" />
         <el-table-column prop="merchantName" label="商家" width="150" />
         <el-table-column prop="reason" label="申请原因" min-width="240" show-overflow-tooltip />
-        <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag :type="row.status === 0 ? 'warning' : row.status === 1 ? 'success' : 'danger'">{{ row.statusText || statusText[row.status] }}</el-tag></template></el-table-column>
+        <el-table-column prop="refundAmount" label="退款金额" width="110" />
+        <el-table-column label="状态" width="110"><template #default="{ row }"><el-tag :type="row.status === 0 ? 'warning' : row.status === 1 ? 'primary' : row.status === 3 ? 'success' : 'danger'">{{ row.statusText || statusText[row.status] }}</el-tag></template></el-table-column>
         <el-table-column prop="createdAt" label="申请时间" width="180" />
         <el-table-column prop="rejectReason" label="拒绝原因" min-width="180" show-overflow-tooltip />
       </el-table>

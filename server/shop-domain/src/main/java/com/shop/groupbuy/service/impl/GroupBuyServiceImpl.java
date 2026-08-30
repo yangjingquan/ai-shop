@@ -287,9 +287,12 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         }
         RefundApplication app = new RefundApplication();
         app.setOrderNo(order.getOrderNo());
+        app.setOutRefundNo("RF_" + order.getOrderNo() + "_"
+                + UUID.randomUUID().toString().replace("-", ""));
         app.setUserId(order.getUserId());
         app.setMerchantId(order.getMerchantId());
         app.setReason("拼团未成团");
+        app.setRefundAmount(order.getPayAmount());
         app.setStatus(RefundStatus.PENDING.getCode());
         refundApplicationMapper.insert(app);
     }

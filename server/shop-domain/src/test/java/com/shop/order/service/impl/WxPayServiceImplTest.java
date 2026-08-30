@@ -16,4 +16,10 @@ class WxPayServiceImplTest {
 
         assertEquals("2026-08-30T11:47:18+08:00", WxPayServiceImpl.formatWxPayDateTime(value));
     }
+
+    @Test
+    void derivesRefundNotifyUrlFromValidatedPaymentNotifyUrl() {
+        assertEquals("https://pay.example.com/api/callback/wxrefund/M0001",
+                WxPayServiceImpl.refundNotifyUrl("https://pay.example.com/api/callback/wxpay/M0001"));
+    }
 }

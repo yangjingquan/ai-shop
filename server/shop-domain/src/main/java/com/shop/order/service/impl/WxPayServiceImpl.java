@@ -24,6 +24,11 @@ import com.wechat.pay.java.service.payments.jsapi.model.PrepayWithRequestPayment
 import com.wechat.pay.java.service.payments.jsapi.model.QueryOrderByOutTradeNoRequest;
 import com.wechat.pay.java.service.payments.jsapi.model.CloseOrderRequest;
 import com.wechat.pay.java.service.payments.model.Transaction;
+import com.wechat.pay.java.service.refund.RefundService;
+import com.wechat.pay.java.service.refund.model.AmountReq;
+import com.wechat.pay.java.service.refund.model.CreateRequest;
+import com.wechat.pay.java.service.refund.model.QueryByOutRefundNoRequest;
+import com.wechat.pay.java.service.refund.model.Refund;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -128,6 +133,56 @@ public class WxPayServiceImpl implements WxPayService {
         }
     }
 
+    @Override
+    public Refund createRefund(Order order, String outRefundNo, String reason) {
+        Merchant merchant = getPayReadyMerchant(order.getMerchantId());
+        MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
+        try {
+            CreateRequest request = new CreateRequest();
+            if (hasText(order.getPayTransactionId())) {
+                request.setTransactionId(order.getPayTransactionId());
+            } else {
+                request.setOutTradeNo(order.getOrderNo());
+            }
+            request.setOutRefundNo(outRefundNo);
+            request.setReason(hasText(reason) ? reason : "订单退款");
+            // 支付回调地址已按商户代码校验，退款回调沿用同一域名和商户路径约定。
+            request.setNotifyUrl(refundNotifyUrl(config.getWxPayNotifyUrl()));
+
+            AmountReq amount = new AmountReq();
+            long totalFen = yuanToFen(order.getPayAmount());
+            amount.setTotal(totalFen);
+            amount.setRefund(totalFen);
+            amount.setCurrency("CNY");
+            request.setAmount(amount);
+
+            return new RefundService.Builder().config(buildConfig(config)).build().create(request);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("微信退款申请失败, orderNo={}, outRefundNo={}, merchantCode={}",
+                    order.getOrderNo(), outRefundNo, merchant.getMerchantCode(), e);
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "微信退款申请失败，请稍后重试");
+        }
+    }
+
+    @Override
+    public Refund queryRefund(Order order, String outRefundNo) {
+        Merchant merchant = getPayReadyMerchant(order.getMerchantId());
+        MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
+        try {
+            QueryByOutRefundNoRequest request = new QueryByOutRefundNoRequest();
+            request.setOutRefundNo(outRefundNo);
+            return new RefundService.Builder().config(buildConfig(config)).build().queryByOutRefundNo(request);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("微信退款查询失败, orderNo={}, outRefundNo={}, merchantCode={}",
+                    order.getOrderNo(), outRefundNo, merchant.getMerchantCode(), e);
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "微信退款状态查询失败，请稍后重试");
+        }
+    }
+
     private Merchant getPayReadyMerchant(Long merchantId) {
         Merchant merchant = merchantMapper.selectOne(new LambdaQueryWrapper<Merchant>()
                 .eq(Merchant::getId, merchantId));
@@ -186,11 +241,28 @@ public class WxPayServiceImpl implements WxPayService {
         return value.truncatedTo(ChronoUnit.SECONDS).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 
+    static String refundNotifyUrl(String payNotifyUrl) {
+        if (!hasTextStatic(payNotifyUrl)) {
+            throw new BusinessException(ErrorCode.WX_PAY_CONFIG_INCOMPLETE);
+        }
+        String marker = "/api/callback/wxpay/";
+        int index = payNotifyUrl.indexOf(marker);
+        if (index < 0) {
+            throw new BusinessException(ErrorCode.WX_PAY_CONFIG_INCOMPLETE.getCode(), "支付回调地址格式不正确");
+        }
+        return payNotifyUrl.substring(0, index) + "/api/callback/wxrefund/"
+                + payNotifyUrl.substring(index + marker.length());
+    }
+
     private String normalizePrivateKey(String privateKey) {
         return privateKey.trim().replace("\\n", "\n");
     }
 
     private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private static boolean hasTextStatic(String value) {
         return value != null && !value.isBlank();
     }
 }

@@ -57,6 +57,10 @@ public class OrderDetailVO {
 
     private String refundRejectReason;
 
+    private BigDecimal refundAmount;
+
+    private String refundFailReason;
+
     private LocalDateTime finishTime;
 
     private LocalDateTime cancelTime;

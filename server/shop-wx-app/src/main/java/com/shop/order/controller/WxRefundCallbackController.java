@@ -1,0 +1,41 @@
+package com.shop.order.controller;
+
+import com.shop.order.service.WxPayCallbackService.WxPayCallbackHeaders;
+import com.shop.order.service.WxRefundCallbackService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/callback")
+@RequiredArgsConstructor
+public class WxRefundCallbackController {
+
+    private final WxRefundCallbackService wxRefundCallbackService;
+
+    @PostMapping("/wxrefund/{merchantCode}")
+    public ResponseEntity<Map<String, String>> callback(@PathVariable String merchantCode,
+                                                        @RequestHeader Map<String, String> headers,
+                                                        @RequestBody(required = false) String rawBody) {
+        try {
+            wxRefundCallbackService.handle(merchantCode, new WxPayCallbackHeaders(
+                    header(headers, "Wechatpay-Timestamp"), header(headers, "Wechatpay-Nonce"),
+                    header(headers, "Wechatpay-Signature"), header(headers, "Wechatpay-Serial")),
+                    rawBody == null ? "" : rawBody);
+            return ResponseEntity.ok(Map.of("code", "SUCCESS", "message", "成功"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("code", "FAIL", "message", "通知处理失败"));
+        }
+    }
+
+    private String header(Map<String, String> headers, String name) {
+        String value = headers.get(name);
+        if (value == null || value.isBlank()) value = headers.get(name.toLowerCase());
+        if (value == null || value.isBlank()) throw new IllegalArgumentException("missing callback header");
+        return value;
+    }
+}

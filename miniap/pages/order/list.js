@@ -53,7 +53,7 @@ Page({
           ...item,
           firstItemImage: resolveImageUrl(item.firstItemImage || ''),
           groupBuyProgress: item.groupBuyRequiredCount ? `${item.groupBuyPaidCount || 0}/${item.groupBuyRequiredCount} 人` : '',
-          refundStatusText: item.refundStatus === 0 ? '退款处理中' : item.refundStatus === 1 ? '退款已同意' : item.refundStatus === 2 ? '退款已拒绝' : '',
+          refundStatusText: item.refundStatus === 0 ? '退款申请处理中' : item.refundStatus === 1 ? '退款处理中' : item.refundStatus === 2 ? '退款申请已拒绝' : item.refundStatus === 3 ? '退款成功' : item.refundStatus === 4 ? '退款失败，可重新申请' : '',
           totalLabel: item.status === 0 ? '需支付' : '实付',
           items: (item.items || []).map((goods) => ({
             ...goods,
@@ -163,6 +163,24 @@ Page({
         if (!modalRes.confirm) return
         orderApi.confirmReceive(orderNo).then(() => {
           wx.showToast({ title: '已确认', icon: 'success' })
+          this.refreshList()
+        }).catch(() => this.refreshList())
+      },
+    })
+  },
+
+  refundApply(e) {
+    const orderNo = e.currentTarget.dataset.orderno
+    if (!orderNo) return
+    wx.showModal({
+      title: '申请退款',
+      editable: true,
+      placeholderText: '请输入退款原因（可选）',
+      confirmColor: '#ff4b43',
+      success: (modalRes) => {
+        if (!modalRes.confirm) return
+        orderApi.refund(orderNo, modalRes.content || '').then(() => {
+          wx.showToast({ title: '已提交退款申请', icon: 'success' })
           this.refreshList()
         }).catch(() => this.refreshList())
       },

@@ -30,7 +30,7 @@ async function loadRefunds() {
 
 async function doApprove(id: number) {
   await request.post<unknown, void>(`/api/merchant/refund/${id}/approve`, { approved: true })
-  ElMessage.success('已同意退款')
+  ElMessage.success('已发起退款，等待微信处理结果')
   await loadRefunds()
 }
 
@@ -74,13 +74,14 @@ onMounted(loadRefunds)
           </template>
         </el-table-column>
         <el-table-column prop="reason" label="退款原因" min-width="180" />
+        <el-table-column prop="refundAmount" label="退款金额" width="110" />
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
             <el-tag
-              :type="row.status === 0 ? 'warning' : row.status === 1 ? 'success' : 'danger'"
+              :type="row.status === 0 ? 'warning' : row.status === 1 ? 'primary' : row.status === 2 ? 'danger' : row.status === 3 ? 'success' : 'danger'"
               size="small"
             >
-              {{ row.status === 0 ? '待处理' : row.status === 1 ? '已同意' : '已拒绝' }}
+              {{ row.status === 0 ? '待处理' : row.status === 1 ? '退款处理中' : row.status === 2 ? '已拒绝' : row.status === 3 ? '退款成功' : '退款失败' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -101,7 +102,11 @@ onMounted(loadRefunds)
             </div>
           </template>
         </el-table-column>
-        <el-table-column v-else label="拒绝原因" prop="rejectReason" min-width="160" />
+        <el-table-column v-else label="退款结果" min-width="190">
+          <template #default="{ row }">
+            {{ row.wxRefundId || row.rejectReason || '-' }}
+          </template>
+        </el-table-column>
       </el-table>
     </el-card>
   </div>

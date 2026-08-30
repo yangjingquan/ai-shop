@@ -7,8 +7,11 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum RefundStatus {
     PENDING(0, "待处理"),
-    APPROVED(1, "已同意"),
-    REJECTED(2, "已拒绝");
+    /** 商家同意，微信已受理，等待最终结果通知。 */
+    REFUNDING(1, "退款处理中"),
+    REJECTED(2, "已拒绝"),
+    SUCCESS(3, "退款成功"),
+    FAILED(4, "退款失败");
 
     private final int code;
     private final String text;

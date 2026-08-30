@@ -83,7 +83,7 @@ public class MerchantOrderController {
     }
 
     @GetMapping("/refund/list")
-    public ApiResult<List<RefundApplication>> refundList(
+    public ApiResult<List<AdminRefundVO>> refundList(
             @RequestParam(required = false) Integer status,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -95,7 +95,25 @@ public class MerchantOrderController {
             q.eq(RefundApplication::getStatus, status);
         }
         IPage<RefundApplication> result = refundApplicationMapper.selectPage(new Page<>(page, size), q);
-        return ApiResult.success(result.getRecords());
+        List<AdminRefundVO> list = result.getRecords().stream().map(r -> {
+            AdminRefundVO vo = new AdminRefundVO();
+            vo.setId(r.getId());
+            vo.setOrderNo(r.getOrderNo());
+            vo.setOutRefundNo(r.getOutRefundNo());
+            vo.setWxRefundId(r.getWxRefundId());
+            vo.setUserId(r.getUserId());
+            vo.setMerchantId(r.getMerchantId());
+            vo.setReason(r.getReason());
+            vo.setStatus(r.getStatus());
+            vo.setRejectReason(r.getRejectReason());
+            vo.setRefundAmount(r.getRefundAmount());
+            vo.setRefundFailReason(r.getRefundFailReason());
+            vo.setRefundTime(r.getRefundTime());
+            vo.setCreatedAt(r.getCreatedAt());
+            vo.setUpdatedAt(r.getUpdatedAt());
+            return vo;
+        }).toList();
+        return ApiResult.success(list);
     }
 
     @Data

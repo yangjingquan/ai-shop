@@ -17,8 +17,8 @@
       <view>团购进度：{{order.groupBuyProgress}}</view>
       <view wx:if="{{order.groupBuyExpireText}}">有效期至：{{order.groupBuyExpireText}}</view>
       <view wx:if="{{order.status === 7}}">拼团失败，等待商家处理退款</view>
-      <view wx:if="{{order.refundStatusText}}">{{order.refundStatusText}}</view>
     </view>
+    <view wx:if="{{order.refundStatusText}}" class="refund-status">{{order.refundStatusText}}</view>
 
     <view
       class="goods"

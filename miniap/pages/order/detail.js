@@ -29,7 +29,7 @@ Page({
           payAmountText: this.fmtPrice(raw.payAmount),
           groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
-          refundStatusText: raw.refundStatus === 0 ? '退款处理中' : raw.refundStatus === 1 ? '退款已同意' : raw.refundStatus === 2 ? '退款已拒绝' : '',
+          refundStatusText: raw.refundStatus === 0 ? '退款申请处理中' : raw.refundStatus === 1 ? '退款处理中' : raw.refundStatus === 2 ? '退款申请已拒绝' : raw.refundStatus === 3 ? '退款成功' : raw.refundStatus === 4 ? '退款失败，可重新申请' : '',
           canRefund: [1, 2, 3].includes(raw.status) || (raw.orderType === 1 && raw.status === 6),
           totalLabel: raw.status === 0 ? '需支付' : '实付款',
           items: (raw.items || []).map((item) => ({

@@ -106,6 +106,8 @@ public class AdminOrderController {
             AdminRefundVO vo = new AdminRefundVO();
             vo.setId(r.getId());
             vo.setOrderNo(r.getOrderNo());
+            vo.setOutRefundNo(r.getOutRefundNo());
+            vo.setWxRefundId(r.getWxRefundId());
             vo.setUserId(r.getUserId());
             vo.setMerchantId(r.getMerchantId());
             vo.setMerchantName(names.getOrDefault(r.getMerchantId(), ""));
@@ -113,6 +115,9 @@ public class AdminOrderController {
             vo.setStatus(r.getStatus());
             vo.setStatusText(refundStatusText(r.getStatus()));
             vo.setRejectReason(r.getRejectReason());
+            vo.setRefundAmount(r.getRefundAmount());
+            vo.setRefundFailReason(r.getRefundFailReason());
+            vo.setRefundTime(r.getRefundTime());
             vo.setCreatedAt(r.getCreatedAt());
             vo.setUpdatedAt(r.getUpdatedAt());
             return vo;
