@@ -13,6 +13,7 @@ import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.merchant.mapper.MerchantWechatConfigMapper;
 import com.shop.merchant.service.MerchantWechatConfigService;
 import com.shop.merchant.service.PaymentCredentialCipher;
+import com.wechat.pay.java.core.util.PemUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,6 +60,8 @@ public class MerchantWechatConfigServiceImpl implements MerchantWechatConfigServ
         config.setWxPayApiV3Key("");
         config.setWxPayMchSerialNo("");
         config.setWxPayPrivateKey("");
+        config.setWxPayPublicKey("");
+        config.setWxPayPublicKeyId("");
         config.setWxPayNotifyUrl("");
         config.setWxPayEnabled(0);
         configMapper.insert(config);
@@ -130,10 +133,12 @@ public class MerchantWechatConfigServiceImpl implements MerchantWechatConfigServ
             vo.setWxMchId("");
             vo.setWxSecretConfigured(false);
             vo.setWxPayMchSerialNo("");
+            vo.setWxPayPublicKeyId("");
             vo.setWxPayNotifyUrl("");
             vo.setWxPayEnabled(0);
             vo.setWxPayApiV3KeyConfigured(false);
             vo.setWxPayPrivateKeyConfigured(false);
+            vo.setWxPayPublicKeyConfigured(false);
             vo.setWxPayConfigured(false);
             return vo;
         }
@@ -141,10 +146,12 @@ public class MerchantWechatConfigServiceImpl implements MerchantWechatConfigServ
         vo.setWxMchId(config.getWxMchId());
         vo.setWxSecretConfigured(hasText(config.getWxSecret()));
         vo.setWxPayMchSerialNo(config.getWxPayMchSerialNo());
+        vo.setWxPayPublicKeyId(config.getWxPayPublicKeyId());
         vo.setWxPayNotifyUrl(config.getWxPayNotifyUrl());
         vo.setWxPayEnabled(config.getWxPayEnabled());
         vo.setWxPayApiV3KeyConfigured(hasText(config.getWxPayApiV3Key()));
         vo.setWxPayPrivateKeyConfigured(hasText(config.getWxPayPrivateKey()));
+        vo.setWxPayPublicKeyConfigured(hasText(config.getWxPayPublicKey()));
         vo.setWxPayConfigured(isPaymentConfigured(config));
         vo.setUpdatedAt(config.getUpdatedAt());
         return vo;
@@ -172,6 +179,17 @@ public class MerchantWechatConfigServiceImpl implements MerchantWechatConfigServ
                 throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "商户私钥必须为 apiclient_key.pem 的 PEM 内容");
             }
             config.setWxPayPrivateKey(paymentCredentialCipher.encrypt(normalized));
+        }
+        if (request.getWxPayPublicKey() != null && !request.getWxPayPublicKey().isBlank()) {
+            String normalized = request.getWxPayPublicKey().trim().replace("\\r\\n", "\\n").replace("\\n", "\n");
+            if (!normalized.contains("-----BEGIN PUBLIC KEY-----")
+                    || !normalized.contains("-----END PUBLIC KEY-----")) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "微信支付公钥必须为 PEM 内容");
+            }
+            config.setWxPayPublicKey(paymentCredentialCipher.encrypt(normalized));
+        }
+        if (request.getWxPayPublicKeyId() != null) {
+            config.setWxPayPublicKeyId(request.getWxPayPublicKeyId().trim());
         }
         if (request.getWxPayNotifyUrl() != null) {
             String normalized = request.getWxPayNotifyUrl().trim();
@@ -201,6 +219,7 @@ public class MerchantWechatConfigServiceImpl implements MerchantWechatConfigServ
                 || !hasText(config.getWxPayPrivateKey()) || !hasText(config.getWxPayNotifyUrl())) {
             throw new BusinessException(ErrorCode.WX_PAY_CONFIG_INCOMPLETE);
         }
+        validatePublicKeyConfig(config);
         paymentCredentialCipher.decrypt(config.getWxPayApiV3Key());
         paymentCredentialCipher.decrypt(config.getWxPayPrivateKey());
     }
@@ -209,7 +228,29 @@ public class MerchantWechatConfigServiceImpl implements MerchantWechatConfigServ
         return hasText(config.getWxAppId()) && hasText(config.getWxMchId())
                 && hasText(config.getWxPayApiV3Key()) && hasText(config.getWxPayMchSerialNo())
                 && hasText(config.getWxPayPrivateKey()) && hasText(config.getWxPayNotifyUrl())
+                && isPublicKeyConfigValid(config)
                 && Integer.valueOf(1).equals(config.getWxPayEnabled());
+    }
+
+    private void validatePublicKeyConfig(MerchantWechatConfig config) {
+        boolean publicKeyConfigured = hasText(config.getWxPayPublicKey());
+        boolean publicKeyIdConfigured = hasText(config.getWxPayPublicKeyId());
+        if (publicKeyConfigured != publicKeyIdConfigured) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "微信支付公钥和公钥 ID 必须同时配置");
+        }
+        if (publicKeyConfigured) {
+            String publicKey = paymentCredentialCipher.decrypt(config.getWxPayPublicKey());
+            try {
+                PemUtil.loadPublicKeyFromString(publicKey);
+            } catch (Exception e) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "微信支付公钥格式不正确");
+            }
+        }
+    }
+
+    private boolean isPublicKeyConfigValid(MerchantWechatConfig config) {
+        return (!hasText(config.getWxPayPublicKey()) && !hasText(config.getWxPayPublicKeyId()))
+                || (hasText(config.getWxPayPublicKey()) && hasText(config.getWxPayPublicKeyId()));
     }
 
     private boolean hasText(String value) {

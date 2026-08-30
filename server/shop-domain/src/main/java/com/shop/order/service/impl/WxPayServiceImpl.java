@@ -13,7 +13,9 @@ import com.shop.order.entity.Order;
 import com.shop.order.service.WxPayService;
 import com.shop.user.entity.User;
 import com.shop.user.mapper.UserMapper;
+import com.wechat.pay.java.core.Config;
 import com.wechat.pay.java.core.RSAAutoCertificateConfig;
+import com.wechat.pay.java.core.RSAPublicKeyConfig;
 import com.wechat.pay.java.service.payments.jsapi.JsapiServiceExtension;
 import com.wechat.pay.java.service.payments.jsapi.model.Amount;
 import com.wechat.pay.java.service.payments.jsapi.model.Payer;
@@ -148,12 +150,26 @@ public class WxPayServiceImpl implements WxPayService {
         return merchant;
     }
 
-    private RSAAutoCertificateConfig buildConfig(MerchantWechatConfig config) {
+    private Config buildConfig(MerchantWechatConfig config) {
+        String merchantId = config.getWxMchId().trim();
+        String privateKey = normalizePrivateKey(paymentCredentialCipher.decrypt(config.getWxPayPrivateKey()));
+        String merchantSerialNumber = config.getWxPayMchSerialNo().trim();
+        String apiV3Key = paymentCredentialCipher.decrypt(config.getWxPayApiV3Key()).trim();
+        if (hasText(config.getWxPayPublicKey()) && hasText(config.getWxPayPublicKeyId())) {
+            return new RSAPublicKeyConfig.Builder()
+                    .merchantId(merchantId)
+                    .privateKey(privateKey)
+                    .merchantSerialNumber(merchantSerialNumber)
+                    .publicKey(paymentCredentialCipher.decrypt(config.getWxPayPublicKey()))
+                    .publicKeyId(config.getWxPayPublicKeyId().trim())
+                    .apiV3Key(apiV3Key)
+                    .build();
+        }
         return new RSAAutoCertificateConfig.Builder()
-                .merchantId(config.getWxMchId().trim())
-                .privateKey(normalizePrivateKey(paymentCredentialCipher.decrypt(config.getWxPayPrivateKey())))
-                .merchantSerialNumber(config.getWxPayMchSerialNo().trim())
-                .apiV3Key(paymentCredentialCipher.decrypt(config.getWxPayApiV3Key()).trim())
+                .merchantId(merchantId)
+                .privateKey(privateKey)
+                .merchantSerialNumber(merchantSerialNumber)
+                .apiV3Key(apiV3Key)
                 .build();
     }
 

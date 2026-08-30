@@ -16,6 +16,8 @@ public class MerchantWechatConfig extends BaseEntity {
     private String wxPayApiV3Key;
     private String wxPayMchSerialNo;
     private String wxPayPrivateKey;
+    private String wxPayPublicKey;
+    private String wxPayPublicKeyId;
     private String wxPayNotifyUrl;
     private Integer wxPayEnabled;
 }

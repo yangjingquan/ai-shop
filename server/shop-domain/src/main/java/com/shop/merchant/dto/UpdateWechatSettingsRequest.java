@@ -28,6 +28,12 @@ public class UpdateWechatSettingsRequest {
     @Size(max = 8192)
     private String wxPayPrivateKey;
 
+    @Size(max = 8192)
+    private String wxPayPublicKey;
+
+    @Size(max = 64)
+    private String wxPayPublicKeyId;
+
     @Size(max = 255)
     private String wxPayNotifyUrl;
 

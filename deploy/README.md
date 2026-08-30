@@ -30,7 +30,7 @@ docker compose logs -f
 
 ## 微信支付凭据主密钥
 
-两个 Java 服务必须使用同一个 `SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY`，用于加密数据库中每个商户的 API v3 密钥和 `apiclient_key.pem` 内容。首次部署前，在服务器的 `deploy/.env` 中设置一次：
+两个 Java 服务必须使用同一个 `SHOP_PAYMENT_CREDENTIAL_ENCRYPTION_KEY`，用于加密数据库中每个商户的 API v3 密钥、`apiclient_key.pem` 内容和微信支付公钥。首次部署前，在服务器的 `deploy/.env` 中设置一次：
 
 ```bash
 openssl rand -base64 32
@@ -39,7 +39,7 @@ openssl rand -base64 32
 
 不要把该值、API v3 密钥或商户私钥提交到仓库；备份主密钥并保持不变。丢失或更换主密钥后，既有商户支付凭据将无法解密，需重新在运营后台填写。
 
-在运营后台为每个商户分别填写：小程序 AppID、支付商户号、API v3 密钥、商户 API 证书序列号、完整 `apiclient_key.pem` 内容，以及该商户专属的 HTTPS 回调地址：
+在运营后台为每个商户分别填写：小程序 AppID、支付商户号、API v3 密钥、商户 API 证书序列号、完整 `apiclient_key.pem` 内容，以及该商户专属的 HTTPS 回调地址。若已切换微信支付公钥验签，还需填写微信支付公钥及公钥 ID：
 
 ```
 https://你的支付回调域名/api/callback/wxpay/该商户代码

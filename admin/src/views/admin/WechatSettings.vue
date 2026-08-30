@@ -22,6 +22,8 @@ const form = reactive({
   wxPayApiV3Key: '',
   wxPayMchSerialNo: '',
   wxPayPrivateKey: '',
+  wxPayPublicKey: '',
+  wxPayPublicKeyId: '',
   wxPayNotifyUrl: '',
   wxPayEnabled: 0,
 })
@@ -60,6 +62,8 @@ async function openEdit(row: MerchantWechatSettingsVO) {
     form.wxPayApiV3Key = ''
     form.wxPayMchSerialNo = current.value.wxPayMchSerialNo ?? ''
     form.wxPayPrivateKey = ''
+    form.wxPayPublicKey = ''
+    form.wxPayPublicKeyId = current.value.wxPayPublicKeyId ?? ''
     form.wxPayNotifyUrl = current.value.wxPayNotifyUrl ?? ''
     form.wxPayEnabled = current.value.wxPayEnabled ?? 0
     dialogVisible.value = true
@@ -82,6 +86,8 @@ async function submit() {
       wxPayApiV3Key: form.wxPayApiV3Key || undefined,
       wxPayMchSerialNo: form.wxPayMchSerialNo,
       wxPayPrivateKey: form.wxPayPrivateKey || undefined,
+      wxPayPublicKey: form.wxPayPublicKey || undefined,
+      wxPayPublicKeyId: form.wxPayPublicKeyId,
       wxPayNotifyUrl: form.wxPayNotifyUrl,
       wxPayEnabled: form.wxPayEnabled,
     })
@@ -218,6 +224,19 @@ onMounted(fetchList)
             :placeholder="current?.wxPayPrivateKeyConfigured ? '留空则保持原值' : '请输入 apiclient_key.pem 内容'"
           />
           <div class="hint">保存后以 AES-GCM 密文存储，编辑时留空不会覆盖。</div>
+        </el-form-item>
+        <el-form-item label="微信支付公钥 ID">
+          <el-input v-model="form.wxPayPublicKeyId" maxlength="64" clearable placeholder="请输入微信支付公钥 ID" />
+        </el-form-item>
+        <el-form-item label="微信支付公钥">
+          <el-input
+            v-model="form.wxPayPublicKey"
+            type="textarea"
+            :rows="6"
+            maxlength="8192"
+            :placeholder="current?.wxPayPublicKeyConfigured ? '留空则保持原值' : '请输入微信支付公钥 PEM 内容'"
+          />
+          <div class="hint">使用微信支付平台公钥验签；保存后以 AES-GCM 密文存储，编辑时留空不会覆盖。</div>
         </el-form-item>
         <el-form-item label="支付回调地址">
           <el-input

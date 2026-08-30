@@ -8,10 +8,12 @@ export interface MerchantWechatSettingsVO {
   wxMchId?: string
   wxSecretConfigured?: boolean
   wxPayMchSerialNo?: string
+  wxPayPublicKeyId?: string
   wxPayNotifyUrl?: string
   wxPayEnabled?: number
   wxPayApiV3KeyConfigured?: boolean
   wxPayPrivateKeyConfigured?: boolean
+  wxPayPublicKeyConfigured?: boolean
   wxPayConfigured?: boolean
   updatedAt?: string
 }
@@ -23,6 +25,8 @@ export interface UpdateWechatSettingsPayload {
   wxPayApiV3Key?: string
   wxPayMchSerialNo?: string
   wxPayPrivateKey?: string
+  wxPayPublicKey?: string
+  wxPayPublicKeyId?: string
   wxPayNotifyUrl?: string
   wxPayEnabled?: number
 }

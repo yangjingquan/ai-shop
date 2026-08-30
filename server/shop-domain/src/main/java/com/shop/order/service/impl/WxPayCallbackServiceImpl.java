@@ -11,8 +11,10 @@ import com.shop.merchant.service.PaymentCredentialCipher;
 import com.shop.order.entity.Order;
 import com.shop.order.service.OrderPaymentService;
 import com.shop.order.service.WxPayCallbackService;
-import com.wechat.pay.java.core.notification.AutoCertificateNotificationConfig;
+import com.wechat.pay.java.core.RSAAutoCertificateConfig;
+import com.wechat.pay.java.core.RSAPublicKeyConfig;
 import com.wechat.pay.java.core.notification.NotificationParser;
+import com.wechat.pay.java.core.notification.NotificationConfig;
 import com.wechat.pay.java.core.notification.RequestParam;
 import com.wechat.pay.java.service.payments.model.Transaction;
 import com.wechat.pay.java.service.payments.model.Transaction.TradeStateEnum;
@@ -50,12 +52,7 @@ public class WxPayCallbackServiceImpl implements WxPayCallbackService {
 
     private Transaction parseTransaction(Merchant merchant, WxPayCallbackHeaders headers, String rawBody) {
         MerchantWechatConfig wechatConfig = merchantWechatConfigService.getRequiredByMerchantId(merchant.getId());
-        AutoCertificateNotificationConfig config = new AutoCertificateNotificationConfig.Builder()
-                .merchantId(wechatConfig.getWxMchId().trim())
-                .privateKey(normalizePrivateKey(paymentCredentialCipher.decrypt(wechatConfig.getWxPayPrivateKey())))
-                .merchantSerialNumber(wechatConfig.getWxPayMchSerialNo().trim())
-                .apiV3Key(paymentCredentialCipher.decrypt(wechatConfig.getWxPayApiV3Key()).trim())
-                .build();
+        NotificationConfig config = buildNotificationConfig(wechatConfig);
 
         RequestParam requestParam = new RequestParam.Builder()
                 .serialNumber(headers.serial())
@@ -67,6 +64,29 @@ public class WxPayCallbackServiceImpl implements WxPayCallbackService {
 
         NotificationParser parser = new NotificationParser(config);
         return parser.parse(requestParam, Transaction.class);
+    }
+
+    private NotificationConfig buildNotificationConfig(MerchantWechatConfig config) {
+        String merchantId = config.getWxMchId().trim();
+        String privateKey = normalizePrivateKey(paymentCredentialCipher.decrypt(config.getWxPayPrivateKey()));
+        String merchantSerialNumber = config.getWxPayMchSerialNo().trim();
+        String apiV3Key = paymentCredentialCipher.decrypt(config.getWxPayApiV3Key()).trim();
+        if (hasText(config.getWxPayPublicKey()) && hasText(config.getWxPayPublicKeyId())) {
+            return new RSAPublicKeyConfig.Builder()
+                    .merchantId(merchantId)
+                    .privateKey(privateKey)
+                    .merchantSerialNumber(merchantSerialNumber)
+                    .publicKey(paymentCredentialCipher.decrypt(config.getWxPayPublicKey()))
+                    .publicKeyId(config.getWxPayPublicKeyId().trim())
+                    .apiV3Key(apiV3Key)
+                    .build();
+        }
+        return new RSAAutoCertificateConfig.Builder()
+                .merchantId(merchantId)
+                .privateKey(privateKey)
+                .merchantSerialNumber(merchantSerialNumber)
+                .apiV3Key(apiV3Key)
+                .build();
     }
 
     private void validateTransaction(Merchant merchant, Transaction transaction, String rawBody) {
