@@ -10,6 +10,7 @@ const RECOMMEND_PAGE_SIZE = 10
 const UNAVAILABLE_REASON_TEXT = {
   OFF_SHELF: '商品已下架',
   SKU_GONE: '规格已失效',
+  MERCHANT_MISMATCH: '商品归属已变化',
   STOCK_NOT_ENOUGH: '库存不足',
 }
 

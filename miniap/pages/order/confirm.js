@@ -83,7 +83,12 @@ Page({
           }))
         };
         this.setData({ preview });
+      } else {
+        this.setData({ preview: null });
+        wx.showToast({ title: res.msg || '不支持跨商家结算', icon: 'none' });
       }
+    }).catch(() => {
+      this.setData({ preview: null });
     });
   },
 

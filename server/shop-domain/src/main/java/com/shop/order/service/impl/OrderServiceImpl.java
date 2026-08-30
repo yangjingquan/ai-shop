@@ -100,6 +100,9 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
+        // 本项目只支持单个商家结算；预览接口也必须与创建订单保持一致。
+        validateSingleMerchantCheckout(cartItems);
+
         // 批量查 SKU / Product / Merchant
         List<Long> skuIds = cartItems.stream().map(CartItem::getSkuId).distinct().collect(Collectors.toList());
         Map<Long, ProductSku> skuMap = skuMapper.selectBatchIds(skuIds).stream()
@@ -149,6 +152,10 @@ public class OrderServiceImpl implements OrderService {
                 } else if (product == null) {
                     pi.setAvailable(false);
                     pi.setUnavailableReason("商品已删除");
+                } else if (!Objects.equals(sku.getProductId(), product.getId())
+                        || !Objects.equals(ci.getMerchantId(), product.getMerchantId())) {
+                    pi.setAvailable(false);
+                    pi.setUnavailableReason("商品归属已变化");
                 } else if (product.getStatus() == null || product.getStatus() != 1) {
                     pi.setAvailable(false);
                     pi.setUnavailableReason("商品已下架");
@@ -217,6 +224,9 @@ public class OrderServiceImpl implements OrderService {
                 }
             }
 
+            // 本项目只支持单个商家结算，不能依赖前端拦截跨商家请求。
+            validateSingleMerchantCheckout(cartItems);
+
             // 批量查 SKU / Product
             List<Long> skuIds = cartItems.stream().map(CartItem::getSkuId).distinct().collect(Collectors.toList());
             Map<Long, ProductSku> skuMap = skuMapper.selectBatchIds(skuIds).stream()
@@ -231,6 +241,8 @@ public class OrderServiceImpl implements OrderService {
                 ProductSku sku = skuMap.get(ci.getSkuId());
                 Product product = productMap.get(ci.getProductId());
                 if (sku == null || product == null
+                        || !Objects.equals(sku.getProductId(), product.getId())
+                        || !Objects.equals(ci.getMerchantId(), product.getMerchantId())
                         || product.getStatus() == null || product.getStatus() != 1
                         || (sku.getStock() != null && sku.getStock() < ci.getQuantity())) {
                     throw new BusinessException(ErrorCode.CART_ITEM_INVALID);
@@ -246,9 +258,6 @@ public class OrderServiceImpl implements OrderService {
             // 按 merchant 分组
             Map<Long, List<CartItem>> grouped = cartItems.stream()
                     .collect(Collectors.groupingBy(CartItem::getMerchantId));
-            if (grouped.size() != 1) {
-                throw new BusinessException(ErrorCode.CART_ITEM_CROSS_MERCHANT);
-            }
 
             List<OrderCreateVO> results = new ArrayList<>();
 
@@ -351,6 +360,15 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+    }
+
+    private void validateSingleMerchantCheckout(List<CartItem> cartItems) {
+        Set<Long> merchantIds = cartItems.stream()
+                .map(CartItem::getMerchantId)
+                .collect(Collectors.toSet());
+        if (merchantIds.size() != 1 || merchantIds.contains(null)) {
+            throw new BusinessException(ErrorCode.CART_ITEM_CROSS_MERCHANT);
+        }
     }
 
     private String toJson(Object obj) {

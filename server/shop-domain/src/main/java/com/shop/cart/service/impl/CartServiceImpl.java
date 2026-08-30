@@ -132,6 +132,10 @@ public class CartServiceImpl implements CartService {
             } else if (sku == null) {
                 vo.setAvailable(false);
                 vo.setUnavailableReason("SKU_GONE");
+            } else if (!Objects.equals(sku.getProductId(), product.getId())
+                    || !Objects.equals(ci.getMerchantId(), product.getMerchantId())) {
+                vo.setAvailable(false);
+                vo.setUnavailableReason("MERCHANT_MISMATCH");
             } else if (sku.getStock() == null || sku.getStock() < ci.getQuantity()) {
                 vo.setAvailable(false);
                 vo.setUnavailableReason("STOCK_NOT_ENOUGH");
