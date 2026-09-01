@@ -53,6 +53,20 @@ public class Order extends BaseEntity {
 
     private String shipCompany;
 
+    private String shipperCode;
+
+    private String logisticsState;
+
+    private String logisticsStateText;
+
+    private LocalDateTime logisticsLastTime;
+
+    private String logisticsLastContent;
+
+    private LocalDateTime logisticsSyncedAt;
+
+    private String logisticsError;
+
     private LocalDateTime shipTime;
 
     private LocalDateTime shipReminderAt;

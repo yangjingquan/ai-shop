@@ -5,7 +5,6 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.List;
 
 @Data
 public class OrderDetailVO {
@@ -49,6 +48,8 @@ public class OrderDetailVO {
     private String shipNo;
 
     private String shipCompany;
+
+    private String shipperCode;
 
     private LocalDateTime shipTime;
 

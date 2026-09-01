@@ -34,6 +34,11 @@ function uploadRefundEvidence(filePath) {
 module.exports = {
   page: (params) => request({ url: '/api/wx/order/page', data: params }),
   detail: (orderNo) => request({ url: `/api/wx/order/${orderNo}` }),
+  logistics: (orderNo, forceRefresh) => request({
+    url: `/api/wx/order/${orderNo}/logistics`,
+    data: forceRefresh ? { forceRefresh: true } : {},
+  }),
+  refreshLogistics: (orderNo) => request({ url: `/api/wx/order/${orderNo}/logistics/refresh`, method: 'POST' }),
   cancel: (orderNo) => request({ url: `/api/wx/order/${orderNo}/cancel`, method: 'POST' }),
   confirmReceive: (orderNo) => request({ url: `/api/wx/order/${orderNo}/confirm-receive`, method: 'POST' }),
   remindShip: (orderNo) => request({ url: `/api/wx/order/${orderNo}/remind-ship`, method: 'POST' }),

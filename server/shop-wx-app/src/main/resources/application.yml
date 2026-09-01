@@ -41,6 +41,14 @@ shop:
     public-prefix: ${SHOP_FILE_PUBLIC_PREFIX:/uploads}
   security:
     trusted-proxies: ${SHOP_TRUSTED_PROXIES:127.0.0.1,::1}
+  logistics:
+    enabled: ${SHOP_LOGISTICS_ENABLED:true}
+    cache-minutes: ${SHOP_LOGISTICS_CACHE_MINUTES:30}
+    kdniao:
+      ebusiness-id: ${KDNIAO_EBUSINESS_ID:}
+      app-key: ${KDNIAO_APP_KEY:}
+      query-url: ${KDNIAO_QUERY_URL:https://api.kdniao.com/Ebusiness/EbusinessOrderHandle.aspx}
+      timeout-ms: ${KDNIAO_TIMEOUT_MS:5000}
   jobs:
     order-timeout-enabled: true
     auto-receive-enabled: true

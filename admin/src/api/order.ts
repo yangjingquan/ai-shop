@@ -27,6 +27,7 @@ export interface AdminOrderDetail extends AdminOrderRow {
   payTransactionId?: string
   payTime?: string
   shipCompany?: string
+  shipperCode?: string
   shipNo?: string
   shipTime?: string
   cancelTime?: string
@@ -36,6 +37,28 @@ export interface AdminOrderDetail extends AdminOrderRow {
   refundRejectReason?: string
   address?: { receiver?: string; phone?: string; region?: string; detail?: string }
   items?: AdminOrderItem[]
+  logistics?: AdminLogisticsTracking
+}
+
+export interface AdminLogisticsTrace {
+  acceptTime?: string
+  acceptStation?: string
+  state?: string
+  stateText?: string
+}
+
+export interface AdminLogisticsTracking {
+  orderNo?: string
+  shipCompany?: string
+  shipperCode?: string
+  shipNo?: string
+  state?: string
+  stateText?: string
+  lastTime?: string
+  lastContent?: string
+  syncedAt?: string
+  error?: string
+  traces?: AdminLogisticsTrace[]
 }
 
 export interface AdminRefundRow {
@@ -88,6 +111,10 @@ export const adminOrderApi = {
     request.get<unknown, PageResult<AdminOrderRow>>('/api/admin/orders/page', { params }),
   detail: (orderNo: string) =>
     request.get<unknown, AdminOrderDetail>(`/api/admin/orders/${orderNo}`),
+  logistics: (orderNo: string, forceRefresh = false) =>
+    request.get<unknown, AdminLogisticsTracking>(`/api/admin/orders/${orderNo}/logistics`, { params: { forceRefresh } }),
+  refreshLogistics: (orderNo: string) =>
+    request.post<unknown, AdminLogisticsTracking>(`/api/admin/orders/${orderNo}/logistics/refresh`),
   refunds: (params: Record<string, unknown>) =>
     request.get<unknown, PageResult<AdminRefundRow>>('/api/admin/refunds/page', { params }),
   payments: (params: Record<string, unknown>) =>

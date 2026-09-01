@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shop.common.aop.OpLog;
+import com.shop.common.aop.RateLimit;
 import com.shop.common.response.ApiResult;
 import com.shop.common.response.PageResult;
 import com.shop.common.security.CurrentUserHolder;
@@ -15,6 +16,7 @@ import com.shop.order.enums.RefundStatus;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderService;
+import com.shop.order.service.LogisticsService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -33,10 +35,13 @@ public class MerchantOrderController {
     private final OrderService orderService;
     private final OrderMapper orderMapper;
     private final RefundApplicationMapper refundApplicationMapper;
+    private final LogisticsService logisticsService;
 
     @Data
     public static class ShipRequest {
         private String shipCompany;
+
+        private String shipperCode;
 
         @NotBlank
         @Pattern(regexp = "^[A-Za-z0-9]{5,30}$")
@@ -47,8 +52,21 @@ public class MerchantOrderController {
     @PostMapping("/order/ship")
     public ApiResult<Void> ship(@RequestParam String orderNo, @RequestBody @Valid ShipRequest req) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
-        orderService.ship(merchantId, orderNo, req.getShipCompany(), req.getShipNo());
+        orderService.ship(merchantId, orderNo, req.getShipCompany(), req.getShipperCode(), req.getShipNo());
         return ApiResult.success(null);
+    }
+
+    @GetMapping("/order/{orderNo}/logistics")
+    public ApiResult<LogisticsTrackingVO> logistics(@PathVariable String orderNo) {
+        return ApiResult.success(logisticsService.trackForMerchant(
+                CurrentUserHolder.get().getMerchantId(), orderNo, false));
+    }
+
+    @RateLimit(key = "logistics_refresh", limit = 1, windowSec = 60)
+    @PostMapping("/order/{orderNo}/logistics/refresh")
+    public ApiResult<LogisticsTrackingVO> refreshLogistics(@PathVariable String orderNo) {
+        return ApiResult.success(logisticsService.trackForMerchant(
+                CurrentUserHolder.get().getMerchantId(), orderNo, true));
     }
 
     @GetMapping("/order/page")

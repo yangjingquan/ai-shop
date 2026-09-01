@@ -165,6 +165,22 @@
   overflow: hidden;
 }
 
+.logistics-card { padding-bottom: 20rpx; }
+.logistics-refresh { color: #2563eb; font-size: 23rpx; }
+.logistics-summary { padding: 16rpx; border-radius: 12rpx; background: #f5f8ff; }
+.logistics-state { display: block; color: #17191f; font-size: 26rpx; font-weight: 900; }
+.logistics-last { display: block; margin-top: 8rpx; color: #61646d; font-size: 23rpx; line-height: 32rpx; }
+.logistics-error { margin-top: 12rpx; color: #b42318; font-size: 23rpx; line-height: 32rpx; }
+.logistics-traces { margin-top: 18rpx; padding-left: 10rpx; }
+.logistics-trace { display: flex; position: relative; padding: 0 0 22rpx 28rpx; }
+.logistics-trace:not(:last-child)::before { content: ''; position: absolute; left: 7rpx; top: 18rpx; bottom: 0; width: 2rpx; background: #d9dee8; }
+.trace-dot { position: absolute; left: 0; top: 8rpx; width: 16rpx; height: 16rpx; border-radius: 50%; background: #aeb7c7; }
+.logistics-trace:first-child .trace-dot { background: #2563eb; box-shadow: 0 0 0 6rpx #e7efff; }
+.trace-content { flex: 1; min-width: 0; }
+.trace-station { color: #343842; font-size: 24rpx; line-height: 34rpx; }
+.trace-time { margin-top: 6rpx; color: #8b8e97; font-size: 21rpx; }
+.logistics-empty { padding: 24rpx 0 8rpx; color: #8b8e97; text-align: center; font-size: 23rpx; }
+
 .amount-row {
   min-height: 50rpx;
   display: flex;

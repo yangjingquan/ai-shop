@@ -6,6 +6,7 @@ Page({
     order: null,
     orderNo: '',
     loading: false,
+    logisticsLoading: false,
   },
 
   onLoad(options) {
@@ -23,6 +24,7 @@ Page({
         const raw = res.data || {}
         const order = {
           ...raw,
+          logistics: null,
           totalAmountText: this.fmtPrice(raw.totalAmount),
           freightAmountText: this.fmtPrice(raw.freightAmount),
           discountAmountText: this.fmtPrice(raw.discountAmount),
@@ -140,13 +142,31 @@ Page({
       wx.showToast({ title: '商家尚未发货', icon: 'none' })
       return
     }
-    wx.showModal({
-      title: '物流信息',
-      content: `${order.shipCompany || '物流'}\n运单号：${order.shipNo}\n发货时间：${order.shipTime || '-'}`,
-      confirmText: '复制单号',
-      showCancel: false,
-      success: () => wx.setClipboardData({ data: String(order.shipNo) }),
+    this.loadLogistics(false)
+  },
+
+  loadLogistics(forceRefresh) {
+    const order = this.data.order || {}
+    if (!order.shipNo || this.data.logisticsLoading) return Promise.resolve()
+    this.setData({ logisticsLoading: true })
+    const query = forceRefresh ? orderApi.refreshLogistics(order.orderNo) : orderApi.logistics(order.orderNo, false)
+    return query.then((res) => {
+      const raw = res.data || {}
+      const logistics = {
+        ...raw,
+        traces: (raw.traces || []).map((trace) => ({
+          ...trace,
+          acceptTime: trace.acceptTime || '-',
+        })),
+      }
+      this.setData({ 'order.logistics': logistics })
+    }).finally(() => {
+      this.setData({ logisticsLoading: false })
     })
+  },
+
+  refreshLogistics() {
+    this.loadLogistics(true)
   },
 
   copyOrderNo() {

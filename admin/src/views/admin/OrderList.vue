@@ -43,8 +43,24 @@ async function openDetail(orderNo: string) {
   detailLoading.value = true
   try {
     detail.value = await adminOrderApi.detail(orderNo)
+    if (detail.value?.shipNo) await loadLogistics()
   } finally {
     detailLoading.value = false
+  }
+}
+
+const logisticsLoading = ref(false)
+
+async function loadLogistics(forceRefresh = false) {
+  if (!detail.value?.orderNo) return
+  logisticsLoading.value = true
+  try {
+    const logistics = forceRefresh
+      ? await adminOrderApi.refreshLogistics(detail.value.orderNo)
+      : await adminOrderApi.logistics(detail.value.orderNo)
+    detail.value = { ...detail.value, logistics }
+  } finally {
+    logisticsLoading.value = false
   }
 }
 
@@ -83,7 +99,7 @@ onMounted(fetchList)
 
     <el-dialog v-model="detailVisible" title="订单详情" width="900px">
       <div v-loading="detailLoading" v-if="detail">
-        <el-descriptions :column="3" border>
+          <el-descriptions :column="3" border>
           <el-descriptions-item label="订单号">{{ detail.orderNo }}</el-descriptions-item>
           <el-descriptions-item label="商家">{{ detail.merchantName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="状态">{{ detail.statusText }}</el-descriptions-item>
@@ -94,6 +110,25 @@ onMounted(fetchList)
           <el-descriptions-item label="物流">{{ detail.shipCompany || '-' }} {{ detail.shipNo || '' }}</el-descriptions-item>
           <el-descriptions-item label="创建时间">{{ detail.createdAt || '-' }}</el-descriptions-item>
         </el-descriptions>
+        <template v-if="detail.shipNo">
+          <el-divider />
+          <div class="logistics-head">
+            <span>物流轨迹</span>
+            <el-button link type="primary" :loading="logisticsLoading" @click="loadLogistics(true)">刷新物流</el-button>
+          </div>
+          <el-alert v-if="detail.logistics?.error" :title="detail.logistics.error" type="warning" :closable="false" />
+          <el-empty v-if="!detail.logistics?.traces?.length" description="暂无物流轨迹" :image-size="70" />
+          <el-timeline v-else>
+            <el-timeline-item
+              v-for="(trace, index) in detail.logistics.traces"
+              :key="`${trace.acceptTime}-${index}`"
+              :timestamp="trace.acceptTime"
+              :type="index === 0 ? 'primary' : 'info'"
+            >
+              {{ trace.acceptStation }}
+            </el-timeline-item>
+          </el-timeline>
+        </template>
         <el-divider />
         <el-table :data="detail.items || []" border>
           <el-table-column prop="productName" label="商品" min-width="220" />
@@ -105,3 +140,13 @@ onMounted(fetchList)
     </el-dialog>
   </div>
 </template>
+
+<style scoped>
+.logistics-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+</style>

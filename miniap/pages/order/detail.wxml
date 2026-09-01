@@ -106,6 +106,28 @@
     </view>
   </view>
 
+  <view wx:if="{{order.shipNo}}" class="logistics-card card">
+    <view class="section-head">
+      <text>物流跟踪</text>
+      <text class="logistics-refresh" bindtap="refreshLogistics">{{logisticsLoading ? '查询中...' : '刷新'}}</text>
+    </view>
+    <view class="logistics-summary" bindtap="viewLogistics">
+      <text class="logistics-state">{{order.logistics.stateText || '点击查看物流轨迹'}}</text>
+      <text class="logistics-last">{{order.logistics.lastContent || (order.shipCompany + ' ' + order.shipNo)}}</text>
+    </view>
+    <view wx:if="{{order.logistics.error}}" class="logistics-error">{{order.logistics.error}}</view>
+    <view wx:if="{{order.logistics && order.logistics.traces && order.logistics.traces.length}}" class="logistics-traces">
+      <view wx:for="{{order.logistics.traces}}" wx:key="acceptTime" class="logistics-trace">
+        <view class="trace-dot"></view>
+        <view class="trace-content">
+          <view class="trace-station">{{item.acceptStation}}</view>
+          <view class="trace-time">{{item.acceptTime}}</view>
+        </view>
+      </view>
+    </view>
+    <view wx:elif="{{order.logistics}}" class="logistics-empty">暂无物流轨迹</view>
+  </view>
+
   <view class="actions" wx:if="{{order.status === 0}}">
     <view class="btn" catchtap="cancelOrder">取消订单</view>
     <view class="btn primary" catchtap="payOrder">去支付</view>

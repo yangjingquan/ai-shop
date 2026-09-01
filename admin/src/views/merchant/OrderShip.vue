@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import type { AdminLogisticsTracking } from '@/api/order'
 
 interface OrderRow {
   orderNo: string
@@ -52,8 +53,10 @@ interface OrderDetail {
   payTime?: string
   payTransactionId?: string
   shipCompany?: string
+  shipperCode?: string
   shipNo?: string
   shipTime?: string
+  logistics?: AdminLogisticsTracking
   finishTime?: string
   cancelTime?: string
   cancelReason?: string
@@ -65,12 +68,26 @@ const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
 
 const orders = ref<OrderRow[]>([])
 const shipNos = ref<Record<string, string>>({})
-const shipCompanies = ref<Record<string, string>>({})
+const shipperCodes = ref<Record<string, string>>({})
+const logisticsLoading = ref(false)
 const loading = ref(false)
 const total = ref(0)
 const detailVisible = ref(false)
 const detailLoading = ref(false)
 const orderDetail = ref<OrderDetail | null>(null)
+const carriers = [
+  { label: '顺丰', value: 'SF' },
+  { label: '中通', value: 'ZTO' },
+  { label: '圆通', value: 'YTO' },
+  { label: '申通', value: 'STO' },
+  { label: '韵达', value: 'YD' },
+  { label: '京东', value: 'JD' },
+  { label: 'EMS', value: 'EMS' },
+  { label: '邮政', value: 'YZPY' },
+  { label: '德邦', value: 'DBL' },
+  { label: '极兔', value: 'JTSD' },
+  { label: '百世', value: 'HTKY' },
+]
 const query = reactive<{
   page: number
   size: number
@@ -132,6 +149,7 @@ async function openOrderDetail(orderNo: string) {
   orderDetail.value = null
   try {
     orderDetail.value = await request.get<unknown, OrderDetail>(`/api/merchant/order/${orderNo}`)
+    if (orderDetail.value?.shipNo) await loadLogistics()
   } finally {
     detailLoading.value = false
   }
@@ -143,12 +161,27 @@ async function doShip(orderNo: string) {
     ElMessage.error('物流单号格式不合法（5-30位字母数字）')
     return
   }
+  const carrier = carriers.find((item) => item.value === shipperCodes.value[orderNo])
   await request.post<unknown, void>('/api/merchant/order/ship', {
-    shipCompany: shipCompanies.value[orderNo] || '',
+    shipCompany: carrier?.label || '',
+    shipperCode: carrier?.value || '',
     shipNo: sn,
   }, { params: { orderNo } })
   ElMessage.success('发货成功')
   await loadOrders()
+}
+
+async function loadLogistics(forceRefresh = false) {
+  if (!orderDetail.value?.orderNo) return
+  logisticsLoading.value = true
+  try {
+    const logistics = forceRefresh
+      ? await request.post<unknown, AdminLogisticsTracking>(`/api/merchant/order/${orderDetail.value.orderNo}/logistics/refresh`)
+      : await request.get<unknown, AdminLogisticsTracking>(`/api/merchant/order/${orderDetail.value.orderNo}/logistics`)
+    orderDetail.value = { ...orderDetail.value, logistics }
+  } finally {
+    logisticsLoading.value = false
+  }
 }
 
 onMounted(loadOrders)
@@ -210,11 +243,14 @@ onMounted(loadOrders)
         <el-table-column label="发货操作" min-width="320" fixed="right">
           <template #default="{ row }">
             <div v-if="canShip(row as OrderRow)" class="ship-action">
-              <el-input
-                v-model="shipCompanies[row.orderNo]"
-                placeholder="物流公司（可选）"
+              <el-select
+                v-model="shipperCodes[row.orderNo]"
+                placeholder="物流公司"
                 size="small"
-              />
+                clearable
+              >
+                <el-option v-for="carrier in carriers" :key="carrier.value" :label="carrier.label" :value="carrier.value" />
+              </el-select>
               <el-input
                 v-model="shipNos[row.orderNo]"
                 placeholder="输入物流单号"
@@ -322,6 +358,25 @@ onMounted(loadOrders)
               <el-descriptions-item label="买家备注">{{ displayValue(orderDetail.remark) }}</el-descriptions-item>
             </el-descriptions>
           </div>
+
+          <div v-if="orderDetail.shipNo" class="detail-section">
+            <div class="section-title logistics-title">
+              <span>物流轨迹</span>
+              <el-button link type="primary" :loading="logisticsLoading" @click="loadLogistics(true)">刷新物流</el-button>
+            </div>
+            <el-alert v-if="orderDetail.logistics?.error" :title="orderDetail.logistics.error" type="warning" :closable="false" />
+            <el-empty v-if="!orderDetail.logistics?.traces?.length" description="暂无物流轨迹" :image-size="70" />
+            <el-timeline v-else>
+              <el-timeline-item
+                v-for="(trace, index) in orderDetail.logistics.traces"
+                :key="`${trace.acceptTime}-${index}`"
+                :timestamp="trace.acceptTime"
+                :type="index === 0 ? 'primary' : 'info'"
+              >
+                {{ trace.acceptStation }}
+              </el-timeline-item>
+            </el-timeline>
+          </div>
         </template>
       </div>
     </el-dialog>
@@ -351,6 +406,12 @@ onMounted(loadOrders)
   margin-bottom: 10px;
   color: var(--el-text-color-primary);
   font-weight: 600;
+}
+
+.logistics-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .detail-item {

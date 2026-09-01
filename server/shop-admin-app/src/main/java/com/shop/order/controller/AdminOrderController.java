@@ -5,12 +5,14 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shop.common.response.ApiResult;
 import com.shop.common.response.PageResult;
+import com.shop.common.aop.RateLimit;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.order.dto.AdminRefundVO;
 import com.shop.order.dto.AdminPaymentVO;
 import com.shop.order.dto.OrderDetailVO;
 import com.shop.order.dto.OrderListVO;
+import com.shop.order.dto.LogisticsTrackingVO;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
@@ -19,6 +21,7 @@ import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.PaymentLogMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderService;
+import com.shop.order.service.LogisticsService;
 import com.shop.order.service.PaymentReconciliationService;
 import com.shop.order.service.RefundReconciliationService;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +51,7 @@ public class AdminOrderController {
     private final PaymentLogMapper paymentLogMapper;
     private final PaymentReconciliationService paymentReconciliationService;
     private final RefundReconciliationService refundReconciliationService;
+    private final LogisticsService logisticsService;
 
     @GetMapping("/payments/page")
     public ApiResult<PageResult<AdminPaymentVO>> payments(
@@ -115,6 +119,17 @@ public class AdminOrderController {
     @GetMapping("/orders/{orderNo}")
     public ApiResult<OrderDetailVO> orderDetail(@PathVariable String orderNo) {
         return ApiResult.success(orderService.adminDetail(orderNo));
+    }
+
+    @GetMapping("/orders/{orderNo}/logistics")
+    public ApiResult<LogisticsTrackingVO> logistics(@PathVariable String orderNo) {
+        return ApiResult.success(logisticsService.trackForAdmin(orderNo, false));
+    }
+
+    @RateLimit(key = "logistics_refresh", limit = 1, windowSec = 60)
+    @PostMapping("/orders/{orderNo}/logistics/refresh")
+    public ApiResult<LogisticsTrackingVO> refreshLogistics(@PathVariable String orderNo) {
+        return ApiResult.success(logisticsService.trackForAdmin(orderNo, true));
     }
 
     @GetMapping("/refunds/page")

@@ -21,6 +21,7 @@ import java.util.List;
 public class WxOrderController {
 
     private final OrderService orderService;
+    private final com.shop.order.service.LogisticsService logisticsService;
     private final WxMerchantResolver wxMerchantResolver;
 
     @PostMapping("/preview")
@@ -59,6 +60,19 @@ public class WxOrderController {
     public ApiResult<OrderDetailVO> detail(@PathVariable String orderNo) {
         Long userId = CurrentUserHolder.get().getUserId();
         return ApiResult.success(orderService.detail(userId, orderNo));
+    }
+
+    @GetMapping("/{orderNo}/logistics")
+    public ApiResult<LogisticsTrackingVO> logistics(@PathVariable String orderNo) {
+        return ApiResult.success(logisticsService.trackForUser(
+                CurrentUserHolder.get().getUserId(), orderNo, false));
+    }
+
+    @RateLimit(key = "logistics_refresh", limit = 1, windowSec = 60, by = RateLimit.By.USER)
+    @PostMapping("/{orderNo}/logistics/refresh")
+    public ApiResult<LogisticsTrackingVO> refreshLogistics(@PathVariable String orderNo) {
+        return ApiResult.success(logisticsService.trackForUser(
+                CurrentUserHolder.get().getUserId(), orderNo, true));
     }
 
     @PostMapping("/{orderNo}/confirm-receive")

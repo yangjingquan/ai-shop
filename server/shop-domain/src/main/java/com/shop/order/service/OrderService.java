@@ -41,6 +41,9 @@ public interface OrderService {
     /** 商家发货（带物流公司） */
     void ship(Long merchantId, String orderNo, String shipCompany, String shipNo);
 
+    /** 商家发货（带快递鸟承运商编码）。 */
+    void ship(Long merchantId, String orderNo, String shipCompany, String shipperCode, String shipNo);
+
     /** 用户确认收货 */
     void confirmReceive(Long userId, String orderNo);
 

@@ -680,6 +680,7 @@ public class OrderServiceImpl implements OrderService {
         vo.setPayTransactionId(order.getPayTransactionId());
         vo.setShipNo(order.getShipNo());
         vo.setShipCompany(order.getShipCompany());
+        vo.setShipperCode(order.getShipperCode());
         vo.setShipTime(order.getShipTime());
         vo.setShipReminderAt(order.getShipReminderAt());
         vo.setMerchantContactPhone(merchant == null ? "" : merchant.getContactPhone());
@@ -726,17 +727,24 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void ship(Long merchantId, String orderNo, String shipNo) {
-        ship(merchantId, orderNo, "", shipNo);
+        ship(merchantId, orderNo, "", "", shipNo);
     }
 
     @Override
     @Transactional
     public void ship(Long merchantId, String orderNo, String shipCompany, String shipNo) {
+        ship(merchantId, orderNo, shipCompany, "", shipNo);
+    }
+
+    @Override
+    @Transactional
+    public void ship(Long merchantId, String orderNo, String shipCompany, String shipperCode, String shipNo) {
         if (shipNo == null || !SHIP_NO_PATTERN.matcher(shipNo).matches()) {
             throw new BusinessException(ErrorCode.SHIP_NO_INVALID);
         }
         LocalDateTime now = LocalDateTime.now();
-        int affected = orderMapper.ship(merchantId, orderNo, shipCompany == null ? "" : shipCompany.trim(), shipNo, now);
+        int affected = orderMapper.ship(merchantId, orderNo, shipCompany == null ? "" : shipCompany.trim(),
+                shipperCode == null ? "" : shipperCode.trim().toUpperCase(), shipNo, now);
         if (affected == 0) {
             Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                     .eq(Order::getOrderNo, orderNo));
