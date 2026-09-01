@@ -31,7 +31,11 @@ Page({
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
           refundStatusText: raw.refundStatus === 0 ? '退款申请处理中' : raw.refundStatus === 1 ? '退款处理中' : raw.refundStatus === 2 ? '退款申请已拒绝' : raw.refundStatus === 3 ? '退款成功' : raw.refundStatus === 4 ? '退款失败，可重新申请' : raw.refundStatus === 5 ? '请填写退货物流' : raw.refundStatus === 6 ? '商家正在验货' : '',
           canRefund: ![0, 1, 5, 6].includes(raw.refundStatus)
-            && ([1, 2, 3].includes(raw.status) || (raw.orderType === 1 && raw.status === 6)),
+            && ([1, 2, 3, 6, 7].includes(raw.status)
+              || (raw.status === 4 && raw.cancelReason === 'REFUNDED' && raw.refundStatus === 4)),
+          refundEvidenceUrls: Array.isArray(raw.refundEvidenceUrls)
+            ? raw.refundEvidenceUrls.map((url) => resolveImageUrl(url)).filter(Boolean)
+            : [],
           totalLabel: raw.status === 0 ? '需支付' : '实付款',
           items: (raw.items || []).map((item) => ({
             ...item,
@@ -185,12 +189,62 @@ Page({
       confirmColor: '#ff4b43',
       success: (modalRes) => {
         if (!modalRes.confirm) return
-        orderApi.refund(orderNo, modalRes.content || '').then(() => {
+        this.promptRefundAmount(modalRes.content || '')
+      },
+    })
+  },
+
+  promptRefundAmount(reason) {
+    wx.showModal({
+      title: '退款金额',
+      editable: true,
+      placeholderText: '请输入金额，留空表示全额退款',
+      confirmColor: '#ff4b43',
+      success: (modalRes) => {
+        if (!modalRes.confirm) return
+        const amountText = String(modalRes.content || '').trim()
+        const amount = Number(amountText)
+        if (amountText && (!Number.isFinite(amount) || amount <= 0 || Math.round(amount * 100) !== amount * 100)) {
+          wx.showToast({ title: '退款金额格式不正确', icon: 'none' })
+          return
+        }
+        this.chooseRefundEvidence().then((filePaths) => {
+          if (!filePaths.length) return []
+          wx.showLoading({ title: '上传凭证中', mask: true })
+          return filePaths.reduce((promise, filePath) => promise.then((urls) =>
+            orderApi.uploadRefundEvidence(filePath).then((url) => urls.concat(url))), Promise.resolve([]))
+            .finally(() => wx.hideLoading())
+        }).then((evidenceUrls) => {
+          const payload = { reason, evidenceUrls }
+          if (amountText) payload.refundAmount = amount.toFixed(2)
+          return orderApi.refund(orderNo, payload)
+        }).then(() => {
           wx.showToast({ title: '已提交退款申请', icon: 'success' })
           this.reloadDetail()
         }).catch(() => this.reloadDetail())
       },
     })
+  },
+
+  chooseRefundEvidence() {
+    return new Promise((resolve, reject) => {
+      wx.chooseImage({
+        count: 6,
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera'],
+        success: (res) => resolve((res.tempFilePaths || []).slice(0, 6)),
+        fail: (err) => {
+          if (String(err && err.errMsg || '').includes('cancel')) resolve([])
+          else reject(err)
+        },
+      })
+    })
+  },
+
+  previewRefundEvidence(e) {
+    const current = e.currentTarget.dataset.url
+    const urls = (this.data.order && this.data.order.refundEvidenceUrls) || []
+    if (current && urls.length) wx.previewImage({ current, urls })
   },
 
   submitReturnShipment() {

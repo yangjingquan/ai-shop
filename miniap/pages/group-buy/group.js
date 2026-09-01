@@ -59,6 +59,9 @@ Page({
     if (!this.data.group || !this.data.group.productId) return
     wx.navigateTo({ url: `/pages/product/detail?id=${this.data.group.productId}&groupBuy=1&groupId=${this.data.groupId}` })
   },
+  goOrders() {
+    wx.switchTab({ url: '/pages/order/list' })
+  },
   onShareAppMessage() {
     const group = this.data.group || {}
     return {

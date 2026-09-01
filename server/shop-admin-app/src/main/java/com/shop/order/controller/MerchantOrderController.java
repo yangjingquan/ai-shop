@@ -11,6 +11,7 @@ import com.shop.order.dto.*;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.enums.RefundStatus;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderService;
@@ -83,7 +84,7 @@ public class MerchantOrderController {
     }
 
     @GetMapping("/refund/list")
-    public ApiResult<List<AdminRefundVO>> refundList(
+    public ApiResult<PageResult<AdminRefundVO>> refundList(
             @RequestParam(required = false) Integer status,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -106,21 +107,35 @@ public class MerchantOrderController {
             vo.setReason(r.getReason());
             vo.setEvidenceUrls(r.getEvidenceUrls());
             vo.setStatus(r.getStatus());
+            vo.setStatusText(refundStatusText(r.getStatus()));
             vo.setRejectReason(r.getRejectReason());
             vo.setRefundAmount(r.getRefundAmount());
             vo.setRefundFailReason(r.getRefundFailReason());
             vo.setRefundTime(r.getRefundTime());
+            vo.setAutoRefund(r.getAutoRefund());
             vo.setReturnRequired(r.getReturnRequired());
             vo.setReturnShipCompany(r.getReturnShipCompany());
             vo.setReturnShipNo(r.getReturnShipNo());
             vo.setReturnShipTime(r.getReturnShipTime());
             vo.setReturnReceivedTime(r.getReturnReceivedTime());
             vo.setReturnReceiveNote(r.getReturnReceiveNote());
+            vo.setRefundReconcileAt(r.getRefundReconcileAt());
+            vo.setRefundReconcileAttempts(r.getRefundReconcileAttempts());
+            vo.setRefundReconcileError(r.getRefundReconcileError());
             vo.setCreatedAt(r.getCreatedAt());
             vo.setUpdatedAt(r.getUpdatedAt());
             return vo;
         }).toList();
-        return ApiResult.success(list);
+        return ApiResult.success(PageResult.of(list, result.getTotal(), page, size));
+    }
+
+    private String refundStatusText(Integer status) {
+        for (RefundStatus value : RefundStatus.values()) {
+            if (value.getCode() == (status == null ? -1 : status)) {
+                return value.getText();
+            }
+        }
+        return "未知状态";
     }
 
     @Data
@@ -135,6 +150,14 @@ public class MerchantOrderController {
                                          @RequestBody RefundApproveRequest req) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
         orderService.refundApprove(merchantId, refundId, req.isApproved(), req.getRejectReason());
+        return ApiResult.success(null);
+    }
+
+    @OpLog(action = "REFUND_RETRY", targetType = "REFUND", targetIdExpr = "#refundId")
+    @PostMapping("/refund/{refundId}/retry")
+    public ApiResult<Void> retryRefund(@PathVariable Long refundId) {
+        Long merchantId = CurrentUserHolder.get().getMerchantId();
+        orderService.refundApprove(merchantId, refundId, true, null);
         return ApiResult.success(null);
     }
 

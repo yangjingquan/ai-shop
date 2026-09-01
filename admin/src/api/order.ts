@@ -59,6 +59,13 @@ export interface AdminRefundRow {
   refundReconcileAt?: string
   refundReconcileAttempts?: number
   refundReconcileError?: string
+  evidenceUrls?: string[]
+  returnRequired?: number
+  returnShipCompany?: string
+  returnShipNo?: string
+  returnShipTime?: string
+  returnReceivedTime?: string
+  returnReceiveNote?: string
 }
 
 export interface AdminPaymentRow {

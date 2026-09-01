@@ -8,7 +8,22 @@ const reconciling = ref(false)
 const list = ref<AdminRefundRow[]>([])
 const total = ref(0)
 const query = reactive({ page: 1, size: 10, status: undefined as number | undefined, merchantId: undefined as number | undefined })
-const statusText: Record<number, string> = { 0: '待处理', 1: '退款处理中', 2: '已拒绝', 3: '退款成功', 4: '退款失败' }
+const statusText: Record<number, string> = { 0: '待处理', 1: '退款处理中', 2: '已拒绝', 3: '退款成功', 4: '退款失败', 5: '待填写退货物流', 6: '待商家验货' }
+
+function statusTagType(status?: number) {
+  if (status === 0 || status === 5) return 'warning'
+  if (status === 1 || status === 6) return 'primary'
+  if (status === 3) return 'success'
+  return 'danger'
+}
+
+function resolveImageUrl(url?: string) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  const configuredBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
+  const base = configuredBase.endsWith('/') ? configuredBase.slice(0, -1) : configuredBase
+  return `${base}${url.startsWith('/') ? url : `/${url}`}`
+}
 
 async function fetchList() {
   loading.value = true
@@ -52,7 +67,9 @@ onMounted(fetchList)
         <el-table-column label="来源" width="100"><template #default="{ row }"><el-tag :type="row.autoRefund ? 'primary' : 'info'">{{ row.autoRefund ? '系统自动' : '用户申请' }}</el-tag></template></el-table-column>
         <el-table-column prop="reason" label="申请原因" min-width="240" show-overflow-tooltip />
         <el-table-column prop="refundAmount" label="退款金额" width="110" />
-        <el-table-column label="状态" width="110"><template #default="{ row }"><el-tag :type="row.status === 0 ? 'warning' : row.status === 1 ? 'primary' : row.status === 3 ? 'success' : 'danger'">{{ row.statusText || statusText[row.status] }}</el-tag></template></el-table-column>
+        <el-table-column label="状态" width="130"><template #default="{ row }"><el-tag :type="statusTagType(row.status)">{{ row.statusText || statusText[row.status] }}</el-tag></template></el-table-column>
+        <el-table-column label="退货物流" min-width="190"><template #default="{ row }">{{ row.returnShipNo ? `${row.returnShipCompany || '物流'} ${row.returnShipNo}` : '-' }}</template></el-table-column>
+        <el-table-column label="退款凭证" min-width="150"><template #default="{ row }"><div v-if="row.evidenceUrls?.length" class="evidence-list"><el-image v-for="url in row.evidenceUrls" :key="url" :src="resolveImageUrl(url)" :preview-src-list="row.evidenceUrls.map(resolveImageUrl)" fit="cover" class="evidence-image" /></div><span v-else>-</span></template></el-table-column>
         <el-table-column label="对账次数" width="100"><template #default="{ row }">{{ row.refundReconcileAttempts || 0 }}</template></el-table-column>
         <el-table-column prop="refundReconcileAt" label="最近对账" width="180" />
         <el-table-column prop="refundReconcileError" label="对账异常" min-width="180" show-overflow-tooltip />
@@ -64,4 +81,8 @@ onMounted(fetchList)
   </div>
 </template>
 
-<style scoped>.notice { margin-bottom: 16px; }</style>
+<style scoped>
+.notice { margin-bottom: 16px; }
+.evidence-list { display: flex; gap: 6px; align-items: center; }
+.evidence-image { width: 42px; height: 42px; border-radius: 4px; }
+</style>

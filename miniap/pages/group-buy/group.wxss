@@ -10,4 +10,5 @@
 .fallback { display: flex; align-items: center; justify-content: center; color: #d9480f; }
 .share-button { margin-top: 16rpx; background: #fff; color: #ff6600; border: 1rpx solid #ff6600; }
 .empty { padding: 120rpx 32rpx; color: #888; text-align: center; }
+.failure-tip { margin: 18rpx 0; padding: 18rpx; border-radius: 8rpx; color: #9a3412; background: #fff7ed; font-size: 25rpx; line-height: 1.6; }
 button { background: #ff6600; color: #fff; border-radius: 8rpx; }

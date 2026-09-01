@@ -895,7 +895,11 @@ public class OrderServiceImpl implements OrderService {
         if (!app.getMerchantId().equals(merchantId)) {
             throw new BusinessException(ErrorCode.REFUND_NOT_YOUR_MERCHANT);
         }
-        if (app.getStatus() != RefundStatus.PENDING.getCode()) {
+        boolean retryingFailedRefund = app.getStatus() == RefundStatus.FAILED.getCode();
+        if (app.getStatus() != RefundStatus.PENDING.getCode() && !retryingFailedRefund) {
+            throw new BusinessException(ErrorCode.REFUND_NOT_PENDING);
+        }
+        if (retryingFailedRefund && !approved) {
             throw new BusinessException(ErrorCode.REFUND_NOT_PENDING);
         }
 
@@ -940,6 +944,7 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "退款金额不合法");
         }
         app.setStatus(RefundStatus.REFUNDING.getCode());
+        app.setRefundFailReason("");
         app.setUpdatedAt(now);
         refundApplicationMapper.updateById(app);
 

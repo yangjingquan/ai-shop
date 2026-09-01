@@ -2,24 +2,28 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import type { AdminRefundRow } from '@/api/order'
 
-interface RefundRow {
-  id: number
-  orderNo: string
-  reason: string
-  status: number
-  statusText?: string
-  rejectReason?: string
-  returnRequired?: number
-  returnShipCompany?: string
-  returnShipNo?: string
-}
+type RefundRow = AdminRefundRow
 
 const refunds = ref<RefundRow[]>([])
-const currentTab = ref<0 | -1>(0)
+const currentTab = ref<number | ''>(0)
+const page = ref(1)
+const size = ref(10)
+const total = ref(0)
 const rejectReasons = ref<Record<number, string>>({})
 const loading = ref(false)
-const statusLabels: Record<number, string> = { 0: '待处理', 1: '退款处理中', 2: '已拒绝', 3: '退款成功', 4: '退款失败', 5: '待退货', 6: '待验货' }
+const statusLabels: Record<number, string> = { 0: '待处理', 1: '退款处理中', 2: '已拒绝', 3: '退款成功', 4: '退款失败', 5: '待填写退货物流', 6: '待商家验货' }
+const statusOptions = [
+  { value: null, label: '全部' },
+  { value: 0, label: '待处理' },
+  { value: 1, label: '退款处理中' },
+  { value: 2, label: '已拒绝' },
+  { value: 4, label: '退款失败' },
+  { value: 5, label: '待填写退货物流' },
+  { value: 6, label: '待商家验货' },
+  { value: 3, label: '退款成功' },
+]
 
 function refundStatusText(row: { status?: number; statusText?: string }) {
   return row.statusText || (row.status === undefined ? '未知状态' : statusLabels[row.status] || '未知状态')
@@ -28,13 +32,35 @@ function refundStatusText(row: { status?: number; statusText?: string }) {
 async function loadRefunds() {
   loading.value = true
   try {
-    const data = await request.get<unknown, RefundRow[]>('/api/merchant/refund/list', {
-      params: { status: currentTab.value === -1 ? undefined : currentTab.value, page: 1, size: 100 },
+    const data = await request.get<unknown, { list: RefundRow[]; total: number }>('/api/merchant/refund/list', {
+      params: { status: currentTab.value === '' ? undefined : currentTab.value, page: page.value, size: size.value },
     })
-    refunds.value = data || []
+    refunds.value = data.list || []
+    total.value = data.total || 0
   } finally {
     loading.value = false
   }
+}
+
+function changeStatus(value: number | '') {
+  currentTab.value = value
+  page.value = 1
+  loadRefunds()
+}
+
+function refundTagType(status?: number) {
+  if (status === 0 || status === 5) return 'warning'
+  if (status === 1 || status === 6) return 'primary'
+  if (status === 3) return 'success'
+  return 'danger'
+}
+
+function resolveImageUrl(url?: string) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  const configuredBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
+  const base = configuredBase.endsWith('/') ? configuredBase.slice(0, -1) : configuredBase
+  return `${base}${url.startsWith('/') ? url : `/${url}`}`
 }
 
 async function doApprove(id: number) {
@@ -58,6 +84,12 @@ async function confirmReturn(id: number) {
   await loadRefunds()
 }
 
+async function doRetry(id: number) {
+  await request.post<unknown, void>(`/api/merchant/refund/${id}/retry`)
+  ElMessage.success('已重新发起退款，等待微信处理结果')
+  await loadRefunds()
+}
+
 onMounted(loadRefunds)
 </script>
 
@@ -73,10 +105,9 @@ onMounted(loadRefunds)
 
     <el-card>
       <div class="toolbar">
-        <el-radio-group v-model="currentTab" @change="loadRefunds">
-          <el-radio-button :value="0">待处理</el-radio-button>
-          <el-radio-button :value="-1">全部</el-radio-button>
-        </el-radio-group>
+        <el-select :model-value="currentTab" placeholder="筛选状态" style="width: 180px" @update:model-value="changeStatus">
+          <el-option v-for="option in statusOptions" :key="String(option.value)" :label="option.label" :value="option.value === null ? '' : option.value" />
+        </el-select>
       </div>
 
       <el-table v-loading="loading" :data="refunds" stripe>
@@ -90,7 +121,22 @@ onMounted(loadRefunds)
         </el-table-column>
         <el-table-column prop="reason" label="退款原因" min-width="180" />
         <el-table-column prop="refundAmount" label="退款金额" width="110" />
-        <el-table-column label="退货物流" min-width="160">
+        <el-table-column label="退款凭证" min-width="150">
+          <template #default="{ row }">
+            <div v-if="row.evidenceUrls?.length" class="evidence-list">
+              <el-image
+                v-for="url in row.evidenceUrls"
+                :key="url"
+                :src="resolveImageUrl(url)"
+                :preview-src-list="row.evidenceUrls.map(resolveImageUrl)"
+                fit="cover"
+                class="evidence-image"
+              />
+            </div>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="退货物流" min-width="180">
           <template #default="{ row }">
             {{ row.returnShipNo ? `${row.returnShipCompany || '物流'} ${row.returnShipNo}` : '-' }}
           </template>
@@ -98,13 +144,14 @@ onMounted(loadRefunds)
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
             <el-tag
-              :type="row.status === 0 ? 'warning' : row.status === 1 ? 'primary' : row.status === 2 ? 'danger' : row.status === 3 ? 'success' : 'danger'"
+              :type="refundTagType(row.status)"
               size="small"
             >
               {{ refundStatusText(row) }}
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="refundFailReason" label="失败原因" min-width="180" show-overflow-tooltip />
         <el-table-column label="售后操作" min-width="360" fixed="right">
           <template #default="{ row }">
             <div v-if="row.status === 0" class="review-action">
@@ -123,10 +170,25 @@ onMounted(loadRefunds)
             <el-button v-else-if="row.status === 6" type="primary" size="small" @click="confirmReturn(row.id)">
               验货并退款
             </el-button>
+            <el-button v-else-if="row.status === 4" type="warning" size="small" @click="doRetry(row.id)">
+              重试退款
+            </el-button>
             <span v-else>-</span>
           </template>
         </el-table-column>
       </el-table>
+      <div class="pagination">
+        <el-pagination
+          v-model:current-page="page"
+          v-model:page-size="size"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
+          background
+          layout="total, sizes, prev, pager, next"
+          @current-change="loadRefunds"
+          @size-change="loadRefunds"
+        />
+      </div>
     </el-card>
   </div>
 </template>
@@ -138,4 +200,7 @@ onMounted(loadRefunds)
   gap: 10px;
   align-items: center;
 }
+.evidence-list { display: flex; gap: 6px; align-items: center; }
+.evidence-image { width: 42px; height: 42px; border-radius: 4px; }
+.pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
 </style>
