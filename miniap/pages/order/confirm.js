@@ -205,19 +205,21 @@ Page({
       this.setData({ submitting: false });
       return;
     }
-    const firstOrder = orders[0];
-    const pendingCount = orders.length - 1;
-    this.payOrder(firstOrder).then(() => {
-      const title = pendingCount > 0 ? '支付成功，仍有订单待支付' : '支付成功，状态同步中';
+    let paidCount = 0;
+    const payAll = orders.reduce((chain, order) => chain.then(() => this.payOrder(order)
+      .then(() => { paidCount += 1; })), Promise.resolve());
+    payAll.then(() => {
+      const title = orders.length > 1 ? `已支付 ${paidCount} 笔订单` : '支付成功，状态同步中';
       wx.showToast({ title, icon: 'success' });
       setTimeout(() => {
         wx.switchTab({ url: '/pages/order/list' });
       }, 1000);
     }).catch(() => {
       this.setData({ submitting: false });
+      const pendingCount = orders.length - paidCount;
       wx.showModal({
         title: '支付未完成',
-        content: '订单已创建，可在订单列表中重新支付。',
+        content: `已支付 ${paidCount} 笔，仍有 ${pendingCount} 笔订单待支付，可在订单列表中继续完成。`,
         confirmText: '去订单',
         cancelText: '留在这里',
         success: (modalRes) => {

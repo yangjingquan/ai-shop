@@ -7,10 +7,13 @@ import com.shop.groupbuy.service.GroupBuyService;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.entity.PaymentLog;
+import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.enums.RefundStatus;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.PaymentLogMapper;
+import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderPaymentService;
 import com.shop.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ import org.springframework.transaction.annotation.Propagation;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,6 +37,7 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
     private final PaymentLogMapper paymentLogMapper;
+    private final RefundApplicationMapper refundApplicationMapper;
     private final ProductService productService;
     private final GroupBuyService groupBuyService;
     @Override
@@ -51,21 +56,15 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
         if (order.getStatus() != OrderStatus.WAIT_PAY.getCode()) {
+            if (order.getStatus() == OrderStatus.CANCELLED.getCode()
+                    && ("TIMEOUT".equals(order.getCancelReason())
+                    || "USER_CANCEL".equals(order.getCancelReason())
+                    || "GROUP_TIMEOUT".equals(order.getCancelReason()))) {
+                recordLatePaymentAndRefund(order, transactionId, rawPayload);
+            }
             return;
         }
-        PaymentLog log = new PaymentLog();
-        log.setOrderNo(orderNo);
-        log.setTransactionId(transactionId);
-        log.setAmount(order.getPayAmount());
-        log.setRawPayload(rawPayload);
-        try {
-            paymentLogMapper.insert(log);
-        } catch (DuplicateKeyException e) {
-            PaymentLog existing = paymentLogMapper.selectOne(new LambdaQueryWrapper<PaymentLog>()
-                    .eq(PaymentLog::getTransactionId, transactionId));
-            if (existing != null && !orderNo.equals(existing.getOrderNo())) {
-                throw new BusinessException(ErrorCode.WX_PAY_CALLBACK_VERIFY_FAILED.getCode(), "微信交易号已关联其他订单");
-            }
+        if (!recordPaymentLog(order, transactionId, rawPayload)) {
             return;
         }
 
@@ -90,5 +89,48 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
             orderMapper.addTotalSales(e.getKey(), e.getValue());
             productService.recalcProduct(e.getKey());
         }
+    }
+
+    private boolean recordPaymentLog(Order order, String transactionId, String rawPayload) {
+        PaymentLog paymentLog = new PaymentLog();
+        paymentLog.setOrderNo(order.getOrderNo());
+        paymentLog.setTransactionId(transactionId);
+        paymentLog.setAmount(order.getPayAmount());
+        paymentLog.setRawPayload(rawPayload);
+        try {
+            paymentLogMapper.insert(paymentLog);
+            return true;
+        } catch (DuplicateKeyException e) {
+            PaymentLog existing = paymentLogMapper.selectOne(new LambdaQueryWrapper<PaymentLog>()
+                    .eq(PaymentLog::getTransactionId, transactionId));
+            if (existing != null && !order.getOrderNo().equals(existing.getOrderNo())) {
+                throw new BusinessException(ErrorCode.WX_PAY_CALLBACK_VERIFY_FAILED.getCode(), "微信交易号已关联其他订单");
+            }
+            return false;
+        }
+    }
+
+    /**
+     * 订单关闭和微信支付成功之间存在竞态窗口。不能因为本地订单已取消就丢弃支付回调，
+     * 而应先记录支付流水，再交给退款对账任务自动原路退款。
+     */
+    private void recordLatePaymentAndRefund(Order order, String transactionId, String rawPayload) {
+        if (!recordPaymentLog(order, transactionId, rawPayload)) {
+            return;
+        }
+        RefundApplication refund = new RefundApplication();
+        refund.setOrderNo(order.getOrderNo());
+        refund.setOutRefundNo("RF_LATE_" + UUID.randomUUID().toString().replace("-", ""));
+        refund.setUserId(order.getUserId());
+        refund.setMerchantId(order.getMerchantId());
+        refund.setReason("支付已完成但订单已关闭，系统自动退款");
+        refund.setStatus(RefundStatus.PENDING.getCode());
+        refund.setRefundAmount(order.getPayAmount());
+        refund.setAutoRefund(1);
+        refund.setReturnRequired(0);
+        refund.setEvidenceUrls(List.of());
+        refundApplicationMapper.insert(refund);
+        log.warn("订单关闭后收到支付成功回调，已创建自动退款单, orderNo={}, transactionId={}, outRefundNo={}",
+                order.getOrderNo(), transactionId, refund.getOutRefundNo());
     }
 }

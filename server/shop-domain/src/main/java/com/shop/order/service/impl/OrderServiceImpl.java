@@ -796,7 +796,8 @@ public class OrderServiceImpl implements OrderService {
     public void refundApply(Long userId, String orderNo, RefundApplyRequest req) {
         Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                 .eq(Order::getOrderNo, orderNo)
-                .eq(Order::getUserId, userId));
+                .eq(Order::getUserId, userId)
+                .last("FOR UPDATE"));
         if (order == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
