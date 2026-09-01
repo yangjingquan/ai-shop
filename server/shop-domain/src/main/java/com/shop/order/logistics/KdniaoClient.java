@@ -18,7 +18,7 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.Base64;
 
-/** 快递鸟即时查询客户端。密钥只从运行时环境读取，不进入前端和源码。 */
+/** 快递鸟物流查询客户端。密钥只从运行时环境读取，不进入前端和源码。 */
 @Slf4j
 @Component
 public class KdniaoClient {
@@ -28,12 +28,14 @@ public class KdniaoClient {
     private final String ebusinessId;
     private final String appKey;
     private final String queryUrl;
+    private final String requestType;
 
     public KdniaoClient(ObjectMapper objectMapper,
                         RestTemplateBuilder restTemplateBuilder,
                         @Value("${shop.logistics.kdniao.ebusiness-id:}") String ebusinessId,
                         @Value("${shop.logistics.kdniao.app-key:}") String appKey,
                         @Value("${shop.logistics.kdniao.query-url:https://api.kdniao.com/Ebusiness/EbusinessOrderHandle.aspx}") String queryUrl,
+                        @Value("${shop.logistics.kdniao.request-type:8002}") String requestType,
                         @Value("${shop.logistics.kdniao.timeout-ms:5000}") long timeoutMs) {
         this.objectMapper = objectMapper;
         this.restTemplate = restTemplateBuilder
@@ -43,6 +45,7 @@ public class KdniaoClient {
         this.ebusinessId = ebusinessId == null ? "" : ebusinessId.trim();
         this.appKey = appKey == null ? "" : appKey.trim();
         this.queryUrl = queryUrl;
+        this.requestType = normalizeRequestType(requestType);
     }
 
     public boolean configured() {
@@ -63,7 +66,7 @@ public class KdniaoClient {
             String requestData = request.toString();
 
             MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-            form.add("RequestType", "1002");
+            form.add("RequestType", requestType);
             form.add("EBusinessID", ebusinessId);
             form.add("RequestData", requestData);
             form.add("DataSign", dataSign(requestData, appKey));
@@ -96,6 +99,11 @@ public class KdniaoClient {
         } catch (Exception e) {
             throw new IllegalStateException("无法生成快递鸟签名", e);
         }
+    }
+
+    static String normalizeRequestType(String value) {
+        String normalized = value == null ? "" : value.trim();
+        return "1002".equals(normalized) ? "1002" : "8002";
     }
 
     @Getter

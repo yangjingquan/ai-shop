@@ -9,6 +9,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class KdniaoClientTest {
 
     @Test
+    void defaultsToPaidExpressQueryApi() {
+        assertEquals("8002", KdniaoClient.normalizeRequestType(null));
+        assertEquals("8002", KdniaoClient.normalizeRequestType("8002"));
+        assertEquals("1002", KdniaoClient.normalizeRequestType("1002"));
+        assertEquals("8002", KdniaoClient.normalizeRequestType("unsupported"));
+    }
+
+    @Test
     void dataSignUsesBase64Md5OfRequestDataAndAppKey() {
         String sign = KdniaoClient.dataSign("{}", "key");
         assertEquals(Base64.getEncoder().encodeToString(new byte[]{

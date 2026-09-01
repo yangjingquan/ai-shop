@@ -69,6 +69,9 @@ services:
       SHOP_FILE_UPLOAD_DIR: /data/shop/uploads
       SHOP_FILE_PUBLIC_PREFIX: /uploads
       SHOP_LOG_FILE: /data/shop/logs/shop-admin-app.log
+      KDNIAO_EBUSINESS_ID: ${KDNIAO_EBUSINESS_ID:-}
+      KDNIAO_APP_KEY: ${KDNIAO_APP_KEY:-}
+      KDNIAO_REQUEST_TYPE: ${KDNIAO_REQUEST_TYPE:-8002}
       SHOP_CORS_ALLOWED_ORIGIN_PATTERNS: "https://console.nexbyte.top"
       TZ: Asia/Shanghai
     volumes:
@@ -106,6 +109,9 @@ services:
       SHOP_FILE_UPLOAD_DIR: /data/shop/uploads
       SHOP_FILE_PUBLIC_PREFIX: /uploads
       SHOP_LOG_FILE: /data/shop/logs/shop-wx-app.log
+      KDNIAO_EBUSINESS_ID: ${KDNIAO_EBUSINESS_ID:-}
+      KDNIAO_APP_KEY: ${KDNIAO_APP_KEY:-}
+      KDNIAO_REQUEST_TYPE: ${KDNIAO_REQUEST_TYPE:-8002}
       TZ: Asia/Shanghai
     volumes:
       - ./uploads:/data/shop/uploads
