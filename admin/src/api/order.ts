@@ -111,6 +111,8 @@ export const adminOrderApi = {
     request.get<unknown, PageResult<AdminOrderRow>>('/api/admin/orders/page', { params }),
   detail: (orderNo: string) =>
     request.get<unknown, AdminOrderDetail>(`/api/admin/orders/${orderNo}`),
+  cancel: (orderNo: string) =>
+    request.post<unknown, void>(`/api/admin/orders/${orderNo}/cancel`),
   logistics: (orderNo: string, forceRefresh = false) =>
     request.get<unknown, AdminLogisticsTracking>(`/api/admin/orders/${orderNo}/logistics`, { params: { forceRefresh } }),
   refreshLogistics: (orderNo: string) =>

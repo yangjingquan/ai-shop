@@ -140,6 +140,8 @@ export const adminProductApi = {
     request.get<unknown, PageResult<ProductListVO>>('/api/admin/products/audit/page', { params }),
   audit: (id: number, auditStatus: number, auditReason?: string) =>
     request.put<unknown, void>(`/api/admin/products/${id}/audit`, { auditStatus, auditReason }),
+  forceOffline: (id: number, reason: string) =>
+    request.post<unknown, void>(`/api/admin/products/${id}/force-offline`, { reason }),
 }
 
 export interface InventorySkuVO {

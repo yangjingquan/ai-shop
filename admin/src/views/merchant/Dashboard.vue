@@ -32,14 +32,19 @@ onMounted(load)
 
     <div v-loading="loading" class="overview-grid">
       <el-card class="metric-card">
-        <span>今日订单</span>
-        <strong>{{ overview?.orderCountToday ?? '-' }}</strong>
-        <p>今日创建订单</p>
+        <span>今日支付订单</span>
+        <strong>{{ overview?.paidOrderCountToday ?? '-' }}</strong>
+        <p>按支付成功时间统计</p>
       </el-card>
       <el-card class="metric-card">
-        <span>今日销售额</span>
+        <span>今日支付金额</span>
         <strong>{{ overview ? money(overview.paidAmountToday) : '-' }}</strong>
-        <p>按支付时间统计</p>
+        <p>支付成功金额，按支付流水统计</p>
+      </el-card>
+      <el-card class="metric-card">
+        <span>今日净额</span>
+        <strong>{{ overview ? money(overview.netAmountToday) : '-' }}</strong>
+        <p>支付成功金额 - 退款成功金额</p>
       </el-card>
       <el-card class="metric-card">
         <span>待办提醒</span>

@@ -7,5 +7,8 @@ public interface OrderCancellationService {
 
     void cancelByUser(Long userId, String orderNo);
 
+    /** 运营管理员关闭未支付订单。 */
+    void cancelByAdmin(String orderNo);
+
     boolean cancelExpired(Long orderId);
 }

@@ -59,4 +59,28 @@ class OrderCancellationServiceImplTest {
         verify(orderMapper).updateById(updated.capture());
         assertEquals(OrderStatus.CANCELLED.getCode(), updated.getValue().getStatus());
     }
+
+    @Test
+    void adminCanCloseUnpaidOrderAndRestoreStock() {
+        Order order = new Order();
+        order.setId(2L);
+        order.setOrderNo("26083000000000010002");
+        order.setStatus(OrderStatus.WAIT_PAY.getCode());
+        OrderItem item = new OrderItem();
+        item.setSkuId(5L);
+        item.setProductId(6L);
+        item.setQuantity(1);
+        when(orderMapper.selectOne(any())).thenReturn(order);
+        when(orderItemMapper.selectList(any())).thenReturn(List.of(item));
+
+        OrderCancellationServiceImpl service = new OrderCancellationServiceImpl(
+                orderMapper, orderItemMapper, groupBuyMemberMapper, productService);
+
+        service.cancelByAdmin(order.getOrderNo());
+
+        assertEquals(OrderStatus.CANCELLED.getCode(), order.getStatus());
+        assertEquals("ADMIN_CANCEL", order.getCancelReason());
+        verify(orderMapper).releaseStock(5L, 1);
+        verify(productService).recalcProduct(6L);
+    }
 }

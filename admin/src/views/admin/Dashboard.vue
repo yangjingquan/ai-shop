@@ -26,7 +26,7 @@ async function changeTrendDays() {
 }
 
 function exportTrend() {
-  const header = ['日期', '支付订单数', '支付金额', '退款金额', '净收入']
+  const header = ['日期', '支付成功订单数', '支付成功金额', '退款成功金额', '当日净额']
   const rows = trend.value.map((row) => [row.date, row.paidOrderCount, row.paidAmount, row.refundAmount, row.netAmount])
   const csv = '\ufeff' + [header, ...rows].map((row) => row.join(',')).join('\n')
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
@@ -61,14 +61,24 @@ onMounted(load)
         <p>共 {{ overview?.merchantCount ?? '-' }} 家商家</p>
       </el-card>
       <el-card class="metric-card">
-        <span>今日订单</span>
+        <span>今日创建订单</span>
         <strong>{{ overview?.orderCountToday ?? '-' }}</strong>
-        <p>平台今日创建订单</p>
+        <p>按订单创建时间统计</p>
+      </el-card>
+      <el-card class="metric-card">
+        <span>今日支付订单</span>
+        <strong>{{ overview?.paidOrderCountToday ?? '-' }}</strong>
+        <p>按支付流水入账时间统计</p>
       </el-card>
       <el-card class="metric-card">
         <span>今日支付金额</span>
         <strong>{{ overview ? money(overview.paidAmountToday) : '-' }}</strong>
-        <p>按支付时间统计</p>
+        <p>支付成功金额，按支付流水统计</p>
+      </el-card>
+      <el-card class="metric-card">
+        <span>今日净额</span>
+        <strong>{{ overview ? money(overview.netAmountToday) : '-' }}</strong>
+        <p>支付成功金额 - 退款成功金额</p>
       </el-card>
       <el-card class="metric-card">
         <span>待发货</span>
@@ -106,7 +116,7 @@ onMounted(load)
         <el-table-column prop="paidOrderCount" label="支付订单" min-width="110" />
         <el-table-column label="支付金额" min-width="130"><template #default="{ row }">{{ money(row.paidAmount) }}</template></el-table-column>
         <el-table-column label="退款金额" min-width="130"><template #default="{ row }">{{ money(row.refundAmount) }}</template></el-table-column>
-        <el-table-column label="净收入" min-width="130"><template #default="{ row }"><strong :class="{ negative: row.netAmount < 0 }">{{ money(row.netAmount) }}</strong></template></el-table-column>
+        <el-table-column label="当日净额" min-width="130"><template #default="{ row }"><strong :class="{ negative: row.netAmount < 0 }">{{ money(row.netAmount) }}</strong></template></el-table-column>
       </el-table>
     </el-card>
   </div>

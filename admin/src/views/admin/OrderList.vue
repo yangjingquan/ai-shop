@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { adminOrderApi, type AdminOrderDetail, type AdminOrderRow } from '@/api/order'
 import type { PageResult } from '@/api/merchant'
 
@@ -47,6 +48,15 @@ async function openDetail(orderNo: string) {
   } finally {
     detailLoading.value = false
   }
+}
+
+async function cancelOrder() {
+  if (!detail.value || detail.value.status !== 0) return
+  await ElMessageBox.confirm('关闭后将释放订单占用库存，且用户不能继续支付，确认继续？', '关闭未支付订单', { type: 'warning' })
+  await adminOrderApi.cancel(detail.value.orderNo)
+  ElMessage.success('订单已关闭')
+  detailVisible.value = false
+  await fetchList()
 }
 
 const logisticsLoading = ref(false)
@@ -130,6 +140,9 @@ onMounted(fetchList)
           </el-timeline>
         </template>
         <el-divider />
+        <div v-if="detail.status === 0" class="admin-actions">
+          <el-button type="danger" @click="cancelOrder">关闭未支付订单</el-button>
+        </div>
         <el-table :data="detail.items || []" border>
           <el-table-column prop="productName" label="商品" min-width="220" />
           <el-table-column prop="specText" label="规格" />
@@ -148,5 +161,10 @@ onMounted(fetchList)
   justify-content: space-between;
   margin-bottom: 12px;
   font-weight: 600;
+}
+.admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
 }
 </style>

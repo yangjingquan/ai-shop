@@ -23,6 +23,12 @@ public interface ProductSkuMapper extends BaseMapper<ProductSku> {
                     @Param("stockBefore") int stockBefore,
                     @Param("stockAfter") int stockAfter);
 
+    @Select("SELECT COUNT(*) FROM product_sku ps JOIN product p ON p.id = ps.product_id " +
+            "WHERE p.deleted = 0 AND ps.deleted = 0 AND ps.active = 1 " +
+            "AND p.status = 1 AND p.audit_status = 1 AND ps.stock <= #{threshold} " +
+            "AND (#{merchantId} IS NULL OR p.merchant_id = #{merchantId})")
+    Long countLowStock(@Param("merchantId") Long merchantId, @Param("threshold") int threshold);
+
     @Select("""
             <script>
             SELECT ps.id AS sku_id, ps.product_id, p.name AS product_name,

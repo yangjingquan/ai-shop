@@ -50,6 +50,21 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void cancelByAdmin(String orderNo) {
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                .eq(Order::getOrderNo, orderNo)
+                .last("FOR UPDATE"));
+        if (order == null) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        if (!OrderStatus.canCancel(order.getStatus())) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_NOT_ALLOWED);
+        }
+        cancelLocked(order, "ADMIN_CANCEL");
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean cancelExpired(Long orderId) {
         Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                 .eq(Order::getId, orderId)

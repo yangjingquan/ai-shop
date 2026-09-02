@@ -4,7 +4,11 @@ export interface DashboardOverview {
   merchantCount?: number
   activeMerchantCount?: number
   orderCountToday: number
+  createdOrderCountToday?: number
+  paidOrderCountToday: number
   paidAmountToday: number
+  refundAmountToday: number
+  netAmountToday: number
   pendingShipCount: number
   pendingRefundCount: number
   onSaleProductCount: number

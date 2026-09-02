@@ -29,6 +29,9 @@ public interface ProductService {
 
     void audit(Long productId, int auditStatus, String auditReason, Long adminId);
 
+    /** 运营管理员强制下架商品，并要求商家重新提交审核后才能再次上架。 */
+    void forceOffline(Long productId, String reason, Long adminId);
+
     void setStatus(Long id, int status, Long merchantId);
 
     void delete(Long id, Long merchantId);

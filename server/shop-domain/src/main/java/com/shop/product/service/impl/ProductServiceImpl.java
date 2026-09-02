@@ -414,6 +414,25 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+    public void forceOffline(Long productId, String reason, Long adminId) {
+        Product p = productMapper.selectById(productId);
+        if (p == null) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+        String normalizedReason = reason == null ? "" : reason.trim();
+        if (normalizedReason.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "强制下架原因不能为空");
+        }
+        p.setStatus(0);
+        p.setAuditStatus(2);
+        p.setAuditReason("平台强制下架：" + normalizedReason);
+        p.setAuditedBy(adminId);
+        p.setAuditedAt(java.time.LocalDateTime.now());
+        productMapper.updateById(p);
+    }
+
+    @Override
+    @Transactional
     public void setStatus(Long id, int status, Long merchantId) {
         Product p = mustOwn(id, merchantId);
         if (status == 1 && !Integer.valueOf(1).equals(p.getAuditStatus())) {

@@ -6,6 +6,7 @@ import com.shop.dashboard.dto.DailyAmountRow;
 import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Mapper
@@ -24,7 +25,16 @@ public interface RefundApplicationMapper extends BaseMapper<RefundApplication> {
                              @Param("error") String error);
 
     @Select("SELECT DATE(refund_time) AS day, COUNT(*) AS count, COALESCE(SUM(refund_amount), 0) AS amount " +
-            "FROM refund_application WHERE status = 3 AND refund_time >= #{from} " +
+            "FROM refund_application WHERE status = 3 AND refund_time >= #{from} AND refund_time < #{to} " +
             "GROUP BY DATE(refund_time) ORDER BY day")
-    List<DailyAmountRow> selectAdminDailyRefund(@Param("from") LocalDateTime from);
+    List<DailyAmountRow> selectAdminDailyRefund(@Param("from") LocalDateTime from,
+                                                @Param("to") LocalDateTime to);
+
+    @Select("<script>SELECT COALESCE(SUM(refund_amount), 0) FROM refund_application " +
+            "WHERE status = 3 AND refund_time &gt;= #{from} AND refund_time &lt; #{to} " +
+            "<if test='merchantId != null'>AND merchant_id = #{merchantId}</if>" +
+            "</script>")
+    BigDecimal selectSuccessfulRefundAmount(@Param("from") LocalDateTime from,
+                                            @Param("to") LocalDateTime to,
+                                            @Param("merchantId") Long merchantId);
 }

@@ -59,7 +59,8 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
             if (order.getStatus() == OrderStatus.CANCELLED.getCode()
                     && ("TIMEOUT".equals(order.getCancelReason())
                     || "USER_CANCEL".equals(order.getCancelReason())
-                    || "GROUP_TIMEOUT".equals(order.getCancelReason()))) {
+                    || "GROUP_TIMEOUT".equals(order.getCancelReason())
+                    || "ADMIN_CANCEL".equals(order.getCancelReason()))) {
                 recordLatePaymentAndRefund(order, transactionId, rawPayload);
             }
             return;

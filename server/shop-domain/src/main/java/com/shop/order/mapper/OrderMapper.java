@@ -2,7 +2,6 @@ package com.shop.order.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.shop.order.entity.Order;
-import com.shop.dashboard.dto.DailyAmountRow;
 import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDateTime;
@@ -53,8 +52,4 @@ public interface OrderMapper extends BaseMapper<Order> {
     @Select("SELECT * FROM `order` WHERE status = 2 AND ship_time < DATE_SUB(NOW(), INTERVAL 7 DAY) ORDER BY id ASC LIMIT #{limit}")
     List<Order> selectAutoReceiveOrders(@Param("limit") int limit);
 
-    @Select("SELECT DATE(pay_time) AS day, COUNT(*) AS count, COALESCE(SUM(pay_amount), 0) AS amount " +
-            "FROM `order` WHERE deleted = 0 AND pay_time >= #{from} " +
-            "GROUP BY DATE(pay_time) ORDER BY day")
-    List<DailyAmountRow> selectAdminDailyPaid(@Param("from") LocalDateTime from);
 }

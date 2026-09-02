@@ -1,7 +1,6 @@
 package com.shop.dashboard.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.shop.dashboard.dto.DashboardOverviewVO;
 import com.shop.dashboard.dto.DashboardTrendVO;
 import com.shop.dashboard.dto.DailyAmountRow;
@@ -11,9 +10,9 @@ import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.RefundApplication;
 import com.shop.order.mapper.OrderMapper;
+import com.shop.order.mapper.PaymentLogMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.product.entity.Product;
-import com.shop.product.entity.ProductSku;
 import com.shop.product.mapper.ProductMapper;
 import com.shop.product.mapper.ProductSkuMapper;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +35,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     private final MerchantMapper merchantMapper;
     private final OrderMapper orderMapper;
+    private final PaymentLogMapper paymentLogMapper;
     private final RefundApplicationMapper refundApplicationMapper;
     private final ProductMapper productMapper;
     private final ProductSkuMapper productSkuMapper;
@@ -59,9 +59,10 @@ public class DashboardServiceImpl implements DashboardService {
         int safeDays = Math.min(Math.max(days, 7), 90);
         LocalDate firstDay = LocalDate.now().minusDays(safeDays - 1L);
         LocalDateTime from = firstDay.atStartOfDay();
-        Map<LocalDate, DailyAmountRow> paid = orderMapper.selectAdminDailyPaid(from).stream()
+        LocalDateTime to = LocalDate.now().plusDays(1).atStartOfDay();
+        Map<LocalDate, DailyAmountRow> paid = paymentLogMapper.selectAdminDailyPaid(from, to).stream()
                 .collect(Collectors.toMap(DailyAmountRow::getDay, Function.identity()));
-        Map<LocalDate, DailyAmountRow> refunds = refundApplicationMapper.selectAdminDailyRefund(from).stream()
+        Map<LocalDate, DailyAmountRow> refunds = refundApplicationMapper.selectAdminDailyRefund(from, to).stream()
                 .collect(Collectors.toMap(DailyAmountRow::getDay, Function.identity()));
         return java.util.stream.IntStream.range(0, safeDays).mapToObj(offset -> {
             LocalDate day = firstDay.plusDays(offset);
@@ -77,11 +78,16 @@ public class DashboardServiceImpl implements DashboardService {
 
     private DashboardOverviewVO overview(Long merchantId) {
         LocalDateTime today = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+        LocalDateTime tomorrow = today.plusDays(1);
         DashboardOverviewVO vo = new DashboardOverviewVO();
         LambdaQueryWrapper<Order> ordersToday = new LambdaQueryWrapper<Order>()
-                .ge(Order::getCreatedAt, today);
+                .ge(Order::getCreatedAt, today)
+                .lt(Order::getCreatedAt, tomorrow);
         scopeOrders(ordersToday, merchantId);
-        vo.setOrderCountToday(orderMapper.selectCount(ordersToday));
+        Long createdOrderCount = orderMapper.selectCount(ordersToday);
+        vo.setOrderCountToday(createdOrderCount);
+        vo.setCreatedOrderCountToday(createdOrderCount);
+        vo.setPaidOrderCountToday(nullToZero(paymentLogMapper.selectPaidCount(today, tomorrow, merchantId)));
 
         LambdaQueryWrapper<Order> pendingShip = new LambdaQueryWrapper<Order>()
                 .in(Order::getStatus, 1, 6);
@@ -100,42 +106,22 @@ public class DashboardServiceImpl implements DashboardService {
         vo.setOnSaleProductCount(productMapper.selectCount(products));
 
         vo.setLowStockSkuCount(lowStockSkuCount(merchantId));
-        vo.setPaidAmountToday(sumPaidAmount(merchantId, today));
+        BigDecimal paidAmount = paymentLogMapper.selectPaidAmount(today, tomorrow, merchantId);
+        if (paidAmount == null) paidAmount = BigDecimal.ZERO;
+        vo.setPaidAmountToday(paidAmount);
+        BigDecimal refundAmount = refundApplicationMapper.selectSuccessfulRefundAmount(today, tomorrow, merchantId);
+        if (refundAmount == null) refundAmount = BigDecimal.ZERO;
+        vo.setRefundAmountToday(refundAmount);
+        vo.setNetAmountToday(paidAmount.subtract(refundAmount));
         return vo;
     }
 
-    private BigDecimal sumPaidAmount(Long merchantId, LocalDateTime today) {
-        QueryWrapper<Order> q = new QueryWrapper<>();
-        q.select("COALESCE(SUM(pay_amount), 0)")
-                .ge("pay_time", today)
-                .eq("deleted", 0);
-        if (merchantId != null) {
-            q.eq("merchant_id", merchantId);
-        }
-        List<Object> values = orderMapper.selectObjs(q);
-        if (values.isEmpty() || values.get(0) == null) {
-            return BigDecimal.ZERO;
-        }
-        return values.get(0) instanceof BigDecimal
-                ? (BigDecimal) values.get(0)
-                : new BigDecimal(values.get(0).toString());
+    private long nullToZero(Long value) {
+        return value == null ? 0 : value;
     }
 
     private long lowStockSkuCount(Long merchantId) {
-        LambdaQueryWrapper<ProductSku> q = new LambdaQueryWrapper<ProductSku>()
-                .eq(ProductSku::getActive, 1)
-                .le(ProductSku::getStock, LOW_STOCK_THRESHOLD);
-        List<Long> productIds = productMapper.selectList(new LambdaQueryWrapper<Product>()
-                        .select(Product::getId)
-                        .eq(merchantId != null, Product::getMerchantId, merchantId)
-                        .eq(Product::getStatus, 1)
-                        .eq(Product::getAuditStatus, 1))
-                .stream().map(Product::getId).toList();
-        if (productIds.isEmpty()) {
-            return 0;
-        }
-        q.in(ProductSku::getProductId, productIds);
-        return productSkuMapper.selectCount(q);
+        return productSkuMapper.countLowStock(merchantId, LOW_STOCK_THRESHOLD);
     }
 
     private void scopeOrders(LambdaQueryWrapper<Order> q, Long merchantId) {

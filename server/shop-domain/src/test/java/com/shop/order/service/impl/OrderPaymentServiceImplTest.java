@@ -59,6 +59,19 @@ class OrderPaymentServiceImplTest {
     }
 
     @Test
+    void latePaymentAfterAdminCloseCreatesAutomaticRefund() {
+        Order order = cancelledOrder("ADMIN_CANCEL");
+        when(orderMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(order);
+
+        service().handlePaidCallback(order.getOrderNo(), "wx-admin-late-1", "{\"mock\":true}");
+
+        ArgumentCaptor<RefundApplication> captor = ArgumentCaptor.forClass(RefundApplication.class);
+        verify(refundApplicationMapper).insert(captor.capture());
+        assertEquals(RefundStatus.PENDING.getCode(), captor.getValue().getStatus());
+        assertEquals(1, captor.getValue().getAutoRefund());
+    }
+
+    @Test
     void duplicateLatePaymentDoesNotCreateSecondRefund() {
         Order order = cancelledOrder("USER_CANCEL");
         PaymentLog existing = new PaymentLog();

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shop.common.response.ApiResult;
 import com.shop.common.response.PageResult;
 import com.shop.common.aop.RateLimit;
+import com.shop.common.aop.OpLog;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
 import com.shop.order.dto.AdminRefundVO;
@@ -24,6 +25,7 @@ import com.shop.order.service.OrderService;
 import com.shop.order.service.LogisticsService;
 import com.shop.order.service.PaymentReconciliationService;
 import com.shop.order.service.RefundReconciliationService;
+import com.shop.order.service.OrderCancellationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,6 +54,7 @@ public class AdminOrderController {
     private final PaymentReconciliationService paymentReconciliationService;
     private final RefundReconciliationService refundReconciliationService;
     private final LogisticsService logisticsService;
+    private final OrderCancellationService orderCancellationService;
 
     @GetMapping("/payments/page")
     public ApiResult<PageResult<AdminPaymentVO>> payments(
@@ -119,6 +122,13 @@ public class AdminOrderController {
     @GetMapping("/orders/{orderNo}")
     public ApiResult<OrderDetailVO> orderDetail(@PathVariable String orderNo) {
         return ApiResult.success(orderService.adminDetail(orderNo));
+    }
+
+    @OpLog(action = "ADMIN_ORDER_CANCEL", targetType = "ORDER", targetIdExpr = "#orderNo")
+    @PostMapping("/orders/{orderNo}/cancel")
+    public ApiResult<Void> cancelOrder(@PathVariable String orderNo) {
+        orderCancellationService.cancelByAdmin(orderNo);
+        return ApiResult.success(null);
     }
 
     @GetMapping("/orders/{orderNo}/logistics")

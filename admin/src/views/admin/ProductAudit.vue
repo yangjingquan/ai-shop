@@ -42,6 +42,20 @@ async function audit(row: ProductListVO, status: number) {
 }
 
 function openDetail(row: ProductListVO) { current.value = row; dialogVisible.value = true }
+
+async function forceOffline(row: ProductListVO) {
+  const result = await ElMessageBox.prompt('请输入强制下架原因', '平台强制下架', {
+    inputPlaceholder: '例如：商品信息违规、价格异常',
+    inputValidator: (value) => value.trim() ? true : '下架原因不能为空',
+  }).catch(() => null)
+  if (!result) return
+  submitting.value = true
+  try {
+    await adminProductApi.forceOffline(row.id, result.value)
+    ElMessage.success('商品已强制下架，需重新审核后才能上架')
+    await fetchList()
+  } finally { submitting.value = false }
+}
 onMounted(fetchList)
 </script>
 
@@ -62,7 +76,7 @@ onMounted(fetchList)
         <el-table-column prop="totalStock" label="库存" width="90" />
         <el-table-column label="审核状态" width="110"><template #default="{ row }"><el-tag :type="row.auditStatus === 0 ? 'warning' : row.auditStatus === 1 ? 'success' : 'danger'">{{ auditText[row.auditStatus ?? 0] }}</el-tag></template></el-table-column>
         <el-table-column prop="auditReason" label="审核意见" min-width="180" show-overflow-tooltip />
-        <el-table-column label="操作" width="180"><template #default="{ row }"><el-button link type="primary" @click="openDetail(row as ProductListVO)">查看</el-button><el-button v-if="row.auditStatus !== 1" link type="success" :loading="submitting" @click="audit(row as ProductListVO, 1)">通过</el-button><el-button v-if="row.auditStatus !== 2" link type="danger" :loading="submitting" @click="audit(row as ProductListVO, 2)">驳回</el-button></template></el-table-column>
+        <el-table-column label="操作" width="250"><template #default="{ row }"><el-button link type="primary" @click="openDetail(row as ProductListVO)">查看</el-button><el-button v-if="row.auditStatus !== 1" link type="success" :loading="submitting" @click="audit(row as ProductListVO, 1)">通过</el-button><el-button v-if="row.auditStatus !== 2" link type="danger" :loading="submitting" @click="audit(row as ProductListVO, 2)">驳回</el-button><el-button v-if="row.status === 1" link type="warning" :loading="submitting" @click="forceOffline(row as ProductListVO)">强制下架</el-button></template></el-table-column>
       </el-table>
       <div class="pagination"><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" background layout="total, sizes, prev, pager, next" @current-change="fetchList" @size-change="fetchList" /></div>
     </el-card>
