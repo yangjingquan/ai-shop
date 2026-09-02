@@ -141,3 +141,44 @@ export const adminProductApi = {
   audit: (id: number, auditStatus: number, auditReason?: string) =>
     request.put<unknown, void>(`/api/admin/products/${id}/audit`, { auditStatus, auditReason }),
 }
+
+export interface InventorySkuVO {
+  skuId: number
+  productId: number
+  productName: string
+  mainImage?: string
+  skuCode?: string
+  specText?: string
+  stock: number
+}
+
+export interface InventoryTransactionVO {
+  id: number
+  productId: number
+  skuId: number
+  productName?: string
+  skuCode?: string
+  specText?: string
+  changeQty: number
+  stockBefore: number
+  stockAfter: number
+  operationType: string
+  referenceNo?: string
+  reason?: string
+  operatorId?: number
+  createdAt?: string
+}
+
+export const inventoryApi = {
+  skus: (params: {
+    page: number
+    size: number
+    keyword?: string
+    lowStockOnly?: boolean
+    threshold?: number
+  }) => request.get<unknown, PageResult<InventorySkuVO>>('/api/merchant/inventory/skus', { params }),
+  transactions: (params: { page: number; size: number; skuId?: number }) =>
+    request.get<unknown, PageResult<InventoryTransactionVO>>('/api/merchant/inventory/transactions', { params }),
+  adjust: (data: { skuId: number; changeQty: number; reason?: string }) =>
+    request.post<unknown, void>('/api/merchant/inventory/adjust', data),
+}

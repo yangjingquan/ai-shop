@@ -49,6 +49,7 @@ const merchantMenus: MenuItem[] = [
   { index: 'merchant-profile', label: '店铺信息', path: '/merchant/profile', desc: '资料维护', icon: '铺' },
   { index: 'merchant-categories', label: '分类管理', path: '/merchant/categories', desc: '店铺类目', icon: '类' },
   { index: 'merchant-products', label: '商品管理', path: '/merchant/products', desc: '上新与库存', icon: '货' },
+  { index: 'merchant-inventory', label: '库存管理', path: '/merchant/inventory', desc: '调整与流水', icon: '库' },
   { index: 'merchant-banners', label: 'Banner 配置', path: '/merchant/banners', desc: '首页轮播', icon: '图' },
   { index: 'merchant-order-ship', label: '订单发货', path: '/merchant/order-ship', desc: '履约处理', icon: '单' },
   { index: 'merchant-refund-review', label: '退款审批', path: '/merchant/refund-review', desc: '售后审核', icon: '退' },
