@@ -47,7 +47,7 @@ shop:
     kdniao:
       ebusiness-id: ${KDNIAO_EBUSINESS_ID:}
       app-key: ${KDNIAO_APP_KEY:}
-      query-url: ${KDNIAO_QUERY_URL:https://api.kdniao.com/Ebusiness/EbusinessOrderHandle.aspx}
+      query-url: ${KDNIAO_QUERY_URL:https://api.kdniao.com/api/dist}
       request-type: ${KDNIAO_REQUEST_TYPE:8002}
       timeout-ms: ${KDNIAO_TIMEOUT_MS:5000}
   jobs:

@@ -99,7 +99,10 @@ public class LogisticsServiceImpl implements LogisticsService {
             return view;
         }
 
-        KdniaoClient.QueryResult result = kdniaoClient.query(carrier.getCode(), order.getShipNo(), customerName(order, carrier));
+        // “邮政”订单的实际渠道可能是 EMS 或 YZPY。让快递鸟按单号识别，避免
+        // 用 YZPY 强制查询一个实际属于 EMS 的单号而返回“非法参数”。
+        String queryShipperCode = carrier == LogisticsCarrier.YZPY ? "" : carrier.getCode();
+        KdniaoClient.QueryResult result = kdniaoClient.query(queryShipperCode, order.getShipNo(), customerName(order, carrier));
         LocalDateTime syncedAt = LocalDateTime.now();
         if (!result.isSuccess()) {
             updateSummary(order, syncedAt, result.getReason());
@@ -110,21 +113,22 @@ public class LogisticsServiceImpl implements LogisticsService {
             return view;
         }
 
-        persistTraces(order, carrier.getCode(), result);
+        String resolvedCarrierCode = resolveCarrierCode(result.getShipperCode(), carrier.getCode());
+        persistTraces(order, resolvedCarrierCode, result);
         List<OrderLogisticsTrace> latest = loadTraces(order.getOrderNo());
         OrderLogisticsTrace last = latest.stream().max(Comparator.comparing(OrderLogisticsTrace::getAcceptTime)).orElse(null);
         String stateText = stateText(result.getState());
         updateSummary(order, syncedAt, "");
         orderMapper.update(null, new LambdaUpdateWrapper<Order>()
                 .eq(Order::getOrderNo, order.getOrderNo())
-                .set(Order::getShipperCode, carrier.getCode())
+                .set(Order::getShipperCode, resolvedCarrierCode)
                 .set(Order::getLogisticsState, result.getState())
                 .set(Order::getLogisticsStateText, stateText)
                 .set(Order::getLogisticsLastTime, last == null ? null : last.getAcceptTime())
                 .set(Order::getLogisticsLastContent, last == null ? "" : last.getAcceptStation())
                 .set(Order::getLogisticsSyncedAt, syncedAt)
                 .set(Order::getLogisticsError, ""));
-        order.setShipperCode(carrier.getCode());
+        order.setShipperCode(resolvedCarrierCode);
         order.setLogisticsState(result.getState());
         order.setLogisticsStateText(stateText);
         order.setLogisticsLastTime(last == null ? null : last.getAcceptTime());
@@ -169,6 +173,11 @@ public class LogisticsServiceImpl implements LogisticsService {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    private String resolveCarrierCode(String returnedCode, String fallbackCode) {
+        LogisticsCarrier returned = LogisticsCarrier.resolve(returnedCode, "");
+        return returned == null ? fallbackCode : returned.getCode();
     }
 
     private void updateSummary(Order order, LocalDateTime syncedAt, String error) {

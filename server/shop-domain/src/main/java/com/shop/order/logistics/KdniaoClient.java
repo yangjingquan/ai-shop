@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.HexFormat;
 
 /** 快递鸟物流查询客户端。密钥只从运行时环境读取，不进入前端和源码。 */
 @Slf4j
@@ -59,8 +60,9 @@ public class KdniaoClient {
     public QueryResult query(String shipperCode, String logisticCode, String customerName) {
         try {
             var request = objectMapper.createObjectNode();
-            request.put("OrderCode", "");
-            request.put("ShipperCode", shipperCode);
+            if (shipperCode != null && !shipperCode.isBlank()) {
+                request.put("ShipperCode", shipperCode);
+            }
             request.put("LogisticCode", logisticCode);
             if (customerName != null && !customerName.isBlank()) request.put("CustomerName", customerName);
             String requestData = request.toString();
@@ -72,8 +74,11 @@ public class KdniaoClient {
             form.add("DataSign", dataSign(requestData, appKey));
             form.add("DataType", "2");
 
+            log.debug("快递鸟物流查询请求: url={}, requestType={}, dataType=2, requestData={}",
+                    queryUrl, requestType, requestData);
+
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            headers.setContentType(new MediaType(MediaType.APPLICATION_FORM_URLENCODED, StandardCharsets.UTF_8));
             ResponseEntity<String> response = restTemplate.postForEntity(
                     queryUrl, new HttpEntity<>(form, headers), String.class);
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
@@ -84,7 +89,8 @@ public class KdniaoClient {
             boolean success = body.path("Success").asBoolean(false);
             String reason = body.path("Reason").asText("");
             String state = body.path("State").asText("0");
-            return new QueryResult(success, reason, state, body.path("Traces"));
+            String resolvedShipperCode = body.path("ShipperCode").asText(shipperCode == null ? "" : shipperCode);
+            return new QueryResult(success, reason, state, resolvedShipperCode, body.path("Traces"));
         } catch (Exception e) {
             log.warn("快递鸟物流查询失败，承运商={}, 单号={}", shipperCode, logisticCode, e);
             return QueryResult.failure("物流查询暂时不可用，请稍后重试");
@@ -95,7 +101,10 @@ public class KdniaoClient {
         try {
             byte[] digest = MessageDigest.getInstance("MD5")
                     .digest((requestData + appKey).getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(digest);
+            // 快递鸟 Java Demo 的约定是：MD5 十六进制字符串（32 个 ASCII 字符）再做 Base64，
+            // 不是直接对 16 字节 MD5 二进制摘要做 Base64。
+            String md5Hex = HexFormat.of().formatHex(digest);
+            return Base64.getEncoder().encodeToString(md5Hex.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             throw new IllegalStateException("无法生成快递鸟签名", e);
         }
@@ -111,17 +120,19 @@ public class KdniaoClient {
         private final boolean success;
         private final String reason;
         private final String state;
+        private final String shipperCode;
         private final JsonNode traces;
 
-        public QueryResult(boolean success, String reason, String state, JsonNode traces) {
+        public QueryResult(boolean success, String reason, String state, String shipperCode, JsonNode traces) {
             this.success = success;
             this.reason = reason == null ? "" : reason;
             this.state = state == null || state.isBlank() ? "0" : state;
+            this.shipperCode = shipperCode == null ? "" : shipperCode;
             this.traces = traces;
         }
 
         public static QueryResult failure(String reason) {
-            return new QueryResult(false, reason, "0", null);
+            return new QueryResult(false, reason, "0", "", null);
         }
     }
 }

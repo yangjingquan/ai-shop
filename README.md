@@ -18,11 +18,13 @@ docker compose up -d
 
 # 2. 起后台管理接口服务（admin/merchant，端口 8081）
 cd ../server && set -a && source ../docker/.env && set +a
-./mvnw -pl shop-admin-app -am spring-boot:run -Dspring-boot.run.profiles=dev
+./mvnw -pl shop-admin-app -am install -DskipTests
+./mvnw -pl shop-admin-app spring-boot:run -Dspring-boot.run.profiles=dev
 
 # 3. 另开终端，起小程序接口服务（wx/public/callback，端口 8082）
 cd server && set -a && source ../docker/.env && set +a
-./mvnw -pl shop-wx-app -am spring-boot:run -Dspring-boot.run.profiles=dev
+./mvnw -pl shop-wx-app -am install -DskipTests
+./mvnw -pl shop-wx-app spring-boot:run -Dspring-boot.run.profiles=dev
 
 # 4. 起管理后台（本地前端固定端口 5180）
 cd ../admin && pnpm install && pnpm dev

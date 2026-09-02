@@ -19,10 +19,7 @@ class KdniaoClientTest {
     @Test
     void dataSignUsesBase64Md5OfRequestDataAndAppKey() {
         String sign = KdniaoClient.dataSign("{}", "key");
-        assertEquals(Base64.getEncoder().encodeToString(new byte[]{
-                0x62, (byte) 0x98, 0x27, (byte) 0x84, (byte) 0xac, 0x7a, 0x42, (byte) 0xee,
-                0x7a, 0x51, 0x0c, 0x74, 0x0f, (byte) 0xe5, (byte) 0xae, (byte) 0x8d
-        }), sign);
+        assertEquals("NjI5ODI3ODRhYzdhNDJlZTdhNTEwYzc0MGZlNWFlOGQ=", sign);
     }
 
     @Test
