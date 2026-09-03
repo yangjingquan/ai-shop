@@ -14,4 +14,7 @@ public class OrderPreviewRequest {
 
     @NotNull
     private Long addressId;
+
+    /** 可选；为空时服务端自动推荐当前订单可用的最优新人券。 */
+    private Long couponId;
 }

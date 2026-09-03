@@ -100,4 +100,19 @@
       </view>
     </view>
   </view>
+
+  <view wx:if="{{newUserCoupon}}" class="coupon-mask">
+    <view class="new-user-popup" catchtap="noop">
+      <view class="popup-close" bindtap="closeNewUserCoupon">×</view>
+      <view class="popup-kicker">NEW USER BENEFIT</view>
+      <view class="popup-title">新人专享礼</view>
+      <view class="popup-desc">首单立减，欢迎来到我们的商城</view>
+      <view class="coupon-ticket">
+        <view class="ticket-amount"><text>¥</text>{{newUserCoupon.amount}}</view>
+        <view class="ticket-info"><view>{{newUserCoupon.name}}</view><text>满{{newUserCoupon.thresholdAmount}}元可用</text></view>
+      </view>
+      <button class="claim-btn" bindtap="claimNewUserCoupon">领取后立即使用</button>
+      <view class="popup-note">仅限普通商品首单使用 · 领取后{{newUserCoupon.validityDays || 30}}天有效</view>
+    </view>
+  </view>
 </view>

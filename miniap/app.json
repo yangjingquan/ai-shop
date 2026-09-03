@@ -10,6 +10,7 @@
     "pages/address/edit",
     "pages/product/detail",
     "pages/order/confirm",
+    "pages/coupon/list",
     "pages/order/detail",
     "pages/group-buy/list",
     "pages/group-buy/group",

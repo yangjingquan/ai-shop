@@ -142,6 +142,12 @@ const routes: RouteRecordRaw[] = [
         meta: { roles: ['merchant'], permission: 'merchant:marketing:view' },
       },
       {
+        path: 'merchant/coupon-templates',
+        name: 'MerchantCouponTemplates',
+        component: () => import('@/views/merchant/MerchantCouponTemplate.vue'),
+        meta: { roles: ['merchant'], permission: 'merchant:coupon:view' },
+      },
+      {
         path: 'merchant/order-ship',
         name: 'OrderShip',
         component: () => import('@/views/merchant/OrderShip.vue'),

@@ -1,5 +1,7 @@
 const userApi = require('../../api/user')
 const notificationApi = require('../../api/notification')
+const marketingCapabilities = require('../../utils/marketing-capabilities')
+const couponApi = require('../../api/coupon')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
@@ -9,6 +11,8 @@ Page({
     avatar: '',
     avatarUrl: '',
     unreadCount: 0,
+    couponEnabled: false,
+    couponCount: 0,
   },
 
   onShow() {
@@ -18,7 +22,19 @@ Page({
     this.setData({ phone, nickname, avatar, avatarUrl: resolveImageUrl(avatar) })
     this.loadProfile()
     this.loadUnreadCount()
+    this.loadCouponEntry()
   },
+
+  async loadCouponEntry() {
+    const featureMap = await marketingCapabilities.load(false).catch(() => ({}))
+    const enabled = !!(featureMap.NEW_USER_COUPON
+      && (featureMap.NEW_USER_COUPON.enabled === true || Number(featureMap.NEW_USER_COUPON.enabled) === 1))
+    if (!enabled) { this.setData({ couponEnabled: false, couponCount: 0 }); return }
+    this.setData({ couponEnabled: true })
+    couponApi.list(0).then(res => this.setData({ couponCount: ((res && res.data) || []).length })).catch(() => {})
+  },
+
+  goCoupons() { wx.navigateTo({ url: '/pages/coupon/list' }) },
 
   loadUnreadCount() {
     notificationApi.unreadCount().then((res) => {

@@ -6,6 +6,7 @@ App({
   globalData: {
     userInfo: null,
     cartCount: 0,
+    newUserCouponPopupShown: false,
   },
   onLaunch() {
     auth.silentLogin().then((res) => {

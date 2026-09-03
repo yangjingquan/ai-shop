@@ -9,7 +9,7 @@ import java.util.Arrays;
  */
 @Getter
 public enum MarketingActivityCode {
-    NEW_USER_COUPON("NEW_USER_COUPON", "新人首单券", "新用户完成首单时享受优惠", false, "/pages/coupon/new-user"),
+    NEW_USER_COUPON("NEW_USER_COUPON", "新人首单券", "新用户完成首单时享受优惠", true, "/pages/coupon/list"),
     SECKILL("SECKILL", "限时秒杀", "在限定时间内以特价购买商品", false, "/pages/seckill/list"),
     GROUP_BUY("GROUP_BUY", "多人拼团", "邀请好友成团后享受拼团价", true, "/pages/group-buy/list"),
     FULL_REDUCTION("FULL_REDUCTION", "满减活动", "订单达到门槛后自动减免", false, "/pages/promotion/full-reduction"),

@@ -25,6 +25,7 @@
 .unavailable-tip { display: flex; align-items: center; gap: 6rpx; color: #ff4d4f; font-size: 24rpx; margin-top: 8rpx; }
 .group-total { text-align: right; padding: 16rpx 0 2rpx; font-size: 27rpx; color: #646a73; }
 .group-total text { color: #ff6600; font-weight: 700; }
+.coupon-section { padding-bottom: 20rpx; }.coupon-title-row { display: flex; align-items: center; margin-bottom: 0; }.coupon-title-row text:first-child { flex: 1; }.coupon-choice { color: #ff6600; font-size: 25rpx; }.coupon-selected { margin-top: 14rpx; color: #646a73; font-size: 25rpx; }.coupon-message { margin-top: 14rpx; color: #e15231; font-size: 24rpx; }
 .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.98); padding: 18rpx 20rpx; padding-bottom: calc(18rpx + env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 -8rpx 28rpx rgba(15,23,42,0.06); border-top: 1rpx solid #eef0f3; color: #646a73; }
 .amount { color: #ff6600; font-weight: 700; font-size: 32rpx; }
 .submit-btn { height: 72rpx; line-height: 72rpx; background: #ff6600; color: #fff; border-radius: 36rpx; padding: 0 40rpx; font-size: 28rpx; font-weight: 600; margin: 0; }

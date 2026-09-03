@@ -5,6 +5,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shop.cart.entity.CartItem;
 import com.shop.cart.mapper.CartItemMapper;
+import com.shop.coupon.dto.CouponCheckoutResult;
+import com.shop.coupon.dto.CouponItemContext;
+import com.shop.coupon.dto.CouponUseContext;
+import com.shop.coupon.service.CouponService;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.response.PageResult;
@@ -77,6 +81,7 @@ public class OrderServiceImpl implements OrderService {
     private final GroupBuyGroupMapper groupBuyGroupMapper;
     private final OrderCancellationService orderCancellationService;
     private final PlatformTransactionManager transactionManager;
+    private final CouponService couponService;
 
     private static final java.util.regex.Pattern SHIP_NO_PATTERN =
             java.util.regex.Pattern.compile("^[A-Za-z0-9]{5,30}$");
@@ -141,6 +146,7 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.groupingBy(CartItem::getMerchantId));
 
         List<OrderPreviewVO.MerchantGroup> groups = new ArrayList<>();
+        List<CouponItemContext> couponItems = new ArrayList<>();
         BigDecimal grandTotal = BigDecimal.ZERO;
 
         for (Map.Entry<Long, List<CartItem>> entry : grouped.entrySet()) {
@@ -187,6 +193,8 @@ public class OrderServiceImpl implements OrderService {
                     pi.setUnitPrice(sku.getPrice());
                     pi.setSubtotal(sku.getPrice().multiply(BigDecimal.valueOf(ci.getQuantity())));
                     groupTotal = groupTotal.add(pi.getSubtotal());
+                    couponItems.add(new CouponItemContext(product.getId(), product.getCategoryId(), pi.getSubtotal(),
+                            Integer.valueOf(1).equals(product.getIsGroupBuy())));
                 }
                 g.getItems().add(pi);
             }
@@ -199,9 +207,26 @@ public class OrderServiceImpl implements OrderService {
             grandTotal = grandTotal.add(groupTotal);
         }
 
+        CouponCheckoutResult couponResult = couponService.calculate(userId,
+                new CouponUseContext(cartItems.get(0).getMerchantId(), grandTotal, couponItems),
+                req.getCouponId(), false, null);
+        BigDecimal couponDiscount = couponResult.getDiscountAmount();
+        if (!groups.isEmpty()) {
+            OrderPreviewVO.MerchantGroup group = groups.get(0);
+            group.setDiscountAmount(couponDiscount);
+            group.setPayAmount(group.getTotalAmount().subtract(couponDiscount).max(BigDecimal.ZERO));
+        }
+
         OrderPreviewVO vo = new OrderPreviewVO();
         vo.setGroups(groups);
         vo.setTotalAmount(grandTotal);
+        vo.setDiscountAmount(couponDiscount);
+        vo.setPayAmount(grandTotal.subtract(couponDiscount).max(BigDecimal.ZERO));
+        vo.setCouponId(couponResult.getSelectedCouponId());
+        vo.setCouponName(couponResult.getSelectedCouponName());
+        vo.setCouponDiscountAmount(couponDiscount);
+        vo.setCouponMessage(couponResult.getUnavailableReason());
+        vo.setCoupons(couponResult.getCoupons());
         vo.setAddress(new AddressSnapshot(
                 address.getReceiver(), address.getPhone(),
                 address.getRegion(), address.getDetail()));
@@ -293,6 +318,21 @@ public class OrderServiceImpl implements OrderService {
                 // 生成订单号
                 String orderNo = generateOrderNo(userId);
 
+                BigDecimal expectedTotal = groupItems.stream().map(ci -> {
+                    ProductSku sku = skuMap.get(ci.getSkuId());
+                    return sku.getPrice().multiply(BigDecimal.valueOf(ci.getQuantity()));
+                }).reduce(BigDecimal.ZERO, BigDecimal::add);
+                List<CouponItemContext> couponItems = groupItems.stream().map(ci -> {
+                    ProductSku sku = skuMap.get(ci.getSkuId());
+                    Product product = productMap.get(ci.getProductId());
+                    return new CouponItemContext(product.getId(), product.getCategoryId(),
+                            sku.getPrice().multiply(BigDecimal.valueOf(ci.getQuantity())),
+                            Integer.valueOf(1).equals(product.getIsGroupBuy()));
+                }).toList();
+                CouponCheckoutResult couponResult = couponService.calculate(userId,
+                        new CouponUseContext(mid, expectedTotal, couponItems), req.getCouponId(), true, orderNo);
+                BigDecimal couponDiscount = couponResult.getDiscountAmount();
+
                 // 先插入 order
                 Order order = new Order();
                 order.setOrderNo(orderNo);
@@ -301,7 +341,14 @@ public class OrderServiceImpl implements OrderService {
                 order.setStatus(OrderStatus.WAIT_PAY.getCode());
                 order.setTotalAmount(BigDecimal.ZERO);
                 order.setFreightAmount(BigDecimal.ZERO);
-                order.setDiscountAmount(BigDecimal.ZERO);
+                order.setDiscountAmount(couponDiscount);
+                order.setCouponId(couponResult.getSelectedCouponId());
+                order.setCouponTemplateId(couponResult.getSelectedCouponTemplateId());
+                order.setCouponDiscountAmount(couponDiscount);
+                order.setCouponSnapshotJson(couponResult.getSelectedCouponId() == null ? null : toJson(Map.of(
+                        "couponId", couponResult.getSelectedCouponId(),
+                        "name", couponResult.getSelectedCouponName(),
+                        "discountAmount", couponDiscount)));
                 order.setPayAmount(BigDecimal.ZERO);
                 order.setAddressSnapshot(addrJson);
                 order.setRemark(req.getRemark() != null ? req.getRemark() : "");
@@ -340,7 +387,7 @@ public class OrderServiceImpl implements OrderService {
 
                 // 更新订单金额
                 order.setTotalAmount(totalAmount);
-                order.setPayAmount(totalAmount);
+                order.setPayAmount(totalAmount.subtract(couponDiscount).max(BigDecimal.ZERO));
                 orderMapper.updateById(order);
 
                 // recalc 每个 product
@@ -357,7 +404,7 @@ public class OrderServiceImpl implements OrderService {
                 // build VO
                 OrderCreateVO vo = new OrderCreateVO();
                 vo.setOrderNo(orderNo);
-                vo.setPayAmount(totalAmount);
+                vo.setPayAmount(order.getPayAmount());
                 createdOrders.add(vo);
             }
 
@@ -660,6 +707,10 @@ public class OrderServiceImpl implements OrderService {
         vo.setTotalAmount(order.getTotalAmount());
         vo.setFreightAmount(order.getFreightAmount());
         vo.setDiscountAmount(order.getDiscountAmount());
+        vo.setCouponId(order.getCouponId());
+        vo.setCouponTemplateId(order.getCouponTemplateId());
+        vo.setCouponDiscountAmount(order.getCouponDiscountAmount());
+        vo.setCouponName(readCouponName(order.getCouponSnapshotJson()));
         vo.setPayAmount(order.getPayAmount());
         vo.setOrderType(order.getOrderType());
         vo.setGroupBuyGroupId(order.getGroupBuyGroupId());
@@ -720,6 +771,15 @@ public class OrderServiceImpl implements OrderService {
                     .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
         }
         return vo;
+    }
+
+    private String readCouponName(String snapshot) {
+        if (snapshot == null || snapshot.isBlank()) return null;
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().readTree(snapshot).path("name").asText(null);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     // ==================== ship / confirmReceive / refund ====================

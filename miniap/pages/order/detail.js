@@ -28,6 +28,7 @@ Page({
           totalAmountText: this.fmtPrice(raw.totalAmount),
           freightAmountText: this.fmtPrice(raw.freightAmount),
           discountAmountText: this.fmtPrice(raw.discountAmount),
+          couponDiscountAmountText: this.fmtPrice(raw.couponDiscountAmount),
           payAmountText: this.fmtPrice(raw.payAmount),
           groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',

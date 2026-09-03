@@ -19,6 +19,7 @@ import com.shop.merchant.service.MerchantWechatConfigService;
 import com.shop.merchant.service.MerchantRbacService;
 import com.shop.merchant.security.PasswordPolicy;
 import com.shop.marketing.service.MarketingFeatureService;
+import com.shop.coupon.service.CouponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -47,6 +48,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
     private final MerchantWechatConfigService merchantWechatConfigService;
     private final MerchantRbacService merchantRbacService;
     private final MarketingFeatureService marketingFeatureService;
+    private final CouponService couponService;
 
     @Override
     @Transactional
@@ -85,6 +87,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         merchantUserMapper.insert(mu);
         merchantRbacService.initializeMerchant(m.getId(), mu.getId());
         marketingFeatureService.initializeMerchant(m.getId());
+        couponService.initializeMerchant(m.getId());
 
         return m.getId();
     }

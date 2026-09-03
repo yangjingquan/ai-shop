@@ -60,6 +60,10 @@
       <text>优惠金额</text>
       <text>-¥{{order.discountAmountText}}</text>
     </view>
+    <view class="amount-row" wx:if="{{order.couponName}}">
+      <text>{{order.couponName}}</text>
+      <text>-¥{{order.couponDiscountAmountText}}</text>
+    </view>
     <view class="divider"></view>
     <view class="amount-row total">
       <text>{{order.totalLabel}}</text>

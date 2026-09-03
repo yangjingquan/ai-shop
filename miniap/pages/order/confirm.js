@@ -16,6 +16,7 @@ Page({
     skuId: 0,
     quantity: 1,
     groupId: 0,
+    selectedCouponId: null,
   },
 
   onLoad(options) {
@@ -33,12 +34,20 @@ Page({
   },
 
   onShow() {
+    const selectedCouponId = wx.getStorageSync('order_selected_coupon_id');
+    if (selectedCouponId) {
+      wx.removeStorageSync('order_selected_coupon_id');
+      this.setData({ selectedCouponId: Number(selectedCouponId) });
+    }
     const selectedAddressId = wx.getStorageSync('order_selected_address_id');
-    if (!selectedAddressId) return;
-    wx.removeStorageSync('order_selected_address_id');
-    const selectedAddress = (this.data.addresses || []).find(a => Number(a.id) === Number(selectedAddressId)) || this.data.selectedAddress;
-    this.setData({ addressId: Number(selectedAddressId), selectedAddress, noAddress: false });
-    this.loadPreview();
+    if (selectedAddressId) {
+      wx.removeStorageSync('order_selected_address_id');
+      const selectedAddress = (this.data.addresses || []).find(a => Number(a.id) === Number(selectedAddressId)) || this.data.selectedAddress;
+      this.setData({ addressId: Number(selectedAddressId), selectedAddress, noAddress: false });
+      this.loadPreview();
+    } else if (selectedCouponId && this.data.addressId) {
+      this.loadPreview();
+    }
   },
 
   loadDefaultAddress() {
@@ -67,7 +76,8 @@ Page({
       method: 'POST',
       data: {
         cartItemIds: this.data.cartItemIds,
-        addressId: this.data.addressId
+        addressId: this.data.addressId,
+        couponId: this.data.selectedCouponId || null
       }
     }).then(res => {
       if (res.code === 0) {
@@ -81,7 +91,7 @@ Page({
             }))
           }))
         };
-        this.setData({ preview });
+        this.setData({ preview, selectedCouponId: preview.couponId || null });
       } else {
         this.setData({ preview: null });
         wx.showToast({ title: res.msg || '不支持跨商家结算', icon: 'none' });
@@ -128,6 +138,10 @@ Page({
 
   chooseAddress() {
     wx.navigateTo({ url: '/pages/address/list?select=1' });
+  },
+
+  chooseCoupon() {
+    wx.navigateTo({ url: '/pages/coupon/list?mode=select' });
   },
 
   goMy() {
@@ -183,7 +197,8 @@ Page({
       method: 'POST',
       data: {
         cartItemIds: this.data.cartItemIds,
-        addressId: this.data.addressId
+        addressId: this.data.addressId,
+        couponId: this.data.selectedCouponId || null
       }
     }).then(res => {
       if (res.code === 0) {

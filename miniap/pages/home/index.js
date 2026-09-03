@@ -3,6 +3,7 @@ const productApi = require('../../api/product')
 const bannerApi = require('../../api/banner')
 const homeApi = require('../../api/home')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
+const couponApi = require('../../api/coupon')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
@@ -13,6 +14,7 @@ Page({
     products: [],
     loading: false,
     marketingEnabled: {},
+    newUserCoupon: null,
   },
 
   onLoad() {
@@ -27,9 +29,13 @@ Page({
         categoryApi.tree().catch(() => ({ data: [] })),
       ])
       const homeData = (homeRes && homeRes.data) || {}
-      const marketingEnabled = Array.isArray(homeData.marketingFeatures)
+      const featureMap = Array.isArray(homeData.marketingFeatures)
         ? marketingCapabilities.seed(homeData.marketingFeatures)
         : {}
+      const marketingEnabled = Object.keys(featureMap).reduce((result, code) => {
+        result[code] = featureMap[code].enabled === true || Number(featureMap[code].enabled) === 1
+        return result
+      }, {})
       const bannerData = homeData.banners || await bannerApi.list().then((res) => res.data || []).catch(() => [])
       let productData = homeData.recommends || []
       if (!productData.length) {
@@ -50,9 +56,40 @@ Page({
       }))
       const list = this.normalizeProducts({ data: { list: productData } })
       this.setData({ banners, topCategories: top, products: list, marketingEnabled })
+      this.loadNewUserCoupon(marketingEnabled)
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  async loadNewUserCoupon(marketingEnabled) {
+    const app = getApp()
+    if (!marketingEnabled.NEW_USER_COUPON || app.globalData.newUserCouponPopupShown) return
+    try {
+      const res = await couponApi.eligibility()
+      const eligibility = (res && res.data) || {}
+      if (eligibility.canReceive && eligibility.coupon) this.setData({ newUserCoupon: eligibility.coupon })
+    } catch (_) {
+      // 登录态或资格接口失败时不打断首页浏览。
+    }
+  },
+
+  closeNewUserCoupon() {
+    const app = getApp()
+    app.globalData.newUserCouponPopupShown = true
+    this.setData({ newUserCoupon: null })
+  },
+
+  claimNewUserCoupon() {
+    const coupon = this.data.newUserCoupon
+    if (!coupon || !coupon.templateId) return
+    couponApi.receive(coupon.templateId).then(() => {
+      const app = getApp()
+      app.globalData.newUserCouponPopupShown = true
+      this.setData({ newUserCoupon: null })
+      wx.showToast({ title: '新人券已领取', icon: 'success' })
+      setTimeout(() => wx.navigateTo({ url: '/pages/coupon/list' }), 500)
+    }).catch(() => {})
   },
 
   async fetchProducts(keyword) {

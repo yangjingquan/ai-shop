@@ -1,6 +1,7 @@
 package com.shop.order.service.impl;
 
 import com.shop.groupbuy.mapper.GroupBuyMemberMapper;
+import com.shop.coupon.service.CouponService;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.enums.OrderStatus;
@@ -32,6 +33,8 @@ class OrderCancellationServiceImplTest {
     private GroupBuyMemberMapper groupBuyMemberMapper;
     @Mock
     private ProductService productService;
+    @Mock
+    private CouponService couponService;
 
     @Test
     void cancelsExpiredOrderInItsOwnTransactionAndRestoresStock() {
@@ -48,7 +51,7 @@ class OrderCancellationServiceImplTest {
         when(orderItemMapper.selectList(any())).thenReturn(List.of(item));
 
         OrderCancellationServiceImpl service = new OrderCancellationServiceImpl(
-                orderMapper, orderItemMapper, groupBuyMemberMapper, productService);
+                orderMapper, orderItemMapper, groupBuyMemberMapper, productService, couponService);
 
         assertTrue(service.cancelExpired(1L));
         assertEquals(OrderStatus.CANCELLED.getCode(), order.getStatus());
@@ -74,7 +77,7 @@ class OrderCancellationServiceImplTest {
         when(orderItemMapper.selectList(any())).thenReturn(List.of(item));
 
         OrderCancellationServiceImpl service = new OrderCancellationServiceImpl(
-                orderMapper, orderItemMapper, groupBuyMemberMapper, productService);
+                orderMapper, orderItemMapper, groupBuyMemberMapper, productService, couponService);
 
         service.cancelByAdmin(order.getOrderNo());
 

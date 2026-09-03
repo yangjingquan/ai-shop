@@ -12,6 +12,20 @@ public class OrderPreviewVO {
 
     private BigDecimal totalAmount;
 
+    private BigDecimal discountAmount;
+
+    private BigDecimal payAmount;
+
+    private Long couponId;
+
+    private String couponName;
+
+    private BigDecimal couponDiscountAmount;
+
+    private String couponMessage;
+
+    private List<com.shop.coupon.dto.CouponVO> coupons;
+
     private AddressSnapshot address;
 
     @Data

@@ -116,6 +116,7 @@
   text-align: center;
   font-weight: 700;
 }
+.coupon-menu-icon { font-size: 18rpx; }
 .unread-badge {
   min-width: 34rpx;
   height: 34rpx;

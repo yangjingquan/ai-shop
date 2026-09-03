@@ -94,6 +94,13 @@ onMounted(load)
             class="feature-link"
             @click="router.push('/merchant/products')"
           >去配置团购商品 →</el-button>
+          <el-button
+            v-if="feature.code === 'NEW_USER_COUPON' && feature.enabled === 1"
+            link
+            type="primary"
+            class="feature-link"
+            @click="router.push('/merchant/coupon-templates')"
+          >去配置新人券 →</el-button>
         </el-card>
       </el-col>
     </el-row>

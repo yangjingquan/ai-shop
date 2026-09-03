@@ -3,6 +3,7 @@ package com.shop.order.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
+import com.shop.coupon.service.CouponService;
 import com.shop.groupbuy.entity.GroupBuyMember;
 import com.shop.groupbuy.enums.GroupBuyMemberStatus;
 import com.shop.groupbuy.mapper.GroupBuyMemberMapper;
@@ -31,6 +32,7 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
     private final OrderItemMapper orderItemMapper;
     private final GroupBuyMemberMapper groupBuyMemberMapper;
     private final ProductService productService;
+    private final CouponService couponService;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -91,6 +93,7 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
         order.setCancelTime(LocalDateTime.now());
         order.setCancelReason(reason);
         orderMapper.updateById(order);
+        couponService.releaseBeforePaymentCancel(order.getId(), order.getOrderNo());
         markGroupBuyMemberCancelled(order);
     }
 

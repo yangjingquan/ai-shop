@@ -31,6 +31,14 @@ public class OrderDetailVO {
 
     private BigDecimal discountAmount;
 
+    private Long couponId;
+
+    private Long couponTemplateId;
+
+    private BigDecimal couponDiscountAmount;
+
+    private String couponName;
+
     private BigDecimal payAmount;
 
     private Long merchantId;

@@ -70,7 +70,8 @@ public class MerchantRbacServiceImpl implements MerchantRbacService {
                 "merchant:order:detail", "merchant:order:ship", "merchant:order:logistics:view",
                 "merchant:order:logistics:refresh", "merchant:refund:view", "merchant:refund:approve",
                 "merchant:refund:return-received", "merchant:refund:retry", "merchant:file:upload",
-                "merchant:file:delete", "merchant:marketing:view", "merchant:marketing:feature:update")));
+                "merchant:file:delete", "merchant:marketing:view", "merchant:marketing:feature:update",
+                "merchant:coupon:view", "merchant:coupon:create", "merchant:coupon:update", "merchant:coupon:status")));
         replaceRolePermissions(warehouse.getId(), permissionIds(List.of(
                 "merchant:dashboard:view", "merchant:product:view", "merchant:inventory:view",
                 "merchant:inventory:adjust", "merchant:inventory:transaction:view", "merchant:order:view",
