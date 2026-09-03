@@ -3,6 +3,8 @@ package com.shop.order.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
+import com.shop.groupbuy.entity.GroupRefundTask;
+import com.shop.groupbuy.mapper.GroupRefundTaskMapper;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.entity.MerchantWechatConfig;
 import com.shop.merchant.mapper.MerchantMapper;
@@ -44,6 +46,7 @@ public class WxRefundCallbackServiceImpl implements WxRefundCallbackService {
     private final PaymentCredentialCipher paymentCredentialCipher;
     private final MerchantWechatConfigService merchantWechatConfigService;
     private final RefundCompletionService refundCompletionService;
+    private final GroupRefundTaskMapper groupRefundTaskMapper;
 
     @Override
     @Transactional
@@ -101,6 +104,7 @@ public class WxRefundCallbackServiceImpl implements WxRefundCallbackService {
                 && notification.getRefundStatus() == Status.SUCCESS) {
             refundCompletionService.completeIfFullRefund(app, order,
                     app.getRefundTime() == null ? LocalDateTime.now() : app.getRefundTime());
+            syncGroupRefundTask(app, null);
             return;
         }
 
@@ -120,6 +124,7 @@ public class WxRefundCallbackServiceImpl implements WxRefundCallbackService {
         if (app.getStatus() == RefundStatus.SUCCESS.getCode()) {
             refundCompletionService.completeIfFullRefund(app, order, app.getRefundTime());
         }
+        syncGroupRefundTask(app, null);
         log.info("微信退款回调处理成功, merchantCode={}, orderNo={}, outRefundNo={}, status={}",
                 merchantCode, app.getOrderNo(), app.getOutRefundNo(), notification.getRefundStatus());
     }
@@ -181,5 +186,28 @@ public class WxRefundCallbackServiceImpl implements WxRefundCallbackService {
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private void syncGroupRefundTask(RefundApplication app, String error) {
+        GroupRefundTask task = groupRefundTaskMapper.selectOne(new LambdaQueryWrapper<GroupRefundTask>()
+                .eq(GroupRefundTask::getOrderNo, app.getOrderNo()));
+        if (task == null) return;
+        LocalDateTime now = LocalDateTime.now();
+        if (app.getStatus() == RefundStatus.SUCCESS.getCode()) {
+            task.setStatus("success");
+            task.setLastError("");
+            task.setCompletedAt(app.getRefundTime() == null ? now : app.getRefundTime());
+            task.setNextRetryAt(null);
+        } else if (app.getStatus() == RefundStatus.REFUNDING.getCode()) {
+            task.setStatus("processing");
+            task.setLastError("");
+            task.setNextRetryAt(now.plusMinutes(1));
+        } else if (app.getStatus() == RefundStatus.FAILED.getCode()) {
+            task.setStatus("failed");
+            task.setLastError(error == null ? app.getRefundFailReason() : error);
+            task.setNextRetryAt(now.plusMinutes(1));
+            task.setRetryCount((task.getRetryCount() == null ? 0 : task.getRetryCount()) + 1);
+        }
+        groupRefundTaskMapper.updateById(task);
     }
 }

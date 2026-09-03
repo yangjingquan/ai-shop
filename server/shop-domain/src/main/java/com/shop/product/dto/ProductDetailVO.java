@@ -33,6 +33,10 @@ public class ProductDetailVO {
     private Integer isGroupBuy;
     private BigDecimal groupBuyPrice;
     private Integer groupBuyRequiredCount;
+    private Integer groupBuyDurationHours;
+    private Integer groupBuyUserLimit;
+    private Integer groupBuyShowActive;
+    private List<Long> groupBuySkuIds = new ArrayList<>();
     private Integer sort;
 
     private List<SpecVO> specs = new ArrayList<>();

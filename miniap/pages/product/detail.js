@@ -86,12 +86,19 @@ Page({
       }))
       product.specs = specs
       product.salePriceText = this.fmtPrice(product.minPrice)
+      product.groupBuyPriceText = this.fmtPrice(product.groupBuyPrice)
+      product.groupBuyRequiredText = `${product.groupBuyRequiredCount || 0} 人成团`
       product.originalPriceText = this.fmtPrice(this.minPositivePrice(product.minOriginalPrice, product.maxOriginalPrice, product.originalPrice))
       product.hasOriginalPrice = this.hasOriginalPrice(product.minOriginalPrice, product.maxOriginalPrice, product.originalPrice)
       product.minPrice = this.fmtPrice(product.minPrice)
       product.maxPrice = this.fmtPrice(product.maxPrice)
       const selected = new Array(specs.length).fill(null)
-      const groups = Number(product.isGroupBuy) === 1 ? ((res && res.data && res.data.groups) || []) : []
+      const groups = Number(product.isGroupBuy) === 1 ? ((res && res.data && res.data.groups) || []).map((group) => ({
+        ...group,
+        groupBuyPriceText: this.fmtPrice(group.groupBuyPrice || product.groupBuyPrice),
+        expireText: group.expireAt ? this.formatDateTime(group.expireAt) : '',
+        leaderText: group.leaderNickname || '拼团发起人',
+      })) : []
       this.setData({
         product,
         banners,
@@ -110,6 +117,13 @@ Page({
   fmtPrice(v) {
     const n = Number(v || 0)
     return n.toFixed(2)
+  },
+
+  formatDateTime(ts) {
+    const date = new Date(Number(ts || 0))
+    if (!Number.isFinite(date.getTime())) return ''
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${date.getMonth() + 1}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
   },
 
   fmtRange(min, max) {

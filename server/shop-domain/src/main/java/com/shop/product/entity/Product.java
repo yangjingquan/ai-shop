@@ -64,5 +64,13 @@ public class Product extends BaseEntity {
 
     private Integer groupBuyRequiredCount;
 
+    private Integer groupBuyDurationHours;
+
+    private Integer groupBuyUserLimit;
+
+    private Integer groupBuyShowActive;
+
+    private String groupBuySkuIdsJson;
+
     private Integer sort;
 }

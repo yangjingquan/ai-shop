@@ -9,6 +9,9 @@ import com.shop.common.response.ApiResult;
 import com.shop.common.response.PageResult;
 import com.shop.common.security.CurrentUserHolder;
 import com.shop.common.security.RequirePermission;
+import com.shop.groupbuy.dto.GroupRefundTaskVO;
+import com.shop.groupbuy.entity.GroupRefundTask;
+import com.shop.groupbuy.mapper.GroupRefundTaskMapper;
 import com.shop.order.dto.*;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.RefundApplication;
@@ -37,6 +40,7 @@ public class MerchantOrderController {
     private final OrderMapper orderMapper;
     private final RefundApplicationMapper refundApplicationMapper;
     private final LogisticsService logisticsService;
+    private final GroupRefundTaskMapper groupRefundTaskMapper;
 
     @Data
     public static class ShipRequest {
@@ -155,6 +159,49 @@ public class MerchantOrderController {
             return vo;
         }).toList();
         return ApiResult.success(PageResult.of(list, result.getTotal(), page, size));
+    }
+
+    @GetMapping("/group-buy/refund-tasks")
+    @RequirePermission("merchant:refund:view")
+    public ApiResult<PageResult<GroupRefundTaskVO>> groupRefundTasks(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Long merchantId = CurrentUserHolder.get().getMerchantId();
+        LambdaQueryWrapper<GroupRefundTask> q = new LambdaQueryWrapper<GroupRefundTask>()
+                .eq(GroupRefundTask::getMerchantId, merchantId)
+                .orderByDesc(GroupRefundTask::getId);
+        if (status != null && !status.isBlank()) {
+            q.eq(GroupRefundTask::getStatus, status.trim());
+        }
+        IPage<GroupRefundTask> result = groupRefundTaskMapper.selectPage(new Page<>(page, size), q);
+        List<GroupRefundTaskVO> list = result.getRecords().stream().map(task -> {
+            GroupRefundTaskVO vo = new GroupRefundTaskVO();
+            vo.setId(task.getId());
+            vo.setGroupId(task.getGroupId());
+            vo.setOrderNo(task.getOrderNo());
+            vo.setRefundApplicationId(task.getRefundApplicationId());
+            vo.setStatus(task.getStatus());
+            vo.setStatusText(groupRefundStatusText(task.getStatus()));
+            vo.setRetryCount(task.getRetryCount());
+            vo.setLastError(task.getLastError());
+            vo.setNextRetryAt(task.getNextRetryAt());
+            vo.setCompletedAt(task.getCompletedAt());
+            vo.setCreatedAt(task.getCreatedAt());
+            vo.setUpdatedAt(task.getUpdatedAt());
+            return vo;
+        }).toList();
+        return ApiResult.success(PageResult.of(list, result.getTotal(), page, size));
+    }
+
+    private String groupRefundStatusText(String status) {
+        return switch (status == null ? "" : status) {
+            case "pending" -> "待退款";
+            case "processing" -> "退款处理中";
+            case "success" -> "已到账";
+            case "failed" -> "退款失败";
+            default -> "未知状态";
+        };
     }
 
     private String refundStatusText(Integer status) {

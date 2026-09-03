@@ -1,4 +1,5 @@
 const orderApi = require('../../api/order')
+const groupBuyApi = require('../../api/group-buy')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
@@ -32,6 +33,7 @@ Page({
           payAmountText: this.fmtPrice(raw.payAmount),
           groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
+          groupBuyStatusText: raw.groupBuyStatusText || '',
           refundStatusText: raw.refundStatus === 0 ? '退款申请处理中' : raw.refundStatus === 1 ? '退款处理中' : raw.refundStatus === 2 ? '退款申请已拒绝' : raw.refundStatus === 3 ? '退款成功' : raw.refundStatus === 4 ? '退款失败，可重新申请' : raw.refundStatus === 5 ? '请填写退货物流' : raw.refundStatus === 6 ? '商家正在验货' : '',
           canRefund: ![0, 1, 5, 6].includes(raw.refundStatus)
             && ([1, 2, 3, 6, 7].includes(raw.status)
@@ -309,9 +311,10 @@ Page({
   onShareAppMessage() {
     const order = this.data.order || {}
     if (order.orderType === 1 && order.groupBuyGroupId) {
+      groupBuyApi.shareEvent(order.groupBuyGroupId, 'order_share', false).catch(() => {})
       return {
         title: '快来参加我的拼团',
-        path: `/pages/group-buy/group?groupId=${order.groupBuyGroupId}`,
+        path: `/pages/group-buy/group?groupId=${order.groupBuyGroupId}&shareSource=order_share`,
       }
     }
     return { title: '潮选商城' }

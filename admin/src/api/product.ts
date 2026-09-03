@@ -74,6 +74,10 @@ export interface ProductDetailVO {
   isGroupBuy?: number
   groupBuyPrice?: number | null
   groupBuyRequiredCount?: number | null
+  groupBuyDurationHours?: number | null
+  groupBuyUserLimit?: number | null
+  groupBuyShowActive?: number | null
+  groupBuySkuIds?: number[]
   sort?: number
   specs: ProductSpecVO[]
   skus: ProductSkuVO[]
@@ -104,6 +108,10 @@ export interface ProductSavePayload {
   isGroupBuy?: number
   groupBuyPrice?: number | null
   groupBuyRequiredCount?: number | null
+  groupBuyDurationHours?: number | null
+  groupBuyUserLimit?: number | null
+  groupBuyShowActive?: number | null
+  groupBuySkuIds?: number[]
   specs: ProductSpecInput[]
   skus: ProductSkuInput[]
 }

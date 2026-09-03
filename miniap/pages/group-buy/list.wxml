@@ -1,4 +1,6 @@
 <view class="group-list-page">
+  <view class="page-title">一起拼，更省钱</view>
+  <view class="page-subtitle">精选团购商品，邀请好友一起享优惠</view>
   <view class="search-row">
     <view class="search-box">
       <input value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" placeholder="搜索团购商品" />
@@ -7,14 +9,14 @@
     <view class="search-btn" bindtap="onSearch">搜索</view>
   </view>
 
-  <view wx:if="{{!loading && products.length === 0}}" class="empty-card">暂无团购商品</view>
+  <view wx:if="{{!loading && products.length === 0}}" class="empty-card">暂无团购商品，换个关键词试试</view>
 
   <view class="product-list">
     <view class="product-card" wx:for="{{products}}" wx:key="id" data-id="{{item.id}}" bindtap="goProduct">
       <image class="thumb" src="{{item.mainImage}}" mode="aspectFill" />
       <view class="info">
         <view class="name">{{item.name}}</view>
-        <view class="meta">{{item.groupBuyRequiredCount}} 人成团</view>
+        <view class="meta"><text class="group-tag">团购</text>{{item.groupBuyRequiredCount}} 人成团</view>
         <view class="price-row">
           <text class="price">¥{{item.groupBuyPriceText}}</text>
           <text class="ordinary">普通价 ¥{{item.minPrice}}</text>

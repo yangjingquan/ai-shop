@@ -2,6 +2,7 @@ package com.shop.groupbuy.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.response.PageResult;
@@ -12,11 +13,14 @@ import com.shop.groupbuy.dto.GroupBuyMemberVO;
 import com.shop.groupbuy.dto.GroupBuyProductDetailVO;
 import com.shop.groupbuy.entity.GroupBuyGroup;
 import com.shop.groupbuy.entity.GroupBuyMember;
+import com.shop.groupbuy.entity.GroupRefundTask;
 import com.shop.groupbuy.enums.GroupBuyGroupStatus;
 import com.shop.groupbuy.enums.GroupBuyMemberStatus;
 import com.shop.groupbuy.mapper.GroupBuyGroupMapper;
 import com.shop.groupbuy.mapper.GroupBuyMemberMapper;
+import com.shop.groupbuy.mapper.GroupRefundTaskMapper;
 import com.shop.groupbuy.service.GroupBuyService;
+import com.shop.groupbuy.service.GroupBuyMessageService;
 import com.shop.order.dto.AddressSnapshot;
 import com.shop.order.dto.OrderCreateVO;
 import com.shop.order.entity.Order;
@@ -72,12 +76,15 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     private final OrderItemMapper orderItemMapper;
     private final GroupBuyGroupMapper groupMapper;
     private final GroupBuyMemberMapper memberMapper;
+    private final GroupRefundTaskMapper groupRefundTaskMapper;
     private final RefundApplicationMapper refundApplicationMapper;
     private final UserMapper userMapper;
     private final WxPayService wxPayService;
     private final UserNotificationService notificationService;
     private final PlatformTransactionManager transactionManager;
     private final MarketingFeatureService marketingFeatureService;
+    private final GroupBuyMessageService groupBuyMessageService;
+    private final ObjectMapper objectMapper;
 
     @Override
     public PageResult<ProductListVO> productPage(int page, int size, Long merchantId, Long categoryId, String keyword) {
@@ -95,14 +102,18 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         validateGroupBuyConfig(product.getGroupBuyPrice(), product.getGroupBuyRequiredCount());
         GroupBuyProductDetailVO vo = new GroupBuyProductDetailVO();
         vo.setProduct(product);
-        List<GroupBuyGroup> active = groupMapper.selectList(new LambdaQueryWrapper<GroupBuyGroup>()
-                .eq(GroupBuyGroup::getProductId, productId)
-                .eq(merchantId != null, GroupBuyGroup::getMerchantId, merchantId)
-                .eq(GroupBuyGroup::getStatus, GroupBuyGroupStatus.WAIT_GROUP.getCode())
-                .gt(GroupBuyGroup::getExpireAt, LocalDateTime.now())
-                .orderByAsc(GroupBuyGroup::getExpireAt)
-                .last("LIMIT 20"));
-        vo.setGroups(active.stream().map(this::toGroupVO).collect(Collectors.toList()));
+        boolean showActive = !Integer.valueOf(0).equals(product.getGroupBuyShowActive());
+        vo.setShowActiveGroups(showActive);
+        if (showActive) {
+            List<GroupBuyGroup> active = groupMapper.selectList(new LambdaQueryWrapper<GroupBuyGroup>()
+                    .eq(GroupBuyGroup::getProductId, productId)
+                    .eq(merchantId != null, GroupBuyGroup::getMerchantId, merchantId)
+                    .eq(GroupBuyGroup::getStatus, GroupBuyGroupStatus.WAIT_GROUP.getCode())
+                    .gt(GroupBuyGroup::getExpireAt, LocalDateTime.now())
+                    .orderByAsc(GroupBuyGroup::getExpireAt)
+                    .last("LIMIT 20"));
+            vo.setGroups(active.stream().map(this::toGroupVO).collect(Collectors.toList()));
+        }
         return vo;
     }
 
@@ -140,8 +151,14 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         if (merchantId != null && !merchantId.equals(group.getMerchantId())) {
             throw new BusinessException(ErrorCode.GROUP_BUY_GROUP_NOT_FOUND);
         }
-        marketingFeatureService.assertEnabled(group.getMerchantId(), MarketingActivityCode.GROUP_BUY);
         GroupBuyGroupVO vo = toGroupVO(group);
+        Product groupProduct = productMapper.selectById(group.getProductId());
+        if (groupProduct != null) {
+            vo.setProductName(groupProduct.getName());
+            vo.setProductImage(groupProduct.getMainImage());
+            vo.setGroupBuyPrice(groupProduct.getGroupBuyPrice());
+            vo.setOriginalPrice(groupProduct.getMinOriginalPrice());
+        }
         User leader = userMapper.selectById(group.getLeaderUserId());
         if (leader != null) {
             vo.setLeaderNickname(leader.getNickname());
@@ -197,6 +214,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             orderMapper.updateById(order);
             refreshPaidCount(group);
             notificationService.notifyGroupFormed(group, List.of(member));
+            groupBuyMessageService.notifyGroupFormed(group, List.of(member));
             return;
         }
         if (group.getStatus() != GroupBuyGroupStatus.WAIT_GROUP.getCode()) {
@@ -232,6 +250,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
                 }
             }
             notificationService.notifyGroupFormed(group, paidMembers);
+            groupBuyMessageService.notifyGroupFormed(group, paidMembers);
         } else {
             groupMapper.updateById(group);
         }
@@ -297,6 +316,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             }
         }
         notificationService.notifyGroupFailed(group, members);
+        groupBuyMessageService.notifyGroupFailed(group, members);
     }
 
     private void markPaidOrderWaitRefund(GroupBuyMember member, Order order) {
@@ -315,22 +335,34 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     }
 
     private void createRefundApplication(Order order) {
-        Long count = refundApplicationMapper.selectCount(new LambdaQueryWrapper<RefundApplication>()
+        RefundApplication app = refundApplicationMapper.selectOne(new LambdaQueryWrapper<RefundApplication>()
                 .eq(RefundApplication::getOrderNo, order.getOrderNo()));
-        if (count != null && count > 0) {
-            return;
+        if (app == null) {
+            app = new RefundApplication();
+            app.setOrderNo(order.getOrderNo());
+            app.setOutRefundNo("RF_" + order.getOrderNo() + "_"
+                    + UUID.randomUUID().toString().replace("-", ""));
+            app.setUserId(order.getUserId());
+            app.setMerchantId(order.getMerchantId());
+            app.setReason("拼团未成团");
+            app.setRefundAmount(order.getPayAmount());
+            app.setStatus(RefundStatus.PENDING.getCode());
+            app.setAutoRefund(1);
+            refundApplicationMapper.insert(app);
         }
-        RefundApplication app = new RefundApplication();
-        app.setOrderNo(order.getOrderNo());
-        app.setOutRefundNo("RF_" + order.getOrderNo() + "_"
-                + UUID.randomUUID().toString().replace("-", ""));
-        app.setUserId(order.getUserId());
-        app.setMerchantId(order.getMerchantId());
-        app.setReason("拼团未成团");
-        app.setRefundAmount(order.getPayAmount());
-        app.setStatus(RefundStatus.PENDING.getCode());
-        app.setAutoRefund(1);
-        refundApplicationMapper.insert(app);
+        GroupRefundTask existingTask = groupRefundTaskMapper.selectOne(new LambdaQueryWrapper<GroupRefundTask>()
+                .eq(GroupRefundTask::getOrderNo, order.getOrderNo()));
+        if (existingTask != null) return;
+        GroupRefundTask task = new GroupRefundTask();
+        task.setMerchantId(order.getMerchantId());
+        task.setGroupId(order.getGroupBuyGroupId());
+        task.setOrderNo(order.getOrderNo());
+        task.setRefundApplicationId(app.getId());
+        task.setStatus("pending");
+        task.setRetryCount(0);
+        task.setLastError("");
+        task.setNextRetryAt(LocalDateTime.now());
+        groupRefundTaskMapper.insert(task);
     }
 
     private void cancelUnpaidOrder(GroupBuyMember member, Order order) {
@@ -378,10 +410,17 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         }
         marketingFeatureService.assertEnabled(product.getMerchantId(), MarketingActivityCode.GROUP_BUY);
         validateGroupBuyConfig(product.getGroupBuyPrice(), product.getGroupBuyRequiredCount());
+        int userLimit = product.getGroupBuyUserLimit() == null ? 1 : product.getGroupBuyUserLimit();
+        if (req.getQuantity() > userLimit) {
+            throw new BusinessException(ErrorCode.GROUP_BUY_ORDER_INVALID.getCode(), "同一拼团每人最多购买" + userLimit + "件");
+        }
         ProductSku sku = skuMapper.selectById(req.getSkuId());
         if (sku == null || !Integer.valueOf(1).equals(sku.getActive())
                 || !product.getId().equals(sku.getProductId()) || sku.getStock() < req.getQuantity()) {
             throw new BusinessException(ErrorCode.CART_ITEM_INVALID);
+        }
+        if (!isSkuApplicable(product, sku.getId())) {
+            throw new BusinessException(ErrorCode.CART_ITEM_INVALID.getCode(), "该规格不参加团购");
         }
         UserAddress address = userAddressMapper.selectOne(new LambdaQueryWrapper<UserAddress>()
                 .eq(UserAddress::getId, req.getAddressId())
@@ -399,7 +438,8 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             group.setRequiredCount(product.getGroupBuyRequiredCount());
             group.setPaidCount(0);
             group.setStatus(GroupBuyGroupStatus.WAIT_GROUP.getCode());
-            group.setExpireAt(LocalDateTime.now().plusHours(24));
+            int durationHours = product.getGroupBuyDurationHours() == null ? 24 : product.getGroupBuyDurationHours();
+            group.setExpireAt(LocalDateTime.now().plusHours(durationHours));
             groupMapper.insert(group);
         } else {
             group = groupMapper.selectByIdForUpdate(groupId);
@@ -476,6 +516,17 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         return vo;
     }
 
+    private boolean isSkuApplicable(Product product, Long skuId) {
+        if (product.getGroupBuySkuIdsJson() == null || product.getGroupBuySkuIdsJson().isBlank()
+                || "[]".equals(product.getGroupBuySkuIdsJson().trim())) return true;
+        try {
+            List<?> ids = objectMapper.readValue(product.getGroupBuySkuIdsJson(), List.class);
+            return ids.stream().map(String::valueOf).anyMatch(String.valueOf(skuId)::equals);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private GroupBuyCreateVO createGroupOrderWithPayment(Long userId, Long merchantId, Long groupId,
                                                          GroupBuyCreateRequest req, boolean openNewGroup) {
         GroupBuyCreateVO vo = new TransactionTemplate(transactionManager)
@@ -516,6 +567,13 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         vo.setStatus(group.getStatus());
         vo.setStatusText(statusText(group.getStatus()));
         vo.setRemainingCount(Math.max(0, group.getRequiredCount() - group.getPaidCount()));
+        Product product = productMapper.selectById(group.getProductId());
+        if (product != null) {
+            vo.setProductName(product.getName());
+            vo.setProductImage(product.getMainImage());
+            vo.setGroupBuyPrice(product.getGroupBuyPrice());
+            vo.setOriginalPrice(product.getMinOriginalPrice());
+        }
         if (group.getExpireAt() != null) {
             vo.setExpireAt(group.getExpireAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
         }

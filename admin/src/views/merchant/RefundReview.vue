@@ -3,11 +3,12 @@ import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
-import type { AdminRefundRow } from '@/api/order'
+import { adminOrderApi, type AdminRefundRow, type GroupRefundTaskRow } from '@/api/order'
 
 type RefundRow = AdminRefundRow
 
 const refunds = ref<RefundRow[]>([])
+const groupRefundTasks = ref<GroupRefundTaskRow[]>([])
 const route = useRoute()
 const routeStatus = Number(route.query.status)
 const currentTab = ref<number | ''>([0, 1, 2, 3, 4, 5, 6].includes(routeStatus) ? routeStatus : 0)
@@ -16,6 +17,7 @@ const size = ref(10)
 const total = ref(0)
 const rejectReasons = ref<Record<number, string>>({})
 const loading = ref(false)
+const groupTaskLoading = ref(false)
 const statusLabels: Record<number, string> = { 0: '待处理', 1: '退款处理中', 2: '已拒绝', 3: '退款成功', 4: '退款失败', 5: '待填写退货物流', 6: '待商家验货' }
 const statusOptions = [
   { value: null, label: '全部' },
@@ -42,6 +44,16 @@ async function loadRefunds() {
     total.value = data.total || 0
   } finally {
     loading.value = false
+  }
+}
+
+async function loadGroupRefundTasks() {
+  groupTaskLoading.value = true
+  try {
+    const data = await adminOrderApi.groupRefundTasks({ page: 1, size: 20 })
+    groupRefundTasks.value = data.list || []
+  } finally {
+    groupTaskLoading.value = false
   }
 }
 
@@ -93,7 +105,10 @@ async function doRetry(id: number) {
   await loadRefunds()
 }
 
-onMounted(loadRefunds)
+onMounted(() => {
+  loadRefunds()
+  loadGroupRefundTasks()
+})
 </script>
 
 <template>
@@ -193,6 +208,30 @@ onMounted(loadRefunds)
         />
       </div>
     </el-card>
+
+    <el-card class="group-refund-card">
+      <div class="group-refund-head">
+        <div>
+          <h2>团购退款追踪</h2>
+          <p>团购未成团后自动退款，开关关闭也不会中断存量退款。</p>
+        </div>
+        <el-button size="small" @click="loadGroupRefundTasks">刷新</el-button>
+      </div>
+      <el-table v-loading="groupTaskLoading" :data="groupRefundTasks" stripe>
+        <el-table-column prop="orderNo" label="订单号" min-width="190" />
+        <el-table-column prop="groupId" label="团ID" width="90" />
+        <el-table-column label="状态" width="120">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 'success' ? 'success' : row.status === 'failed' ? 'danger' : 'warning'" size="small">
+              {{ row.statusText || row.status || '未知状态' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="retryCount" label="重试次数" width="100" />
+        <el-table-column prop="lastError" label="最近错误" min-width="220" show-overflow-tooltip />
+        <el-table-column prop="completedAt" label="到账时间" width="170" />
+      </el-table>
+    </el-card>
   </div>
 </template>
 
@@ -206,4 +245,8 @@ onMounted(loadRefunds)
 .evidence-list { display: flex; gap: 6px; align-items: center; }
 .evidence-image { width: 42px; height: 42px; border-radius: 4px; }
 .pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
+.group-refund-card { margin-top: 18px; }
+.group-refund-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.group-refund-head h2 { margin: 0 0 6px; font-size: 18px; color: var(--shop-ink); }
+.group-refund-head p { margin: 0; color: var(--shop-muted); font-size: 13px; }
 </style>

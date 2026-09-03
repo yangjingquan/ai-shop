@@ -16,7 +16,14 @@
     <view wx:if="{{order.orderType === 1}}" class="group-info">
       <view>团购进度：{{order.groupBuyProgress}}</view>
       <view wx:if="{{order.groupBuyExpireText}}">有效期至：{{order.groupBuyExpireText}}</view>
+      <view wx:if="{{order.groupBuyStatusText}}">团购状态：{{order.groupBuyStatusText}}</view>
       <view wx:if="{{order.status === 7}}">拼团未成团，退款状态请见下方</view>
+    </view>
+    <view wx:if="{{order.orderType === 1 && order.groupBuyStatus === 1}}" class="group-result formed-result">
+      <view class="group-result-title">✓ 已成团</view><view class="group-result-desc">商品将按正常订单流程发货</view>
+    </view>
+    <view wx:if="{{order.orderType === 1 && (order.groupBuyStatus === 2 || order.groupBuyStatus === 3)}}" class="group-result failed-result">
+      <view class="group-result-title">× {{order.groupBuyStatus === 3 ? '退款已完成' : '退款处理中'}}</view><view class="group-result-desc">{{order.refundStatusText || '退款状态请稍后刷新查看'}}</view>
     </view>
     <view wx:if="{{order.refundStatusText}}" class="refund-status">{{order.refundStatusText}}</view>
     <view wx:if="{{order.refundReturnShipNo}}" class="refund-status">退货物流：{{order.refundReturnShipCompany}} {{order.refundReturnShipNo}}</view>

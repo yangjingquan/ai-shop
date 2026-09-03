@@ -73,6 +73,7 @@
   font-size: 34rpx;
   font-weight: 700;
 }
+.group-buy-head { display: flex; align-items: baseline; justify-content: space-between; }.active-group-title { margin-top: 22rpx; color: #1f2329; font-size: 27rpx; font-weight: 700; }.group-empty { margin-top: 18rpx; color: #9aa0a6; font-size: 23rpx; }.group-row-info { flex: 1; min-width: 0; }.group-progress { margin-left: 10rpx; color: #ff4b43; font-weight: 700; }.group-row-time { margin-top: 6rpx; color: #9aa0a6; font-size: 22rpx; }
 .group-buy-meta {
   margin-top: 8rpx;
   color: #666;

@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 public class MarketingFeatureServiceImpl implements MarketingFeatureService {
     private static final String CACHE_PREFIX = "merchant:marketing:features:";
     private static final Duration CACHE_TTL = Duration.ofHours(1);
+    private static final String GROUP_BUY_CONFIG = "{\"durationHours\":24,\"userLimit\":1,\"showActiveGroups\":1,\"formedTemplateId\":\"sg0sw0AxgcxKZN1_Rz03ggc50HltbY1FK-Me2ZDGWcc\",\"expiringTemplateId\":\"RevYrSvVjLuJ4WEhySpfQ2FrWEyDKGyxcHYz-QiyzN0\",\"failedTemplateId\":\"9eLlvp1elpSJeHU-BgET6tZL2NOaqZfj6CB8vTX8s0A\"}";
 
     private final MerchantMarketingFeatureMapper featureMapper;
     private final StringRedisTemplate stringRedisTemplate;
@@ -81,7 +82,7 @@ public class MarketingFeatureServiceImpl implements MarketingFeatureService {
             feature.setMerchantId(merchantId);
             feature.setFeatureCode(code.getCode());
             feature.setEnabled(0);
-            feature.setConfigJson("{}");
+            feature.setConfigJson(defaultConfig(code));
             feature.setSort(code.ordinal() + 1);
             feature.setVersion(0);
             featureMapper.insert(feature);
@@ -106,7 +107,7 @@ public class MarketingFeatureServiceImpl implements MarketingFeatureService {
             feature = new MerchantMarketingFeature();
             feature.setMerchantId(merchantId);
             feature.setFeatureCode(activity.getCode());
-            feature.setConfigJson("{}");
+            feature.setConfigJson(defaultConfig(activity));
             feature.setSort(activity.ordinal() + 1);
             feature.setVersion(0);
         }
@@ -181,5 +182,9 @@ public class MarketingFeatureServiceImpl implements MarketingFeatureService {
         vo.setFrontendPath(code.getFrontendPath());
         vo.setSort(stored == null || stored.getSort() == null ? code.ordinal() + 1 : stored.getSort());
         return vo;
+    }
+
+    private String defaultConfig(MarketingActivityCode code) {
+        return code == MarketingActivityCode.GROUP_BUY ? GROUP_BUY_CONFIG : "{}";
     }
 }

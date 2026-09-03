@@ -10,4 +10,5 @@ import java.util.List;
 public class GroupBuyProductDetailVO {
     private ProductDetailVO product;
     private List<GroupBuyGroupVO> groups = new ArrayList<>();
+    private Boolean showActiveGroups = true;
 }

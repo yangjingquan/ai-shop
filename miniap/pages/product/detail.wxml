@@ -17,12 +17,13 @@
       <view wx:if="{{ product.hasOriginalPrice }}" class="original-price">¥ {{ product.originalPriceText }}</view>
     </view>
     <view wx:if="{{product.isGroupBuy === 1}}" class="group-buy-panel">
-      <view class="group-buy-price">团购价 ¥{{product.groupBuyPrice}}</view>
-      <view class="group-buy-meta">{{product.groupBuyRequiredCount}} 人成团</view>
+      <view class="group-buy-head"><view class="group-buy-price">¥{{product.groupBuyPriceText}}</view><view class="group-buy-meta">{{product.groupBuyRequiredText}}</view></view>
+      <view wx:if="{{groupBuyGroups.length}}" class="active-group-title">正在进行的团</view>
       <view class="group-row" wx:for="{{groupBuyGroups}}" wx:key="id">
-        <text>{{item.paidCount}}/{{item.requiredCount}} 人</text>
+        <view class="group-row-info"><view>{{item.leaderText}} <text class="group-progress">{{item.paidCount}}/{{item.requiredCount}}人</text></view><view class="group-row-time">还差{{item.remainingCount}}人 · {{item.expireText}}截止</view></view>
         <button size="mini" data-groupid="{{item.id}}" bindtap="joinGroup">去参团</button>
       </view>
+      <view wx:if="{{!groupBuyGroups.length}}" class="group-empty">暂无进行中的团，快来发起第一团</view>
     </view>
     <view class="name">{{ product.name }}</view>
     <view wx:if="{{ product.subtitle }}" class="subtitle">{{ product.subtitle }}</view>

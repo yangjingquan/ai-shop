@@ -17,6 +17,7 @@ interface SpecForm {
 }
 
 interface SkuRow {
+  id?: number
   specValueIndexes: number[]
   specText: string
   originalPrice: number | null
@@ -52,6 +53,10 @@ const form = reactive({
   isGroupBuy: 0,
   groupBuyPrice: null as number | null,
   groupBuyRequiredCount: 2,
+  groupBuyDurationHours: 24,
+  groupBuyUserLimit: 1,
+  groupBuyShowActive: 1,
+  groupBuySkuIds: [] as number[],
 })
 
 const rules: FormRules = {
@@ -145,6 +150,7 @@ function rebuildSkuRows() {
     const specText = c.map((x) => x.value).join(' / ')
     const old = prev.get(specText)
     return {
+      id: old?.id,
       specValueIndexes: c.map((x) => x.idx),
       specText,
       originalPrice: old?.originalPrice ?? null,
@@ -154,6 +160,10 @@ function rebuildSkuRows() {
       image: old?.image ?? '',
     }
   })
+  // SKU 会在保存时重建；只要规格组合发生变化，旧 ID 就不再可靠，默认恢复为“全部 SKU”。
+  if (isEdit.value && skuRows.value.some((row) => !row.id) && form.groupBuySkuIds.length) {
+    form.groupBuySkuIds = []
+  }
 }
 
 watch(specs, () => rebuildSkuRows(), { deep: true })
@@ -191,6 +201,10 @@ async function loadDetail(id: number) {
     form.isGroupBuy = data.isGroupBuy === 1 ? 1 : 0
     form.groupBuyPrice = data.groupBuyPrice == null ? null : Number(data.groupBuyPrice)
     form.groupBuyRequiredCount = data.groupBuyRequiredCount ?? 2
+    form.groupBuyDurationHours = data.groupBuyDurationHours ?? 24
+    form.groupBuyUserLimit = data.groupBuyUserLimit ?? 1
+    form.groupBuyShowActive = data.groupBuyShowActive == null ? 1 : data.groupBuyShowActive
+    form.groupBuySkuIds = [...(data.groupBuySkuIds ?? [])]
 
     // 暂停 watch 触发的 rebuild
     suppressSkuRebuild = true
@@ -217,6 +231,7 @@ async function loadDetail(id: number) {
           .filter(Boolean)
           .join(' / ')
       return {
+        id: sku.id,
         specValueIndexes: indexes,
         specText,
         originalPrice: sku.originalPrice == null ? null : Number(sku.originalPrice),
@@ -296,6 +311,14 @@ async function handleSubmit() {
         ElMessage.error('成团人数至少为 2')
         return
       }
+      if (!Number.isInteger(form.groupBuyDurationHours) || form.groupBuyDurationHours < 1 || form.groupBuyDurationHours > 168) {
+        ElMessage.error('团购有效期需为 1-168 小时')
+        return
+      }
+      if (!Number.isInteger(form.groupBuyUserLimit) || form.groupBuyUserLimit < 1 || form.groupBuyUserLimit > 99) {
+        ElMessage.error('每人限购需为 1-99 件')
+        return
+      }
       const minSkuPrice = Math.min(...skuRows.value.map((r) => Number(r.price || 0)).filter((n) => n > 0))
       if (Number.isFinite(minSkuPrice) && groupBuyPrice > minSkuPrice) {
         ElMessage.error('团购价格不能高于最低 SKU 卖价')
@@ -318,6 +341,10 @@ async function handleSubmit() {
       isGroupBuy: form.isGroupBuy === 1 ? 1 : 0,
       groupBuyPrice: form.isGroupBuy === 1 ? Number(form.groupBuyPrice) : undefined,
       groupBuyRequiredCount: form.isGroupBuy === 1 ? Number(form.groupBuyRequiredCount) : undefined,
+      groupBuyDurationHours: form.isGroupBuy === 1 ? Number(form.groupBuyDurationHours) : undefined,
+      groupBuyUserLimit: form.isGroupBuy === 1 ? Number(form.groupBuyUserLimit) : undefined,
+      groupBuyShowActive: form.isGroupBuy === 1 ? Number(form.groupBuyShowActive) : undefined,
+      groupBuySkuIds: form.isGroupBuy === 1 ? [...form.groupBuySkuIds] : [],
       specs: specs.value.map((s) => ({
         name: s.name.trim(),
         values: s.values.map((v) => v.trim()).filter(Boolean),
@@ -428,6 +455,23 @@ onMounted(async () => {
               :precision="0"
               style="width: 180px"
             />
+          </el-form-item>
+          <el-form-item label="团购有效期">
+            <el-input-number v-model="form.groupBuyDurationHours" :min="1" :max="168" :precision="0" style="width: 180px" />
+            <span class="field-hint">小时，默认 24 小时</span>
+          </el-form-item>
+          <el-form-item label="每人限购">
+            <el-input-number v-model="form.groupBuyUserLimit" :min="1" :max="99" :precision="0" style="width: 180px" />
+            <span class="field-hint">同一用户在同一团内的购买数量</span>
+          </el-form-item>
+          <el-form-item label="展示进行中团">
+            <el-radio-group v-model="form.groupBuyShowActive"><el-radio :value="1">展示</el-radio><el-radio :value="0">不展示</el-radio></el-radio-group>
+          </el-form-item>
+          <el-form-item label="适用 SKU">
+            <el-checkbox-group v-model="form.groupBuySkuIds" class="sku-scope">
+              <el-checkbox v-for="row in skuRows" :key="row.id || row.specText" :label="row.id" :disabled="!row.id">{{ row.specText }}{{ !row.id ? '（保存后可配置）' : '' }}</el-checkbox>
+            </el-checkbox-group>
+            <span class="field-hint">不勾选表示全部 SKU；新商品保存后可再次编辑选择</span>
           </el-form-item>
         </template>
         <el-form-item label="主图">
@@ -606,5 +650,18 @@ onMounted(async () => {
   margin-top: 24px;
   padding: 16px 0 4px;
   background: linear-gradient(180deg, rgba(246, 242, 234, 0), var(--shop-bg) 35%);
+}
+
+.field-hint {
+  margin-left: 12px;
+  color: var(--shop-muted);
+  font-size: 12px;
+}
+
+.sku-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  max-width: 760px;
 }
 </style>

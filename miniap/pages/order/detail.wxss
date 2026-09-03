@@ -89,6 +89,11 @@
 .status-text.s7 { color: #dc2626; }
 
 .group-info { margin-top: 16rpx; padding: 20rpx; border-radius: 8rpx; background: #fff7ed; color: #7c2d12; font-size: 26rpx; line-height: 1.6; }
+.group-result { margin-top: 16rpx; padding: 20rpx; border-radius: 14rpx; }
+.formed-result { background: #edfff2; color: #159447; }
+.failed-result { background: #fff2ef; color: #d83b30; }
+.group-result-title { font-size: 28rpx; font-weight: 900; }
+.group-result-desc { margin-top: 6rpx; color: #737780; font-size: 23rpx; }
 .refund-evidence { margin-top: 16rpx; padding: 18rpx; border-radius: 8rpx; background: #f8fafc; }
 .refund-evidence-title { color: #61646d; font-size: 23rpx; font-weight: 800; }
 .refund-evidence-list { display: flex; gap: 12rpx; margin-top: 12rpx; flex-wrap: wrap; }

@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +50,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductSkuMapper skuMapper;
     private final MerchantCategoryService merchantCategoryService;
     private final OrderItemMapper orderItemMapper;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -78,6 +81,11 @@ public class ProductServiceImpl implements ProductService {
         p.setIsGroupBuy(normalizeGroupBuyFlag(req.getIsGroupBuy()));
         p.setGroupBuyPrice(Integer.valueOf(1).equals(p.getIsGroupBuy()) ? req.getGroupBuyPrice() : null);
         p.setGroupBuyRequiredCount(Integer.valueOf(1).equals(p.getIsGroupBuy()) ? req.getGroupBuyRequiredCount() : null);
+        if (Integer.valueOf(1).equals(p.getIsGroupBuy())
+                && req.getGroupBuySkuIds() != null && !req.getGroupBuySkuIds().isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC.getCode(), "新商品保存后才能配置适用 SKU");
+        }
+        applyGroupBuyOptions(p, req);
         p.setSort(0);
         productMapper.insert(p);
 
@@ -90,6 +98,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void update(Long id, ProductSaveRequest req, Long merchantId) {
         Product p = mustOwn(id, merchantId);
+        Set<String> selectedGroupBuySkuTexts = resolveSelectedGroupBuySkuTexts(p, req.getGroupBuySkuIds());
         merchantCategoryService.validateUsableCategory(merchantId, req.getCategoryId());
         validateSpecs(req.getSpecs());
         validateSkus(req.getSkus(), req.getSpecs());
@@ -110,11 +119,13 @@ public class ProductServiceImpl implements ProductService {
         p.setIsGroupBuy(normalizeGroupBuyFlag(req.getIsGroupBuy()));
         p.setGroupBuyPrice(Integer.valueOf(1).equals(p.getIsGroupBuy()) ? req.getGroupBuyPrice() : null);
         p.setGroupBuyRequiredCount(Integer.valueOf(1).equals(p.getIsGroupBuy()) ? req.getGroupBuyRequiredCount() : null);
+        applyGroupBuyOptions(p, req);
         productMapper.updateById(p);
 
         // 已被订单引用的商品不能物理替换旧 SKU；保留历史 SKU，并将其标记为不可售。
         replaceSpecsAndSkus(id);
         persistSpecsAndSkus(id, req);
+        refreshGroupBuySkuScope(p, selectedGroupBuySkuTexts, req.getGroupBuySkuIds());
         recalcProduct(id);
     }
 
@@ -156,6 +167,10 @@ public class ProductServiceImpl implements ProductService {
         vo.setIsGroupBuy(p.getIsGroupBuy());
         vo.setGroupBuyPrice(p.getGroupBuyPrice());
         vo.setGroupBuyRequiredCount(p.getGroupBuyRequiredCount());
+        vo.setGroupBuyDurationHours(p.getGroupBuyDurationHours());
+        vo.setGroupBuyUserLimit(p.getGroupBuyUserLimit());
+        vo.setGroupBuyShowActive(p.getGroupBuyShowActive());
+        vo.setGroupBuySkuIds(parseGroupBuySkuIds(p.getGroupBuySkuIdsJson()));
         vo.setSort(p.getSort());
 
         List<ProductSpec> specs = specMapper.selectList(
@@ -470,6 +485,15 @@ public class ProductServiceImpl implements ProductService {
         if (req.getGroupBuyRequiredCount() == null || req.getGroupBuyRequiredCount() < 2) {
             throw new BusinessException(ErrorCode.INVALID_SPEC);
         }
+        if (req.getGroupBuyDurationHours() != null && (req.getGroupBuyDurationHours() < 1 || req.getGroupBuyDurationHours() > 168)) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC);
+        }
+        if (req.getGroupBuyUserLimit() != null && (req.getGroupBuyUserLimit() < 1 || req.getGroupBuyUserLimit() > 99)) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC);
+        }
+        if (req.getGroupBuyShowActive() != null && req.getGroupBuyShowActive() != 0 && req.getGroupBuyShowActive() != 1) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC);
+        }
         BigDecimal minSkuPrice = req.getSkus().stream()
                 .map(ProductSaveRequest.SkuInput::getPrice)
                 .filter(java.util.Objects::nonNull)
@@ -478,6 +502,77 @@ public class ProductServiceImpl implements ProductService {
         if (minSkuPrice.compareTo(BigDecimal.ZERO) > 0 && req.getGroupBuyPrice().compareTo(minSkuPrice) > 0) {
             throw new BusinessException(ErrorCode.INVALID_SPEC);
         }
+        if (req.getGroupBuySkuIds() != null && req.getGroupBuySkuIds().stream().anyMatch(java.util.Objects::isNull)) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC);
+        }
+    }
+
+    private void applyGroupBuyOptions(Product product, ProductSaveRequest req) {
+        if (!Integer.valueOf(1).equals(product.getIsGroupBuy())) {
+            product.setGroupBuyDurationHours(null);
+            product.setGroupBuyUserLimit(null);
+            product.setGroupBuyShowActive(null);
+            product.setGroupBuySkuIdsJson(null);
+            return;
+        }
+        product.setGroupBuyDurationHours(req.getGroupBuyDurationHours() == null ? 24 : req.getGroupBuyDurationHours());
+        product.setGroupBuyUserLimit(req.getGroupBuyUserLimit() == null ? 1 : req.getGroupBuyUserLimit());
+        product.setGroupBuyShowActive(req.getGroupBuyShowActive() == null ? 1 : req.getGroupBuyShowActive());
+        try {
+            product.setGroupBuySkuIdsJson(objectMapper.writeValueAsString(
+                    req.getGroupBuySkuIds() == null ? List.of() : req.getGroupBuySkuIds()));
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC);
+        }
+    }
+
+    private List<Long> parseGroupBuySkuIds(String json) {
+        if (!StringUtils.hasText(json)) return new ArrayList<>();
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<Long>>() {});
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private Set<String> resolveSelectedGroupBuySkuTexts(Product product, List<Long> selectedIds) {
+        if (!Integer.valueOf(1).equals(product.getIsGroupBuy())
+                || selectedIds == null || selectedIds.isEmpty()) {
+            return Set.of();
+        }
+        List<ProductSku> activeSkus = skuMapper.selectList(new LambdaQueryWrapper<ProductSku>()
+                .eq(ProductSku::getProductId, product.getId())
+                .eq(ProductSku::getActive, 1)
+                .in(ProductSku::getId, selectedIds));
+        if (activeSkus.size() != new HashSet<>(selectedIds).size()) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC.getCode(), "适用 SKU 不属于当前商品或已失效");
+        }
+        return activeSkus.stream().map(ProductSku::getSpecText).collect(Collectors.toSet());
+    }
+
+    private void refreshGroupBuySkuScope(Product product, Set<String> selectedTexts, List<Long> selectedIds) {
+        if (!Integer.valueOf(1).equals(product.getIsGroupBuy())
+                || selectedIds == null || selectedIds.isEmpty()) {
+            product.setGroupBuySkuIdsJson("[]");
+            productMapper.updateById(product);
+            return;
+        }
+        List<ProductSku> activeSkus = skuMapper.selectList(new LambdaQueryWrapper<ProductSku>()
+                .eq(ProductSku::getProductId, product.getId())
+                .eq(ProductSku::getActive, 1));
+        List<Long> newIds = activeSkus.stream()
+                .filter(sku -> selectedTexts.contains(sku.getSpecText()))
+                .map(ProductSku::getId)
+                .toList();
+        if (newIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC.getCode(), "适用 SKU 在新规格中不存在，请重新选择");
+        }
+        try {
+            product.setGroupBuySkuIdsJson(objectMapper.writeValueAsString(newIds));
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.INVALID_SPEC);
+        }
+        productMapper.updateById(product);
     }
 
     private int normalizeGroupBuyFlag(Integer flag) {

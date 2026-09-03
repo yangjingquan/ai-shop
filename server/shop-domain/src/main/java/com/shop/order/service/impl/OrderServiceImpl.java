@@ -13,6 +13,7 @@ import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.response.PageResult;
 import com.shop.groupbuy.entity.GroupBuyGroup;
+import com.shop.groupbuy.enums.GroupBuyGroupStatus;
 import com.shop.groupbuy.mapper.GroupBuyGroupMapper;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
@@ -719,6 +720,8 @@ public class OrderServiceImpl implements OrderService {
             if (group != null) {
                 vo.setGroupBuyRequiredCount(group.getRequiredCount());
                 vo.setGroupBuyPaidCount(group.getPaidCount());
+                vo.setGroupBuyStatus(group.getStatus());
+                vo.setGroupBuyStatusText(groupStatusText(group.getStatus()));
                 if (group.getExpireAt() != null) {
                     vo.setGroupBuyExpireAt(group.getExpireAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
                 }
@@ -748,6 +751,7 @@ public class OrderServiceImpl implements OrderService {
             vo.setRefundReason(refund.getReason());
             vo.setRefundRejectReason(refund.getRejectReason());
             vo.setRefundAmount(refund.getRefundAmount());
+            vo.setRefundTime(refund.getRefundTime());
             vo.setRefundFailReason(refund.getRefundFailReason());
             vo.setRefundEvidenceUrls(refund.getEvidenceUrls());
             vo.setRefundReturnRequired(refund.getReturnRequired());
@@ -780,6 +784,14 @@ public class OrderServiceImpl implements OrderService {
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    private String groupStatusText(Integer status) {
+        if (status == null) return "";
+        for (GroupBuyGroupStatus item : GroupBuyGroupStatus.values()) {
+            if (item.getCode() == status) return item.getText();
+        }
+        return "团购状态未知";
     }
 
     // ==================== ship / confirmReceive / refund ====================

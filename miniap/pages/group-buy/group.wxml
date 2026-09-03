@@ -1,31 +1,48 @@
 <view class="group-page" wx:if="{{group}}">
-  <view class="panel">
-    <view class="status">{{group.statusText}}</view>
-    <view class="leader" wx:if="{{group.leaderNickname}}">团长：{{group.leaderNickname}}</view>
-    <view class="count">{{group.paidCount}} / {{group.requiredCount}} 人</view>
-    <view class="remaining" wx:if="{{group.status === 0}}">
-      还差 {{group.remainingCount}} 人 · 剩余 {{remainingText}}
-    </view>
-    <view class="members" wx:if="{{group.members.length}}">
+  <view class="hero {{group.status === 0 ? 'waiting' : group.status === 1 ? 'formed' : 'failed'}}">
+    <view class="hero-back">‹</view>
+    <view class="hero-title">{{group.status === 0 ? '团购进行中' : '团购结果'}}</view>
+    <view class="hero-main">{{group.status === 0 ? '还差' + group.remainingCount + '人，成团发货' : group.status === 1 ? '已成团' : '退款处理中'}}</view>
+    <view wx:if="{{group.status === 0}}" class="countdown-row"><text>剩余时间</text><text class="countdown">{{remainingText}}</text></view>
+    <view wx:elif="{{group.status === 1}}" class="hero-sub">感谢参与，商品已安排发货</view>
+    <view wx:else class="hero-sub">未成团，已为你发起退款</view>
+  </view>
+
+  <view class="member-card card" wx:if="{{group.status === 0}}">
+    <view class="member-head"><text>团购进度</text><text class="accent">{{group.paidCount}}/{{group.requiredCount}} 人</text></view>
+    <view class="progress"><view class="progress-inner" style="width: {{group.paidCount / group.requiredCount * 100}}%;"></view></view>
+    <view class="member-list">
       <view class="member" wx:for="{{group.members}}" wx:key="index">
         <image wx:if="{{item.avatar}}" class="avatar" src="{{item.avatar}}" mode="aspectFill" />
-        <view wx:else class="avatar fallback">拼</view>
-        <view class="member-name">{{item.nickname}}{{item.leader ? '（团长）' : ''}}</view>
+        <view wx:else class="avatar fallback">拼</view><text class="member-name">{{item.nickname}}</text>
+        <text wx:if="{{item.leader}}" class="leader-tag">团长</text>
       </view>
+      <view class="member invite-slot"><view class="invite-plus">＋</view><text>还差{{group.remainingCount}}人</text></view>
     </view>
-    <block wx:if="{{group.status === 0}}">
-      <button bindtap="goProduct">去参团</button>
-      <button open-type="share" class="share-button">邀请好友参团</button>
-    </block>
-    <block wx:elif="{{group.status === 1}}">
-      <button bindtap="goProduct">查看商品</button>
-      <button class="share-button" bindtap="goOrders">查看订单</button>
-    </block>
-    <block wx:else>
-      <view class="failure-tip">拼团已结束，退款进度请在订单中心查看。</view>
-      <button bindtap="goOrders">查看订单/退款</button>
-      <button class="share-button" bindtap="goProduct">重新购买</button>
-    </block>
+    <button class="primary-btn" open-type="share">邀请好友参团</button>
+    <view class="remind-link" bindtap="remindMe">{{subscribing ? '处理中...' : '提醒我结果'}}</view>
+  </view>
+
+  <view class="result-card card" wx:elif="{{group.status === 1}}">
+    <view class="result-icon">✓</view><view class="result-title">已成团</view><view class="result-desc">感谢参与，商品已安排发货</view>
+    <view class="result-actions"><button class="ghost-btn" bindtap="goOrders">查看订单</button><button class="primary-btn small" bindtap="goOrders">查看物流</button></view>
+  </view>
+  <view class="result-card failed-card card" wx:else>
+    <view class="result-icon failed-icon">×</view><view class="result-title">退款处理中</view><view class="result-desc">未成团，已为你发起原路退款</view>
+    <view class="refund-progress"><view class="refund-node active">退款发起</view><view class="refund-line active"></view><view class="refund-node active">平台审核中</view><view class="refund-line"></view><view class="refund-node">退款到账</view></view>
+    <button class="ghost-btn full" bindtap="goOrders">查看订单</button>
+  </view>
+
+  <view class="product-card card" bindtap="goProduct">
+    <image class="product-image" src="{{group.productImage}}" mode="aspectFill" />
+    <view class="product-info"><view class="product-name">{{group.productName || '团购商品'}}</view><view class="product-price">团购价 ¥{{group.groupBuyPrice}}</view><view class="product-meta">{{group.requiredCount}}人团 · 团长：{{group.leaderNickname || '拼团发起人'}}</view></view>
+    <image class="arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" />
+  </view>
+
+  <view class="detail-card card">
+    <view class="detail-row"><text>团购规则</text><text>满{{group.requiredCount}}人成团 <text class="arrow-text">›</text></text></view>
+    <view class="detail-row"><text>订单信息</text><text bindtap="goOrders">查看订单 <text class="arrow-text">›</text></text></view>
+    <view class="detail-row"><text>联系客服</text><text>在线咨询 <text class="arrow-text">›</text></text></view>
   </view>
 </view>
-<view wx:if="{{!group && !loading}}" class="empty">拼团不存在或已被删除</view>
+<view wx:if="{{!group && !loading}}" class="empty">拼团不存在或已结束</view>

@@ -91,6 +91,21 @@ export interface AdminRefundRow {
   returnReceiveNote?: string
 }
 
+export interface GroupRefundTaskRow {
+  id: number
+  groupId?: number
+  orderNo: string
+  refundApplicationId?: number
+  status?: string
+  statusText?: string
+  retryCount?: number
+  lastError?: string
+  nextRetryAt?: string
+  completedAt?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
 export interface AdminPaymentRow {
   id: number
   orderNo: string
@@ -119,6 +134,8 @@ export const adminOrderApi = {
     request.post<unknown, AdminLogisticsTracking>(`/api/admin/orders/${orderNo}/logistics/refresh`),
   refunds: (params: Record<string, unknown>) =>
     request.get<unknown, PageResult<AdminRefundRow>>('/api/admin/refunds/page', { params }),
+  groupRefundTasks: (params: Record<string, unknown>) =>
+    request.get<unknown, PageResult<GroupRefundTaskRow>>('/api/merchant/group-buy/refund-tasks', { params }),
   payments: (params: Record<string, unknown>) =>
     request.get<unknown, PageResult<AdminPaymentRow>>('/api/admin/payments/page', { params }),
   reconcilePayments: () =>

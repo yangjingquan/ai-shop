@@ -25,6 +25,10 @@ public class OrderDetailVO {
 
     private Long groupBuyExpireAt;
 
+    private Integer groupBuyStatus;
+
+    private String groupBuyStatusText;
+
     private BigDecimal totalAmount;
 
     private BigDecimal freightAmount;
@@ -72,6 +76,8 @@ public class OrderDetailVO {
     private String refundRejectReason;
 
     private BigDecimal refundAmount;
+
+    private LocalDateTime refundTime;
 
     private String refundFailReason;
 

@@ -36,6 +36,16 @@ public class ProductSaveRequest {
     @Min(2)
     private Integer groupBuyRequiredCount;
 
+    @Min(1)
+    private Integer groupBuyDurationHours;
+
+    @Min(1)
+    private Integer groupBuyUserLimit;
+
+    private Integer groupBuyShowActive;
+
+    private List<Long> groupBuySkuIds;
+
     @NotEmpty
     @Valid
     private List<SpecInput> specs;

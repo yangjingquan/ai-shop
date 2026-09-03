@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.RefundStatus;
+import com.shop.groupbuy.entity.GroupRefundTask;
+import com.shop.groupbuy.mapper.GroupRefundTaskMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.RefundCompletionService;
@@ -13,6 +15,7 @@ import com.wechat.pay.java.service.refund.model.Refund;
 import com.wechat.pay.java.service.refund.model.Status;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -34,6 +37,10 @@ public class RefundReconciliationServiceImpl implements RefundReconciliationServ
     private final RefundCompletionService refundCompletionService;
     private final ObjectMapper objectMapper;
 
+    /** Optional for backward-compatible unit construction; the application always provides this mapper. */
+    @Autowired
+    private GroupRefundTaskMapper groupRefundTaskMapper;
+
     @Override
     public int reconcilePending(int batchLimit) {
         if (batchLimit <= 0) {
@@ -54,11 +61,13 @@ public class RefundReconciliationServiceImpl implements RefundReconciliationServ
                         : wxPayService.createRefund(order, app.getOutRefundNo(), app.getReason(), app.getRefundAmount());
                 validateResponse(app, order, wxRefund);
                 applyResponse(app, order, wxRefund);
+                syncGroupRefundTask(app, null);
                 if (app.getStatus() == RefundStatus.SUCCESS.getCode()) {
                     completed++;
                 }
             } catch (Exception e) {
                 error = abbreviate(e.getMessage());
+                syncGroupRefundTask(app, error);
                 log.warn("退款主动对账失败, outRefundNo={}, error={}", app.getOutRefundNo(), error, e);
             } finally {
                 refundMapper.markReconcileAttempt(app.getId(), LocalDateTime.now(), error);
@@ -126,5 +135,38 @@ public class RefundReconciliationServiceImpl implements RefundReconciliationServ
     private String abbreviate(String message) {
         String value = message == null || message.isBlank() ? "未知错误" : message;
         return value.length() <= MAX_ERROR_LENGTH ? value : value.substring(0, MAX_ERROR_LENGTH);
+    }
+
+    private void syncGroupRefundTask(RefundApplication app, String error) {
+        if (groupRefundTaskMapper == null || app == null || app.getOrderNo() == null) {
+            return;
+        }
+        GroupRefundTask task = groupRefundTaskMapper.selectOne(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<GroupRefundTask>()
+                .eq(GroupRefundTask::getOrderNo, app.getOrderNo()));
+        if (task == null) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        task.setRetryCount((task.getRetryCount() == null ? 0 : task.getRetryCount())
+                + (error == null ? 0 : 1));
+        if (error != null && !error.isBlank()) {
+            task.setStatus("failed");
+            task.setLastError(error);
+            task.setNextRetryAt(now.plusMinutes(1));
+        } else if (app.getStatus() == RefundStatus.SUCCESS.getCode()) {
+            task.setStatus("success");
+            task.setLastError("");
+            task.setNextRetryAt(null);
+            task.setCompletedAt(app.getRefundTime() == null ? now : app.getRefundTime());
+        } else if (app.getStatus() == RefundStatus.REFUNDING.getCode()) {
+            task.setStatus("processing");
+            task.setLastError("");
+            task.setNextRetryAt(now.plusMinutes(1));
+        } else if (app.getStatus() == RefundStatus.FAILED.getCode()) {
+            task.setStatus("failed");
+            task.setLastError(app.getRefundFailReason() == null ? "微信退款失败" : app.getRefundFailReason());
+            task.setNextRetryAt(now.plusMinutes(1));
+        }
+        groupRefundTaskMapper.updateById(task);
     }
 }
