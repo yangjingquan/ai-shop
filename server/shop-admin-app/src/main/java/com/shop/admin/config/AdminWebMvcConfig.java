@@ -13,6 +13,7 @@ public class AdminWebMvcConfig implements WebMvcConfigurer {
 
     private final AdminAuthInterceptor adminAuthInterceptor;
     private final MerchantAuthInterceptor merchantAuthInterceptor;
+    private final MerchantPermissionInterceptor merchantPermissionInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -22,5 +23,8 @@ public class AdminWebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(merchantAuthInterceptor)
                 .addPathPatterns("/api/merchant/**")
                 .excludePathPatterns("/api/merchant/auth/login", "/api/merchant/auth/public-key");
+        registry.addInterceptor(merchantPermissionInterceptor)
+                .addPathPatterns("/api/merchant/**")
+                .excludePathPatterns("/api/merchant/auth/**");
     }
 }

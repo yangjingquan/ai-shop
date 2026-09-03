@@ -14,5 +14,7 @@ public class MerchantUser extends BaseEntity {
     private String passwordHash;
     private String role;
 
+    private Integer status;
+
     private Integer tokenVersion;
 }

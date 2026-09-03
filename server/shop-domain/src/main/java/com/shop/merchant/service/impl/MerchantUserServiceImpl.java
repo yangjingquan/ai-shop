@@ -46,6 +46,9 @@ public class MerchantUserServiceImpl implements MerchantUserService {
         if (user == null || (!bootstrapLogin && !ENCODER.matches(password, user.getPasswordHash()))) {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
+        if (!Integer.valueOf(1).equals(user.getStatus())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
         Merchant merchant = merchantMapper.selectById(user.getMerchantId());
         if (merchant == null || merchant.getStatus() == null || merchant.getStatus() == 0) {
             throw new BusinessException(ErrorCode.MERCHANT_FROZEN);
@@ -62,7 +65,7 @@ public class MerchantUserServiceImpl implements MerchantUserService {
     public void changePassword(Long userId, String currentPassword, String newPassword) {
         PasswordPolicy.validate(newPassword);
         MerchantUser user = merchantUserMapper.selectById(userId);
-        if (user == null || !matchesPassword(user, currentPassword)) {
+        if (user == null || !Integer.valueOf(1).equals(user.getStatus()) || !matchesPassword(user, currentPassword)) {
             throw new BusinessException(ErrorCode.CURRENT_PASSWORD_INCORRECT);
         }
         user.setPasswordHash(ENCODER.encode(newPassword));

@@ -38,6 +38,7 @@ export const adminAuthApi = {
 
 export const merchantAuthApi = {
   getPublicKey: getMerchantPublicKey,
+  encryptPassword: (password: string) => encryptPasswordFields(getMerchantPublicKey, { password }).then((data) => data.password),
   login: async (username: string, password: string) =>
     request.post<unknown, unknown>('/api/merchant/auth/login', {
       username,
@@ -46,6 +47,10 @@ export const merchantAuthApi = {
   changePassword: async (data: ChangePasswordPayload) =>
     request.put<unknown, void>('/api/merchant/auth/password',
       await encryptPasswordFields(getMerchantPublicKey, { ...data })),
+}
+
+export async function encryptMerchantPassword(password: string) {
+  return merchantAuthApi.encryptPassword(password)
 }
 
 export async function encryptAdminPassword(password: string) {

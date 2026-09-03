@@ -2,6 +2,7 @@ const categoryApi = require('../../api/category')
 const productApi = require('../../api/product')
 const bannerApi = require('../../api/banner')
 const homeApi = require('../../api/home')
+const marketingCapabilities = require('../../utils/marketing-capabilities')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
@@ -11,6 +12,7 @@ Page({
     topCategories: [],
     products: [],
     loading: false,
+    marketingEnabled: {},
   },
 
   onLoad() {
@@ -25,6 +27,9 @@ Page({
         categoryApi.tree().catch(() => ({ data: [] })),
       ])
       const homeData = (homeRes && homeRes.data) || {}
+      const marketingEnabled = Array.isArray(homeData.marketingFeatures)
+        ? marketingCapabilities.seed(homeData.marketingFeatures)
+        : {}
       const bannerData = homeData.banners || await bannerApi.list().then((res) => res.data || []).catch(() => [])
       let productData = homeData.recommends || []
       if (!productData.length) {
@@ -44,7 +49,7 @@ Page({
         tone: `tone-${(idx % 5) + 1}`,
       }))
       const list = this.normalizeProducts({ data: { list: productData } })
-      this.setData({ banners, topCategories: top, products: list })
+      this.setData({ banners, topCategories: top, products: list, marketingEnabled })
     } finally {
       this.setData({ loading: false })
     }
@@ -180,7 +185,9 @@ Page({
   },
 
   onGroupBuy() {
-    wx.navigateTo({ url: '/pages/group-buy/list' })
+    marketingCapabilities.ensure('GROUP_BUY').then((enabled) => {
+      if (enabled) wx.navigateTo({ url: '/pages/group-buy/list' })
+    })
   },
 
   onProduct(e) {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 import type { AdminRefundRow } from '@/api/order'
@@ -7,7 +8,9 @@ import type { AdminRefundRow } from '@/api/order'
 type RefundRow = AdminRefundRow
 
 const refunds = ref<RefundRow[]>([])
-const currentTab = ref<number | ''>(0)
+const route = useRoute()
+const routeStatus = Number(route.query.status)
+const currentTab = ref<number | ''>([0, 1, 2, 3, 4, 5, 6].includes(routeStatus) ? routeStatus : 0)
 const page = ref(1)
 const size = ref(10)
 const total = ref(0)
@@ -160,17 +163,17 @@ onMounted(loadRefunds)
                 placeholder="拒绝原因（可选）"
                 size="small"
               />
-              <el-button type="success" size="small" @click="doApprove(row.id)">
+              <el-button v-permission="'merchant:refund:approve'" type="success" size="small" @click="doApprove(row.id)">
                 同意退款
               </el-button>
-              <el-button type="danger" size="small" @click="doReject(row.id)">
+              <el-button v-permission="'merchant:refund:approve'" type="danger" size="small" @click="doReject(row.id)">
                 拒绝
               </el-button>
             </div>
-            <el-button v-else-if="row.status === 6" type="primary" size="small" @click="confirmReturn(row.id)">
+            <el-button v-else-if="row.status === 6" v-permission="'merchant:refund:return-received'" type="primary" size="small" @click="confirmReturn(row.id)">
               验货并退款
             </el-button>
-            <el-button v-else-if="row.status === 4" type="warning" size="small" @click="doRetry(row.id)">
+            <el-button v-else-if="row.status === 4" v-permission="'merchant:refund:retry'" type="warning" size="small" @click="doRetry(row.id)">
               重试退款
             </el-button>
             <span v-else>-</span>

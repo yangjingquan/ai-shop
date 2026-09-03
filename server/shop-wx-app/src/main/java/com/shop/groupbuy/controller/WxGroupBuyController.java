@@ -10,6 +10,8 @@ import com.shop.groupbuy.dto.GroupBuyProductDetailVO;
 import com.shop.groupbuy.service.GroupBuyService;
 import com.shop.product.dto.ProductListVO;
 import com.shop.wx.config.WxMerchantResolver;
+import com.shop.marketing.enums.MarketingActivityCode;
+import com.shop.marketing.service.MarketingFeatureService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class WxGroupBuyController {
     private final GroupBuyService groupBuyService;
     private final WxMerchantResolver wxMerchantResolver;
+    private final MarketingFeatureService marketingFeatureService;
 
     @GetMapping("/products")
     public ApiResult<PageResult<ProductListVO>> products(@RequestParam(defaultValue = "1") int page,
@@ -28,18 +31,22 @@ public class WxGroupBuyController {
                                                          @RequestParam(required = false) Long categoryId,
                                                          @RequestParam(required = false) String keyword,
                                                          HttpServletRequest request) {
-        return ApiResult.success(groupBuyService.productPage(page, size,
-                wxMerchantResolver.currentMerchantId(request), categoryId, keyword));
+        Long merchantId = wxMerchantResolver.currentMerchantId(request);
+        marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.GROUP_BUY);
+        return ApiResult.success(groupBuyService.productPage(page, size, merchantId, categoryId, keyword));
     }
 
     @GetMapping("/products/{productId}")
     public ApiResult<GroupBuyProductDetailVO> productDetail(@PathVariable Long productId, HttpServletRequest request) {
-        return ApiResult.success(groupBuyService.productDetail(productId, wxMerchantResolver.currentMerchantId(request)));
+        Long merchantId = wxMerchantResolver.currentMerchantId(request);
+        marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.GROUP_BUY);
+        return ApiResult.success(groupBuyService.productDetail(productId, merchantId));
     }
 
     @PostMapping("/groups")
     public ApiResult<GroupBuyCreateVO> open(@RequestBody @Valid GroupBuyCreateRequest req, HttpServletRequest request) {
         Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
+        marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.GROUP_BUY);
         return ApiResult.success(groupBuyService.openGroup(CurrentUserHolder.get().getUserId(), merchantId, req));
     }
 
@@ -47,12 +54,14 @@ public class WxGroupBuyController {
     public ApiResult<GroupBuyCreateVO> join(@PathVariable Long groupId, @RequestBody @Valid GroupBuyCreateRequest req,
                                             HttpServletRequest request) {
         Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
+        marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.GROUP_BUY);
         return ApiResult.success(groupBuyService.joinGroup(CurrentUserHolder.get().getUserId(), merchantId, groupId, req));
     }
 
     @GetMapping("/groups/{groupId}")
     public ApiResult<GroupBuyGroupVO> group(@PathVariable Long groupId, HttpServletRequest request) {
         Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
+        marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.GROUP_BUY);
         return ApiResult.success(groupBuyService.groupDetail(groupId, merchantId));
     }
 }

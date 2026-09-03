@@ -171,7 +171,7 @@ onMounted(async () => {
         <h1 class="page-title">商品管理</h1>
         <p class="page-desc">管理商品资料、价格库存、上下架与 SKU 信息。</p>
       </div>
-      <el-button type="primary" @click="onCreate">新增商品</el-button>
+      <el-button v-permission="'merchant:product:create'" type="primary" @click="onCreate">新增商品</el-button>
     </div>
 
     <el-card>
@@ -225,10 +225,10 @@ onMounted(async () => {
           <el-option label="非团购" :value="0" />
         </el-select>
         <el-button type="primary" @click="onSearch">搜索</el-button>
-        <el-button :disabled="!selectedCount" @click="onBatchSetStatus(1)">
+        <el-button v-permission="'merchant:product:status'" :disabled="!selectedCount" @click="onBatchSetStatus(1)">
           一键上架
         </el-button>
-        <el-button :disabled="!selectedCount" @click="onBatchSetStatus(0)">
+        <el-button v-permission="'merchant:product:status'" :disabled="!selectedCount" @click="onBatchSetStatus(0)">
           一键下架
         </el-button>
         <span v-if="selectedCount" class="selection-tip">已选 {{ selectedCount }} 个</span>
@@ -300,8 +300,9 @@ onMounted(async () => {
         </el-table-column>
         <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="onEdit(row as ProductListVO)">编辑</el-button>
+            <el-button v-permission="'merchant:product:update'" link type="primary" @click="onEdit(row as ProductListVO)">编辑</el-button>
             <el-button
+              v-permission="'merchant:product:status'"
               link
               :type="(row as ProductListVO).status === 1 ? 'warning' : 'success'"
               :disabled="(row as ProductListVO).status !== 1 && (row as ProductListVO).auditStatus !== 1"
@@ -309,7 +310,7 @@ onMounted(async () => {
             >
               {{ (row as ProductListVO).status === 1 ? '下架' : '上架' }}
             </el-button>
-            <el-button link type="danger" @click="onRemove(row as ProductListVO)">删除</el-button>
+            <el-button v-permission="'merchant:product:delete'" link type="danger" @click="onRemove(row as ProductListVO)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

@@ -88,7 +88,7 @@ async function submit() {
     />
     <template #footer>
       <el-button @click="close">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="submit">导入</el-button>
+      <el-button v-permission="'merchant:category:import'" type="primary" :loading="submitting" @click="submit">导入</el-button>
     </template>
   </el-dialog>
 </template>

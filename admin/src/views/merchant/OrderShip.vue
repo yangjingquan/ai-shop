@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 import type { AdminLogisticsTracking } from '@/api/order'
@@ -65,6 +66,7 @@ interface OrderDetail {
 }
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081').replace(/\/$/, '')
+const route = useRoute()
 
 const orders = ref<OrderRow[]>([])
 const shipNos = ref<Record<string, string>>({})
@@ -92,7 +94,13 @@ const query = reactive<{
   page: number
   size: number
   status: number | undefined
-}>({ page: 1, size: 10, status: undefined })
+  scope: string | undefined
+}>({
+  page: 1,
+  size: 10,
+  status: undefined,
+  scope: route.query.scope === 'shipable' ? 'shipable' : undefined,
+})
 
 async function loadOrders() {
   loading.value = true
@@ -102,6 +110,7 @@ async function loadOrders() {
         page: query.page,
         size: query.size,
         status: query.status,
+        scope: query.scope,
       },
     })
     orders.value = data?.list || []
@@ -113,6 +122,7 @@ async function loadOrders() {
 
 function onSearch() {
   query.page = 1
+  query.scope = undefined
   loadOrders()
 }
 
@@ -222,7 +232,7 @@ onMounted(loadOrders)
       <el-table v-loading="loading" :data="orders" stripe>
         <el-table-column label="订单号" min-width="200">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openOrderDetail(row.orderNo)">
+              <el-button v-permission="'merchant:order:detail'" link type="primary" @click="openOrderDetail(row.orderNo)">
               {{ row.orderNo }}
             </el-button>
           </template>
@@ -256,7 +266,7 @@ onMounted(loadOrders)
                 placeholder="输入物流单号"
                 size="small"
               />
-              <el-button type="primary" size="small" @click="doShip(row.orderNo)">
+              <el-button v-permission="'merchant:order:ship'" type="primary" size="small" @click="doShip(row.orderNo)">
                 发货
               </el-button>
             </div>
@@ -362,7 +372,7 @@ onMounted(loadOrders)
           <div v-if="orderDetail.shipNo" class="detail-section">
             <div class="section-title logistics-title">
               <span>物流轨迹</span>
-              <el-button link type="primary" :loading="logisticsLoading" @click="loadLogistics(true)">刷新物流</el-button>
+              <el-button v-permission="'merchant:order:logistics:refresh'" link type="primary" :loading="logisticsLoading" @click="loadLogistics(true)">刷新物流</el-button>
             </div>
             <el-alert v-if="orderDetail.logistics?.error" :title="orderDetail.logistics.error" type="warning" :closable="false" />
             <el-empty v-if="!orderDetail.logistics?.traces?.length" description="暂无物流轨迹" :image-size="70" />

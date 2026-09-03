@@ -80,19 +80,19 @@
       <view class="empty-title">{{ keyword ? '暂无搜索结果' : '暂无推荐商品' }}</view>
     </view>
 
-    <view class="section-head deal-head">
+    <view wx:if="{{ marketingEnabled.GROUP_BUY || marketingEnabled.SECKILL }}" class="section-head deal-head">
       <view class="section-title">限时会场</view>
       <view class="more">11:00 更新</view>
     </view>
-    <view class="deal-row">
-      <view class="group-card" bindtap="onGroupBuy">
+    <view wx:if="{{ marketingEnabled.GROUP_BUY || marketingEnabled.SECKILL }}" class="deal-row">
+      <view wx:if="{{ marketingEnabled.GROUP_BUY }}" class="group-card" bindtap="onGroupBuy">
         <view class="deal-title">团购商品</view>
         <view class="deal-desc">N人成团·省更多</view>
         <view class="avatars"><view></view><view></view><view></view></view>
         <view class="group-price">享受拼团价</view>
         <view class="headphone"></view>
       </view>
-      <view class="flash-card">
+      <view wx:if="{{ marketingEnabled.SECKILL }}" class="flash-card">
         <view class="deal-title dark">秒杀商品</view>
         <view class="timer"><text>01</text><text>23</text><text>59</text></view>
         <view class="flash-price">¥69 起</view>

@@ -109,7 +109,7 @@ onMounted(load)
           <el-input v-model="form.contactPhone" maxlength="20" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="submitting" @click="handleSubmit">
+          <el-button v-permission="'merchant:profile:update'" type="primary" :loading="submitting" @click="handleSubmit">
             保存
           </el-button>
           <el-button @click="load">重置</el-button>

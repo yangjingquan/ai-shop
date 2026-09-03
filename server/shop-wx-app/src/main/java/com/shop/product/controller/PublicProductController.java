@@ -6,6 +6,8 @@ import com.shop.product.dto.ProductDetailVO;
 import com.shop.product.dto.ProductListVO;
 import com.shop.product.service.ProductService;
 import com.shop.wx.config.WxMerchantResolver;
+import com.shop.marketing.enums.MarketingActivityCode;
+import com.shop.marketing.service.MarketingFeatureService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +19,7 @@ public class PublicProductController {
 
     private final ProductService productService;
     private final WxMerchantResolver wxMerchantResolver;
+    private final MarketingFeatureService marketingFeatureService;
 
     @GetMapping("/page")
     public ApiResult<PageResult<ProductListVO>> page(
@@ -28,12 +31,37 @@ public class PublicProductController {
             @RequestParam(required = false) Integer isGroupBuy,
             HttpServletRequest request) {
         Long merchantId = wxMerchantResolver.currentMerchantId(request);
-        return ApiResult.success(productService.publicPage(page, size, merchantId, categoryId, keyword, isRecommend, isGroupBuy));
+        boolean groupBuyEnabled = marketingFeatureService.isEnabled(merchantId, MarketingActivityCode.GROUP_BUY);
+        if (Integer.valueOf(1).equals(isGroupBuy)) {
+            marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.GROUP_BUY);
+        }
+        PageResult<ProductListVO> result = productService.publicPage(page, size, merchantId, categoryId, keyword,
+                isRecommend, isGroupBuy);
+        if (!groupBuyEnabled && !Integer.valueOf(1).equals(isGroupBuy)) {
+            result.getList().forEach(this::hideGroupBuyFields);
+        }
+        return ApiResult.success(result);
     }
 
     @GetMapping("/{id}")
     public ApiResult<ProductDetailVO> get(@PathVariable Long id, HttpServletRequest request) {
         Long merchantId = wxMerchantResolver.currentMerchantId(request);
-        return ApiResult.success(productService.publicGet(id, merchantId));
+        ProductDetailVO product = productService.publicGet(id, merchantId);
+        if (!marketingFeatureService.isEnabled(merchantId, MarketingActivityCode.GROUP_BUY)) {
+            hideGroupBuyFields(product);
+        }
+        return ApiResult.success(product);
+    }
+
+    private void hideGroupBuyFields(ProductListVO product) {
+        product.setIsGroupBuy(0);
+        product.setGroupBuyPrice(null);
+        product.setGroupBuyRequiredCount(null);
+    }
+
+    private void hideGroupBuyFields(ProductDetailVO product) {
+        product.setIsGroupBuy(0);
+        product.setGroupBuyPrice(null);
+        product.setGroupBuyRequiredCount(null);
     }
 }

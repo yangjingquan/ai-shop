@@ -2,6 +2,7 @@ package com.shop.file.controller;
 
 import com.shop.common.response.ApiResult;
 import com.shop.common.security.CurrentUserHolder;
+import com.shop.common.security.RequirePermission;
 import com.shop.file.service.LocalFileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ public class MerchantFileController {
     private final LocalFileStorageService localFileStorageService;
 
     @PostMapping("/upload")
+    @RequirePermission("merchant:file:upload")
     public ApiResult<Map<String, String>> upload(@RequestParam("file") MultipartFile file) throws IOException {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
         return ApiResult.success(Map.of("url", localFileStorageService.save(file, "MERCHANT",
@@ -26,6 +28,7 @@ public class MerchantFileController {
     }
 
     @PostMapping("/upload/batch")
+    @RequirePermission("merchant:file:upload")
     public ApiResult<List<String>> uploadBatch(@RequestParam("files") List<MultipartFile> files) throws IOException {
         List<String> urls = new java.util.ArrayList<>();
         for (MultipartFile file : files) {
@@ -36,6 +39,7 @@ public class MerchantFileController {
     }
 
     @DeleteMapping("/delete")
+    @RequirePermission("merchant:file:delete")
     public ApiResult<Void> delete(@RequestParam("url") String url) throws IOException {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
         localFileStorageService.delete(url, "MERCHANT", merchantId, merchantId);

@@ -4,11 +4,16 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shop.dashboard.dto.DashboardOverviewVO;
 import com.shop.dashboard.dto.DashboardTrendVO;
 import com.shop.dashboard.dto.DailyAmountRow;
+import com.shop.dashboard.dto.MerchantWorkbenchTodoVO;
+import com.shop.dashboard.dto.MerchantWorkbenchVO;
 import com.shop.dashboard.service.DashboardService;
+import com.shop.inventory.dto.InventorySkuVO;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
+import com.shop.order.dto.OrderListVO;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.RefundApplication;
+import com.shop.order.enums.OrderStatus;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.PaymentLogMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
@@ -16,6 +21,8 @@ import com.shop.product.entity.Product;
 import com.shop.product.mapper.ProductMapper;
 import com.shop.product.mapper.ProductSkuMapper;
 import lombok.RequiredArgsConstructor;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -52,6 +59,27 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public DashboardOverviewVO merchantOverview(Long merchantId) {
         return overview(merchantId);
+    }
+
+    @Override
+    public MerchantWorkbenchVO merchantWorkbench(Long merchantId) {
+        DashboardOverviewVO overview = merchantOverview(merchantId);
+
+        MerchantWorkbenchTodoVO todo = new MerchantWorkbenchTodoVO();
+        todo.setPendingShipCount(overview.getPendingShipCount());
+        todo.setPendingRefundCount(overview.getPendingRefundCount());
+        todo.setPendingReturnReceiveCount(refundCount(merchantId, 6));
+        todo.setFailedRefundCount(refundCount(merchantId, 4));
+        todo.setLowStockSkuCount(overview.getLowStockSkuCount());
+
+        MerchantWorkbenchVO vo = new MerchantWorkbenchVO();
+        vo.setOverview(overview);
+        vo.setTodo(todo);
+        vo.setRecentOrders(recentOrders(merchantId));
+        vo.setLowStockSkus(productSkuMapper.selectMerchantLowStockPage(
+                new Page<>(1, 5), merchantId, LOW_STOCK_THRESHOLD).getRecords());
+        vo.setGeneratedAt(LocalDateTime.now());
+        return vo;
     }
 
     @Override
@@ -122,6 +150,31 @@ public class DashboardServiceImpl implements DashboardService {
 
     private long lowStockSkuCount(Long merchantId) {
         return productSkuMapper.countLowStock(merchantId, LOW_STOCK_THRESHOLD);
+    }
+
+    private long refundCount(Long merchantId, int status) {
+        return refundApplicationMapper.selectCount(new LambdaQueryWrapper<RefundApplication>()
+                .eq(RefundApplication::getMerchantId, merchantId)
+                .eq(RefundApplication::getStatus, status));
+    }
+
+    private List<OrderListVO> recentOrders(Long merchantId) {
+        LambdaQueryWrapper<Order> q = new LambdaQueryWrapper<Order>()
+                .eq(Order::getMerchantId, merchantId)
+                .orderByDesc(Order::getCreatedAt)
+                .orderByDesc(Order::getId);
+        IPage<Order> page = orderMapper.selectPage(new Page<>(1, 5), q);
+        return page.getRecords().stream().map(order -> {
+            OrderListVO vo = new OrderListVO();
+            vo.setOrderNo(order.getOrderNo());
+            vo.setStatus(order.getStatus());
+            vo.setStatusText(OrderStatus.statusText(order.getStatus()));
+            vo.setOrderType(order.getOrderType());
+            vo.setPayAmount(order.getPayAmount());
+            vo.setMerchantId(order.getMerchantId());
+            vo.setCreatedAt(order.getCreatedAt());
+            return vo;
+        }).toList();
     }
 
     private void scopeOrders(LambdaQueryWrapper<Order> q, Long merchantId) {

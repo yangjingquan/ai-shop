@@ -2,6 +2,7 @@ package com.shop.merchant.controller;
 
 import com.shop.common.response.ApiResult;
 import com.shop.common.security.CurrentUserHolder;
+import com.shop.common.security.RequirePermission;
 import com.shop.merchant.dto.MerchantSelfVO;
 import com.shop.merchant.dto.UpdateMerchantSelfRequest;
 import com.shop.merchant.service.MerchantManagementService;
@@ -21,12 +22,14 @@ public class MerchantProfileController {
     private final MerchantManagementService merchantManagementService;
 
     @GetMapping
+    @RequirePermission("merchant:profile:view")
     public ApiResult<MerchantSelfVO> getSelf() {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
         return ApiResult.success(merchantManagementService.getSelf(merchantId));
     }
 
     @PutMapping
+    @RequirePermission("merchant:profile:update")
     public ApiResult<Void> updateSelf(@RequestBody @Valid UpdateMerchantSelfRequest req) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
         merchantManagementService.updateSelf(merchantId, req);

@@ -452,7 +452,7 @@ onMounted(async () => {
               style="width: 200px"
               maxlength="32"
             />
-            <el-button link type="danger" @click="removeSpec(idx)">删除规格</el-button>
+            <el-button v-permission="'merchant:product:update'" link type="danger" @click="removeSpec(idx)">删除规格</el-button>
           </div>
           <div class="spec-values">
             <div v-for="(_, vIdx) in spec.values" :key="vIdx" class="value-cell">
@@ -462,12 +462,12 @@ onMounted(async () => {
                 style="width: 140px"
                 maxlength="32"
               />
-              <el-button link type="danger" @click="removeSpecValue(spec, vIdx)">×</el-button>
+              <el-button v-permission="'merchant:product:update'" link type="danger" @click="removeSpecValue(spec, vIdx)">×</el-button>
             </div>
-            <el-button size="small" @click="addSpecValue(spec)">+ 添加值</el-button>
+              <el-button v-permission="'merchant:product:update'" size="small" @click="addSpecValue(spec)">+ 添加值</el-button>
           </div>
         </div>
-        <el-button type="primary" plain @click="addSpec">+ 添加规格</el-button>
+        <el-button v-permission="'merchant:product:update'" type="primary" plain @click="addSpec">+ 添加规格</el-button>
       </div>
 
       <el-divider content-position="left">SKU 列表（共 {{ skuRows.length }} 条）</el-divider>
@@ -533,7 +533,7 @@ onMounted(async () => {
       </el-table>
 
       <div class="actions">
-        <el-button :loading="submitting" type="primary" @click="handleSubmit">
+        <el-button v-permission="isEdit ? 'merchant:product:update' : 'merchant:product:create'" :loading="submitting" type="primary" @click="handleSubmit">
           保存
         </el-button>
         <el-button @click="handleCancel">取消</el-button>

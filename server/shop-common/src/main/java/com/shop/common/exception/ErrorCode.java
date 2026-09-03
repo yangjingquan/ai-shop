@@ -61,6 +61,8 @@ public enum ErrorCode {
     GROUP_BUY_GROUP_EXPIRED(263, "团已过期"),
     GROUP_BUY_GROUP_STATUS_INVALID(264, "团状态不可参团"),
     GROUP_BUY_ORDER_INVALID(265, "团购订单状态不允许当前操作"),
+    MARKETING_ACTIVITY_DISABLED(270, "营销活动未启用"),
+    MARKETING_ACTIVITY_NOT_FOUND(271, "营销活动不存在"),
     UNAUTHORIZED(401, "未登录"),
     FORBIDDEN(403, "无权限"),
     RATE_LIMIT_EXCEEDED(429, "请求过于频繁，请稍后再试"),

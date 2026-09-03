@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fileApi, type UploadScope } from '@/api/file'
+import { useUserStore } from '@/stores/user'
 
 const props = withDefaults(defineProps<{
   modelValue: string | string[]
@@ -21,6 +22,7 @@ const emit = defineEmits<{
 
 const inputRef = ref<HTMLInputElement>()
 const uploading = ref(false)
+const userStore = useUserStore()
 const previewVisible = ref(false)
 const previewUrl = ref('')
 
@@ -33,6 +35,9 @@ const urls = computed<string[]>(() => {
   if (Array.isArray(props.modelValue)) return props.modelValue.filter(Boolean)
   return props.modelValue ? [props.modelValue] : []
 })
+
+const canDelete = computed(() => props.scope === 'admin' || userStore.hasPermission('merchant:file:delete'))
+const canUpload = computed(() => props.scope === 'admin' || userStore.hasPermission('merchant:file:upload'))
 
 function resolveImageUrl(url: string) {
   if (/^(https?:)?\/\//.test(url) || url.startsWith('data:') || url.startsWith('blob:')) return url
@@ -106,10 +111,10 @@ async function removeImage(url: string) {
         <button class="preview-trigger" type="button" title="点击放大查看" @click="openPreview(url)">
           <img :src="resolveImageUrl(url)" alt="已上传图片" class="preview" />
         </button>
-        <button class="remove" type="button" title="删除图片" @click.stop="removeImage(url)">×</button>
+        <button v-if="canDelete" class="remove" type="button" title="删除图片" @click.stop="removeImage(url)">×</button>
       </div>
       <button
-        v-if="multiple ? urls.length < limit : urls.length === 0"
+        v-if="canUpload && (multiple ? urls.length < limit : urls.length === 0)"
         class="upload-card"
         type="button"
         :disabled="uploading"

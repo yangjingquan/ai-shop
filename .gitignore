@@ -36,3 +36,5 @@ logs/
 *.log
 
 server/uploads/*
+
+docs

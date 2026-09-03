@@ -6,6 +6,7 @@ import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.security.CurrentUser;
 import com.shop.common.security.CurrentUserHolder;
+import com.shop.common.security.RequirePermission;
 import com.shop.inventory.dto.InventoryAdjustmentRequest;
 import com.shop.inventory.dto.InventorySkuVO;
 import com.shop.inventory.dto.InventoryTransactionVO;
@@ -22,6 +23,7 @@ public class MerchantInventoryController {
     private final InventoryService inventoryService;
 
     @GetMapping("/skus")
+    @RequirePermission("merchant:inventory:view")
     public ApiResult<PageResult<InventorySkuVO>> skus(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -32,6 +34,7 @@ public class MerchantInventoryController {
     }
 
     @GetMapping("/transactions")
+    @RequirePermission("merchant:inventory:transaction:view")
     public ApiResult<PageResult<InventoryTransactionVO>> transactions(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -40,6 +43,7 @@ public class MerchantInventoryController {
     }
 
     @PostMapping("/adjust")
+    @RequirePermission("merchant:inventory:adjust")
     public ApiResult<Void> adjust(@Valid @RequestBody InventoryAdjustmentRequest request) {
         CurrentUser user = CurrentUserHolder.get();
         inventoryService.adjust(merchantId(), user == null ? null : user.getUserId(), request);

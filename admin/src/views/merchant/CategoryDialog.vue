@@ -109,7 +109,7 @@ async function submit() {
     </el-form>
     <template #footer>
       <el-button @click="close">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="submit">保存</el-button>
+      <el-button v-permission="props.mode === 'edit' ? 'merchant:category:update' : 'merchant:category:create'" type="primary" :loading="submitting" @click="submit">保存</el-button>
     </template>
   </el-dialog>
 </template>

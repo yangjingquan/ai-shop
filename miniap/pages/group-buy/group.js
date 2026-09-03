@@ -1,5 +1,6 @@
 const groupBuyApi = require('../../api/group-buy')
 const { resolveImageUrl } = require('../../utils/url')
+const marketingCapabilities = require('../../utils/marketing-capabilities')
 
 Page({
   data: {
@@ -11,7 +12,10 @@ Page({
   onLoad(options) {
     const groupId = Number(options.groupId || 0)
     this.setData({ groupId })
-    this.load()
+    marketingCapabilities.ensure('GROUP_BUY').then((enabled) => {
+      if (enabled) this.load()
+      else wx.switchTab({ url: '/pages/home/index' })
+    })
   },
   onUnload() {
     this.clearTimer()

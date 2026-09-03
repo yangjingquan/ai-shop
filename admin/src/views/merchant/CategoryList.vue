@@ -72,8 +72,8 @@ onMounted(load)
         <p class="page-desc">维护本店小程序展示分类，可从平台分类导入，也可手动添加并设置排序。</p>
       </div>
       <div class="header-actions">
-        <el-button @click="importOpen = true">从平台导入</el-button>
-        <el-button type="primary" @click="openCreateRoot">新增一级分类</el-button>
+        <el-button v-permission="'merchant:category:import'" @click="importOpen = true">从平台导入</el-button>
+        <el-button v-permission="'merchant:category:create'" type="primary" @click="openCreateRoot">新增一级分类</el-button>
       </div>
     </div>
 
@@ -111,6 +111,7 @@ onMounted(load)
         <el-table-column label="操作" width="320">
           <template #default="{ row }">
             <el-button
+              v-permission="'merchant:category:create'"
               v-if="(row as MerchantCategoryVO).level === 1"
               link
               type="primary"
@@ -118,11 +119,11 @@ onMounted(load)
             >
               新增子级
             </el-button>
-            <el-button link type="primary" @click="openEdit(row as MerchantCategoryVO)">编辑</el-button>
-            <el-button link type="warning" @click="toggleStatus(row as MerchantCategoryVO)">
+            <el-button v-permission="'merchant:category:update'" link type="primary" @click="openEdit(row as MerchantCategoryVO)">编辑</el-button>
+            <el-button v-permission="'merchant:category:status'" link type="warning" @click="toggleStatus(row as MerchantCategoryVO)">
               {{ (row as MerchantCategoryVO).status === 1 ? '禁用' : '启用' }}
             </el-button>
-            <el-button link type="danger" @click="remove(row as MerchantCategoryVO)">删除</el-button>
+            <el-button v-permission="'merchant:category:delete'" link type="danger" @click="remove(row as MerchantCategoryVO)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

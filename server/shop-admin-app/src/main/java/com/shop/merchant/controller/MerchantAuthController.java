@@ -8,6 +8,7 @@ import com.shop.merchant.dto.LoginRequest;
 import com.shop.merchant.dto.LoginResponse;
 import com.shop.merchant.security.PasswordCipher;
 import com.shop.merchant.service.MerchantUserService;
+import com.shop.merchant.service.MerchantRbacService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class MerchantAuthController {
 
     private final MerchantUserService merchantUserService;
+    private final MerchantRbacService merchantRbacService;
     private final PasswordCipher passwordCipher;
 
     @GetMapping("/public-key")
@@ -34,6 +36,12 @@ public class MerchantAuthController {
     @PostMapping("/login")
     public ApiResult<LoginResponse> login(@RequestBody @Valid LoginRequest req) {
         return ApiResult.success(merchantUserService.login(req.getUsername(), passwordCipher.decrypt(req.getPassword())));
+    }
+
+    @GetMapping("/me")
+    public ApiResult<com.shop.merchant.dto.MerchantAuthMeVO> me() {
+        com.shop.common.security.CurrentUser user = CurrentUserHolder.get();
+        return ApiResult.success(merchantRbacService.me(user.getUserId(), user.getMerchantId()));
     }
 
     @PutMapping("/password")

@@ -2,6 +2,7 @@ const productApi = require('../../api/product')
 const cartApi = require('../../api/cart')
 const groupBuyApi = require('../../api/group-buy')
 const { resolveImageUrl } = require('../../utils/url')
+const marketingCapabilities = require('../../utils/marketing-capabilities')
 
 Page({
   data: {
@@ -36,7 +37,14 @@ Page({
       groupBuyMode: opts.groupBuy === '1',
       selectedGroupId: Number(opts.groupId || 0),
     })
-    this.loadDetail()
+    if (this.data.groupBuyMode) {
+      marketingCapabilities.ensure('GROUP_BUY').then((enabled) => {
+        if (enabled) this.loadDetail()
+        else wx.switchTab({ url: '/pages/home/index' })
+      })
+    } else {
+      this.loadDetail()
+    }
   },
 
   async loadDetail() {

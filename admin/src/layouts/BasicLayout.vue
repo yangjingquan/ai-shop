@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { profileApi } from '@/api/profile'
-import ChangePasswordDialog from '@/components/ChangePasswordDialog.vue'
-import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
-const passwordDialogVisible = ref(false)
 
 const title = computed(() =>
   userStore.role === 'admin' ? '商城运营后台' : '商家管理后台',
@@ -23,12 +20,15 @@ const roleLabel = computed(() =>
   userStore.role === 'admin' ? '运营管理员' : userStore.merchantName || '商家账号',
 )
 
+const currentUserLabel = computed(() => userStore.username || roleLabel.value)
+
 interface MenuItem {
   index: string
   label: string
   path: string
   desc: string
   icon: string
+  permission?: string
 }
 
 const adminMenus: MenuItem[] = [
@@ -45,21 +45,25 @@ const adminMenus: MenuItem[] = [
 ]
 
 const merchantMenus: MenuItem[] = [
-  { index: 'merchant', label: '首页', path: '/merchant', desc: '店铺概览', icon: '店' },
-  { index: 'merchant-profile', label: '店铺信息', path: '/merchant/profile', desc: '资料维护', icon: '铺' },
-  { index: 'merchant-categories', label: '分类管理', path: '/merchant/categories', desc: '店铺类目', icon: '类' },
-  { index: 'merchant-products', label: '商品管理', path: '/merchant/products', desc: '上新与库存', icon: '货' },
-  { index: 'merchant-inventory', label: '库存管理', path: '/merchant/inventory', desc: '调整与流水', icon: '库' },
-  { index: 'merchant-banners', label: 'Banner 配置', path: '/merchant/banners', desc: '首页轮播', icon: '图' },
-  { index: 'merchant-order-ship', label: '订单发货', path: '/merchant/order-ship', desc: '履约处理', icon: '单' },
-  { index: 'merchant-refund-review', label: '退款审批', path: '/merchant/refund-review', desc: '售后审核', icon: '退' },
+  { index: 'merchant', label: '首页', path: '/merchant', desc: '店铺概览', icon: '店', permission: 'merchant:dashboard:view' },
+  { index: 'merchant-profile', label: '店铺信息', path: '/merchant/profile', desc: '资料维护', icon: '铺', permission: 'merchant:profile:view' },
+  { index: 'merchant-categories', label: '分类管理', path: '/merchant/categories', desc: '店铺类目', icon: '类', permission: 'merchant:category:view' },
+  { index: 'merchant-products', label: '商品管理', path: '/merchant/products', desc: '上新与库存', icon: '货', permission: 'merchant:product:view' },
+  { index: 'merchant-inventory', label: '库存管理', path: '/merchant/inventory', desc: '调整与流水', icon: '库', permission: 'merchant:inventory:view' },
+  { index: 'merchant-banners', label: 'Banner 配置', path: '/merchant/banners', desc: '首页轮播', icon: '图', permission: 'merchant:banner:view' },
+  { index: 'merchant-marketing', label: '营销活动', path: '/merchant/marketing', desc: '活动开关', icon: '营', permission: 'merchant:marketing:view' },
+  { index: 'merchant-order-ship', label: '订单发货', path: '/merchant/order-ship', desc: '履约处理', icon: '单', permission: 'merchant:order:view' },
+  { index: 'merchant-refund-review', label: '退款审批', path: '/merchant/refund-review', desc: '售后审核', icon: '退', permission: 'merchant:refund:view' },
+  { index: 'merchant-access-control', label: '账号与权限', path: '/merchant/access-control', desc: '角色与成员', icon: '权', permission: 'merchant:rbac:manage' },
 ]
 
 const menus = computed<MenuItem[]>(() =>
-  userStore.role === 'admin' ? adminMenus : merchantMenus,
+  (userStore.role === 'admin' ? adminMenus : merchantMenus)
+    .filter((item) => !item.permission || userStore.hasPermission(item.permission)),
 )
 
 const activeIndex = computed(() => {
+  if (route.path === '/admin/profile' || route.path === '/merchant/password') return ''
   const matched = [...menus.value]
     .sort((a, b) => b.path.length - a.path.length)
     .find((m) => route.path === m.path || route.path.startsWith(`${m.path}/`))
@@ -86,10 +90,12 @@ function handleLogout() {
   router.replace('/login')
 }
 
-function handlePasswordChanged() {
-  userStore.logout()
-  ElMessage.success('密码修改成功，请使用新密码重新登录')
-  router.replace('/login')
+function handleUserCommand(command: 'profile' | 'logout') {
+  if (command === 'profile') {
+    router.push(userStore.role === 'admin' ? '/admin/profile' : '/merchant/password')
+    return
+  }
+  handleLogout()
 }
 onMounted(loadMerchantName)
 </script>
@@ -132,9 +138,23 @@ onMounted(loadMerchantName)
           <div class="subtitle">{{ subtitle }}</div>
         </div>
         <div class="actions">
-          <span class="role-tag">{{ roleLabel }}</span>
-          <el-button class="password-btn" plain @click="passwordDialogVisible = true">修改密码</el-button>
-          <el-button class="logout-btn" plain @click="handleLogout">退出登录</el-button>
+          <el-dropdown
+            trigger="click"
+            placement="bottom-end"
+            @command="handleUserCommand"
+          >
+            <button class="user-trigger" type="button" :aria-label="`打开${currentUserLabel}菜单`">
+              <span class="user-avatar">{{ currentUserLabel.slice(0, 1).toUpperCase() }}</span>
+              <span class="user-name">{{ currentUserLabel }}</span>
+              <span class="user-chevron" aria-hidden="true">⌄</span>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu class="user-menu">
+                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </el-header>
       <el-main class="main">
@@ -143,10 +163,6 @@ onMounted(loadMerchantName)
     </el-container>
   </el-container>
 
-  <ChangePasswordDialog
-    v-model="passwordDialogVisible"
-    @changed="handlePasswordChanged"
-  />
 </template>
 
 <style scoped>
@@ -319,46 +335,55 @@ onMounted(loadMerchantName)
 .actions {
   display: flex;
   align-items: center;
-  gap: 12px;
 }
 
-.role-tag {
+.user-trigger {
   display: inline-flex;
   align-items: center;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid #f0c89a;
-  border-radius: 999px;
-  color: var(--shop-primary-dark);
+  gap: 9px;
+  min-height: 42px;
+  padding: 5px 8px 5px 6px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--shop-text);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.user-trigger:hover,
+.user-trigger:focus-visible {
+  outline: none;
+  border-color: #f0c89a;
   background: var(--shop-primary-soft);
-  font-size: 12px;
+}
+
+.user-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  color: #fff8ed;
+  background: linear-gradient(135deg, #df7d32, #b64e18);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.user-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
   font-weight: 800;
 }
 
-.logout-btn {
-  border-color: rgba(255, 255, 255, 0.92) !important;
-  color: var(--shop-text) !important;
-  background: #fff !important;
-}
-
-.password-btn {
-  border-color: #f0c89a !important;
-  color: var(--shop-primary-dark) !important;
-  background: var(--shop-primary-soft) !important;
-}
-
-.password-btn:hover,
-.password-btn:focus {
-  border-color: var(--shop-primary) !important;
-  color: var(--shop-primary-dark) !important;
-  background: #fff1dc !important;
-}
-
-.logout-btn:hover,
-.logout-btn:focus {
-  border-color: #ef4444 !important;
-  color: #ef4444 !important;
-  background: #fff5f5 !important;
+.user-chevron {
+  margin-top: -4px;
+  color: var(--shop-text-muted);
+  font-size: 18px;
+  line-height: 1;
 }
 
 .main {

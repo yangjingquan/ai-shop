@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { inventoryApi, type InventorySkuVO, type InventoryTransactionVO } from '@/api/product'
 import type { PageResult } from '@/api/merchant'
 
 const loading = ref(false)
+const route = useRoute()
 const list = ref<InventorySkuVO[]>([])
 const total = ref(0)
-const threshold = ref(5)
-const query = reactive({ page: 1, size: 10, keyword: '', lowStockOnly: false })
+const threshold = ref(Number(route.query.threshold) || 5)
+const query = reactive({
+  page: 1,
+  size: 10,
+  keyword: '',
+  lowStockOnly: route.query.lowStockOnly === 'true',
+})
 const adjustVisible = ref(false)
 const adjusting = ref(false)
 const selected = ref<InventorySkuVO | null>(null)
@@ -127,8 +134,8 @@ onMounted(load)
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openAdjust(row as InventorySkuVO)">调整库存</el-button>
-            <el-button link @click="openHistory(row as InventorySkuVO)">变更记录</el-button>
+            <el-button v-permission="'merchant:inventory:adjust'" link type="primary" @click="openAdjust(row as InventorySkuVO)">调整库存</el-button>
+            <el-button v-permission="'merchant:inventory:transaction:view'" link @click="openHistory(row as InventorySkuVO)">变更记录</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -147,7 +154,7 @@ onMounted(load)
         <el-form-item label="变更数量"><el-input-number v-model="adjustForm.changeQty" :step="1" :controls="true" /></el-form-item>
         <el-form-item label="调整原因"><el-input v-model="adjustForm.reason" maxlength="255" placeholder="如：采购入库、盘点修正" /></el-form-item>
       </el-form>
-      <template #footer><el-button @click="adjustVisible = false">取消</el-button><el-button type="primary" :loading="adjusting" @click="submitAdjust">提交</el-button></template>
+      <template #footer><el-button @click="adjustVisible = false">取消</el-button><el-button v-permission="'merchant:inventory:adjust'" type="primary" :loading="adjusting" @click="submitAdjust">提交</el-button></template>
     </el-dialog>
 
     <el-dialog v-model="historyVisible" title="库存变更记录" width="900px">

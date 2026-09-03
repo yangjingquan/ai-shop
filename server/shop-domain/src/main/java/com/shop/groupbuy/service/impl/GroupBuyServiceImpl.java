@@ -36,6 +36,8 @@ import com.shop.product.entity.ProductSku;
 import com.shop.product.mapper.ProductMapper;
 import com.shop.product.mapper.ProductSkuMapper;
 import com.shop.product.service.ProductService;
+import com.shop.marketing.enums.MarketingActivityCode;
+import com.shop.marketing.service.MarketingFeatureService;
 import com.shop.user.entity.User;
 import com.shop.user.entity.UserAddress;
 import com.shop.user.mapper.UserAddressMapper;
@@ -75,15 +77,18 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     private final WxPayService wxPayService;
     private final UserNotificationService notificationService;
     private final PlatformTransactionManager transactionManager;
+    private final MarketingFeatureService marketingFeatureService;
 
     @Override
     public PageResult<ProductListVO> productPage(int page, int size, Long merchantId, Long categoryId, String keyword) {
+        marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.GROUP_BUY);
         return productService.publicPage(page, size, merchantId, categoryId, keyword, null, 1);
     }
 
     @Override
     public GroupBuyProductDetailVO productDetail(Long productId, Long merchantId) {
         ProductDetailVO product = productService.publicGet(productId, merchantId);
+        marketingFeatureService.assertEnabled(product.getMerchantId(), MarketingActivityCode.GROUP_BUY);
         if (product.getIsGroupBuy() == null || product.getIsGroupBuy() != 1) {
             throw new BusinessException(ErrorCode.GROUP_BUY_PRODUCT_NOT_FOUND);
         }
@@ -135,6 +140,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         if (merchantId != null && !merchantId.equals(group.getMerchantId())) {
             throw new BusinessException(ErrorCode.GROUP_BUY_GROUP_NOT_FOUND);
         }
+        marketingFeatureService.assertEnabled(group.getMerchantId(), MarketingActivityCode.GROUP_BUY);
         GroupBuyGroupVO vo = toGroupVO(group);
         User leader = userMapper.selectById(group.getLeaderUserId());
         if (leader != null) {
@@ -370,6 +376,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         if (merchantId != null && !merchantId.equals(product.getMerchantId())) {
             throw new BusinessException(ErrorCode.GROUP_BUY_PRODUCT_NOT_FOUND);
         }
+        marketingFeatureService.assertEnabled(product.getMerchantId(), MarketingActivityCode.GROUP_BUY);
         validateGroupBuyConfig(product.getGroupBuyPrice(), product.getGroupBuyRequiredCount());
         ProductSku sku = skuMapper.selectById(req.getSkuId());
         if (sku == null || !Integer.valueOf(1).equals(sku.getActive())

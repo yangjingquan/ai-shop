@@ -180,7 +180,7 @@ onMounted(async () => {
         <h1 class="page-title">Banner 配置</h1>
         <p class="page-desc">配置小程序首页轮播图、展示顺序与点击跳转。</p>
       </div>
-      <el-button type="primary" @click="onCreate">新增 Banner</el-button>
+      <el-button v-permission="'merchant:banner:create'" type="primary" @click="onCreate">新增 Banner</el-button>
     </div>
 
     <el-card>
@@ -211,8 +211,8 @@ onMounted(async () => {
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="onEdit(row as BannerVO)">编辑</el-button>
-            <el-button link type="danger" @click="onRemove(row as BannerVO)">删除</el-button>
+            <el-button v-permission="'merchant:banner:update'" link type="primary" @click="onEdit(row as BannerVO)">编辑</el-button>
+            <el-button v-permission="'merchant:banner:delete'" link type="danger" @click="onRemove(row as BannerVO)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -291,7 +291,7 @@ onMounted(async () => {
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="onSave">保存</el-button>
+        <el-button v-permission="editingId ? 'merchant:banner:update' : 'merchant:banner:create'" type="primary" :loading="saving" @click="onSave">保存</el-button>
       </template>
     </el-dialog>
   </div>

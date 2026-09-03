@@ -8,6 +8,7 @@ import com.shop.common.aop.RateLimit;
 import com.shop.common.response.ApiResult;
 import com.shop.common.response.PageResult;
 import com.shop.common.security.CurrentUserHolder;
+import com.shop.common.security.RequirePermission;
 import com.shop.order.dto.*;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.RefundApplication;
@@ -50,6 +51,7 @@ public class MerchantOrderController {
 
     @OpLog(action = "ORDER_SHIP", targetType = "ORDER", targetIdExpr = "#orderNo")
     @PostMapping("/order/ship")
+    @RequirePermission("merchant:order:ship")
     public ApiResult<Void> ship(@RequestParam String orderNo, @RequestBody @Valid ShipRequest req) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
         orderService.ship(merchantId, orderNo, req.getShipCompany(), req.getShipperCode(), req.getShipNo());
@@ -57,6 +59,7 @@ public class MerchantOrderController {
     }
 
     @GetMapping("/order/{orderNo}/logistics")
+    @RequirePermission("merchant:order:logistics:view")
     public ApiResult<LogisticsTrackingVO> logistics(@PathVariable String orderNo) {
         return ApiResult.success(logisticsService.trackForMerchant(
                 CurrentUserHolder.get().getMerchantId(), orderNo, false));
@@ -64,21 +67,26 @@ public class MerchantOrderController {
 
     @RateLimit(key = "logistics_refresh", limit = 1, windowSec = 60)
     @PostMapping("/order/{orderNo}/logistics/refresh")
+    @RequirePermission("merchant:order:logistics:refresh")
     public ApiResult<LogisticsTrackingVO> refreshLogistics(@PathVariable String orderNo) {
         return ApiResult.success(logisticsService.trackForMerchant(
                 CurrentUserHolder.get().getMerchantId(), orderNo, true));
     }
 
     @GetMapping("/order/page")
+    @RequirePermission("merchant:order:view")
     public ApiResult<PageResult<OrderListVO>> page(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) Integer status) {
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String scope) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
         LambdaQueryWrapper<Order> q = new LambdaQueryWrapper<Order>()
                 .eq(Order::getMerchantId, merchantId)
                 .orderByDesc(Order::getId);
-        if (status != null) {
+        if ("shipable".equals(scope)) {
+            q.in(Order::getStatus, 1, 6);
+        } else if (status != null) {
             q.eq(Order::getStatus, status);
         }
         IPage<Order> result = orderMapper.selectPage(new Page<>(page, size), q);
@@ -96,12 +104,14 @@ public class MerchantOrderController {
     }
 
     @GetMapping("/order/{orderNo}")
+    @RequirePermission("merchant:order:detail")
     public ApiResult<OrderDetailVO> detail(@PathVariable String orderNo) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
         return ApiResult.success(orderService.merchantDetail(merchantId, orderNo));
     }
 
     @GetMapping("/refund/list")
+    @RequirePermission("merchant:refund:view")
     public ApiResult<PageResult<AdminRefundVO>> refundList(
             @RequestParam(required = false) Integer status,
             @RequestParam(defaultValue = "1") int page,
@@ -164,6 +174,7 @@ public class MerchantOrderController {
 
     @OpLog(action = "REFUND_APPROVE", targetType = "REFUND", targetIdExpr = "#refundId")
     @PostMapping("/refund/{refundId}/approve")
+    @RequirePermission("merchant:refund:approve")
     public ApiResult<Void> refundApprove(@PathVariable Long refundId,
                                          @RequestBody RefundApproveRequest req) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
@@ -173,6 +184,7 @@ public class MerchantOrderController {
 
     @OpLog(action = "REFUND_RETRY", targetType = "REFUND", targetIdExpr = "#refundId")
     @PostMapping("/refund/{refundId}/retry")
+    @RequirePermission("merchant:refund:retry")
     public ApiResult<Void> retryRefund(@PathVariable Long refundId) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
         orderService.refundApprove(merchantId, refundId, true, null);
@@ -187,6 +199,7 @@ public class MerchantOrderController {
 
     @OpLog(action = "REFUND_RETURN_RECEIVE", targetType = "REFUND", targetIdExpr = "#refundId")
     @PostMapping("/refund/{refundId}/return-received")
+    @RequirePermission("merchant:refund:return-received")
     public ApiResult<Void> confirmReturnReceived(@PathVariable Long refundId,
                                                   @RequestBody(required = false) @Valid ReturnReceiveRequest req) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();

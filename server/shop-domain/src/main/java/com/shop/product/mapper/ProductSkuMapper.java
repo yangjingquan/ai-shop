@@ -45,7 +45,7 @@ public interface ProductSkuMapper extends BaseMapper<ProductSku> {
             <if test="lowStockOnly">
               AND ps.stock &lt;= #{threshold}
             </if>
-            ORDER BY ps.stock ASC, ps.id DESC
+            ORDER BY p.sort DESC, p.id DESC, ps.id ASC
             </script>
             """)
     IPage<InventorySkuVO> selectMerchantInventoryPage(Page<?> page,
@@ -53,4 +53,19 @@ public interface ProductSkuMapper extends BaseMapper<ProductSku> {
                                                        @Param("keyword") String keyword,
                                                        @Param("lowStockOnly") boolean lowStockOnly,
                                                        @Param("threshold") int threshold);
+
+    @Select("""
+            SELECT ps.id AS sku_id, ps.product_id, p.name AS product_name,
+                   p.main_image, ps.sku_code, ps.spec_text, ps.stock
+            FROM product_sku ps
+            JOIN product p ON p.id = ps.product_id
+            WHERE p.merchant_id = #{merchantId}
+              AND p.deleted = 0 AND p.status = 1 AND p.audit_status = 1
+              AND ps.deleted = 0 AND ps.active = 1
+              AND ps.stock <= #{threshold}
+            ORDER BY ps.stock ASC, p.sort DESC, p.id DESC, ps.id ASC
+            """)
+    IPage<InventorySkuVO> selectMerchantLowStockPage(Page<?> page,
+                                                      @Param("merchantId") Long merchantId,
+                                                      @Param("threshold") int threshold);
 }
