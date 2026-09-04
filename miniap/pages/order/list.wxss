@@ -237,7 +237,7 @@
   justify-content: center;
   margin: 0 0 0 8rpx;
   padding: 0 14rpx;
-  border-radius: 17rpx;
+  border-radius: 18rpx;
   color: #17191f;
   background: #e9e5dc;
   border: 1rpx solid rgba(23, 25, 31, 0.06);

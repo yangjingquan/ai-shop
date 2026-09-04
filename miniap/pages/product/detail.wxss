@@ -396,14 +396,14 @@
 }
 
 .confirm-btn {
-  width: 520rpx;
+  width: calc(100% - 48rpx);
   height: 92rpx;
   line-height: normal;
-  margin: 18rpx auto 28rpx;
+  margin: 18rpx 24rpx 28rpx;
   padding: 0;
   background: #ff5a1f;
   color: #fff;
-  border-radius: 46rpx;
+  border-radius: 18rpx;
   font-size: 32rpx;
   font-weight: 700;
   display: flex;

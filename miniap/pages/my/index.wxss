@@ -77,7 +77,7 @@
   align-items: center;
   justify-content: center;
   line-height: normal;
-  border-radius: 27rpx;
+  border-radius: 18rpx;
   font-size: 24rpx;
   color: #ff6600;
   background: #fff7f0;

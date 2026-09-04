@@ -416,7 +416,7 @@
   justify-content: center;
   line-height: normal;
   margin: 0;
-  border-radius: 16rpx;
+  border-radius: 18rpx;
   color: #fff;
   font-size: 28rpx;
   font-weight: 900;
@@ -424,7 +424,7 @@
 }
 
 .checkout-btn {
-  min-width: 188rpx;
+  min-width: 220rpx;
   padding: 0 32rpx;
   background: #ff6600;
 }
@@ -434,8 +434,8 @@
 }
 
 .batch-delete-btn {
-  width: 188rpx;
-  min-width: 188rpx;
+  width: 220rpx;
+  min-width: 220rpx;
   margin: 0;
   padding: 0 44rpx;
   background: #ff4b43;

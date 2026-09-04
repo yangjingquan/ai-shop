@@ -76,7 +76,7 @@ button::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 44rpx;
+  border-radius: 18rpx;
   background: #ff6600;
   color: #fff;
   font-size: 30rpx;
@@ -89,7 +89,7 @@ button::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 36rpx;
+  border-radius: 18rpx;
   background: #fff7f0;
   color: #ff6600;
   font-size: 28rpx;
