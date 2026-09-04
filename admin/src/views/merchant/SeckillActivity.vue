@@ -183,17 +183,17 @@ onMounted(load)
       <el-form label-width="100px">
         <el-form-item label="活动名称"><el-input v-model="form.activityName" maxlength="128" placeholder="如：周末数码秒杀" /></el-form-item>
         <el-form-item label="活动说明"><el-input v-model="form.description" maxlength="500" placeholder="展示在会场顶部的说明" /></el-form-item>
-        <el-form-item label="预热时间"><el-date-picker v-model="form.preheatAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="可选" /></el-form-item>
+        <el-form-item label="预热时间"><el-date-picker v-model="form.preheatAt" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="可选" /></el-form-item>
         <div v-for="(session, sessionIndex) in form.sessions" :key="sessionIndex" class="session-editor">
           <div class="session-editor-head"><strong>场次 {{ sessionIndex + 1 }}</strong><el-button v-if="(form.sessions || []).length > 1" link type="danger" @click="removeSession(sessionIndex)">删除场次</el-button></div>
           <el-form-item label="场次名称"><el-input v-model="session.name" placeholder="如：10:00 抢购场" /></el-form-item>
-          <el-form-item label="时间"><el-date-picker v-model="session.startAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="开始时间" /><span class="to">至</span><el-date-picker v-model="session.endAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="结束时间" /></el-form-item>
+          <el-form-item label="时间"><el-date-picker v-model="session.startAt" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="开始时间" /><span class="to">至</span><el-date-picker v-model="session.endAt" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="结束时间" /></el-form-item>
           <div v-for="(sku, skuIndex) in session.skus" :key="skuIndex" class="sku-editor">
             <el-select v-model="sku.productId" filterable placeholder="选择商品" @change="productChanged(sku)"><el-option v-for="product in products" :key="product.id" :label="product.name" :value="product.id" /></el-select>
             <el-select v-model="sku.skuId" placeholder="选择 SKU" :disabled="!sku.skuOptions?.length"><el-option v-for="option in sku.skuOptions" :key="option.id" :label="`${option.specText || '默认规格'} · ¥${option.price} · 库存${option.stock}`" :value="option.id" /></el-select>
-            <el-input-number v-model="sku.activityPrice" :min="0.01" :precision="2" placeholder="秒杀价" />
-            <el-input-number v-model="sku.activityStock" :min="1" :precision="0" placeholder="活动库存" />
-            <el-input-number v-model="sku.userLimit" :min="1" :max="99" :precision="0" />
+            <div class="sku-field"><span class="sku-field-label">秒杀价（元）</span><el-input-number v-model="sku.activityPrice" :min="0.01" :precision="2" placeholder="请输入价格" /></div>
+            <div class="sku-field"><span class="sku-field-label">活动库存（件）</span><el-input-number v-model="sku.activityStock" :min="1" :precision="0" placeholder="请输入库存" /></div>
+            <div class="sku-field"><span class="sku-field-label">每人限购（件）</span><el-input-number v-model="sku.userLimit" :min="1" :max="99" :precision="0" /></div>
             <el-button link type="danger" @click="removeSku(session, skuIndex)">移除</el-button>
           </div>
           <el-button link type="primary" @click="addSku(session)">+ 添加 SKU</el-button>
@@ -210,7 +210,10 @@ onMounted(load)
 .activity-table { border-radius: 16px; overflow: hidden; }
 .session-editor { margin: 18px 0; padding: 16px; border: 1px solid var(--shop-line); border-radius: 14px; background: #fffaf5; }
 .session-editor-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; color: var(--shop-ink); }
-.sku-editor { display: grid; grid-template-columns: minmax(170px, 1.4fr) minmax(180px, 1.6fr) 130px 130px 100px 50px; gap: 8px; margin: 10px 0; align-items: center; }
+.sku-editor { display: grid; grid-template-columns: minmax(170px, 1.4fr) minmax(180px, 1.6fr) 130px 130px 120px 50px; gap: 8px; margin: 10px 0; align-items: end; }
+.sku-field { min-width: 0; }
+.sku-field-label { display: block; margin-bottom: 5px; color: var(--shop-muted); font-size: 12px; line-height: 1.2; }
+.sku-field :deep(.el-input-number) { width: 100%; }
 .to { margin: 0 10px; color: var(--shop-muted); }
 .add-session { width: 100%; margin-top: 8px; border-style: dashed; }
 @media (max-width: 900px) { .sku-editor { grid-template-columns: 1fr 1fr; } }
