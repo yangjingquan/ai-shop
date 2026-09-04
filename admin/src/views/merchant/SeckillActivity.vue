@@ -136,8 +136,25 @@ async function save() {
   }
   saving.value = true
   try {
-    const payload = JSON.parse(JSON.stringify(form.value)) as SeckillActivity
-    payload.sessions?.forEach((session) => session.skus.forEach((sku) => delete sku.skuOptions))
+    // 详情接口包含 soldCount、productName、specText 等只读字段，保存时只提交可编辑字段。
+    const payload: SeckillActivity = {
+      activityName: form.value.activityName,
+      description: form.value.description,
+      preheatAt: form.value.preheatAt || null,
+      sessions: (form.value.sessions || []).map((session) => ({
+        name: session.name,
+        startAt: session.startAt,
+        endAt: session.endAt,
+        sort: session.sort,
+        skus: session.skus.map((sku) => ({
+          productId: sku.productId,
+          skuId: sku.skuId,
+          activityPrice: sku.activityPrice,
+          activityStock: sku.activityStock,
+          userLimit: sku.userLimit,
+        })),
+      })),
+    }
     if (editingId.value) await seckillApi.update(editingId.value, payload)
     else await seckillApi.create(payload)
     ElMessage.success(editingId.value ? '秒杀活动已更新' : '秒杀活动已发布')
