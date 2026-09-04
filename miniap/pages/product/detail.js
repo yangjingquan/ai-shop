@@ -24,6 +24,7 @@ Page({
     seckillMode: false,
     seckillSessionId: 0,
     seckillSkuId: 0,
+    seckillHasSkuSelector: false,
     seckillPriceText: '',
     seckillRemainingText: '',
     seckillLimitText: '',
@@ -39,7 +40,7 @@ Page({
     }
     this.setData({
       productId: id,
-      initialSkuId: Number(opts.skuId || opts.seckillSkuId || 0),
+      initialSkuId: Number(opts.skuId || 0),
       initialAction: opts.action || '',
       groupBuyMode: opts.groupBuy === '1',
       seckillMode: opts.activity === 'seckill',
@@ -92,6 +93,7 @@ Page({
         ? product.skus.map((sku) => ({
             ...sku,
             id: this.data.seckillMode ? sku.skuId : sku.id,
+            seckillSkuId: this.data.seckillMode ? Number(sku.seckillSkuId || 0) : 0,
             price: this.data.seckillMode ? sku.activityPrice : sku.price,
             stock: this.data.seckillMode ? sku.remainingStock : sku.stock,
             image: resolveImageUrl(sku.image || ''),
@@ -110,7 +112,18 @@ Page({
         name: s.name,
         values: (s.values || []).map((v) => ({ id: v.id, value: v.value })),
       }))
-      product.specs = specs
+      const configuredSpecValueIds = new Set(
+        product.skus.flatMap((sku) => Array.isArray(sku.specValueIds) ? sku.specValueIds.map(Number) : []),
+      )
+      const displaySpecs = this.data.seckillMode
+        ? specs
+            .map((spec) => ({
+              ...spec,
+              values: spec.values.filter((value) => configuredSpecValueIds.has(Number(value.id))),
+            }))
+            .filter((spec) => spec.values.length > 0)
+        : specs
+      product.specs = displaySpecs
       if (this.data.seckillMode) {
         product.minPrice = product.activityPrice
         product.maxPrice = product.activityPrice
@@ -123,6 +136,7 @@ Page({
         product.seckillEndText = this.formatDateTime(product.endAt)
         product.seckillRemaining = product.remainingStock
         product.seckillUserLimit = product.userLimit
+        product.seckillSoldText = `已抢 ${product.soldCount || 0} 件`
       } else {
         product.salePriceText = this.fmtPrice(product.minPrice)
       }
@@ -134,7 +148,7 @@ Page({
       }
       product.minPrice = this.fmtPrice(product.minPrice)
       product.maxPrice = this.fmtPrice(product.maxPrice)
-      const selected = new Array(specs.length).fill(null)
+      const selected = new Array(displaySpecs.length).fill(null)
       const groups = Number(product.isGroupBuy) === 1 ? ((res && res.data && res.data.groups) || []).map((group) => ({
         ...group,
         groupBuyPriceText: this.fmtPrice(group.groupBuyPrice || product.groupBuyPrice),
@@ -145,6 +159,10 @@ Page({
         product,
         banners,
         groupBuyGroups: groups,
+        seckillHasSkuSelector: this.data.seckillMode && product.skus.length > 1,
+        initialSkuId: this.data.seckillMode
+          ? Number(this.data.initialSkuId || product.skuId || 0)
+          : this.data.initialSkuId,
         selectedValueIds: selected,
         selectedSku: null,
         selectedSkuText: '',
@@ -210,9 +228,30 @@ Page({
 
   openSku(e) {
     if (!this.data.product) return
+    if (this.data.seckillMode && !this.data.seckillHasSkuSelector) {
+      this.buySingleSeckill()
+      return
+    }
     const rawAction = e && e.currentTarget && e.currentTarget.dataset.action
     const action = rawAction === 'cart' ? 'cart' : 'buy'
     this.setData({ skuOpen: true, skuAction: action })
+  },
+
+  buySingleSeckill() {
+    const sku = (this.data.product.skus || [])[0]
+    if (!sku) {
+      wx.showToast({ title: '暂无可售秒杀规格', icon: 'none' })
+      return
+    }
+    this.setData({
+      selectedSku: sku,
+      selectedValueIds: Array.isArray(sku.specValueIds) ? sku.specValueIds.slice() : [],
+      selectedSkuText: sku.specText || '默认规格',
+      seckillSkuId: Number(sku.seckillSkuId || this.data.seckillSkuId),
+      seckillPriceText: sku.priceText,
+      seckillRemainingText: `仅剩 ${sku.stock || 0} 件`,
+      seckillLimitText: `每人限购${sku.userLimit || 1}件`,
+    }, () => this.onConfirm())
   },
 
   openGroupBuySku() {
@@ -283,6 +322,7 @@ Page({
     }
     const nextData = { selectedValueIds, selectedSku, selectedSkuText }
     if (this.data.seckillMode && selectedSku) {
+      nextData.seckillSkuId = Number(selectedSku.seckillSkuId || this.data.seckillSkuId)
       nextData.seckillPriceText = selectedSku.priceText
       nextData.seckillRemainingText = `仅剩 ${selectedSku.stock || 0} 件`
       nextData.seckillLimitText = `每人限购${selectedSku.userLimit || 1}件`
@@ -327,7 +367,7 @@ Page({
     }
 
     if (this.data.seckillMode) {
-      const url = `/pages/order/confirm?mode=seckill&productId=${this.data.productId}&sessionId=${this.data.seckillSessionId}&seckillSkuId=${this.data.selectedSku.id}&quantity=${this.data.qty}`
+      const url = `/pages/order/confirm?mode=seckill&productId=${this.data.productId}&skuId=${this.data.selectedSku.id}&sessionId=${this.data.seckillSessionId}&seckillSkuId=${this.data.seckillSkuId}&quantity=${this.data.qty}`
       this.setData({ skuOpen: false })
       wx.navigateTo({ url })
       return

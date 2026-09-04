@@ -578,6 +578,7 @@ public class SeckillServiceImpl implements SeckillService {
     private SeckillProductDetailVO.SeckillSkuOptionVO toSkuOption(SeckillSku config, ProductSku sku) {
         if (sku == null) return null;
         SeckillProductDetailVO.SeckillSkuOptionVO vo = new SeckillProductDetailVO.SeckillSkuOptionVO();
+        vo.setSeckillSkuId(config.getId());
         vo.setSkuId(sku.getId());
         vo.setSpecText(sku.getSpecText());
         vo.setActivityPrice(config.getActivityPrice());

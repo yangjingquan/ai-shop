@@ -115,7 +115,7 @@ Page({
       return
     }
     wx.navigateTo({
-      url: `/pages/product/detail?id=${item.productId}&activity=seckill&sessionId=${session.id}&seckillSkuId=${item.seckillSkuId}`,
+      url: `/pages/product/detail?id=${item.productId}&activity=seckill&sessionId=${session.id}&seckillSkuId=${item.seckillSkuId}&skuId=${item.skuId}`,
     })
   },
 })

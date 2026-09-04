@@ -41,6 +41,7 @@ public class SeckillProductDetailVO {
 
     @Data
     public static class SeckillSkuOptionVO {
+        private Long seckillSkuId;
         private Long skuId;
         private String specText;
         private BigDecimal activityPrice;

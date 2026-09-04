@@ -33,9 +33,12 @@
     <view class="name">{{ product.name }}</view>
     <view wx:if="{{ product.subtitle }}" class="subtitle">{{ product.subtitle }}</view>
     <view class="meta">
-      <text>销量 {{ product.totalSales || 0 }}</text>
-      <text class="dot">·</text>
-      <text>库存 {{ product.totalStock || 0 }}</text>
+      <text wx:if="{{seckillMode}}">{{product.seckillSoldText}}</text>
+      <block wx:else>
+        <text>销量 {{ product.totalSales || 0 }}</text>
+        <text class="dot">·</text>
+        <text>库存 {{ product.totalStock || 0 }}</text>
+      </block>
     </view>
   </view>
 
