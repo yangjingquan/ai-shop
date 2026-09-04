@@ -286,6 +286,11 @@
   background: #ff4b43;
 }
 
+.btn.danger {
+  color: #fff;
+  background: #ff4b43;
+}
+
 .btn.dark {
   color: #fff;
   background: #17191f;

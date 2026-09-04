@@ -65,7 +65,7 @@ public class MerchantRbacServiceImpl implements MerchantRbacService {
                 "merchant:category:create", "merchant:category:update", "merchant:category:status",
                 "merchant:category:delete", "merchant:category:import", "merchant:product:view",
                 "merchant:product:create", "merchant:product:update", "merchant:product:status",
-                "merchant:product:delete", "merchant:banner:view", "merchant:banner:create",
+                "merchant:product:delete", "merchant:product:audit", "merchant:banner:view", "merchant:banner:create",
                 "merchant:banner:update", "merchant:banner:delete", "merchant:order:view",
                 "merchant:order:detail", "merchant:order:ship", "merchant:order:logistics:view",
                 "merchant:order:logistics:refresh", "merchant:refund:view", "merchant:refund:approve",

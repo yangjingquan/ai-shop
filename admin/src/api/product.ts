@@ -16,6 +16,7 @@ export interface ProductListVO {
   auditStatus?: number
   auditReason?: string
   auditedBy?: number | null
+  auditOperatorType?: number | null
   auditedAt?: string | null
   isRecommend?: number
   isGroupBuy?: number
@@ -69,6 +70,7 @@ export interface ProductDetailVO {
   auditStatus?: number
   auditReason?: string
   auditedBy?: number | null
+  auditOperatorType?: number | null
   auditedAt?: string | null
   isRecommend?: number
   isGroupBuy?: number
@@ -124,6 +126,7 @@ export interface ProductPageQuery {
   status?: number
   isRecommend?: number
   isGroupBuy?: number
+  auditStatus?: number
 }
 
 export const productApi = {
@@ -135,6 +138,8 @@ export const productApi = {
     request.post<unknown, number>('/api/merchant/products', data),
   update: (id: number, data: ProductSavePayload) =>
     request.put<unknown, void>(`/api/merchant/products/${id}`, data),
+  audit: (id: number) =>
+    request.put<unknown, void>(`/api/merchant/products/${id}/audit`),
   setStatus: (id: number, status: number) =>
     request.put<unknown, void>(`/api/merchant/products/${id}/status`, null, {
       params: { status },
@@ -146,8 +151,6 @@ export const productApi = {
 export const adminProductApi = {
   auditPage: (params: { page: number; size: number; auditStatus?: number; keyword?: string; merchantId?: number }) =>
     request.get<unknown, PageResult<ProductListVO>>('/api/admin/products/audit/page', { params }),
-  audit: (id: number, auditStatus: number, auditReason?: string) =>
-    request.put<unknown, void>(`/api/admin/products/${id}/audit`, { auditStatus, auditReason }),
   forceOffline: (id: number, reason: string) =>
     request.post<unknown, void>(`/api/admin/products/${id}/force-offline`, { reason }),
 }

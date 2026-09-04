@@ -86,4 +86,7 @@ public class Order extends BaseEntity {
     private String cancelReason;
 
     private String remark;
+
+    /** 用户侧隐藏标记；不影响商家后台及订单相关业务。 */
+    private Integer userDeleted;
 }

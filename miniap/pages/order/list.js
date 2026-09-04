@@ -1,5 +1,8 @@
 const orderApi = require('../../api/order')
+const marketingCapabilities = require('../../utils/marketing-capabilities')
 const { resolveImageUrl } = require('../../utils/url')
+
+const SWIPE_DELETE_WIDTH = 140
 
 Page({
   data: {
@@ -7,23 +10,33 @@ Page({
       { label: '全部', value: null, key: 'all' },
       { label: '待支付', value: 0, key: '0' },
       { label: '待发货', value: 1, key: '1' },
-      { label: '待成团', value: 5, key: '5' },
-      { label: '已成团', value: 6, key: '6' },
+      { label: '待成团', value: 5, key: '5', groupOnly: true },
+      { label: '已成团', value: 6, key: '6', groupOnly: true },
       { label: '待收货', value: 2, key: '2' },
       { label: '已完成', value: 3, key: '3' },
       { label: '已取消', value: 4, key: '4' },
-      { label: '待退款', value: 7, key: '7' },
+      { label: '待退款', value: 7, key: '7', groupOnly: true },
     ],
     orders: [],
     currentStatus: null,
     currentStatusKey: 'all',
+    groupBuyEnabled: false,
     page: 1,
     hasMore: true,
     loading: false,
   },
 
   onShow() {
-    this.refreshList()
+    marketingCapabilities.load(false).then(() => {
+      const groupBuyEnabled = marketingCapabilities.isEnabled('GROUP_BUY')
+      const nextData = { groupBuyEnabled }
+      if (!groupBuyEnabled && [5, 6, 7].includes(this.data.currentStatus)) {
+        nextData.currentStatus = null
+        nextData.currentStatusKey = 'all'
+      }
+      this.setData(nextData)
+      return this.refreshList()
+    })
   },
 
   onPullDownRefresh() {
@@ -51,8 +64,14 @@ Page({
       .then((res) => {
         const list = ((res.data && res.data.list) || []).map((item) => ({
           ...item,
+          statusText: this.displayStatusText(item),
           firstItemImage: resolveImageUrl(item.firstItemImage || ''),
-          groupBuyProgress: item.groupBuyRequiredCount ? `${item.groupBuyPaidCount || 0}/${item.groupBuyRequiredCount} 人` : '',
+          canDelete: item.status === 3 || item.status === 4,
+          swipeOffset: 0,
+          swipeStyle: 'transform: translate3d(0, 0, 0);',
+          groupBuyProgress: this.data.groupBuyEnabled && item.orderType === 1 && item.groupBuyRequiredCount
+            ? `${item.groupBuyPaidCount || 0}/${item.groupBuyRequiredCount} 人`
+            : '',
           refundStatusText: item.refundStatus === 0 ? '退款申请处理中' : item.refundStatus === 1 ? '退款处理中' : item.refundStatus === 2 ? '退款申请已拒绝' : item.refundStatus === 3 ? '退款成功' : item.refundStatus === 4 ? '退款失败，可重新申请' : item.refundStatus === 5 ? '请填写退货物流' : item.refundStatus === 6 ? '商家正在验货' : '',
           totalLabel: item.status === 0 ? '需支付' : '实付',
           items: (item.items || []).map((goods) => ({
@@ -77,6 +96,14 @@ Page({
     return Number(value || 0).toFixed(2)
   },
 
+  displayStatusText(item) {
+    if (this.data.groupBuyEnabled || item.orderType !== 1) return item.statusText
+    if (item.status === 5) return '订单处理中'
+    if (item.status === 6) return '待发货'
+    if (item.status === 7) return item.refundStatusText || '退款处理中'
+    return item.statusText
+  },
+
   switchTab(e) {
     const key = e.currentTarget.dataset.key
     const tab = this.data.tabs.find((item) => item.key === key)
@@ -92,9 +119,111 @@ Page({
   },
 
   goDetail(e) {
+    if (this._suppressCardTap) return
+    const rawIndex = e.currentTarget.dataset.index
+    const index = rawIndex === undefined ? undefined : Number(rawIndex)
+    const item = index === undefined ? null : this.data.orders[index]
+    if (item && item.swipeOffset > 0) {
+      this.closeSwipeRows()
+      return
+    }
     const orderNo = e.currentTarget.dataset.orderno
     if (!orderNo) return
     wx.navigateTo({ url: '/pages/order/detail?orderNo=' + orderNo })
+  },
+
+  closeSwipeRows(exceptIndex = -1) {
+    const orders = this.data.orders || []
+    const nextOrders = orders.map((item, index) => {
+      if (index === exceptIndex || !item.swipeOffset) return item
+      return {
+        ...item,
+        swipeOffset: 0,
+        swipeStyle: 'transform: translate3d(0, 0, 0);',
+      }
+    })
+    if (nextOrders.some((item, index) => item !== orders[index])) {
+      this.setData({ orders: nextOrders })
+    }
+  },
+
+  onSwipeStart(e) {
+    const rawIndex = e.currentTarget.dataset.index
+    const index = rawIndex === undefined ? -1 : Number(rawIndex)
+    const item = this.data.orders[index]
+    const touch = e.touches && e.touches[0]
+    if (!item || !item.canDelete || !touch) {
+      this.closeSwipeRows()
+      return
+    }
+    this.closeSwipeRows(index)
+    this._swipeState = {
+      index,
+      startX: touch.pageX,
+      startY: touch.pageY,
+      currentOffset: item.swipeOffset || 0,
+      horizontal: false,
+      moved: false,
+    }
+  },
+
+  onSwipeMove(e) {
+    const state = this._swipeState
+    const touch = e.touches && e.touches[0]
+    if (!state || !touch) return
+    const dx = touch.pageX - state.startX
+    const dy = touch.pageY - state.startY
+    if (!state.horizontal && Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+    if (!state.horizontal && Math.abs(dy) > Math.abs(dx)) {
+      state.vertical = true
+      return
+    }
+    if (state.vertical) return
+    state.horizontal = true
+    if (Math.abs(dx) > 8) {
+      state.moved = true
+      this._suppressCardTap = true
+    }
+    const offset = Math.max(0, Math.min(SWIPE_DELETE_WIDTH, state.currentOffset - dx))
+    state.currentOffset = offset
+    this.setData({
+      [`orders[${state.index}].swipeOffset`]: offset,
+      [`orders[${state.index}].swipeStyle`]: `transform: translate3d(-${offset}rpx, 0, 0);`,
+    })
+  },
+
+  onSwipeEnd() {
+    const state = this._swipeState
+    if (!state) return
+    const offset = state.currentOffset > SWIPE_DELETE_WIDTH / 2 ? SWIPE_DELETE_WIDTH : 0
+    this.setData({
+      [`orders[${state.index}].swipeOffset`]: offset,
+      [`orders[${state.index}].swipeStyle`]: `transform: translate3d(-${offset}rpx, 0, 0);`,
+    })
+    this._swipeState = null
+    if (state.moved) {
+      setTimeout(() => {
+        this._suppressCardTap = false
+      }, 220)
+    }
+  },
+
+  deleteOrder(e) {
+    const orderNo = e.currentTarget.dataset.orderno
+    if (!orderNo) return
+    this.closeSwipeRows()
+    wx.showModal({
+      title: '删除订单',
+      content: '确定要删除这笔订单吗？删除后将无法在订单列表中查看。',
+      confirmColor: '#ff4b43',
+      success: (modalRes) => {
+        if (!modalRes.confirm) return
+        orderApi.remove(orderNo).then(() => {
+          wx.showToast({ title: '已删除', icon: 'success' })
+          this.refreshList()
+        }).catch(() => this.refreshList())
+      },
+    })
   },
 
   goHome() {

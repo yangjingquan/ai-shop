@@ -20,6 +20,9 @@ public interface OrderService {
     /** 用户主动取消（仅 WAIT_PAY） */
     void cancelByUser(Long userId, String orderNo);
 
+    /** 用户侧隐藏订单（仅 FINISHED / CANCELLED）。 */
+    void deleteByUser(Long userId, String orderNo);
+
     /** 定时任务扫过期订单（status=0 且超过 30 分钟），逐条取消 */
     int cancelExpired(int batchLimit);
 

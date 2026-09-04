@@ -1,5 +1,6 @@
 package com.shop.product.controller;
 
+import com.shop.common.aop.OpLog;
 import com.shop.common.response.ApiResult;
 import com.shop.common.response.PageResult;
 import com.shop.common.security.CurrentUser;
@@ -35,9 +36,10 @@ public class MerchantProductController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) Integer isRecommend,
-            @RequestParam(required = false) Integer isGroupBuy) {
+            @RequestParam(required = false) Integer isGroupBuy,
+            @RequestParam(required = false) Integer auditStatus) {
         return ApiResult.success(productService.page(page, size, currentMerchantId(),
-                categoryId, keyword, status, isRecommend, isGroupBuy));
+                categoryId, keyword, status, isRecommend, isGroupBuy, auditStatus));
     }
 
     @GetMapping("/{id}")
@@ -50,6 +52,15 @@ public class MerchantProductController {
     @RequirePermission("merchant:product:update")
     public ApiResult<Void> update(@PathVariable Long id, @Valid @RequestBody ProductSaveRequest req) {
         productService.update(id, req, currentMerchantId());
+        return ApiResult.success();
+    }
+
+    @OpLog(action = "MERCHANT_PRODUCT_AUDIT", targetType = "PRODUCT", targetIdExpr = "#id")
+    @PutMapping("/{id}/audit")
+    @RequirePermission("merchant:product:audit")
+    public ApiResult<Void> audit(@PathVariable Long id) {
+        CurrentUser user = CurrentUserHolder.get();
+        productService.merchantAudit(id, user.getMerchantId(), user.getUserId());
         return ApiResult.success();
     }
 

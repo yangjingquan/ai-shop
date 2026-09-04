@@ -39,7 +39,7 @@ const adminMenus: MenuItem[] = [
   { index: 'admin-payments', label: '支付管理', path: '/admin/payments', desc: '流水与对账', icon: '支' },
   { index: 'admin-refunds', label: '平台退款', path: '/admin/refunds', desc: '售后跟踪', icon: '退' },
   { index: 'admin-banners', label: '平台 Banner', path: '/admin/banners', desc: '内容运营', icon: '图' },
-  { index: 'admin-product-audit', label: '商品审核', path: '/admin/product-audit', desc: '上架审核', icon: '审' },
+  { index: 'admin-product-audit', label: '商品审核', path: '/admin/product-audit', desc: '商品监管', icon: '审' },
   { index: 'admin-op-logs', label: '操作日志', path: '/admin/op-logs', desc: '审计追踪', icon: '志' },
   { index: 'admin-wechat-settings', label: '微信设置', path: '/admin/wechat-settings', desc: '商户微信配置', icon: '微' },
 ]

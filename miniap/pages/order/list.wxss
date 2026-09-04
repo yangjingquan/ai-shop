@@ -48,12 +48,38 @@
   flex-direction: column;
 }
 
-.order-card {
+.swipe-row {
+  position: relative;
+  overflow: hidden;
   margin-bottom: 18rpx;
+  border-radius: 18rpx;
+}
+
+.swipe-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 140rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #ff4b43;
+  font-size: 24rpx;
+  font-weight: 900;
+}
+
+.order-card {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 0;
   padding: 22rpx;
   border-radius: 18rpx;
   background: #fff;
   box-shadow: 0 14rpx 30rpx rgba(50, 44, 36, 0.06);
+  transition: transform 0.2s ease;
+  will-change: transform;
 }
 
 .order-head {

@@ -505,6 +505,23 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public void deleteByUser(Long userId, String orderNo) {
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                .eq(Order::getOrderNo, orderNo)
+                .eq(Order::getUserId, userId)
+                .eq(Order::getUserDeleted, 0));
+        if (order == null) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        if (!Integer.valueOf(OrderStatus.FINISHED.getCode()).equals(order.getStatus())
+                && !Integer.valueOf(OrderStatus.CANCELLED.getCode()).equals(order.getStatus())) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_NOT_ALLOWED);
+        }
+        order.setUserDeleted(1);
+        orderMapper.updateById(order);
+    }
+
+    @Override
     public int cancelExpired(int batchLimit) {
         List<Order> expired = orderMapper.selectExpiredOrders(batchLimit);
         int count = 0;
@@ -560,6 +577,7 @@ public class OrderServiceImpl implements OrderService {
     public PageResult<OrderListVO> page(Long userId, int page, int size, Integer status) {
         LambdaQueryWrapper<Order> q = new LambdaQueryWrapper<Order>()
                 .eq(Order::getUserId, userId)
+                .eq(Order::getUserDeleted, 0)
                 .orderByDesc(Order::getCreatedAt)
                 .orderByDesc(Order::getId);
         if (status != null) {
@@ -662,7 +680,8 @@ public class OrderServiceImpl implements OrderService {
     public OrderDetailVO detail(Long userId, String orderNo) {
         Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                 .eq(Order::getOrderNo, orderNo)
-                .eq(Order::getUserId, userId));
+                .eq(Order::getUserId, userId)
+                .eq(Order::getUserDeleted, 0));
         if (order == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }

@@ -28,6 +28,7 @@ public class ProductDetailVO {
     private Integer auditStatus;
     private String auditReason;
     private Long auditedBy;
+    private Integer auditOperatorType;
     private java.time.LocalDateTime auditedAt;
     private Integer isRecommend;
     private Integer isGroupBuy;

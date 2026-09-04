@@ -101,7 +101,7 @@ onMounted(load)
         <el-card class="metric-card">
           <span>在售商品</span>
           <strong>{{ overview?.onSaleProductCount ?? '-' }}</strong>
-          <p>审核通过且已上架</p>
+          <p>已上架销售</p>
         </el-card>
         <el-card class="metric-card">
           <span>库存预警 SKU</span>

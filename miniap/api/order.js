@@ -40,6 +40,7 @@ module.exports = {
   }),
   refreshLogistics: (orderNo) => request({ url: `/api/wx/order/${orderNo}/logistics/refresh`, method: 'POST' }),
   cancel: (orderNo) => request({ url: `/api/wx/order/${orderNo}/cancel`, method: 'POST' }),
+  remove: (orderNo) => request({ url: `/api/wx/order/${orderNo}/delete`, method: 'POST' }),
   confirmReceive: (orderNo) => request({ url: `/api/wx/order/${orderNo}/confirm-receive`, method: 'POST' }),
   remindShip: (orderNo) => request({ url: `/api/wx/order/${orderNo}/remind-ship`, method: 'POST' }),
   refund: (orderNo, payload) => request({

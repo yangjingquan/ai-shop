@@ -47,6 +47,14 @@ public class WxOrderController {
         return ApiResult.success(null);
     }
 
+    @OpLog(action = "ORDER_USER_DELETE", targetType = "ORDER", targetIdExpr = "#orderNo")
+    @PostMapping("/{orderNo}/delete")
+    public ApiResult<Void> delete(@PathVariable String orderNo) {
+        Long userId = CurrentUserHolder.get().getUserId();
+        orderService.deleteByUser(userId, orderNo);
+        return ApiResult.success(null);
+    }
+
     @GetMapping("/page")
     public ApiResult<PageResult<OrderListVO>> page(
             @RequestParam(defaultValue = "1") int page,

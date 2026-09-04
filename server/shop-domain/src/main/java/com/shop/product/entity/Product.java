@@ -52,6 +52,9 @@ public class Product extends BaseEntity {
 
     private Long auditedBy;
 
+    /** 1 运营管理员 / 2 商户账号 */
+    private Integer auditOperatorType;
+
     private java.time.LocalDateTime auditedAt;
 
     /** 1 推荐 / 0 不推荐 */

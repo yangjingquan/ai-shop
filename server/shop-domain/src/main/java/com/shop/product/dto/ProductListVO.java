@@ -34,6 +34,7 @@ public class ProductListVO {
     private String auditReason;
 
     private Long auditedBy;
+    private Integer auditOperatorType;
 
     private java.time.LocalDateTime auditedAt;
 

@@ -19,6 +19,10 @@ public interface ProductService {
     PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId,
                                    String keyword, Integer status, Integer isRecommend, Integer isGroupBuy);
 
+    PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId,
+                                   String keyword, Integer status, Integer isRecommend, Integer isGroupBuy,
+                                   Integer auditStatus);
+
     PageResult<ProductListVO> publicPage(int page, int size, Long merchantId, Long categoryId,
                                          String keyword, Integer isRecommend, Integer isGroupBuy);
 
@@ -27,9 +31,9 @@ public interface ProductService {
     PageResult<ProductListVO> adminAuditPage(int page, int size, Integer auditStatus, String keyword,
                                              Long merchantId);
 
-    void audit(Long productId, int auditStatus, String auditReason, Long adminId);
+    void merchantAudit(Long productId, Long merchantId, Long merchantUserId);
 
-    /** 运营管理员强制下架商品，并要求商家重新提交审核后才能再次上架。 */
+    /** 运营管理员强制下架商品，并要求商家重新审核后才能再次上架。 */
     void forceOffline(Long productId, String reason, Long adminId);
 
     void setStatus(Long id, int status, Long merchantId);

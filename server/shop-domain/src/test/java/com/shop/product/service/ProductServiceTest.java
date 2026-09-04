@@ -196,6 +196,29 @@ class ProductServiceTest {
     }
 
     @Test
+    void merchantAuditAllowsListingAndEditingKeepsProductOnSale() {
+        Long cid = createCategory();
+        Long pid = productService.create(sample(cid), M_A);
+
+        productService.merchantAudit(pid, M_A, 501L);
+        productService.setStatus(pid, 1, M_A);
+        assertEquals(1, productService.get(pid, M_A).getStatus());
+
+        ProductSaveRequest edit = sample(cid, "M3T 上架商品修改");
+        productService.update(pid, edit, M_A);
+
+        ProductDetailVO afterEdit = productService.get(pid, M_A);
+        assertEquals(1, afterEdit.getStatus());
+        assertEquals(0, afterEdit.getAuditStatus());
+        assertNull(afterEdit.getAuditedBy());
+        assertTrue(productService.publicPage(1, 20, null, cid, null, null, null)
+                .getList().stream().anyMatch(v -> v.getId().equals(pid)));
+
+        productService.merchantAudit(pid, M_A, 501L);
+        assertEquals(1, productService.get(pid, M_A).getAuditStatus());
+    }
+
+    @Test
     void savesAndFiltersRecommendFlag() {
         Long cid = createCategory();
         ProductSaveRequest recommended = sample(cid, "M3T 推荐商品");

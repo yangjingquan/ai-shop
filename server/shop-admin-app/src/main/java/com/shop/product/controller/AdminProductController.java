@@ -39,22 +39,6 @@ public class AdminProductController {
     }
 
     @Data
-    public static class AuditRequest {
-        @NotNull
-        private Integer auditStatus;
-        private String auditReason;
-    }
-
-    @OpLog(action = "PRODUCT_AUDIT", targetType = "PRODUCT", targetIdExpr = "#productId")
-    @PutMapping("/{productId}/audit")
-    public ApiResult<Void> audit(@PathVariable Long productId, @Valid @RequestBody AuditRequest req) {
-        CurrentUser user = CurrentUserHolder.get();
-        Long adminId = user == null ? null : user.getUserId();
-        productService.audit(productId, req.getAuditStatus(), req.getAuditReason(), adminId);
-        return ApiResult.success(null);
-    }
-
-    @Data
     public static class ForceOfflineRequest {
         @NotNull
         @Size(max = 255)

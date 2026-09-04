@@ -1,11 +1,13 @@
 const orderApi = require('../../api/order')
 const groupBuyApi = require('../../api/group-buy')
+const marketingCapabilities = require('../../utils/marketing-capabilities')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
   data: {
     order: null,
     orderNo: '',
+    groupBuyEnabled: false,
     loading: false,
     logisticsLoading: false,
   },
@@ -13,7 +15,21 @@ Page({
   onLoad(options) {
     const orderNo = options.orderNo || ''
     this.setData({ orderNo })
-    this.loadDetail(orderNo)
+    this.refreshMarketingState().then(() => this.loadDetail(orderNo))
+  },
+
+  onShow() {
+    if (this.data.orderNo && this.data.order) this.refreshMarketingState()
+  },
+
+  refreshMarketingState() {
+    return marketingCapabilities.load(false).then(() => {
+      const enabled = marketingCapabilities.isEnabled('GROUP_BUY')
+      const nextData = { groupBuyEnabled: enabled }
+      if (this.data.order) nextData['order.statusText'] = this.displayStatusText(this.data.order, enabled)
+      this.setData(nextData)
+      return enabled
+    })
   },
 
   loadDetail(orderNo) {
@@ -25,6 +41,7 @@ Page({
         const raw = res.data || {}
         const order = {
           ...raw,
+          sourceStatusText: raw.statusText,
           logistics: null,
           totalAmountText: this.fmtPrice(raw.totalAmount),
           freightAmountText: this.fmtPrice(raw.freightAmount),
@@ -33,6 +50,7 @@ Page({
           payAmountText: this.fmtPrice(raw.payAmount),
           groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
+          statusText: this.displayStatusText(raw),
           groupBuyStatusText: raw.groupBuyStatusText || '',
           refundStatusText: raw.refundStatus === 0 ? '退款申请处理中' : raw.refundStatus === 1 ? '退款处理中' : raw.refundStatus === 2 ? '退款申请已拒绝' : raw.refundStatus === 3 ? '退款成功' : raw.refundStatus === 4 ? '退款失败，可重新申请' : raw.refundStatus === 5 ? '请填写退货物流' : raw.refundStatus === 6 ? '商家正在验货' : '',
           canRefund: ![0, 1, 5, 6].includes(raw.refundStatus)
@@ -67,6 +85,15 @@ Page({
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
   },
 
+  displayStatusText(raw, enabled = this.data.groupBuyEnabled) {
+    const sourceStatusText = raw.sourceStatusText || raw.statusText
+    if (enabled || raw.orderType !== 1) return sourceStatusText
+    if (raw.status === 5) return '订单处理中'
+    if (raw.status === 6) return '待发货'
+    if (raw.status === 7) return raw.refundStatusText || '退款处理中'
+    return sourceStatusText
+  },
+
   reloadDetail() {
     return this.loadDetail(this.data.orderNo || (this.data.order && this.data.order.orderNo))
   },
@@ -84,6 +111,23 @@ Page({
           wx.showToast({ title: '已取消', icon: 'success' })
           this.reloadDetail()
         }).catch(() => this.reloadDetail())
+      },
+    })
+  },
+
+  deleteOrder() {
+    const order = this.data.order || {}
+    if (!order.orderNo || (order.status !== 3 && order.status !== 4)) return
+    wx.showModal({
+      title: '删除订单',
+      content: '确定要删除这笔订单吗？删除后将无法在订单列表中查看。',
+      confirmColor: '#ff4b43',
+      success: (modalRes) => {
+        if (!modalRes.confirm) return
+        orderApi.remove(order.orderNo).then(() => {
+          wx.showToast({ title: '已删除', icon: 'success' })
+          wx.navigateBack({ delta: 1 })
+        })
       },
     })
   },
@@ -310,7 +354,7 @@ Page({
 
   onShareAppMessage() {
     const order = this.data.order || {}
-    if (order.orderType === 1 && order.groupBuyGroupId) {
+    if (this.data.groupBuyEnabled && order.orderType === 1 && order.groupBuyGroupId) {
       groupBuyApi.shareEvent(order.groupBuyGroupId, 'order_share', false).catch(() => {})
       return {
         title: '快来参加我的拼团',

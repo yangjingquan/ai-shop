@@ -363,10 +363,12 @@ async function handleSubmit() {
     try {
       if (isEdit.value && editId.value !== undefined) {
         await productApi.update(editId.value, payload)
-        ElMessage.success('更新成功')
+        ElMessage.success(initialDetail.value?.status === 1
+          ? '更新成功，商品继续上架，修改已立即生效，请完成商户审核'
+          : '更新成功，请完成商户审核后再上架')
       } else {
         await productApi.create(payload)
-        ElMessage.success('创建成功')
+        ElMessage.success('创建成功，请完成商户审核后再上架')
       }
       router.push('/merchant/products')
     } finally {

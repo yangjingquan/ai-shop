@@ -20,6 +20,7 @@ const query = reactive<{
   status: number | undefined
   isRecommend: number | undefined
   isGroupBuy: number | undefined
+  auditStatus: number | undefined
 }>({
   page: 1,
   size: 10,
@@ -28,6 +29,7 @@ const query = reactive<{
   status: undefined,
   isRecommend: undefined,
   isGroupBuy: undefined,
+  auditStatus: undefined,
 })
 
 const catTree = ref<MerchantCategoryVO[]>([])
@@ -56,6 +58,7 @@ async function fetchList() {
       status: query.status,
       isRecommend: query.isRecommend,
       isGroupBuy: query.isGroupBuy,
+      auditStatus: query.auditStatus,
     })
     list.value = data.list
     total.value = data.total
@@ -110,7 +113,7 @@ async function onBatchSetStatus(status: number) {
 async function onToggleStatus(row: ProductListVO) {
   const next = row.status === 1 ? 0 : 1
   if (next === 1 && row.auditStatus !== 1) {
-    ElMessage.warning(`当前商品${auditText[row.auditStatus ?? 0]}，请等待平台审核通过`)
+    ElMessage.warning(`当前商品${auditText[row.auditStatus ?? 0]}，请先完成商户审核`)
     return
   }
   const action = next === 1 ? '上架' : '下架'
@@ -120,6 +123,24 @@ async function onToggleStatus(row: ProductListVO) {
   await productApi.setStatus(row.id, next)
   ElMessage.success(`${action}成功`)
   fetchList()
+}
+
+async function onAudit(row: ProductListVO) {
+  await ElMessageBox.confirm(
+    row.auditStatus === 2
+      ? `商品「${row.name}」曾被平台驳回，请确认已完成整改并通过商户自审？`
+      : `确认审核通过商品「${row.name}」？`,
+    '商户审核',
+    { type: 'warning' },
+  )
+  loading.value = true
+  try {
+    await productApi.audit(row.id)
+    ElMessage.success('商品审核通过')
+    await fetchList()
+  } finally {
+    loading.value = false
+  }
 }
 
 async function onRemove(row: ProductListVO) {
@@ -224,6 +245,17 @@ onMounted(async () => {
           <el-option label="团购" :value="1" />
           <el-option label="非团购" :value="0" />
         </el-select>
+        <el-select
+          v-model="query.auditStatus"
+          placeholder="全部审核状态"
+          clearable
+          style="width: 150px"
+          @change="onSearch"
+        >
+          <el-option label="待审核" :value="0" />
+          <el-option label="已通过" :value="1" />
+          <el-option label="已驳回" :value="2" />
+        </el-select>
         <el-button type="primary" @click="onSearch">搜索</el-button>
         <el-button v-permission="'merchant:product:status'" :disabled="!selectedCount" @click="onBatchSetStatus(1)">
           一键上架
@@ -298,9 +330,18 @@ onMounted(async () => {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
             <el-button v-permission="'merchant:product:update'" link type="primary" @click="onEdit(row as ProductListVO)">编辑</el-button>
+            <el-button
+              v-if="(row as ProductListVO).auditStatus !== 1"
+              v-permission="'merchant:product:audit'"
+              link
+              type="success"
+              @click="onAudit(row as ProductListVO)"
+            >
+              审核通过
+            </el-button>
             <el-button
               v-permission="'merchant:product:status'"
               link

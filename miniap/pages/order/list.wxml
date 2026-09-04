@@ -1,13 +1,14 @@
 <view class="order-list-page">
   <scroll-view class="tabs-scroll" scroll-x enhanced show-scrollbar="false">
     <view class="tabs">
+      <block wx:for="{{tabs}}" wx:key="key">
       <view
-        wx:for="{{tabs}}"
-        wx:key="key"
+        wx:if="{{!item.groupOnly || groupBuyEnabled}}"
         class="tab-chip {{currentStatusKey === item.key ? 'active' : ''}}"
         data-key="{{item.key}}"
         bindtap="switchTab"
       >{{item.label}}</view>
+      </block>
     </view>
   </scroll-view>
 
@@ -21,80 +22,91 @@
   </view>
 
   <view class="order-list" wx:else>
-    <view class="order-card" wx:for="{{orders}}" wx:key="orderNo" data-orderno="{{item.orderNo}}" bindtap="goDetail">
-      <view class="order-head">
-        <text class="state-text s{{item.status}}">{{item.statusText}}</text>
-        <text wx:if="{{item.refundStatusText}}" class="refund-status">{{item.refundStatusText}}</text>
-        <text wx:if="{{item.orderType === 1 && item.groupBuyProgress}}" class="group-progress">{{item.groupBuyProgress}}</text>
-      </view>
+    <view
+      class="swipe-row"
+      wx:for="{{orders}}"
+      wx:key="orderNo"
+      data-index="{{index}}"
+      bindtouchstart="onSwipeStart"
+      bindtouchmove="onSwipeMove"
+      bindtouchend="onSwipeEnd"
+    >
+      <view wx:if="{{item.canDelete}}" class="swipe-delete" catchtap="deleteOrder" data-orderno="{{item.orderNo}}">删除</view>
+      <view class="order-card" style="{{item.swipeStyle}}" data-index="{{index}}" data-orderno="{{item.orderNo}}" bindtap="goDetail">
+        <view class="order-head">
+          <text class="state-text s{{item.status}}">{{item.statusText}}</text>
+          <text wx:if="{{item.refundStatusText}}" class="refund-status">{{item.refundStatusText}}</text>
+        <text wx:if="{{groupBuyEnabled && item.orderType === 1 && item.groupBuyProgress}}" class="group-progress">{{item.groupBuyProgress}}</text>
+        </view>
 
-      <view class="goods-list">
-        <view class="goods" wx:for="{{item.items}}" wx:for-item="goods" wx:key="skuId">
-          <image class="thumb" src="{{goods.mainImage || item.firstItemImage}}" mode="aspectFill" />
-          <view class="goods-info">
-            <view class="goods-name">{{goods.productName}}</view>
-            <view class="goods-spec">{{goods.specText}}</view>
-            <view class="goods-subtotal">小计 ¥{{goods.subtotalText}}</view>
-          </view>
-          <view class="goods-price">
-            <text>¥{{goods.unitPriceText}}</text>
-            <text class="qty">x{{goods.quantity}}</text>
+        <view class="goods-list">
+          <view class="goods" wx:for="{{item.items}}" wx:for-item="goods" wx:key="skuId">
+            <image class="thumb" src="{{goods.mainImage || item.firstItemImage}}" mode="aspectFill" />
+            <view class="goods-info">
+              <view class="goods-name">{{goods.productName}}</view>
+              <view class="goods-spec">{{goods.specText}}</view>
+              <view class="goods-subtotal">小计 ¥{{goods.subtotalText}}</view>
+            </view>
+            <view class="goods-price">
+              <text>¥{{goods.unitPriceText}}</text>
+              <text class="qty">x{{goods.quantity}}</text>
+            </view>
           </view>
         </view>
-      </view>
 
-      <view class="order-foot">
-        <view class="order-total">
-          <text>{{item.totalLabel}}</text>
-          <text class="amount">¥{{item.payAmount}}</text>
-        </view>
-        <view class="actions">
-          <block wx:if="{{item.status === 0}}">
-            <view class="btn" catchtap="cancelOrder" data-orderno="{{item.orderNo}}">取消订单</view>
-            <view class="btn primary" catchtap="payOrder" data-orderno="{{item.orderNo}}">去支付</view>
-          </block>
-          <block wx:elif="{{item.status === 1}}">
-            <view class="btn dark" catchtap="remindShip" data-orderno="{{item.orderNo}}">提醒发货</view>
-            <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
-          </block>
-          <block wx:elif="{{item.status === 5}}">
-            <view class="btn dark" catchtap="goGroup" data-groupid="{{item.groupBuyGroupId}}">查看拼团</view>
-          </block>
-          <block wx:elif="{{item.status === 6}}">
-            <view wx:if="{{item.orderType === 1}}" class="btn" catchtap="goGroup" data-groupid="{{item.groupBuyGroupId}}">查看拼团</view>
-            <view class="btn dark" catchtap="remindShip" data-orderno="{{item.orderNo}}">提醒发货</view>
-            <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
-          </block>
-          <block wx:elif="{{item.status === 7}}">
-            <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">{{item.refundStatusText || '退款处理中'}}</view>
-            <view wx:if="{{item.refundStatus === 2 || item.refundStatus === 4}}" class="btn primary" catchtap="goDetail" data-orderno="{{item.orderNo}}">重新申请退款</view>
-            <view wx:if="{{item.refundStatus === 5}}" class="btn primary" catchtap="goDetail" data-orderno="{{item.orderNo}}">填写退货物流</view>
-          </block>
-          <block wx:elif="{{item.status === 2}}">
-            <view class="btn" catchtap="viewLogistics" data-orderno="{{item.orderNo}}">查看物流</view>
-            <view class="btn primary" catchtap="confirmReceive" data-orderno="{{item.orderNo}}">确认收货</view>
-            <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
-          </block>
-          <block wx:elif="{{item.status === 3}}">
-            <view class="btn" catchtap="viewLogistics" data-orderno="{{item.orderNo}}">查看物流</view>
-            <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
-            <view
-              class="btn dark"
-              wx:if="{{item.items && item.items.length}}"
-              catchtap="buyAgain"
-              data-productid="{{item.items[0].productId}}"
-              data-skuid="{{item.items[0].skuId}}"
-            >再来一单</view>
-          </block>
-          <block wx:elif="{{item.status === 4}}">
-            <view
-              class="btn dark"
-              wx:if="{{item.items && item.items.length}}"
-              catchtap="buyAgain"
-              data-productid="{{item.items[0].productId}}"
-              data-skuid="{{item.items[0].skuId}}"
-            >再来一单</view>
-          </block>
+        <view class="order-foot">
+          <view class="order-total">
+            <text>{{item.totalLabel}}</text>
+            <text class="amount">¥{{item.payAmount}}</text>
+          </view>
+          <view class="actions">
+            <block wx:if="{{item.status === 0}}">
+              <view class="btn" catchtap="cancelOrder" data-orderno="{{item.orderNo}}">取消订单</view>
+              <view class="btn primary" catchtap="payOrder" data-orderno="{{item.orderNo}}">去支付</view>
+            </block>
+            <block wx:elif="{{item.status === 1}}">
+              <view class="btn dark" catchtap="remindShip" data-orderno="{{item.orderNo}}">提醒发货</view>
+              <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
+            </block>
+            <block wx:elif="{{item.status === 5 && groupBuyEnabled}}">
+              <view class="btn dark" catchtap="goGroup" data-groupid="{{item.groupBuyGroupId}}">查看拼团</view>
+            </block>
+            <block wx:elif="{{item.status === 6}}">
+              <view wx:if="{{groupBuyEnabled && item.orderType === 1}}" class="btn" catchtap="goGroup" data-groupid="{{item.groupBuyGroupId}}">查看拼团</view>
+              <view class="btn dark" catchtap="remindShip" data-orderno="{{item.orderNo}}">提醒发货</view>
+              <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
+            </block>
+            <block wx:elif="{{item.status === 7}}">
+              <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">{{item.refundStatusText || '退款处理中'}}</view>
+              <view wx:if="{{item.refundStatus === 2 || item.refundStatus === 4}}" class="btn primary" catchtap="goDetail" data-orderno="{{item.orderNo}}">重新申请退款</view>
+              <view wx:if="{{item.refundStatus === 5}}" class="btn primary" catchtap="goDetail" data-orderno="{{item.orderNo}}">填写退货物流</view>
+            </block>
+            <block wx:elif="{{item.status === 2}}">
+              <view class="btn" catchtap="viewLogistics" data-orderno="{{item.orderNo}}">查看物流</view>
+              <view class="btn primary" catchtap="confirmReceive" data-orderno="{{item.orderNo}}">确认收货</view>
+              <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
+            </block>
+            <block wx:elif="{{item.status === 3}}">
+              <view class="btn" catchtap="viewLogistics" data-orderno="{{item.orderNo}}">查看物流</view>
+              <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
+              <view
+                class="btn dark"
+                wx:if="{{item.items && item.items.length}}"
+                catchtap="buyAgain"
+                data-productid="{{item.items[0].productId}}"
+                data-skuid="{{item.items[0].skuId}}"
+              >再来一单</view>
+            </block>
+            <block wx:elif="{{item.status === 4}}">
+              <view
+                class="btn dark"
+                wx:if="{{item.items && item.items.length}}"
+                catchtap="buyAgain"
+                data-productid="{{item.items[0].productId}}"
+                data-skuid="{{item.items[0].skuId}}"
+              >再来一单</view>
+            </block>
+          </view>
         </view>
       </view>
     </view>

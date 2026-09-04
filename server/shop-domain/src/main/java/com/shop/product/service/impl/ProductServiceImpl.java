@@ -110,10 +110,10 @@ public class ProductServiceImpl implements ProductService {
         p.setMainImage(req.getMainImage());
         p.setImages(req.getImages());
         p.setDescription(XssSanitizer.sanitize(req.getDescription()));
-        p.setStatus(0);
         p.setAuditStatus(0);
         p.setAuditReason("");
         p.setAuditedBy(null);
+        p.setAuditOperatorType(null);
         p.setAuditedAt(null);
         p.setIsRecommend(normalizeFlag(req.getIsRecommend()));
         p.setIsGroupBuy(normalizeGroupBuyFlag(req.getIsGroupBuy()));
@@ -162,6 +162,7 @@ public class ProductServiceImpl implements ProductService {
         vo.setAuditStatus(p.getAuditStatus());
         vo.setAuditReason(p.getAuditReason());
         vo.setAuditedBy(p.getAuditedBy());
+        vo.setAuditOperatorType(p.getAuditOperatorType());
         vo.setAuditedAt(p.getAuditedAt());
         vo.setIsRecommend(p.getIsRecommend());
         vo.setIsGroupBuy(p.getIsGroupBuy());
@@ -249,8 +250,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductDetailVO publicGet(Long id, Long merchantId) {
         ProductDetailVO vo = get(id, merchantId);
-        if (vo.getStatus() == null || vo.getStatus() != 1
-                || !Integer.valueOf(1).equals(vo.getAuditStatus())) {
+        if (vo.getStatus() == null || vo.getStatus() != 1) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
         return vo;
@@ -266,7 +266,6 @@ public class ProductServiceImpl implements ProductService {
     public PageResult<ProductListVO> publicTopSalesPage(int page, int size, Long merchantId, Long categoryId) {
         LambdaQueryWrapper<Product> q = new LambdaQueryWrapper<Product>()
                 .eq(Product::getStatus, 1)
-                .eq(Product::getAuditStatus, 1)
                 .orderByDesc(Product::getTotalSales)
                 .orderByDesc(Product::getId);
         if (merchantId != null) {
@@ -285,6 +284,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId,
                                           String keyword, Integer status, Integer isRecommend, Integer isGroupBuy) {
+        return page(page, size, merchantId, categoryId, keyword, status, isRecommend, isGroupBuy, null);
+    }
+
+    @Override
+    public PageResult<ProductListVO> page(int page, int size, Long merchantId, Long categoryId,
+                                          String keyword, Integer status, Integer isRecommend, Integer isGroupBuy,
+                                          Integer auditStatus) {
         LambdaQueryWrapper<Product> q = new LambdaQueryWrapper<>();
         if (merchantId != null) {
             q.eq(Product::getMerchantId, merchantId);
@@ -299,14 +305,14 @@ public class ProductServiceImpl implements ProductService {
         if (status != null) {
             q.eq(Product::getStatus, status);
         }
-        if (Integer.valueOf(1).equals(status)) {
-            q.eq(Product::getAuditStatus, 1);
-        }
         if (isRecommend != null) {
             q.eq(Product::getIsRecommend, normalizeFlag(isRecommend));
         }
         if (isGroupBuy != null) {
             q.eq(Product::getIsGroupBuy, normalizeGroupBuyFlag(isGroupBuy));
+        }
+        if (auditStatus != null) {
+            q.eq(Product::getAuditStatus, auditStatus);
         }
         if (StringUtils.hasText(keyword)) {
             String kw = keyword.trim();
@@ -354,6 +360,7 @@ public class ProductServiceImpl implements ProductService {
             v.setAuditStatus(p.getAuditStatus());
             v.setAuditReason(p.getAuditReason());
             v.setAuditedBy(p.getAuditedBy());
+            v.setAuditOperatorType(p.getAuditOperatorType());
             v.setAuditedAt(p.getAuditedAt());
             v.setIsRecommend(p.getIsRecommend());
             v.setIsGroupBuy(p.getIsGroupBuy());
@@ -402,6 +409,7 @@ public class ProductServiceImpl implements ProductService {
             v.setAuditStatus(p.getAuditStatus());
             v.setAuditReason(p.getAuditReason());
             v.setAuditedBy(p.getAuditedBy());
+            v.setAuditOperatorType(p.getAuditOperatorType());
             v.setAuditedAt(p.getAuditedAt());
             v.setCategoryId(p.getCategoryId());
             v.setCategoryName(catNames.get(p.getCategoryId()));
@@ -412,17 +420,12 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void audit(Long productId, int auditStatus, String auditReason, Long adminId) {
-        if (auditStatus != 1 && auditStatus != 2) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "审核结果不合法");
-        }
-        Product p = productMapper.selectById(productId);
-        if (p == null) {
-            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
-        }
-        p.setAuditStatus(auditStatus);
-        p.setAuditReason(auditReason == null ? "" : auditReason.trim());
-        p.setAuditedBy(adminId);
+    public void merchantAudit(Long productId, Long merchantId, Long merchantUserId) {
+        Product p = mustOwn(productId, merchantId);
+        p.setAuditStatus(1);
+        p.setAuditReason("");
+        p.setAuditedBy(merchantUserId);
+        p.setAuditOperatorType(2);
         p.setAuditedAt(java.time.LocalDateTime.now());
         productMapper.updateById(p);
     }
@@ -442,6 +445,7 @@ public class ProductServiceImpl implements ProductService {
         p.setAuditStatus(2);
         p.setAuditReason("平台强制下架：" + normalizedReason);
         p.setAuditedBy(adminId);
+        p.setAuditOperatorType(1);
         p.setAuditedAt(java.time.LocalDateTime.now());
         productMapper.updateById(p);
     }
@@ -450,8 +454,11 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void setStatus(Long id, int status, Long merchantId) {
         Product p = mustOwn(id, merchantId);
+        if (status != 0 && status != 1) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "商品状态不合法");
+        }
         if (status == 1 && !Integer.valueOf(1).equals(p.getAuditStatus())) {
-            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "商品尚未审核通过");
+            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "请先完成商户审核");
         }
         p.setStatus(status == 1 ? 1 : 0);
         productMapper.updateById(p);
