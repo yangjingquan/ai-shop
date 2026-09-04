@@ -14,7 +14,9 @@ import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.service.OrderCancellationService;
 import com.shop.product.service.ProductService;
+import com.shop.seckill.service.SeckillService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,9 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
     private final GroupBuyMemberMapper groupBuyMemberMapper;
     private final ProductService productService;
     private final CouponService couponService;
+    /** 可选注入，保持订单取消纯单测构造器兼容；正式容器会注入秒杀库存释放服务。 */
+    @Autowired(required = false)
+    private SeckillService seckillService;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -94,6 +99,9 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
         order.setCancelReason(reason);
         orderMapper.updateById(order);
         couponService.releaseBeforePaymentCancel(order.getId(), order.getOrderNo());
+        if (Integer.valueOf(2).equals(order.getOrderType()) && seckillService != null) {
+            seckillService.releaseForOrder(order.getOrderNo(), reason);
+        }
         markGroupBuyMemberCancelled(order);
     }
 

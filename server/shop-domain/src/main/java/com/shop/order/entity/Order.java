@@ -21,10 +21,15 @@ public class Order extends BaseEntity {
 
     private Integer status;
 
-    /** 0 普通订单 / 1 团购订单 */
+    /** 0 普通订单 / 1 团购订单 / 2 秒杀订单 */
     private Integer orderType;
 
     private Long groupBuyGroupId;
+
+    /** 2=秒杀订单。 */
+    private Long seckillSessionId;
+
+    private Long seckillSkuId;
 
     private BigDecimal totalAmount;
 

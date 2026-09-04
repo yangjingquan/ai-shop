@@ -1,0 +1,46 @@
+<view class="seckill-page page-shell">
+  <view class="seckill-hero">
+    <view class="hero-kicker">LIMITED TIME SALE</view>
+    <view class="hero-title">秒杀限时折扣</view>
+    <view class="hero-subtitle">精选好物限时抢，手慢就没有</view>
+    <view wx:if="{{activeSession}}" class="hero-countdown">
+      <text>{{activeSession.status === 0 ? '距开始' : activeSession.status === 1 ? '距结束' : '已结束'}}</text>
+      <text wx:if="{{activeSession.status !== 2}}" class="countdown-value">{{activeSession.countdownText}}</text>
+    </view>
+  </view>
+
+  <scroll-view wx:if="{{sessions.length}}" class="session-tabs" scroll-x enhanced show-scrollbar="false">
+    <view class="session-tab-list">
+      <view wx:for="{{sessions}}" wx:key="id" class="session-tab {{activeIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="selectSession">
+        <text class="session-name">{{item.name}}</text>
+        <text class="session-time">{{item.startText}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{activeSession}}" class="session-card card">
+    <view class="session-head">
+      <view><text class="session-label">{{activeSession.status === 0 ? '即将开始' : activeSession.status === 1 ? '限量抢购' : '本场已结束'}}</text><text class="session-range">{{activeSession.startText}} - {{activeSession.endText}}</text></view>
+      <text class="session-desc">{{activeSession.activityDescription || '限时特价，售完即止'}}</text>
+    </view>
+    <view wx:if="{{activeSession.products.length}}" class="seckill-products">
+      <view wx:for="{{activeSession.products}}" wx:key="seckillSkuId" class="seckill-product" data-item="{{item}}" bindtap="openProduct">
+        <image class="product-image" src="{{item.mainImage}}" mode="aspectFill" />
+        <view class="product-content">
+          <view class="product-name">{{item.productName}}</view>
+          <view class="product-spec">{{item.specText || '精选规格'}}</view>
+          <view class="product-price"><text>¥{{item.activityPriceText}}</text><text class="product-original">¥{{item.originalPriceText}}</text></view>
+          <view class="stock-line"><text>{{item.remainingText}}</text><view class="stock-track"><view class="stock-fill" style="width: {{item.stockPercent}}%;"></view></view></view>
+          <view class="limit-line">每人限购{{item.userLimit}}件</view>
+          <button class="buy-button {{item.status === 1 ? '' : 'disabled'}}" catchtap="openProduct" data-item="{{item}}">{{item.statusText}}</button>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty-inner">本场暂无可售秒杀商品</view>
+  </view>
+
+  <view wx:if="{{!loading && !sessions.length}}" class="empty-card card">
+    <view class="empty-title">暂无秒杀活动</view>
+    <view class="empty-desc">下一场活动正在准备中，稍后再来看看</view>
+  </view>
+</view>

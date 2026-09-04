@@ -8,6 +8,7 @@ Page({
     order: null,
     orderNo: '',
     groupBuyEnabled: false,
+    seckillEnabled: false,
     loading: false,
     logisticsLoading: false,
   },
@@ -24,9 +25,10 @@ Page({
 
   refreshMarketingState() {
     return marketingCapabilities.load(false).then(() => {
-      const enabled = marketingCapabilities.isEnabled('GROUP_BUY')
-      const nextData = { groupBuyEnabled: enabled }
-      if (this.data.order) nextData['order.statusText'] = this.displayStatusText(this.data.order, enabled)
+      const groupBuyEnabled = marketingCapabilities.isEnabled('GROUP_BUY')
+      const seckillEnabled = marketingCapabilities.isEnabled('SECKILL')
+      const nextData = { groupBuyEnabled, seckillEnabled }
+      if (this.data.order) nextData['order.statusText'] = this.displayStatusText(this.data.order, groupBuyEnabled)
       this.setData(nextData)
       return enabled
     })

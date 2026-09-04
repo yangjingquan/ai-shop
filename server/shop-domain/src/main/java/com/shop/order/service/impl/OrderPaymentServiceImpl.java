@@ -16,7 +16,9 @@ import com.shop.order.mapper.PaymentLogMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderPaymentService;
 import com.shop.product.service.ProductService;
+import com.shop.seckill.service.SeckillService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,9 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     private final RefundApplicationMapper refundApplicationMapper;
     private final ProductService productService;
     private final GroupBuyService groupBuyService;
+    /** 可选注入，保持支付回调纯单测构造器兼容。 */
+    @Autowired(required = false)
+    private SeckillService seckillService;
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaidCallback(String orderNo, String transactionId, String rawPayload) {
@@ -79,6 +84,9 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
         } else {
             order.setStatus(OrderStatus.WAIT_SHIP.getCode());
             orderMapper.updateById(order);
+            if (Integer.valueOf(2).equals(order.getOrderType()) && seckillService != null) {
+                seckillService.handleOrderPaid(orderNo);
+            }
         }
 
         List<OrderItem> items = orderItemMapper.selectList(

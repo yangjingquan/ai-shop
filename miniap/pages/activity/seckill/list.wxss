@@ -1,0 +1,35 @@
+.seckill-page { min-height: 100vh; padding-bottom: 36rpx; background: #f7f4ed; }
+.seckill-hero { padding: 52rpx 32rpx 42rpx; color: #fff; background: linear-gradient(135deg, #ff6a1e, #f23f16); }
+.hero-kicker { font-size: 20rpx; letter-spacing: .18em; opacity: .76; }
+.hero-title { margin-top: 10rpx; font-size: 56rpx; font-weight: 800; letter-spacing: 4rpx; }
+.hero-subtitle { margin-top: 8rpx; font-size: 26rpx; opacity: .88; }
+.hero-countdown { display: flex; align-items: center; gap: 18rpx; margin-top: 32rpx; font-size: 25rpx; }
+.countdown-value { padding: 8rpx 18rpx; border-radius: 12rpx; background: rgba(31,35,41,.82); font-size: 34rpx; font-weight: 800; letter-spacing: 4rpx; }
+.session-tabs { white-space: nowrap; background: #fff; border-bottom: 1rpx solid #f0e5da; }
+.session-tab-list { display: flex; padding: 22rpx 24rpx 0; }
+.session-tab { flex: 0 0 180rpx; padding: 0 12rpx 18rpx; text-align: center; color: #9aa0a6; border-bottom: 5rpx solid transparent; }
+.session-tab.active { color: #ff551b; border-color: #ff551b; }
+.session-name { display: block; font-size: 29rpx; font-weight: 700; }
+.session-time { display: block; margin-top: 6rpx; font-size: 22rpx; }
+.session-card { margin: 22rpx 24rpx 0; padding: 24rpx; }
+.session-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18rpx; }
+.session-label { color: #ff551b; font-size: 31rpx; font-weight: 800; }
+.session-range { display: block; margin-top: 8rpx; color: #9aa0a6; font-size: 22rpx; }
+.session-desc { flex: 1; text-align: right; color: #9aa0a6; font-size: 22rpx; line-height: 1.5; }
+.seckill-product { display: flex; gap: 20rpx; margin-top: 22rpx; padding: 18rpx; border-radius: 18rpx; background: #fff8f2; }
+.product-image { width: 220rpx; height: 250rpx; flex: 0 0 220rpx; border-radius: 14rpx; background: #f1ece5; }
+.product-content { min-width: 0; flex: 1; }
+.product-name { overflow: hidden; color: #1f2329; font-size: 29rpx; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.product-spec { margin-top: 8rpx; overflow: hidden; color: #898f98; font-size: 22rpx; text-overflow: ellipsis; white-space: nowrap; }
+.product-price { display: flex; align-items: baseline; gap: 12rpx; margin-top: 16rpx; color: #ff4b1d; font-size: 38rpx; font-weight: 800; }
+.product-original { color: #a6a9ad; font-size: 22rpx; font-weight: 400; text-decoration: line-through; }
+.stock-line { margin-top: 10rpx; color: #ff551b; font-size: 21rpx; }
+.stock-track { height: 10rpx; margin-top: 7rpx; border-radius: 10rpx; background: #ffe0d2; overflow: hidden; }
+.stock-fill { height: 100%; border-radius: 10rpx; background: #ff551b; }
+.limit-line { margin-top: 8rpx; color: #898f98; font-size: 21rpx; }
+.buy-button { height: 62rpx; margin: 14rpx 0 0; padding: 0 20rpx; border-radius: 32rpx; color: #fff; background: #ff551b; font-size: 25rpx; line-height: 62rpx; }
+.buy-button.disabled { color: #fff; background: #b9bdc3; }
+.buy-button::after { border: none; }
+.empty-inner, .empty-card { padding: 72rpx 24rpx; text-align: center; color: #9aa0a6; }
+.empty-title { color: #555b64; font-size: 30rpx; font-weight: 700; }
+.empty-desc { margin-top: 12rpx; font-size: 24rpx; }

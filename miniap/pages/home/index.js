@@ -4,6 +4,7 @@ const bannerApi = require('../../api/banner')
 const homeApi = require('../../api/home')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
 const couponApi = require('../../api/coupon')
+const seckillApi = require('../../api/seckill')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
@@ -14,6 +15,8 @@ Page({
     products: [],
     loading: false,
     marketingEnabled: {},
+    seckillSummary: null,
+    now: Date.now(),
     newUserCoupon: null,
   },
 
@@ -56,10 +59,62 @@ Page({
       }))
       const list = this.normalizeProducts({ data: { list: productData } })
       this.setData({ banners, topCategories: top, products: list, marketingEnabled })
+      this.loadSeckillSummary(marketingEnabled.SECKILL)
       this.loadNewUserCoupon(marketingEnabled)
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  loadSeckillSummary(enabled) {
+    if (!enabled) {
+      this.setData({ seckillSummary: null })
+      if (this._seckillTimer) clearInterval(this._seckillTimer)
+      return
+    }
+    seckillApi.sessions().then((res) => {
+      const session = res && res.data && res.data[0]
+      const product = session && session.products && session.products[0]
+      if (!session || !product) {
+        this.setData({ seckillSummary: null })
+        return
+      }
+      const summary = {
+        status: session.status,
+        statusText: session.status === 0 ? '即将开始' : session.status === 1 ? '限量抢购' : '本场已结束',
+        activityPriceText: this.fmtPrice(product.activityPrice),
+        productName: product.productName,
+        startText: this.formatHour(session.startAt),
+        startAt: session.startAt,
+        endAt: session.endAt,
+      }
+      this.setData({ seckillSummary: this.withSeckillCountdown(summary) })
+      if (this._seckillTimer) clearInterval(this._seckillTimer)
+      this._seckillTimer = setInterval(() => {
+        if (this.data.seckillSummary) this.setData({ now: Date.now(), seckillSummary: this.withSeckillCountdown(this.data.seckillSummary) })
+      }, 1000)
+    }).catch(() => this.setData({ seckillSummary: null }))
+  },
+
+  formatHour(value) {
+    const date = new Date(String(value || '').replace(' ', 'T'))
+    if (!Number.isFinite(date.getTime())) return ''
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+  },
+
+  withSeckillCountdown(summary) {
+    const value = summary.status === 0 ? summary.startAt : summary.endAt
+    const date = new Date(String(value || '').replace(' ', 'T'))
+    let seconds = Math.max(0, Math.floor((date.getTime() - Date.now()) / 1000))
+    const hours = Math.floor(seconds / 3600)
+    seconds -= hours * 3600
+    const minutes = Math.floor(seconds / 60)
+    const remain = seconds % 60
+    return { ...summary, countdownText: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remain).padStart(2, '0')}` }
+  },
+
+  onUnload() {
+    if (this._seckillTimer) clearInterval(this._seckillTimer)
   },
 
   async loadNewUserCoupon(marketingEnabled) {
@@ -225,6 +280,11 @@ Page({
     marketingCapabilities.ensure('GROUP_BUY').then((enabled) => {
       if (enabled) wx.navigateTo({ url: '/pages/group-buy/list' })
     })
+  },
+
+  onSeckill() {
+    if (!this.data.marketingEnabled.SECKILL) return
+    wx.navigateTo({ url: '/pages/activity/seckill/list' })
   },
 
   onProduct(e) {

@@ -34,7 +34,7 @@ public interface OrderMapper extends BaseMapper<Order> {
 
     @Update("UPDATE `order` SET status = 2, ship_company = #{shipCompany}, shipper_code = #{shipperCode}, ship_no = #{shipNo}, ship_time = #{now}, updated_at = #{now} " +
             "WHERE order_no = #{orderNo} AND merchant_id = #{merchantId} AND deleted = 0 " +
-            "AND ((order_type = 0 AND status = 1) OR (order_type = 1 AND status = 6)) " +
+            "AND ((order_type = 0 AND status = 1) OR (order_type = 1 AND status = 6) OR (order_type = 2 AND status = 1)) " +
             "AND NOT EXISTS (SELECT 1 FROM refund_application ra " +
             "                WHERE ra.order_no = `order`.order_no AND ra.status IN (0, 1))")
     int ship(@Param("merchantId") Long merchantId, @Param("orderNo") String orderNo,

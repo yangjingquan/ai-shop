@@ -101,6 +101,13 @@ onMounted(load)
             class="feature-link"
             @click="router.push('/merchant/coupon-templates')"
           >去配置新人券 →</el-button>
+          <el-button
+            v-if="feature.code === 'SECKILL' && feature.enabled === 1"
+            link
+            type="primary"
+            class="feature-link"
+            @click="router.push('/merchant/seckill')"
+          >去配置秒杀活动 →</el-button>
         </el-card>
       </el-col>
     </el-row>

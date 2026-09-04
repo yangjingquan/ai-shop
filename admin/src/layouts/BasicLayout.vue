@@ -52,6 +52,7 @@ const merchantMenus: MenuItem[] = [
   { index: 'merchant-inventory', label: '库存管理', path: '/merchant/inventory', desc: '调整与流水', icon: '库', permission: 'merchant:inventory:view' },
   { index: 'merchant-banners', label: 'Banner 配置', path: '/merchant/banners', desc: '首页轮播', icon: '图', permission: 'merchant:banner:view' },
   { index: 'merchant-marketing', label: '营销活动', path: '/merchant/marketing', desc: '活动开关', icon: '营', permission: 'merchant:marketing:view' },
+  { index: 'merchant-seckill', label: '秒杀活动', path: '/merchant/seckill', desc: '场次与库存', icon: '秒', permission: 'merchant:seckill:view' },
   { index: 'merchant-coupon-templates', label: '新人券配置', path: '/merchant/coupon-templates', desc: '券模板与库存', icon: '券', permission: 'merchant:coupon:view' },
   { index: 'merchant-order-ship', label: '订单发货', path: '/merchant/order-ship', desc: '履约处理', icon: '单', permission: 'merchant:order:view' },
   { index: 'merchant-refund-review', label: '退款审批', path: '/merchant/refund-review', desc: '售后审核', icon: '退', permission: 'merchant:refund:view' },

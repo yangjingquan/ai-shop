@@ -9,7 +9,7 @@
 
   <view class="items-card card">
     <view class="section-head">
-      <text>{{order.merchantName || '潮选商城'}}</text>
+      <view class="merchant-title"><text>{{order.merchantName || '潮选商城'}}</text><text wx:if="{{seckillEnabled && order.orderType === 2}}" class="seckill-order-tag">秒杀订单</text></view>
       <text class="status-text s{{order.status}}">{{order.statusText}}</text>
     </view>
 

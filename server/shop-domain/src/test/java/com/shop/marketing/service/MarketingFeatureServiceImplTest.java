@@ -43,7 +43,7 @@ class MarketingFeatureServiceImplTest {
     void onlyImplementedAndEnabledFeaturesAreReturnedToMiniapp() {
         when(valueOperations.get("merchant:marketing:features:1")).thenReturn("GROUP_BUY,SECKILL");
 
-        assertEquals(List.of("GROUP_BUY"), service.listEnabled(1L).stream()
+        assertEquals(List.of("SECKILL", "GROUP_BUY"), service.listEnabled(1L).stream()
                 .map(item -> item.getCode()).toList());
         assertEquals(1, service.listEnabled(1L).get(0).getEnabled());
     }

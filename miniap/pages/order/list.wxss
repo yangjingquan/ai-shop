@@ -90,6 +90,8 @@
   margin-bottom: 14rpx;
 }
 
+.seckill-order-tag { margin-left: 12rpx; padding: 4rpx 10rpx; border-radius: 8rpx; color: #ff551b; background: #fff0e8; font-size: 20rpx; }
+
 .state-text {
   flex: 0 0 auto;
   margin-left: 16rpx;

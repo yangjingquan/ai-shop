@@ -21,6 +21,7 @@ Page({
     currentStatus: null,
     currentStatusKey: 'all',
     groupBuyEnabled: false,
+    seckillEnabled: false,
     page: 1,
     hasMore: true,
     loading: false,
@@ -29,7 +30,8 @@ Page({
   onShow() {
     marketingCapabilities.load(false).then(() => {
       const groupBuyEnabled = marketingCapabilities.isEnabled('GROUP_BUY')
-      const nextData = { groupBuyEnabled }
+      const seckillEnabled = marketingCapabilities.isEnabled('SECKILL')
+      const nextData = { groupBuyEnabled, seckillEnabled }
       if (!groupBuyEnabled && [5, 6, 7].includes(this.data.currentStatus)) {
         nextData.currentStatus = null
         nextData.currentStatusKey = 'all'
@@ -65,6 +67,7 @@ Page({
         const list = ((res.data && res.data.list) || []).map((item) => ({
           ...item,
           statusText: this.displayStatusText(item),
+          seckillLabel: this.data.seckillEnabled && item.orderType === 2 ? '秒杀订单' : '',
           firstItemImage: resolveImageUrl(item.firstItemImage || ''),
           canDelete: item.status === 3 || item.status === 4,
           swipeOffset: 0,

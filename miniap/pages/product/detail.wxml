@@ -13,8 +13,13 @@
 
   <view class="info card">
     <view class="price-block">
-      <view class="price">¥ {{ product.salePriceText || product.minPrice }}</view>
+      <view class="price">¥ {{ seckillMode ? seckillPriceText : (product.salePriceText || product.minPrice) }}</view>
       <view wx:if="{{ product.hasOriginalPrice }}" class="original-price">¥ {{ product.originalPriceText }}</view>
+    </view>
+    <view wx:if="{{seckillMode}}" class="seckill-panel">
+      <view class="seckill-panel-head"><text>{{product.seckillStatus === 0 ? '即将开始' : product.seckillStatus === 1 ? '秒杀中' : '已结束'}}</text><text>{{product.seckillStartText}} - {{product.seckillEndText}}</text></view>
+      <view class="seckill-panel-row"><text>{{seckillLimitText}}</text><text class="seckill-stock">{{seckillRemainingText}}</text></view>
+      <view class="seckill-panel-tip">秒杀商品不支持使用优惠券，售完即止</view>
     </view>
     <view wx:if="{{product.isGroupBuy === 1}}" class="group-buy-panel">
       <view class="group-buy-head"><view class="group-buy-price">¥{{product.groupBuyPriceText}}</view><view class="group-buy-meta">{{product.groupBuyRequiredText}}</view></view>
@@ -45,13 +50,13 @@
     </view>
   </view>
 
-  <view class="bottom-bar {{product.isGroupBuy === 1 ? 'has-group-buy' : ''}}">
+  <view class="bottom-bar {{product.isGroupBuy === 1 ? 'has-group-buy' : ''}} {{seckillMode ? 'has-seckill' : ''}}">
     <button class="cart-tab" bindtap="onCartTab">
       <image class="btn-icon" src="/assets/icons/cart.png" mode="aspectFit" />
       <text>购物车</text>
     </button>
-    <button class="action add-cart" data-action="cart" bindtap="openSku">加入购物车</button>
-    <button class="action buy-now" data-action="buy" bindtap="openSku">立即购买</button>
+    <button wx:if="{{!seckillMode}}" class="action add-cart" data-action="cart" bindtap="openSku">加入购物车</button>
+    <button class="action buy-now" data-action="buy" bindtap="openSku">{{seckillMode ? '立即抢购' : '立即购买'}}</button>
     <button wx:if="{{product.isGroupBuy === 1}}" class="action group-buy" bindtap="openGroupBuySku">发起团购</button>
   </view>
 
@@ -66,13 +71,13 @@
           data-url="{{ (selectedSku && selectedSku.image) || product.mainImage }}"
         />
         <view class="sku-meta">
-          <view class="price">¥ {{ selectedSku ? selectedSku.priceText : product.salePriceText }}</view>
+          <view class="price">¥ {{ selectedSku ? selectedSku.priceText : (seckillMode ? seckillPriceText : product.salePriceText) }}</view>
           <view
             wx:if="{{ selectedSku ? selectedSku.hasOriginalPrice : product.hasOriginalPrice }}"
             class="original-price sku-original-price"
           >¥ {{ selectedSku ? selectedSku.originalPriceText : product.originalPriceText }}</view>
           <view class="text">{{ selectedSkuText || '请选择规格' }}</view>
-          <view wx:if="{{ selectedSku }}" class="stock">库存 {{ selectedSku.stock }}</view>
+          <view wx:if="{{ selectedSku }}" class="stock">{{seckillMode ? seckillRemainingText : '库存 ' + selectedSku.stock}}</view>
         </view>
         <view class="close" catchtap="closeSku">
           <image class="icon" src="/assets/icons/close.png" mode="aspectFit" />

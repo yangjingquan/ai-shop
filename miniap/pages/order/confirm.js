@@ -1,6 +1,7 @@
 const app = getApp();
 const { resolveImageUrl } = require('../../utils/url')
 const groupBuyApi = require('../../api/group-buy')
+const seckillApi = require('../../api/seckill')
 
 Page({
   data: {
@@ -16,6 +17,8 @@ Page({
     skuId: 0,
     quantity: 1,
     groupId: 0,
+    sessionId: 0,
+    seckillSkuId: 0,
     selectedCouponId: null,
   },
 
@@ -29,6 +32,8 @@ Page({
       skuId: Number(options.skuId || 0),
       quantity: Number(options.quantity || 1),
       groupId: Number(options.groupId || 0),
+      sessionId: Number(options.sessionId || 0),
+      seckillSkuId: Number(options.seckillSkuId || 0),
     });
     this.loadDefaultAddress();
   },
@@ -69,6 +74,10 @@ Page({
     if (!this.data.addressId) return;
     if (this.data.mode === 'groupBuy') {
       this.loadGroupBuyPreview();
+      return;
+    }
+    if (this.data.mode === 'seckill') {
+      this.loadSeckillPreview();
       return;
     }
     app.request({
@@ -136,6 +145,50 @@ Page({
     });
   },
 
+  loadSeckillPreview() {
+    seckillApi.preview({
+      sessionId: this.data.sessionId,
+      seckillSkuId: this.data.seckillSkuId,
+      addressId: this.data.addressId,
+      quantity: this.data.quantity,
+    }).then((res) => {
+      if (res.code !== 0) {
+        this.setData({ preview: null })
+        wx.showToast({ title: res.msg || '秒杀活动不可用', icon: 'none' })
+        return
+      }
+      const data = res.data || {}
+      const unitPrice = Number(data.activityPrice || 0).toFixed(2)
+      const quantity = Number(data.quantity || this.data.quantity || 1)
+      const subtotal = (Number(unitPrice) * quantity).toFixed(2)
+      const preview = {
+        ...data,
+        mainImage: resolveImageUrl(data.mainImage || ''),
+        totalAmount: data.totalAmount || subtotal,
+        payAmount: data.payAmount || subtotal,
+        groups: [{
+          merchantId: 0,
+          merchantName: '秒杀商品',
+          payAmount: data.payAmount || subtotal,
+          items: [{
+            cartItemId: data.seckillSkuId,
+            productName: data.productName,
+            specText: data.specText || '',
+            mainImage: resolveImageUrl(data.mainImage || ''),
+            available: true,
+            unitPrice,
+            quantity,
+            subtotal,
+          }],
+        }],
+      }
+      this.setData({ preview })
+    }).catch(() => {
+      this.setData({ preview: null })
+      wx.showToast({ title: '秒杀信息加载失败，请重试', icon: 'none' })
+    })
+  },
+
   chooseAddress() {
     wx.navigateTo({ url: '/pages/address/list?select=1' });
   },
@@ -190,6 +243,40 @@ Page({
         this.setData({ submitting: false });
       }).catch(() => this.setData({ submitting: false }));
       return;
+    }
+
+    if (this.data.mode === 'seckill') {
+      seckillApi.createOrder({
+        sessionId: this.data.sessionId,
+        seckillSkuId: this.data.seckillSkuId,
+        addressId: this.data.addressId,
+        quantity: this.data.quantity,
+      }).then((res) => {
+        if (res.code !== 0) {
+          wx.showToast({ title: res.msg || '秒杀下单失败', icon: 'none' })
+          this.setData({ submitting: false })
+          return
+        }
+        return this.payOrder(res.data).then(() => {
+          wx.showToast({ title: '抢购成功，状态同步中', icon: 'success' })
+          setTimeout(() => wx.switchTab({ url: '/pages/order/list' }), 1000)
+        }).catch(() => {
+          this.setData({ submitting: false })
+          wx.showModal({
+            title: '支付未完成',
+            content: '秒杀订单已创建，可在订单列表中继续支付。',
+            confirmText: '去订单',
+            cancelText: '留在这里',
+            success: (modalRes) => {
+              if (modalRes.confirm) wx.switchTab({ url: '/pages/order/list' })
+            },
+          })
+        })
+      }).catch(() => {
+        this.setData({ submitting: false })
+        wx.showToast({ title: '秒杀下单失败，请重试', icon: 'none' })
+      })
+      return
     }
 
     app.request({
