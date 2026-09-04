@@ -189,7 +189,7 @@ onMounted(async () => {
     <div class="page-header">
       <div>
         <span class="page-kicker">PRODUCTS</span>
-        <h1 class="page-title">商品管理</h1>
+        <h1 class="page-title">商品设置</h1>
         <p class="page-desc">管理商品资料、价格库存、上下架与 SKU 信息。</p>
       </div>
       <el-button v-permission="'merchant:product:create'" type="primary" @click="onCreate">新增商品</el-button>

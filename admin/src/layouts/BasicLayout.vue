@@ -25,10 +25,11 @@ const currentUserLabel = computed(() => userStore.username || roleLabel.value)
 interface MenuItem {
   index: string
   label: string
-  path: string
+  path?: string
   desc: string
   icon: string
   permission?: string
+  children?: MenuItem[]
 }
 
 const adminMenus: MenuItem[] = [
@@ -48,33 +49,67 @@ const merchantMenus: MenuItem[] = [
   { index: 'merchant', label: '首页', path: '/merchant', desc: '店铺概览', icon: '店', permission: 'merchant:dashboard:view' },
   { index: 'merchant-profile', label: '店铺信息', path: '/merchant/profile', desc: '资料维护', icon: '铺', permission: 'merchant:profile:view' },
   { index: 'merchant-categories', label: '分类管理', path: '/merchant/categories', desc: '店铺类目', icon: '类', permission: 'merchant:category:view' },
-  { index: 'merchant-products', label: '商品管理', path: '/merchant/products', desc: '上新与库存', icon: '货', permission: 'merchant:product:view' },
-  { index: 'merchant-inventory', label: '库存管理', path: '/merchant/inventory', desc: '调整与流水', icon: '库', permission: 'merchant:inventory:view' },
+  {
+    index: 'merchant-product-management',
+    label: '商品管理',
+    desc: '商品与库存',
+    icon: '货',
+    children: [
+      { index: 'merchant-products', label: '商品设置', path: '/merchant/products', desc: '上新与库存', icon: '货', permission: 'merchant:product:view' },
+      { index: 'merchant-inventory', label: '库存设置', path: '/merchant/inventory', desc: '调整与流水', icon: '库', permission: 'merchant:inventory:view' },
+    ],
+  },
   { index: 'merchant-banners', label: 'Banner 配置', path: '/merchant/banners', desc: '首页轮播', icon: '图', permission: 'merchant:banner:view' },
   { index: 'merchant-marketing', label: '营销活动', path: '/merchant/marketing', desc: '活动开关', icon: '营', permission: 'merchant:marketing:view' },
-  { index: 'merchant-seckill', label: '秒杀活动', path: '/merchant/seckill', desc: '场次与库存', icon: '秒', permission: 'merchant:seckill:view' },
-  { index: 'merchant-coupon-templates', label: '新人券配置', path: '/merchant/coupon-templates', desc: '券模板与库存', icon: '券', permission: 'merchant:coupon:view' },
+  {
+    index: 'merchant-activity-configuration',
+    label: '活动配置',
+    desc: '优惠与促销',
+    icon: '营',
+    children: [
+      { index: 'merchant-coupon-templates', label: '新人券配置', path: '/merchant/coupon-templates', desc: '券模板与库存', icon: '券', permission: 'merchant:coupon:view' },
+      { index: 'merchant-seckill', label: '秒杀活动', path: '/merchant/seckill', desc: '场次与库存', icon: '秒', permission: 'merchant:seckill:view' },
+    ],
+  },
   { index: 'merchant-order-ship', label: '订单发货', path: '/merchant/order-ship', desc: '履约处理', icon: '单', permission: 'merchant:order:view' },
   { index: 'merchant-refund-review', label: '退款审批', path: '/merchant/refund-review', desc: '售后审核', icon: '退', permission: 'merchant:refund:view' },
   { index: 'merchant-access-control', label: '账号与权限', path: '/merchant/access-control', desc: '角色与成员', icon: '权', permission: 'merchant:rbac:manage' },
 ]
 
-const menus = computed<MenuItem[]>(() =>
-  (userStore.role === 'admin' ? adminMenus : merchantMenus)
-    .filter((item) => !item.permission || userStore.hasPermission(item.permission)),
+function hasPermission(item: MenuItem) {
+  return !item.permission || userStore.hasPermission(item.permission)
+}
+
+const menus = computed<MenuItem[]>(() => {
+  const source = userStore.role === 'admin' ? adminMenus : merchantMenus
+  return source.flatMap((item) => {
+    if (!item.children) return hasPermission(item) ? [item] : []
+    const children = item.children.filter(hasPermission)
+    return children.length > 0 ? [{ ...item, children }] : []
+  })
+})
+
+const leafMenus = computed<MenuItem[]>(() =>
+  menus.value.flatMap((item) => item.children ?? [item]),
 )
 
 const activeIndex = computed(() => {
   if (route.path === '/admin/profile' || route.path === '/merchant/password') return ''
-  const matched = [...menus.value]
-    .sort((a, b) => b.path.length - a.path.length)
-    .find((m) => route.path === m.path || route.path.startsWith(`${m.path}/`))
-  return matched?.index ?? menus.value[0]?.index ?? ''
+  const matched = [...leafMenus.value]
+    .sort((a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0))
+    .find((m) => m.path && (route.path === m.path || route.path.startsWith(`${m.path}/`)))
+  return matched?.index ?? leafMenus.value[0]?.index ?? ''
 })
 
+const openMenuIndexes = computed(() =>
+  menus.value
+    .filter((item) => item.children?.some((child) => child.index === activeIndex.value))
+    .map((item) => item.index),
+)
+
 function handleSelect(index: string) {
-  const target = menus.value.find((m) => m.index === index)
-  if (target && target.path !== route.path) router.push(target.path)
+  const target = leafMenus.value.find((m) => m.index === index)
+  if (target?.path && target.path !== route.path) router.push(target.path)
 }
 
 async function loadMerchantName() {
@@ -115,16 +150,35 @@ onMounted(loadMerchantName)
 
       <el-menu
         :default-active="activeIndex"
+        :default-openeds="openMenuIndexes"
         class="side-menu"
         @select="handleSelect"
       >
-        <el-menu-item v-for="m in menus" :key="m.index" :index="m.index">
-          <span class="menu-icon">{{ m.icon }}</span>
-          <span class="menu-copy">
-            <span class="menu-label">{{ m.label }}</span>
-            <span class="menu-desc">{{ m.desc }}</span>
-          </span>
-        </el-menu-item>
+        <template v-for="m in menus" :key="m.index">
+          <el-sub-menu v-if="m.children" :index="m.index">
+            <template #title>
+              <span class="menu-icon">{{ m.icon }}</span>
+              <span class="menu-copy">
+                <span class="menu-label">{{ m.label }}</span>
+                <span class="menu-desc">{{ m.desc }}</span>
+              </span>
+            </template>
+            <el-menu-item v-for="child in m.children" :key="child.index" :index="child.index">
+              <span class="menu-icon">{{ child.icon }}</span>
+              <span class="menu-copy">
+                <span class="menu-label">{{ child.label }}</span>
+                <span class="menu-desc">{{ child.desc }}</span>
+              </span>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-menu-item v-else :index="m.index">
+            <span class="menu-icon">{{ m.icon }}</span>
+            <span class="menu-copy">
+              <span class="menu-label">{{ m.label }}</span>
+              <span class="menu-desc">{{ m.desc }}</span>
+            </span>
+          </el-menu-item>
+        </template>
       </el-menu>
 
       <div class="aside-card">
@@ -232,7 +286,30 @@ onMounted(loadMerchantName)
   line-height: 1;
 }
 
+.side-menu :deep(.el-sub-menu) {
+  margin: 6px 0;
+}
+
+.side-menu :deep(.el-sub-menu__title) {
+  height: 58px;
+  padding: 0 12px !important;
+  border-radius: 16px;
+  color: rgba(255, 247, 234, 0.68);
+  line-height: 1;
+}
+
+.side-menu :deep(.el-sub-menu__title .menu-copy) {
+  flex: 1;
+  min-width: 0;
+}
+
 .side-menu :deep(.el-menu-item:hover) {
+  color: #fff7ea;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.side-menu :deep(.el-sub-menu__title:hover),
+.side-menu :deep(.el-sub-menu.is-opened > .el-sub-menu__title) {
   color: #fff7ea;
   background: rgba(255, 255, 255, 0.08);
 }
@@ -241,6 +318,16 @@ onMounted(loadMerchantName)
   color: #fff7ea;
   background: linear-gradient(135deg, rgba(216, 111, 34, 0.96), rgba(159, 63, 18, 0.92));
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+.side-menu :deep(.el-sub-menu .el-menu) {
+  background: transparent;
+}
+
+.side-menu :deep(.el-sub-menu .el-menu-item) {
+  height: 52px;
+  margin: 4px 0;
+  padding-left: 28px !important;
 }
 
 .menu-icon {

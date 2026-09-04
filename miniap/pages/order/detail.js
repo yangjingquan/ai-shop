@@ -30,7 +30,7 @@ Page({
       const nextData = { groupBuyEnabled, seckillEnabled }
       if (this.data.order) nextData['order.statusText'] = this.displayStatusText(this.data.order, groupBuyEnabled)
       this.setData(nextData)
-      return enabled
+      return nextData
     })
   },
 

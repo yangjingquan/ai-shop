@@ -110,7 +110,7 @@ onMounted(load)
     <div class="page-header">
       <div>
         <span class="page-kicker">INVENTORY</span>
-        <h1 class="page-title">库存管理</h1>
+        <h1 class="page-title">库存设置</h1>
         <p class="page-desc">按 SKU 查看库存，记录入库/出库调整，并保留完整变更流水。</p>
       </div>
       <el-button @click="load">刷新</el-button>
