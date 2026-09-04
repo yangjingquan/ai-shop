@@ -6,6 +6,7 @@ import com.shop.order.mapper.OrderMapper;
 import com.shop.order.service.OrderPaymentService;
 import com.shop.order.service.PaymentReconciliationService;
 import com.shop.order.service.WxPayService;
+import com.shop.order.service.WechatPayOrderNotFoundException;
 import com.wechat.pay.java.service.payments.model.Transaction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,9 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
                             objectMapper.writeValueAsString(transaction));
                     paidCount++;
                 }
+            } catch (WechatPayOrderNotFoundException e) {
+                // 微信侧没有支付单等价于本地订单仍未支付，不应把它记录成查单故障。
+                log.info("微信支付订单不存在，按未支付订单处理, orderNo={}", order.getOrderNo());
             } catch (Exception e) {
                 error = abbreviate(e.getMessage());
                 log.warn("主动查单失败, orderNo={}, error={}", order.getOrderNo(), error, e);

@@ -102,7 +102,7 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
             return;
         }
         GroupBuyMember member = groupBuyMemberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>()
-                .eq(GroupBuyMember::getOrderNo, order.getOrderNo())
+                .eq(GroupBuyMember::getOrderId, order.getId())
                 .eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.WAIT_PAY.getCode()));
         if (member != null) {
             member.setStatus(GroupBuyMemberStatus.CANCELLED.getCode());

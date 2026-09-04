@@ -33,6 +33,7 @@ import com.shop.order.service.OrderPaymentService;
 import com.shop.order.service.OrderCancellationService;
 import com.shop.order.service.RefundCompletionService;
 import com.shop.order.service.WxPayService;
+import com.shop.order.service.WechatPayOrderNotFoundException;
 import com.shop.product.entity.Product;
 import com.shop.product.entity.ProductSku;
 import com.shop.product.mapper.ProductMapper;
@@ -521,7 +522,14 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private void closeWechatPaymentBeforeCancellation(Order order) {
-        Transaction transaction = wxPayService.queryOrder(order);
+        Transaction transaction;
+        try {
+            transaction = wxPayService.queryOrder(order);
+        } catch (WechatPayOrderNotFoundException e) {
+            // 微信侧没有创建出支付单时，本地待支付订单仍然可以安全取消。
+            log.info("微信支付订单不存在，继续取消本地待支付订单, orderNo={}", order.getOrderNo());
+            return;
+        }
         if (transaction != null && transaction.getTradeState() == TradeStateEnum.SUCCESS) {
             if (transaction.getAmount() == null || transaction.getAmount().getTotal() == null
                     || transaction.getAmount().getTotal() != yuanToFen(order.getPayAmount())

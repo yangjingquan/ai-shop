@@ -1,11 +1,14 @@
 package com.shop.order.service.impl;
 
+import com.wechat.pay.java.core.exception.ServiceException;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WxPayServiceImplTest {
 
@@ -21,5 +24,16 @@ class WxPayServiceImplTest {
     void derivesRefundNotifyUrlFromValidatedPaymentNotifyUrl() {
         assertEquals("https://pay.example.com/api/callback/wxrefund/M0001",
                 WxPayServiceImpl.refundNotifyUrl("https://pay.example.com/api/callback/wxpay/M0001"));
+    }
+
+    @Test
+    void recognizesWechatOrderNotFoundOnlyForHttp404() {
+        ServiceException notFound = new ServiceException(null, 404,
+                "{\"code\":\"ORDER_NOT_EXIST\",\"message\":\"订单不存在\"}");
+        ServiceException other404 = new ServiceException(null, 404,
+                "{\"code\":\"SYSTEM_ERROR\",\"message\":\"系统错误\"}");
+
+        assertTrue(WxPayServiceImpl.isOrderNotFound(notFound));
+        assertFalse(WxPayServiceImpl.isOrderNotFound(other404));
     }
 }

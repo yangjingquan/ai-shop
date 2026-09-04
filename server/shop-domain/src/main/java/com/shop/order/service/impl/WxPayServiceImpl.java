@@ -11,11 +11,13 @@ import com.shop.merchant.service.PaymentCredentialCipher;
 import com.shop.order.dto.OrderCreateVO;
 import com.shop.order.entity.Order;
 import com.shop.order.service.WxPayService;
+import com.shop.order.service.WechatPayOrderNotFoundException;
 import com.shop.user.entity.User;
 import com.shop.user.mapper.UserMapper;
 import com.wechat.pay.java.core.Config;
 import com.wechat.pay.java.core.RSAAutoCertificateConfig;
 import com.wechat.pay.java.core.RSAPublicKeyConfig;
+import com.wechat.pay.java.core.exception.ServiceException;
 import com.wechat.pay.java.service.payments.jsapi.JsapiServiceExtension;
 import com.wechat.pay.java.service.payments.jsapi.model.Amount;
 import com.wechat.pay.java.service.payments.jsapi.model.Payer;
@@ -110,10 +112,22 @@ public class WxPayServiceImpl implements WxPayService {
                     .queryOrderByOutTradeNo(request);
         } catch (BusinessException e) {
             throw e;
+        } catch (ServiceException e) {
+            if (isOrderNotFound(e)) {
+                log.info("微信支付订单不存在, orderNo={}, merchantCode={}",
+                        order.getOrderNo(), merchant.getMerchantCode());
+                throw new WechatPayOrderNotFoundException(order.getOrderNo(), e);
+            }
+            log.error("微信支付查单失败, orderNo={}, merchantCode={}", order.getOrderNo(), merchant.getMerchantCode(), e);
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "微信支付状态查询失败，请稍后重试");
         } catch (Exception e) {
             log.error("微信支付查单失败, orderNo={}, merchantCode={}", order.getOrderNo(), merchant.getMerchantCode(), e);
             throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "微信支付状态查询失败，请稍后重试");
         }
+    }
+
+    static boolean isOrderNotFound(ServiceException e) {
+        return e.getHttpStatusCode() == 404 && "ORDER_NOT_EXIST".equals(e.getErrorCode());
     }
 
     @Override
@@ -127,6 +141,14 @@ public class WxPayServiceImpl implements WxPayService {
             new JsapiServiceExtension.Builder().config(buildConfig(config)).build().closeOrder(request);
         } catch (BusinessException e) {
             throw e;
+        } catch (ServiceException e) {
+            if (isOrderNotFound(e)) {
+                log.info("微信支付订单不存在，无需关单, orderNo={}, merchantCode={}",
+                        order.getOrderNo(), merchant.getMerchantCode());
+                return;
+            }
+            log.error("微信支付关单失败, orderNo={}, merchantCode={}", order.getOrderNo(), merchant.getMerchantCode(), e);
+            throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "微信支付关单失败，请稍后重试");
         } catch (Exception e) {
             log.error("微信支付关单失败, orderNo={}, merchantCode={}", order.getOrderNo(), merchant.getMerchantCode(), e);
             throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "微信支付关单失败，请稍后重试");

@@ -1,5 +1,8 @@
 package com.shop.order.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.shop.groupbuy.entity.GroupBuyMember;
+import com.shop.groupbuy.enums.GroupBuyMemberStatus;
 import com.shop.groupbuy.mapper.GroupBuyMemberMapper;
 import com.shop.coupon.service.CouponService;
 import com.shop.order.entity.Order;
@@ -85,5 +88,34 @@ class OrderCancellationServiceImplTest {
         assertEquals("ADMIN_CANCEL", order.getCancelReason());
         verify(orderMapper).releaseStock(5L, 1);
         verify(productService).recalcProduct(6L);
+    }
+
+    @Test
+    void cancelsGroupBuyMemberByOrderId() {
+        Order order = new Order();
+        order.setId(3L);
+        order.setOrderNo("26083000000000010003");
+        order.setOrderType(1);
+        order.setStatus(OrderStatus.WAIT_PAY.getCode());
+        OrderItem item = new OrderItem();
+        item.setSkuId(7L);
+        item.setProductId(8L);
+        item.setQuantity(1);
+        GroupBuyMember member = new GroupBuyMember();
+        member.setOrderId(order.getId());
+        member.setStatus(GroupBuyMemberStatus.WAIT_PAY.getCode());
+
+        when(orderMapper.selectOne(any())).thenReturn(order);
+        when(orderItemMapper.selectList(any())).thenReturn(List.of(item));
+        when(groupBuyMemberMapper.selectOne(any())).thenReturn(member);
+
+        OrderCancellationServiceImpl service = new OrderCancellationServiceImpl(
+                orderMapper, orderItemMapper, groupBuyMemberMapper, productService, couponService);
+
+        service.cancelByAdmin(order.getOrderNo());
+
+        ArgumentCaptor<LambdaQueryWrapper<GroupBuyMember>> query = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(groupBuyMemberMapper).selectOne(query.capture());
+        assertEquals(GroupBuyMemberStatus.CANCELLED.getCode(), member.getStatus());
     }
 }
