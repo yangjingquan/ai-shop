@@ -14,6 +14,8 @@ Page({
     products: [],
     productViewMode: 'list',
     categoryExpanded: false,
+    sideScrollIntoView: '',
+    productScrollTop: 0,
     loading: false,
     productLoading: false,
   },
@@ -43,7 +45,9 @@ Page({
         this.pendingCategoryId = null
         const targetCategoryId = presetCategoryId || pendingCategoryId
         const activeTopId = this.resolveTopId(topCats, targetCategoryId) || (topCats[0] && topCats[0].id) || 0
-        this.setData({ topCats, activeTopId })
+        this.setData({ topCats, activeTopId, sideScrollIntoView: '' }, () => {
+          this.scrollSideTo(activeTopId)
+        })
         if (activeTopId) {
           this.renderTop(activeTopId, targetCategoryId)
         }
@@ -90,7 +94,23 @@ Page({
       selectedSubName,
       categoryExpanded: false,
     })
+    this.resetProductScroll()
     this.loadProducts(selectedSubId || top.id)
+  },
+
+  scrollSideTo(topId) {
+    if (!topId) return
+    const target = `side-item-${topId}`
+    this.setData({ sideScrollIntoView: '' }, () => {
+      this.setData({ sideScrollIntoView: target })
+    })
+  },
+
+  resetProductScroll() {
+    // 先设置一个非零值再回到顶部，确保重复切换分类时也能触发滚动重置。
+    this.setData({ productScrollTop: 1 }, () => {
+      this.setData({ productScrollTop: 0 })
+    })
   },
 
   loadProducts(categoryId) {
@@ -146,9 +166,8 @@ Page({
     const categoryId = Number(id)
     const topId = this.resolveTopId(this.data.topCats, categoryId)
     if (!topId || !this.data.topCats.find((c) => c.id === topId)) return
-    if (topId !== this.data.activeTopId) {
-      this.setData({ activeTopId: topId })
-    }
+    this.setData({ activeTopId: topId })
+    this.scrollSideTo(topId)
     // 即使目标仍属于当前一级分类，也要重新选中目标二级分类。
     this.renderTop(topId, categoryId)
   },
@@ -168,6 +187,7 @@ Page({
     const selectedSubName = sub ? sub.name : '全部商品'
     const categoryId = selectedSubId || this.data.activeTopId
     this.setData({ selectedSubId, selectedSubName })
+    this.resetProductScroll()
     this.loadProducts(categoryId)
   },
 

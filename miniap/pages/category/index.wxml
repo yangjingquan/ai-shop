@@ -5,10 +5,18 @@
   </view>
 
   <view class="layout">
-    <scroll-view class="side" scroll-y>
+    <scroll-view
+      class="side"
+      scroll-y
+      enhanced
+      show-scrollbar="{{false}}"
+      scroll-into-view="{{ sideScrollIntoView }}"
+      scroll-with-animation="{{true}}"
+    >
       <view
         wx:for="{{ topCats }}"
         wx:key="id"
+        id="side-item-{{ item.id }}"
         class="side-item {{ activeTopId === item.id ? 'active' : '' }}"
         bindtap="onTopTab"
         data-id="{{ item.id }}"
@@ -20,7 +28,7 @@
       </view>
     </scroll-view>
 
-    <scroll-view class="main" scroll-y>
+    <view class="main">
       <view wx:if="{{ currentTop }}" class="category-panel">
         <view class="category-head">
           <text>{{ currentTopName }}</text>
@@ -71,31 +79,33 @@
         </view>
       </view>
 
-      <view wx:if="{{ products.length }}" class="product-list {{ productViewMode === 'grid' ? 'product-grid' : 'product-single' }}">
-        <view
-          wx:for="{{ products }}"
-          wx:key="id"
-          class="tile"
-          bindtap="onProduct"
-          data-id="{{ item.id }}"
-        >
-          <view class="tile-media {{ item.mainImage ? '' : 'tile-media-empty' }}">
-            <image wx:if="{{ item.mainImage }}" src="{{ item.mainImage }}" mode="aspectFill" />
-            <view wx:else class="product-art"><text>{{ item.shortName }}</text></view>
-          </view>
-          <view class="tile-name">{{ item.name }}</view>
-          <view class="tile-desc">{{ item.subtitle }}</view>
-          <view class="price-wrap">
-            <view class="price">¥ {{ item.salePriceText || item.minPrice }}</view>
-            <view wx:if="{{ item.hasOriginalPrice }}" class="original-price">¥ {{ item.originalPriceText }}</view>
+      <scroll-view class="product-scroll" scroll-y scroll-top="{{ productScrollTop }}">
+        <view wx:if="{{ products.length }}" class="product-list {{ productViewMode === 'grid' ? 'product-grid' : 'product-single' }}">
+          <view
+            wx:for="{{ products }}"
+            wx:key="id"
+            class="tile"
+            bindtap="onProduct"
+            data-id="{{ item.id }}"
+          >
+            <view class="tile-media {{ item.mainImage ? '' : 'tile-media-empty' }}">
+              <image wx:if="{{ item.mainImage }}" src="{{ item.mainImage }}" mode="aspectFill" />
+              <view wx:else class="product-art"><text>{{ item.shortName }}</text></view>
+            </view>
+            <view class="tile-name">{{ item.name }}</view>
+            <view class="tile-desc">{{ item.subtitle }}</view>
+            <view class="price-wrap">
+              <view class="price">¥ {{ item.salePriceText || item.minPrice }}</view>
+              <view wx:if="{{ item.hasOriginalPrice }}" class="original-price">¥ {{ item.originalPriceText }}</view>
+            </view>
           </view>
         </view>
-      </view>
 
-      <view wx:if="{{ !products.length && !productLoading }}" class="empty-content">
-        <image class="empty-icon" src="/assets/icons/empty.png" mode="aspectFit" />
-        <view>暂无商品</view>
-      </view>
-    </scroll-view>
+        <view wx:if="{{ !products.length && !productLoading }}" class="empty-content">
+          <image class="empty-icon" src="/assets/icons/empty.png" mode="aspectFit" />
+          <view>暂无商品</view>
+        </view>
+      </scroll-view>
+    </view>
   </view>
 </view>
