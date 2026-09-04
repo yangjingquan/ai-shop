@@ -63,7 +63,8 @@ Page({
   },
   goProduct() {
     if (!this.data.group || !this.data.group.productId) return
-    wx.navigateTo({ url: `/pages/product/detail?id=${this.data.group.productId}&groupBuy=1&groupId=${this.data.groupId}` })
+    const skuId = this.data.group.skuId ? `&skuId=${this.data.group.skuId}` : ''
+    wx.navigateTo({ url: `/pages/product/detail?id=${this.data.group.productId}&groupBuy=1&groupId=${this.data.groupId}${skuId}` })
   },
   loadSubscribeConfig() {
     if (!this.data.groupId) return

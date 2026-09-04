@@ -434,6 +434,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             group = new GroupBuyGroup();
             group.setMerchantId(product.getMerchantId());
             group.setProductId(product.getId());
+            group.setSkuId(sku.getId());
             group.setLeaderUserId(userId);
             group.setRequiredCount(product.getGroupBuyRequiredCount());
             group.setPaidCount(0);
@@ -446,6 +447,9 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             if (group == null || !group.getProductId().equals(product.getId())
                     || (merchantId != null && !merchantId.equals(group.getMerchantId()))) {
                 throw new BusinessException(ErrorCode.GROUP_BUY_GROUP_NOT_FOUND);
+            }
+            if (group.getSkuId() != null && !group.getSkuId().equals(sku.getId())) {
+                throw new BusinessException(ErrorCode.CART_ITEM_INVALID.getCode(), "该规格与拼团不一致");
             }
             if (group.getStatus() != GroupBuyGroupStatus.WAIT_GROUP.getCode()) {
                 throw new BusinessException(ErrorCode.GROUP_BUY_GROUP_STATUS_INVALID);
@@ -562,6 +566,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         GroupBuyGroupVO vo = new GroupBuyGroupVO();
         vo.setId(group.getId());
         vo.setProductId(group.getProductId());
+        vo.setSkuId(group.getSkuId());
         vo.setRequiredCount(group.getRequiredCount());
         vo.setPaidCount(group.getPaidCount());
         vo.setStatus(group.getStatus());

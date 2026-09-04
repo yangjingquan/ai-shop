@@ -62,6 +62,7 @@ class GroupBuyServiceTest {
 
         GroupBuyGroup group = groupMapper.selectById(vo.getGroupId());
         assertEquals(GroupBuyGroupStatus.WAIT_GROUP.getCode(), group.getStatus());
+        assertEquals(SKU_ID, group.getSkuId());
         assertEquals(0, group.getPaidCount());
         assertNotNull(group.getExpireAt());
 

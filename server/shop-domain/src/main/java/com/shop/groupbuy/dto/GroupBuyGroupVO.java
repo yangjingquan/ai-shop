@@ -10,6 +10,7 @@ import java.util.List;
 public class GroupBuyGroupVO {
     private Long id;
     private Long productId;
+    private Long skuId;
     private Integer requiredCount;
     private Integer paidCount;
     private Integer status;
