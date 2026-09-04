@@ -402,9 +402,13 @@ page {
   gap: 20rpx;
 }
 
+.deal-row.single-deal {
+  grid-template-columns: 1fr;
+}
+
 .group-card,
 .flash-card {
-  height: 252rpx;
+  height: 276rpx;
   padding: 24rpx;
   position: relative;
   overflow: hidden;
@@ -418,8 +422,9 @@ page {
 }
 
 .flash-card {
-  background: #ffef68;
-  box-shadow: inset 0 -48rpx 0 rgba(255, 123, 84, 0.18);
+  color: #17191f;
+  background: linear-gradient(145deg, #fff48a 0%, #ffef68 72%, #ffd879 100%);
+  box-shadow: inset 0 -48rpx 0 rgba(255, 123, 84, 0.16);
 }
 
 .deal-title {
@@ -429,6 +434,117 @@ page {
 
 .deal-title.dark {
   color: #17191f;
+}
+
+.flash-copy {
+  position: relative;
+  z-index: 2;
+  width: calc(100% - 116rpx);
+  height: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.flash-head {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.flash-head .deal-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flash-arrow {
+  flex: 0 0 auto;
+  margin-left: 6rpx;
+  color: rgba(23, 25, 31, .55);
+  font-size: 34rpx;
+  line-height: 1;
+}
+
+.flash-status {
+  display: inline-flex;
+  max-width: 100%;
+  margin-top: 8rpx;
+  padding: 5rpx 10rpx;
+  overflow: hidden;
+  color: #fff;
+  background: #ff573b;
+  border-radius: 8rpx;
+  font-size: 19rpx;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flash-product {
+  display: -webkit-box;
+  height: 48rpx;
+  margin-top: 8rpx;
+  overflow: hidden;
+  color: #35302a;
+  font-size: 22rpx;
+  font-weight: 760;
+  line-height: 24rpx;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.flash-price-row {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  margin-top: 8rpx;
+}
+
+.flash-price {
+  position: static;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: #e53935;
+  font-size: 32rpx;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flash-price-suffix {
+  margin-left: 4rpx;
+  color: #e53935;
+  font-size: 19rpx;
+  font-weight: 800;
+}
+
+.flash-countdown {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin-top: 10rpx;
+  color: #6b5b20;
+  font-size: 18rpx;
+  white-space: nowrap;
+}
+
+.flash-countdown-label {
+  flex: 0 0 auto;
+}
+
+.flash-time {
+  min-width: 0;
+  margin-left: 6rpx;
+  padding: 6rpx 8rpx;
+  overflow: hidden;
+  color: #fff;
+  background: #17191f;
+  border-radius: 8rpx;
+  font-size: 19rpx;
+  font-weight: 900;
+  letter-spacing: 1rpx;
+  text-overflow: ellipsis;
 }
 
 .deal-desc {
@@ -494,21 +610,14 @@ page {
   font-weight: 900;
 }
 
-.flash-price {
-  position: absolute;
-  left: 24rpx;
-  bottom: 24rpx;
-  color: #e53935;
-  font-size: 34rpx;
-  font-weight: 950;
-}
-
 .speaker {
   position: absolute;
-  right: 28rpx;
-  bottom: 28rpx;
-  width: 108rpx;
-  height: 132rpx;
+  z-index: 1;
+  right: 10rpx;
+  bottom: 22rpx;
+  width: 98rpx;
+  height: 120rpx;
+  opacity: .92;
   border-radius: 30rpx;
   background: radial-gradient(circle at 50% 30%, #17191f 0 18rpx, #fff 20rpx 30rpx, #17191f 32rpx 36rpx, transparent 38rpx), radial-gradient(circle at 50% 72%, #17191f 0 26rpx, #fff 28rpx 42rpx, transparent 44rpx), #ff755e;
   transform: rotate(7deg);

@@ -76,12 +76,14 @@ Page({
       const session = res && res.data && res.data[0]
       const product = session && session.products && session.products[0]
       if (!session || !product) {
+        if (this._seckillTimer) clearInterval(this._seckillTimer)
         this.setData({ seckillSummary: null })
         return
       }
       const summary = {
         status: session.status,
         statusText: session.status === 0 ? '即将开始' : session.status === 1 ? '限量抢购' : '本场已结束',
+        sessionName: session.name,
         activityPriceText: this.fmtPrice(product.activityPrice),
         productName: product.productName,
         startText: this.formatHour(session.startAt),
@@ -91,9 +93,19 @@ Page({
       this.setData({ seckillSummary: this.withSeckillCountdown(summary) })
       if (this._seckillTimer) clearInterval(this._seckillTimer)
       this._seckillTimer = setInterval(() => {
-        if (this.data.seckillSummary) this.setData({ now: Date.now(), seckillSummary: this.withSeckillCountdown(this.data.seckillSummary) })
+        if (!this.data.seckillSummary) return
+        const updated = this.withSeckillCountdown(this.data.seckillSummary)
+        if (updated.status === 2) {
+          clearInterval(this._seckillTimer)
+          this.loadSeckillSummary(true)
+          return
+        }
+        this.setData({ now: Date.now(), seckillSummary: updated })
       }, 1000)
-    }).catch(() => this.setData({ seckillSummary: null }))
+    }).catch(() => {
+      if (this._seckillTimer) clearInterval(this._seckillTimer)
+      this.setData({ seckillSummary: null })
+    })
   },
 
   formatHour(value) {
@@ -103,14 +115,24 @@ Page({
   },
 
   withSeckillCountdown(summary) {
-    const value = summary.status === 0 ? summary.startAt : summary.endAt
-    const date = new Date(String(value || '').replace(' ', 'T'))
+    const now = Date.now()
+    const start = new Date(String(summary.startAt || '').replace(' ', 'T')).getTime()
+    const end = new Date(String(summary.endAt || '').replace(' ', 'T')).getTime()
+    const status = Number.isFinite(start) && now < start ? 0 : Number.isFinite(end) && now < end ? 1 : 2
+    const value = status === 0 ? start : end
+    const date = new Date(value)
     let seconds = Math.max(0, Math.floor((date.getTime() - Date.now()) / 1000))
     const hours = Math.floor(seconds / 3600)
     seconds -= hours * 3600
     const minutes = Math.floor(seconds / 60)
     const remain = seconds % 60
-    return { ...summary, countdownText: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remain).padStart(2, '0')}` }
+    return {
+      ...summary,
+      status,
+      statusText: status === 0 ? '即将开始' : status === 1 ? '限量抢购' : '本场已结束',
+      countdownLabel: status === 0 ? '距开始' : status === 1 ? '距结束' : '活动结束',
+      countdownText: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remain).padStart(2, '0')}`,
+    }
   },
 
   onUnload() {

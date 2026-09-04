@@ -80,11 +80,11 @@
       <view class="empty-title">{{ keyword ? '暂无搜索结果' : '暂无推荐商品' }}</view>
     </view>
 
-    <view wx:if="{{ marketingEnabled.GROUP_BUY || marketingEnabled.SECKILL }}" class="section-head deal-head">
+    <view wx:if="{{ marketingEnabled.GROUP_BUY || (marketingEnabled.SECKILL && seckillSummary) }}" class="section-head deal-head">
       <view class="section-title">限时会场</view>
-      <view class="more">{{seckillSummary ? seckillSummary.startText + ' 场' : ''}}</view>
+      <view class="more">{{seckillSummary ? seckillSummary.sessionName : ''}}</view>
     </view>
-    <view wx:if="{{ marketingEnabled.GROUP_BUY || marketingEnabled.SECKILL }}" class="deal-row">
+    <view wx:if="{{ marketingEnabled.GROUP_BUY || (marketingEnabled.SECKILL && seckillSummary) }}" class="deal-row {{ marketingEnabled.GROUP_BUY && marketingEnabled.SECKILL && seckillSummary ? 'two-deals' : 'single-deal' }}">
       <view wx:if="{{ marketingEnabled.GROUP_BUY }}" class="group-card" bindtap="onGroupBuy">
         <view class="deal-title">团购商品</view>
         <view class="deal-desc">N人成团·省更多</view>
@@ -93,10 +93,13 @@
         <view class="headphone"></view>
       </view>
       <view wx:if="{{ marketingEnabled.SECKILL && seckillSummary }}" class="flash-card" bindtap="onSeckill">
-        <view class="deal-title dark">秒杀商品</view>
-        <view class="deal-desc">{{seckillSummary.statusText}} · {{seckillSummary.productName}}</view>
-        <view class="timer"><text>{{seckillSummary.countdownText}}</text></view>
-        <view class="flash-price">¥{{seckillSummary.activityPriceText}} 起</view>
+        <view class="flash-copy">
+          <view class="flash-head"><view class="deal-title dark">秒杀专场</view><text class="flash-arrow">›</text></view>
+          <view class="flash-status">{{seckillSummary.statusText}}</view>
+          <view class="flash-product">{{seckillSummary.productName}}</view>
+          <view class="flash-price-row"><text class="flash-price">¥{{seckillSummary.activityPriceText}}</text><text class="flash-price-suffix">起</text></view>
+          <view class="flash-countdown"><text class="flash-countdown-label">{{seckillSummary.countdownLabel}}</text><text class="flash-time">{{seckillSummary.countdownText}}</text></view>
+        </view>
         <view class="speaker"></view>
       </view>
     </view>
