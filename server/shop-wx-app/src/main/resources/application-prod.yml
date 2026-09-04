@@ -11,7 +11,11 @@ spring:
       password: ${REDIS_PASSWORD}
       timeout: 3s
   flyway:
-    enabled: false
+    # 小程序服务也负责启动时执行数据库升级，避免只发布 wx 服务时遗漏迁移。
+    # Flyway 通过 schema history 和数据库锁保证与后台服务并行启动时幂等执行。
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
 
 logging:
   level:
