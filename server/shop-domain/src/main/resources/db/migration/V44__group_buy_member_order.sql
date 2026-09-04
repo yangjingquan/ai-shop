@@ -19,7 +19,7 @@ DEALLOCATE PREPARE stmt_add_group_buy_member_order_id;
 
 -- 通过现有 order_no 回填历史成员记录；无法匹配的记录暂不误绑订单。
 UPDATE group_buy_member m
-JOIN `order` o ON o.order_no = m.order_no
+JOIN `order` o ON BINARY o.order_no = BINARY m.order_no
 SET m.order_id = o.id
 WHERE m.order_id IS NULL;
 
