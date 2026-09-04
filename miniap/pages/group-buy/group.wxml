@@ -1,7 +1,7 @@
 <view class="group-page" wx:if="{{group}}">
   <view class="hero {{group.status === 0 ? 'waiting' : group.status === 1 ? 'formed' : 'failed'}}">
-    <view class="hero-back">‹</view>
-    <view class="hero-title">{{group.status === 0 ? '团购进行中' : '团购结果'}}</view>
+    <view wx:if="{{group.status !== 1}}" class="hero-back">‹</view>
+    <view wx:if="{{group.status !== 1}}" class="hero-title">{{group.status === 0 ? '团购进行中' : '团购结果'}}</view>
     <view class="hero-main">{{group.status === 0 ? '还差' + group.remainingCount + '人，成团发货' : group.status === 1 ? '已成团' : '退款处理中'}}</view>
     <view wx:if="{{group.status === 0}}" class="countdown-row"><text>剩余时间</text><text class="countdown">{{remainingText}}</text></view>
     <view wx:elif="{{group.status === 1}}" class="hero-sub">感谢参与，商品已安排发货</view>

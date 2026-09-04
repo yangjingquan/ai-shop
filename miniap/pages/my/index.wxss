@@ -73,7 +73,10 @@
   margin: 0;
   padding: 0 20rpx;
   height: 54rpx;
-  line-height: 54rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: normal;
   border-radius: 27rpx;
   font-size: 24rpx;
   color: #ff6600;

@@ -7,6 +7,11 @@ page {
 
 button {
   font-family: inherit;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: normal;
 }
 
 button::after {
@@ -68,7 +73,9 @@ button::after {
 
 .primary-btn {
   height: 88rpx;
-  line-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 44rpx;
   background: #ff6600;
   color: #fff;
@@ -79,7 +86,9 @@ button::after {
 
 .outline-btn {
   height: 72rpx;
-  line-height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 36rpx;
   background: #fff7f0;
   color: #ff6600;

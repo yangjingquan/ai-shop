@@ -142,7 +142,10 @@ page {
 .expand-toggle {
   flex: 0 0 auto;
   height: 52rpx;
-  line-height: 52rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: normal;
   padding: 0 20rpx;
   border-radius: 14rpx;
   color: #17191f;

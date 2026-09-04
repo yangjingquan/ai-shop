@@ -65,10 +65,14 @@
 .submit-btn {
   margin-top: 48rpx;
   height: 88rpx;
-  line-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: normal;
   background: #ff6600;
   color: #fff;
   border-radius: 44rpx;
   font-size: 30rpx;
   font-weight: 600;
+  box-sizing: border-box;
 }
