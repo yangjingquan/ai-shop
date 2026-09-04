@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class GroupBuyMember extends BaseEntity {
     private Long groupId;
     private Long userId;
+    private Long orderId;
     private String orderNo;
     private Integer status;
     private LocalDateTime paidAt;

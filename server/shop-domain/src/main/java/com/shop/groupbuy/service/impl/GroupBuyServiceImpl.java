@@ -507,6 +507,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         GroupBuyMember member = new GroupBuyMember();
         member.setGroupId(group.getId());
         member.setUserId(userId);
+        member.setOrderId(order.getId());
         member.setOrderNo(orderNo);
         member.setStatus(GroupBuyMemberStatus.WAIT_PAY.getCode());
         memberMapper.insert(member);

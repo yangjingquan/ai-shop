@@ -114,7 +114,7 @@ class OrderServiceTest {
     void cancelGroupBuyWaitPayOrderMarksMemberCancelled() {
         GroupBuyGroup group = createGroup();
         Order order = createGroupBuyWaitPayOrder(group.getId());
-        GroupBuyMember member = createMember(group.getId(), order.getOrderNo());
+        GroupBuyMember member = createMember(group.getId(), order.getId(), order.getOrderNo());
 
         orderService.cancelByUser(WX_USER, order.getOrderNo());
 
@@ -130,7 +130,7 @@ class OrderServiceTest {
         Order order = createGroupBuyWaitPayOrder(group.getId());
         order.setCreatedAt(LocalDateTime.now().minusMinutes(31));
         orderMapper.updateById(order);
-        GroupBuyMember member = createMember(group.getId(), order.getOrderNo());
+        GroupBuyMember member = createMember(group.getId(), order.getId(), order.getOrderNo());
 
         int count = orderService.cancelExpired(100);
 
@@ -152,6 +152,7 @@ class OrderServiceTest {
         GroupBuyGroup group = new GroupBuyGroup();
         group.setMerchantId(1L);
         group.setProductId(1L);
+        group.setSkuId(9L);
         group.setLeaderUserId(WX_USER);
         group.setRequiredCount(2);
         group.setPaidCount(0);
@@ -178,10 +179,11 @@ class OrderServiceTest {
         return order;
     }
 
-    private GroupBuyMember createMember(Long groupId, String orderNo) {
+    private GroupBuyMember createMember(Long groupId, Long orderId, String orderNo) {
         GroupBuyMember member = new GroupBuyMember();
         member.setGroupId(groupId);
         member.setUserId(WX_USER);
+        member.setOrderId(orderId);
         member.setOrderNo(orderNo);
         member.setStatus(GroupBuyMemberStatus.WAIT_PAY.getCode());
         memberMapper.insert(member);

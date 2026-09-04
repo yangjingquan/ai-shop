@@ -68,6 +68,7 @@ class GroupBuyServiceTest {
 
         GroupBuyMember member = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>().eq(GroupBuyMember::getOrderNo, vo.getOrderNo()));
         assertEquals(GroupBuyMemberStatus.WAIT_PAY.getCode(), member.getStatus());
+        assertEquals(order.getId(), member.getOrderId());
     }
 
     @Test
