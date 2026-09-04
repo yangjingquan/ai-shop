@@ -582,7 +582,7 @@ public class SeckillServiceImpl implements SeckillService {
         vo.setSpecText(sku.getSpecText());
         vo.setActivityPrice(config.getActivityPrice());
         vo.setOriginalPrice(sku.getPrice());
-        vo.setSpecValueIds(sku.getSpecValueIds() == null ? List.of() : sku.getSpecValueIds());
+        vo.setSpecValueIds(normalizeSpecValueIds(sku.getSpecValueIds()));
         vo.setImage(sku.getImage());
         vo.setStock(sku.getStock());
         vo.setActivityStock(config.getActivityStock());
@@ -590,6 +590,18 @@ public class SeckillServiceImpl implements SeckillService {
         vo.setRemainingStock(Math.min(Optional.ofNullable(config.getActivityStock()).orElse(0), Optional.ofNullable(sku.getStock()).orElse(0)));
         vo.setUserLimit(config.getUserLimit());
         return vo;
+    }
+
+    private List<Long> normalizeSpecValueIds(List<Long> rawIds) {
+        if (rawIds == null || rawIds.isEmpty()) return List.of();
+        List<Long> ids = new ArrayList<>(rawIds.size());
+        for (Object rawId : rawIds) {
+            if (!(rawId instanceof Number number)) {
+                throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID.getCode(), "商品规格数据不合法");
+            }
+            ids.add(number.longValue());
+        }
+        return ids;
     }
 
     private SeckillActivity mustActivity(Long merchantId, Long activityId) {

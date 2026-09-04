@@ -1,6 +1,6 @@
-const seckillApi = require('../../../../api/seckill')
-const { resolveImageUrl } = require('../../../../utils/url')
-const marketingCapabilities = require('../../../../utils/marketing-capabilities')
+const seckillApi = require('../../../api/seckill')
+const { resolveImageUrl } = require('../../../utils/url')
+const marketingCapabilities = require('../../../utils/marketing-capabilities')
 
 Page({
   data: {
