@@ -115,9 +115,11 @@ public class PromotionServiceImpl implements PromotionService {
         PromotionThreshold hit = thresholds.stream().filter(t -> qualified.compareTo(t.getThresholdAmount()) >= 0).findFirst().orElse(null);
         PromotionThreshold next = thresholds.stream().filter(t -> qualified.compareTo(t.getThresholdAmount()) < 0).min(Comparator.comparing(PromotionThreshold::getThresholdAmount)).orElse(null);
         BigDecimal discount = hit == null ? BigDecimal.ZERO : discount(activity, hit, qualified);
+        // 未达标时保留下一档用于进度和凑单推荐；优惠仍只按已命中的阶梯计算。
+        PromotionThreshold displayThreshold = hit != null ? hit : next;
         PromotionCheckoutResult.PromotionProgress p = new PromotionCheckoutResult.PromotionProgress(); p.setActivityId(activity.getId()); p.setActivityName(activity.getName()); p.setActivityType(activity.getActivityType()); p.setQualifiedAmount(qualified); p.setDiscountAmount(discount); p.setAchieved(hit != null);
-        p.setThresholdAmount(hit != null ? hit.getThresholdAmount() : next == null ? null : next.getThresholdAmount()); p.setNextThresholdAmount(next == null ? null : next.getThresholdAmount()); p.setRemainingAmount(next == null ? BigDecimal.ZERO : next.getThresholdAmount().subtract(qualified).max(BigDecimal.ZERO));
-        return new Candidate(activity, qualified, hit, discount, p);
+        p.setThresholdAmount(displayThreshold == null ? null : displayThreshold.getThresholdAmount()); p.setNextThresholdAmount(next == null ? null : next.getThresholdAmount()); p.setRemainingAmount(next == null ? BigDecimal.ZERO : next.getThresholdAmount().subtract(qualified).max(BigDecimal.ZERO));
+        return new Candidate(activity, qualified, displayThreshold, discount, p);
     }
     private BigDecimal discount(PromotionActivity activity, PromotionThreshold threshold, BigDecimal qualified) {
         BigDecimal value = "FULL_DISCOUNT".equals(activity.getActivityType()) ? qualified.multiply(BigDecimal.TEN.subtract(threshold.getDiscountRate())).divide(BigDecimal.TEN, 2, RoundingMode.HALF_UP) : threshold.getReductionAmount();
