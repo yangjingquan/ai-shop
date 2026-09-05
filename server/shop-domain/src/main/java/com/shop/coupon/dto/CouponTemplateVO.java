@@ -10,6 +10,7 @@ import java.util.List;
 public class CouponTemplateVO {
     private Long id;
     private String name;
+    private String image;
     private Integer type;
     private BigDecimal amount;
     private BigDecimal thresholdAmount;

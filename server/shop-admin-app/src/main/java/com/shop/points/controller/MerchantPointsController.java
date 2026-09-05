@@ -19,6 +19,7 @@ public class MerchantPointsController {
  @GetMapping("/products") @RequirePermission("merchant:points:view") public ApiResult<List<PointsProductVO>> products(){return ApiResult.success(pointsService.merchantProducts(merchant()));}
  @PostMapping("/products") @RequirePermission("merchant:points:update") public ApiResult<Long> create(@RequestBody @Valid PointsProductRequest q){return ApiResult.success(pointsService.saveProduct(merchant(),null,q));}
  @PutMapping("/products/{id}") @RequirePermission("merchant:points:update") public ApiResult<Long> update(@PathVariable Long id,@RequestBody @Valid PointsProductRequest q){return ApiResult.success(pointsService.saveProduct(merchant(),id,q));}
+ @DeleteMapping("/products/{id}") @RequirePermission("merchant:points:update") public ApiResult<Void> delete(@PathVariable Long id){pointsService.deleteProduct(merchant(),id);return ApiResult.success();}
  @GetMapping("/member-day") @RequirePermission("merchant:points:view") public ApiResult<MemberDayActivityVO> day(){return ApiResult.success(pointsService.merchantMemberDay(merchant()));}
  @PutMapping("/member-day") @RequirePermission("merchant:points:update") public ApiResult<Void> saveDay(@RequestBody @Valid MemberDayActivityRequest q){pointsService.saveMemberDay(merchant(),q);return ApiResult.success();}
 }

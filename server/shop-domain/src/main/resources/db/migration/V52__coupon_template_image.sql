@@ -1,0 +1,2 @@
+ALTER TABLE coupon_template
+    ADD COLUMN image VARCHAR(512) NOT NULL DEFAULT '' COMMENT '券面图片' AFTER name;

@@ -386,7 +386,7 @@ public class CouponServiceImpl implements CouponService {
 
     private CouponTemplateVO toTemplateVO(CouponTemplate t) {
         CouponTemplateVO vo = new CouponTemplateVO();
-        vo.setId(t.getId()); vo.setName(t.getName()); vo.setType(t.getType()); vo.setAmount(t.getAmount());
+        vo.setId(t.getId()); vo.setName(t.getName()); vo.setImage(t.getImage()); vo.setType(t.getType()); vo.setAmount(t.getAmount());
         vo.setThresholdAmount(t.getThresholdAmount()); vo.setTotalStock(t.getTotalStock());
         vo.setReceivedCount(t.getReceivedCount()); vo.setUsedCount(t.getUsedCount());
         vo.setPerUserLimit(t.getPerUserLimit()); vo.setValidityDays(t.getValidityDays());
@@ -420,7 +420,7 @@ public class CouponServiceImpl implements CouponService {
     }
 
     private void applyRequest(CouponTemplate t, CouponTemplateSaveRequest request) {
-        t.setName(request.getName().trim()); t.setAmount(request.getAmount()); t.setThresholdAmount(request.getThresholdAmount());
+        t.setName(request.getName().trim()); t.setImage(request.getImage() == null ? "" : request.getImage()); t.setAmount(request.getAmount()); t.setThresholdAmount(request.getThresholdAmount());
         t.setTotalStock(request.getTotalStock()); t.setPerUserLimit(1); t.setValidityDays(request.getValidityDays());
         t.setValidFrom(request.getValidFrom()); t.setValidTo(request.getValidTo()); t.setScopeType(request.getScopeType());
         t.setScopeIdsJson(toJson(request.getScopeIds() == null ? List.of() : request.getScopeIds()));

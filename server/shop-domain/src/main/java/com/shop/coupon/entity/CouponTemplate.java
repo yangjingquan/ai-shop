@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class CouponTemplate extends BaseEntity {
     private Long merchantId;
     private String name;
+    private String image;
     private Integer type;
     private BigDecimal amount;
     private BigDecimal thresholdAmount;

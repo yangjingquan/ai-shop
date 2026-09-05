@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { couponTemplateApi, type CouponTemplate, type CouponTemplatePayload } from '@/api/marketing'
+import ImageUploader from '@/components/upload/ImageUploader.vue'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -12,7 +13,7 @@ const form = reactive<CouponTemplatePayload>(emptyForm())
 
 function emptyForm(): CouponTemplatePayload {
   return {
-    name: '新人首单券', amount: 20, thresholdAmount: 99, totalStock: 0,
+    name: '新人首单券', image: '', amount: 20, thresholdAmount: 99, totalStock: 0,
     perUserLimit: 1, validityDays: 30, validFrom: null, validTo: null,
     scopeType: 0, scopeIds: [], newUserOnly: 1, excludeActivityGoods: 1, stackable: 0, status: 1,
   }
@@ -42,8 +43,9 @@ async function save() {
   }
   saving.value = true
   try {
-    if (editingId.value) await couponTemplateApi.update(editingId.value, { ...form })
-    else await couponTemplateApi.create({ ...form })
+    const { id, type, receivedCount, usedCount, statusText, ...payload } = form as CouponTemplate & CouponTemplatePayload
+    if (editingId.value) await couponTemplateApi.update(editingId.value, payload)
+    else await couponTemplateApi.create(payload)
     ElMessage.success('新人券模板已保存')
     dialogVisible.value = false
     await load()
@@ -91,7 +93,8 @@ onMounted(load)
     </el-card>
     <el-dialog v-model="dialogVisible" :title="editingId ? '编辑新人券' : '新增新人券'" width="620px">
       <el-form label-width="112px">
-        <el-form-item label="模板名称"><el-input v-model="form.name" maxlength="32" /></el-form-item>
+      <el-form-item label="模板名称"><el-input v-model="form.name" maxlength="32" /></el-form-item>
+      <el-form-item label="券面图片"><ImageUploader v-model="form.image" scope="merchant" :limit="1" label="上传券面图片" /><span class="hint">用于积分商城等营销展示，不上传则显示默认券面。</span></el-form-item>
         <el-form-item label="优惠金额"><el-input-number v-model="form.amount" :min="0.01" :precision="2" :step="1" /></el-form-item>
         <el-form-item label="使用门槛"><el-input-number v-model="form.thresholdAmount" :min="0" :precision="2" :step="10" /></el-form-item>
         <el-form-item label="总库存"><el-input-number v-model="form.totalStock" :min="0" :step="100" /><span class="hint">0 表示不限</span></el-form-item>

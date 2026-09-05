@@ -1,5 +1,6 @@
 package com.shop.coupon.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -11,9 +12,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CouponTemplateSaveRequest {
     @NotBlank
     private String name;
+
+    /** 券面展示图，供积分商城等营销入口使用。 */
+    private String image;
 
     @NotNull
     @DecimalMin("0.01")
