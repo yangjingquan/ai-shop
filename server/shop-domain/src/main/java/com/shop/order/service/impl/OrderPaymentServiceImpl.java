@@ -19,6 +19,7 @@ import com.shop.product.service.ProductService;
 import com.shop.seckill.service.SeckillService;
 import com.shop.referral.service.ReferralService;
 import com.shop.points.service.PointsMemberService;
+import com.shop.coupon.service.CouponIssueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +52,8 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     private ReferralService referralService;
     @Autowired(required = false)
     private PointsMemberService pointsMemberService;
+    @Autowired(required = false)
+    private CouponIssueService couponIssueService;
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaidCallback(String orderNo, String transactionId, String rawPayload) {
@@ -96,6 +99,14 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
         }
         if (referralService != null) referralService.handleOrderPaid(order);
         if (pointsMemberService != null) pointsMemberService.rewardPaidOrder(order);
+        if (couponIssueService != null) {
+            try {
+                couponIssueService.issueAfterPaid(order);
+            } catch (RuntimeException ex) {
+                // 优惠券奖励不可阻断已验证的支付成功；后续由支付补单/人工记录排查。
+                log.error("购后复购券发放失败, orderNo={}", orderNo, ex);
+            }
+        }
 
         List<OrderItem> items = orderItemMapper.selectList(
                 new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, order.getId()));

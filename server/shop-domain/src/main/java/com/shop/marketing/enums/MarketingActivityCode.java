@@ -13,7 +13,7 @@ public enum MarketingActivityCode {
     SECKILL("SECKILL", "限时秒杀", "在限定时间内以特价购买商品", true, "/pages/activity/seckill/list"),
     GROUP_BUY("GROUP_BUY", "多人拼团", "邀请好友成团后享受拼团价", true, "/pages/group-buy/list"),
     FULL_REDUCTION("FULL_REDUCTION", "满减活动", "订单达到门槛后自动减免", false, "/pages/promotion/full-reduction"),
-    REPURCHASE_COUPON("REPURCHASE_COUPON", "复购券", "鼓励已购买用户再次下单", false, "/pages/coupon/repurchase"),
+    REPURCHASE_COUPON("REPURCHASE_COUPON", "复购券", "支付成功后赠送短期复购优惠券", true, "/pages/coupon/list"),
     POINTS_MEMBER_DAY("POINTS_MEMBER_DAY", "积分会员日", "会员日享受积分或专属权益", true, "/pages/points/member-day"),
     REFERRAL("REFERRAL", "邀请有礼", "邀请新用户首单后获得优惠券奖励", true, "/pages/activity/referral/index"),
     BUNDLE("BUNDLE", "组合购", "搭配购买多件商品享受组合优惠", false, "/pages/promotion/bundle"),

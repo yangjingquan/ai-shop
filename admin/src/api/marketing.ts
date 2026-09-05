@@ -88,6 +88,12 @@ export interface CouponTemplate {
   scopeType: number
   scopeIds?: number[]
   newUserOnly: number
+  issueScene: 'NEW_USER' | 'REPURCHASE_AFTER_PAID'
+  repurchaseTargetType: number
+  repurchaseTargetIds?: number[]
+  repurchaseMinOrderAmount: number
+  repurchaseFirstPurchaseOnly: number
+  repurchasePriority: number
   excludeActivityGoods: number
   stackable: number
   status: number
@@ -107,15 +113,24 @@ export interface CouponTemplatePayload {
   scopeType: number
   scopeIds: number[]
   newUserOnly: number
+  issueScene: 'NEW_USER' | 'REPURCHASE_AFTER_PAID'
+  repurchaseTargetType: number
+  repurchaseTargetIds: number[]
+  repurchaseMinOrderAmount: number
+  repurchaseFirstPurchaseOnly: number
+  repurchasePriority: number
   excludeActivityGoods: number
   stackable: number
   status: number
 }
 
+export type CouponIssueScene = 'NEW_USER' | 'REPURCHASE_AFTER_PAID'
+
 export const couponTemplateApi = {
-  list: () => request.get<unknown, CouponTemplate[]>('/api/merchant/marketing/coupons/templates'),
-  create: (data: CouponTemplatePayload) =>
-    request.post<unknown, { id: number }>('/api/merchant/marketing/coupons/templates', data),
+  list: (issueScene: CouponIssueScene = 'NEW_USER') =>
+    request.get<unknown, CouponTemplate[]>('/api/merchant/marketing/coupons/templates', { params: { issueScene } }),
+  create: (issueScene: CouponIssueScene, data: CouponTemplatePayload) =>
+    request.post<unknown, { id: number }>('/api/merchant/marketing/coupons/templates', data, { params: { issueScene } }),
   update: (id: number, data: CouponTemplatePayload) =>
     request.put<unknown, void>(`/api/merchant/marketing/coupons/templates/${id}`, data),
   status: (id: number, status: number) =>

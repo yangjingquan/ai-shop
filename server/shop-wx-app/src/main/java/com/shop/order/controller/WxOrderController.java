@@ -9,6 +9,8 @@ import com.shop.wx.config.WxMerchantResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import com.shop.order.dto.*;
 import com.shop.order.service.OrderService;
+import com.shop.coupon.dto.RepurchaseCouponVO;
+import com.shop.coupon.service.CouponIssueService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,7 @@ import java.util.List;
 public class WxOrderController {
 
     private final OrderService orderService;
+    private final CouponIssueService couponIssueService;
     private final com.shop.order.service.LogisticsService logisticsService;
     private final WxMerchantResolver wxMerchantResolver;
 
@@ -68,6 +71,13 @@ public class WxOrderController {
     public ApiResult<OrderDetailVO> detail(@PathVariable String orderNo) {
         Long userId = CurrentUserHolder.get().getUserId();
         return ApiResult.success(orderService.detail(userId, orderNo));
+    }
+
+    @GetMapping("/{orderNo}/repurchase-coupon")
+    public ApiResult<RepurchaseCouponVO> repurchaseCoupon(@PathVariable String orderNo, HttpServletRequest request) {
+        Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
+        return ApiResult.success(couponIssueService.findRepurchaseCoupon(
+                CurrentUserHolder.get().getUserId(), merchantId, orderNo));
     }
 
     @GetMapping("/{orderNo}/logistics")

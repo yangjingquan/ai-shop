@@ -15,6 +15,8 @@ public class UserCoupon extends BaseEntity {
     private Long userId;
     private Long merchantId;
     private Long templateId;
+    private String issueScene;
+    private String sourceOrderNo;
     private String templateNameSnapshot;
     private Integer type;
     private BigDecimal amountSnapshot;
@@ -28,4 +30,5 @@ public class UserCoupon extends BaseEntity {
     private LocalDateTime receivedAt;
     private LocalDateTime usedAt;
     private String usedOrderNo;
+    private String invalidReason;
 }

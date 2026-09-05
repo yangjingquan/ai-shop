@@ -9,6 +9,7 @@ import com.shop.common.security.CurrentUserHolder;
 import com.shop.common.security.RequirePermission;
 import com.shop.coupon.dto.CouponTemplateSaveRequest;
 import com.shop.coupon.dto.CouponTemplateVO;
+import com.shop.coupon.enums.CouponIssueScene;
 import com.shop.coupon.service.CouponService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,14 +26,18 @@ public class MerchantCouponTemplateController {
 
     @GetMapping
     @RequirePermission("merchant:coupon:view")
-    public ApiResult<List<CouponTemplateVO>> list() {
-        return ApiResult.success(couponService.listTemplates(currentMerchantId()));
+    public ApiResult<List<CouponTemplateVO>> list(@RequestParam(defaultValue = CouponIssueScene.NEW_USER) String issueScene) {
+        return ApiResult.success(couponService.listTemplates(currentMerchantId(), issueScene));
     }
 
     @PostMapping
     @OpLog(action = "COUPON_TEMPLATE_CREATE", targetType = "COUPON_TEMPLATE")
     @RequirePermission("merchant:coupon:create")
-    public ApiResult<Map<String, Long>> create(@RequestBody @Valid CouponTemplateSaveRequest request) {
+    public ApiResult<Map<String, Long>> create(
+            @RequestParam(defaultValue = CouponIssueScene.NEW_USER) String issueScene,
+            @RequestBody @Valid CouponTemplateSaveRequest request) {
+        // 场景由入口决定，不能由前端表单任意选择。
+        request.setIssueScene(issueScene);
         return ApiResult.success(Map.of("id", couponService.createTemplate(currentMerchantId(), request)));
     }
 

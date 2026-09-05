@@ -13,6 +13,12 @@
   box-shadow: 0 14rpx 30rpx rgba(50, 44, 36, 0.06);
 }
 
+.repurchase-card { border: 1rpx solid #ffd8bc; background: linear-gradient(135deg, #fffaf6, #fff2e8); }
+.repurchase-head, .repurchase-content { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.repurchase-title { color: #2d241f; font-size: 27rpx; font-weight: 900; }.repurchase-sub { margin-top: 7rpx; color: #9b745c; font-size: 21rpx; }.repurchase-state { color: #e45d1b; font-size: 21rpx; font-weight: 700; text-align: right; }
+.repurchase-content { margin-top: 20rpx; }.repurchase-price { color: #f15e17; font-size: 52rpx; line-height: 1; font-weight: 950; }.repurchase-price text { margin-right: 4rpx; font-size: 25rpx; }.repurchase-condition { flex: 1; color: #754b32; font-size: 23rpx; font-weight: 700; }.repurchase-action { min-width: 104rpx; height: 54rpx; display: flex; align-items: center; justify-content: center; border-radius: 16rpx; color: #fff; background: #ff6600; font-size: 23rpx; font-weight: 800; }.repurchase-action.disabled { color: #9298a0; background: #edf0f2; }
+.repurchase-recommend { padding-bottom: 18rpx; }.recommend-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 14rpx; color: #17191f; font-size: 27rpx; font-weight: 900; }.recommend-heading text:last-child { color: #a07860; font-size: 20rpx; font-weight: 700; text-align: right; }.recommend-list { margin-top: 16rpx; }.recommend-product { display: flex; align-items: center; min-height: 114rpx; padding: 12rpx 0; border-top: 1rpx solid rgba(23,25,31,.06); }.recommend-product image { width: 96rpx; height: 96rpx; border-radius: 14rpx; background: #f1f3f5; }.recommend-product-info { flex: 1; min-width: 0; margin-left: 16rpx; color: #292d34; font-size: 24rpx; font-weight: 850; }.recommend-product-info view { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.recommend-product-info text { display: block; margin-top: 12rpx; color: #ff4b43; font-size: 25rpx; font-weight: 950; }.recommend-buy { margin-left: 12rpx; color: #e45d1b; font-size: 22rpx; font-weight: 800; }
+
 .address-card {
   display: flex;
   align-items: center;

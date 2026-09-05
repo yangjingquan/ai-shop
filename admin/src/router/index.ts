@@ -163,7 +163,13 @@ const routes: RouteRecordRaw[] = [
         path: 'merchant/coupon-templates',
         name: 'MerchantCouponTemplates',
         component: () => import('@/views/merchant/MerchantCouponTemplate.vue'),
-        meta: { roles: ['merchant'], permission: 'merchant:coupon:view' },
+        meta: { roles: ['merchant'], permission: 'merchant:coupon:view', couponIssueScene: 'NEW_USER' },
+      },
+      {
+        path: 'merchant/repurchase-coupon-templates',
+        name: 'MerchantRepurchaseCouponTemplates',
+        component: () => import('@/views/merchant/MerchantCouponTemplate.vue'),
+        meta: { roles: ['merchant'], permission: 'merchant:coupon:view', couponIssueScene: 'REPURCHASE_AFTER_PAID' },
       },
       {
         path: 'merchant/order-ship',

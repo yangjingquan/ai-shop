@@ -3,7 +3,7 @@ const couponApi = require('../../api/coupon')
 Page({
   data: {
     mode: 'view',
-    tabs: [{ key: 0, label: '可使用' }, { key: 1, label: '已使用' }, { key: 2, label: '已过期' }],
+    tabs: [{ key: 0, label: '可使用' }, { key: 1, label: '已使用' }, { key: 2, label: '已失效/过期' }],
     activeTab: 0,
     coupons: [],
     loading: false,
@@ -21,7 +21,7 @@ Page({
     try {
       const res = await couponApi.list(this.data.activeTab)
       const list = (res && res.data) || []
-      this.setData({ coupons: list.map(item => ({ ...item, amountText: Number(item.amount || 0).toFixed(0), thresholdText: Number(item.thresholdAmount || 0).toFixed(0) })) })
+      this.setData({ coupons: list.map(item => ({ ...item, amountText: Number(item.amount || 0).toFixed(0), thresholdText: Number(item.thresholdAmount || 0).toFixed(0), expiryText: this.expiryText(item.validTo) })) })
     } catch (_) { this.setData({ coupons: [] }) } finally { this.setData({ loading: false }) }
   },
 
@@ -42,6 +42,12 @@ Page({
       wx.navigateBack({ delta: 1 })
       return
     }
+    wx.setStorageSync('order_selected_coupon_id', coupon.id)
     wx.navigateTo({ url: '/pages/recommend/index' })
+  },
+  expiryText(validTo) {
+    const ms = new Date(validTo).getTime() - Date.now()
+    const days = Math.ceil(ms / (24 * 60 * 60 * 1000))
+    return days > 0 && days <= 1 ? '仅剩 1 天有效' : ''
   },
 })

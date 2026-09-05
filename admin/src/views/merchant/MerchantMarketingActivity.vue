@@ -102,6 +102,13 @@ onMounted(load)
             @click="router.push('/merchant/coupon-templates')"
           >去配置新人券 →</el-button>
           <el-button
+            v-if="feature.code === 'REPURCHASE_COUPON' && feature.enabled === 1"
+            link
+            type="primary"
+            class="feature-link"
+            @click="router.push('/merchant/repurchase-coupon-templates')"
+          >去配置复购券 →</el-button>
+          <el-button
             v-if="feature.code === 'SECKILL' && feature.enabled === 1"
             link
             type="primary"

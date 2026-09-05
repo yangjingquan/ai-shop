@@ -46,6 +46,13 @@ public class CouponTemplateSaveRequest {
     private Integer scopeType = 0;
     private List<Long> scopeIds;
     private Integer newUserOnly = 1;
+    private String issueScene = "NEW_USER";
+    private Integer repurchaseTargetType = 0;
+    private List<Long> repurchaseTargetIds;
+    @DecimalMin("0.00")
+    private BigDecimal repurchaseMinOrderAmount = BigDecimal.ZERO;
+    private Integer repurchaseFirstPurchaseOnly = 0;
+    private Integer repurchasePriority = 0;
     private Integer excludeActivityGoods = 1;
     private Integer stackable = 0;
     private Integer status = 1;

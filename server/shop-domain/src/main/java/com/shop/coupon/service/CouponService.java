@@ -7,7 +7,10 @@ import java.util.List;
 public interface CouponService {
     void initializeMerchant(Long merchantId);
 
-    List<CouponTemplateVO> listTemplates(Long merchantId);
+    /**
+     * 按发放场景返回模板。运营端必须显式在各自活动入口管理，避免复购券被旧活动误选。
+     */
+    List<CouponTemplateVO> listTemplates(Long merchantId, String issueScene);
 
     Long createTemplate(Long merchantId, CouponTemplateSaveRequest request);
 
@@ -22,8 +25,12 @@ public interface CouponService {
     /** 按模板向指定用户发券，供邀请奖励等服务端奖励使用。 */
     Long issueTemplate(Long userId, Long merchantId, Long templateId);
 
+    RepurchaseIssueResult issueRepurchaseCoupon(Long userId, Long merchantId, Long templateId, String sourceOrderNo);
+
     /** 撤销一张尚未使用的用户券；已使用券不做逆向扣减。 */
     boolean invalidateCoupon(Long userId, Long merchantId, Long couponId);
+
+    boolean invalidateCoupon(Long userId, Long merchantId, Long couponId, String reason);
 
     List<CouponVO> listUserCoupons(Long userId, Long merchantId, Integer status);
 

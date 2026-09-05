@@ -7,6 +7,14 @@
 .order-btn { width: 100%; height: 84rpx; margin: 0; padding: 0; border-radius: 18rpx; color: #fff; background: #ff6600; font-size: 29rpx; font-weight: 700; box-shadow: 0 10rpx 20rpx rgba(255, 102, 0, .16); }
 .card { margin-top: 20rpx; padding: 26rpx; border: 1rpx solid #eef0f3; border-radius: 16rpx; background: #fff; box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, .04); }
 .points-reward-card { display: flex; align-items: center; min-height: 100rpx; box-sizing: border-box; border-color: #ffe0c5; background: #fffaf5; }
+.repurchase-card { border-color: #ffd7b5; background: linear-gradient(135deg, #fff9f3, #fff1e5); }
+.repurchase-top { display: flex; align-items: center; gap: 12rpx; }
+.repurchase-badge { padding: 5rpx 12rpx; border-radius: 10rpx; color: #fff; background: #ff6600; font-size: 20rpx; font-weight: 700; }
+.repurchase-title { color: #2d241f; font-size: 29rpx; font-weight: 800; }
+.repurchase-main { display: flex; align-items: center; margin-top: 18rpx; }
+.repurchase-yuan, .repurchase-amount { color: #f15e17; font-weight: 900; }.repurchase-yuan { font-size: 28rpx; }.repurchase-amount { font-size: 64rpx; line-height: 1; }
+.repurchase-info { margin-left: 18rpx; color: #754b32; font-size: 24rpx; font-weight: 650; }.repurchase-expiry { margin-top: 8rpx; color: #e45d1b; font-size: 21rpx; }
+.repurchase-btn { width: 100%; height: 68rpx; margin: 20rpx 0 0; padding: 0; border-radius: 16rpx; color: #fff; background: #ff6600; font-size: 25rpx; font-weight: 700; }.repurchase-btn[disabled] { color: #9298a0; background: #edf0f2; }
 .reward-icon, .invite-icon { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: 60rpx; height: 60rpx; border-radius: 50%; color: #ff6600; background: #fff0e3; font-size: 27rpx; font-weight: 700; }
 .points-reward-copy { flex: 1; min-width: 0; margin-left: 18rpx; }
 .points-reward-title { color: #2d241f; font-size: 29rpx; font-weight: 700; }

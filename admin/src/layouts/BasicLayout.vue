@@ -68,6 +68,7 @@ const merchantMenus: MenuItem[] = [
     icon: '营',
     children: [
       { index: 'merchant-coupon-templates', label: '新人券配置', path: '/merchant/coupon-templates', desc: '券模板与库存', icon: '券', permission: 'merchant:coupon:view' },
+      { index: 'merchant-repurchase-coupon-templates', label: '购后复购券配置', path: '/merchant/repurchase-coupon-templates', desc: '支付后自动发券', icon: '券', permission: 'merchant:coupon:view' },
       { index: 'merchant-seckill', label: '秒杀活动', path: '/merchant/seckill', desc: '场次与库存', icon: '秒', permission: 'merchant:seckill:view' },
       { index: 'merchant-referral', label: '邀请有礼', path: '/merchant/referral', desc: '老带新返券', icon: '礼', permission: 'merchant:referral:view' },
       { index: 'merchant-points', label: '积分会员日', path: '/merchant/points', desc: '积分、兑换与会员日', icon: '积', permission: 'merchant:points:view' },

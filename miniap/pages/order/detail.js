@@ -1,5 +1,6 @@
 const orderApi = require('../../api/order')
 const groupBuyApi = require('../../api/group-buy')
+const productApi = require('../../api/product')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
 const { resolveImageUrl } = require('../../utils/url')
 
@@ -9,6 +10,9 @@ Page({
     orderNo: '',
     groupBuyEnabled: false,
     seckillEnabled: false,
+    repurchaseEnabled: false,
+    repurchaseCoupon: null,
+    repurchaseRecommendations: [],
     loading: false,
     logisticsLoading: false,
   },
@@ -16,22 +20,76 @@ Page({
   onLoad(options) {
     const orderNo = options.orderNo || ''
     this.setData({ orderNo })
-    this.refreshMarketingState().then(() => this.loadDetail(orderNo))
+    this.refreshMarketingState().then(() => this.loadDetail(orderNo).then(() => this.loadRepurchaseCoupon(orderNo)))
   },
 
   onShow() {
-    if (this.data.orderNo && this.data.order) this.refreshMarketingState()
+    if (this.data.orderNo && this.data.order) this.refreshMarketingState().then(() => this.loadRepurchaseCoupon(this.data.orderNo))
   },
 
   refreshMarketingState() {
     return marketingCapabilities.load(false).then(() => {
       const groupBuyEnabled = marketingCapabilities.isEnabled('GROUP_BUY')
       const seckillEnabled = marketingCapabilities.isEnabled('SECKILL')
-      const nextData = { groupBuyEnabled, seckillEnabled }
+      const repurchaseEnabled = marketingCapabilities.isEnabled('REPURCHASE_COUPON')
+      const nextData = { groupBuyEnabled, seckillEnabled, repurchaseEnabled }
       if (this.data.order) nextData['order.statusText'] = this.displayStatusText(this.data.order, groupBuyEnabled)
       this.setData(nextData)
       return nextData
     })
+  },
+
+  loadRepurchaseCoupon(orderNo) {
+    if (!orderNo || !this.data.repurchaseEnabled) {
+      this.setData({ repurchaseCoupon: null, repurchaseRecommendations: [] })
+      return Promise.resolve()
+    }
+    return orderApi.repurchaseCoupon(orderNo).then((res) => {
+      const coupon = res && res.data
+      this.setData({ repurchaseCoupon: coupon ? this.formatRepurchaseCoupon(coupon) : null })
+      if (coupon) return this.loadRepurchaseRecommendations()
+    }).catch(() => this.setData({ repurchaseCoupon: null, repurchaseRecommendations: [] }))
+  },
+
+  formatRepurchaseCoupon(coupon) {
+    const days = Math.max(0, Math.ceil((new Date(coupon.validTo).getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+    return {
+      ...coupon,
+      amountText: this.fmtPrice(coupon.amount),
+      thresholdText: this.fmtPrice(coupon.thresholdAmount),
+      expiryText: days <= 1 ? '仅剩 1 天有效' : `还有 ${days} 天有效`,
+      available: coupon.available === true,
+    }
+  },
+
+  goUseRepurchaseCoupon() {
+    const coupon = this.data.repurchaseCoupon
+    if (!coupon || !coupon.available) {
+      wx.showToast({ title: (coupon && coupon.unavailableReason) || '优惠券暂不可使用', icon: 'none' })
+      return
+    }
+    wx.setStorageSync('order_selected_coupon_id', coupon.id)
+    wx.navigateTo({ url: '/pages/recommend/index' })
+  },
+
+  loadRepurchaseRecommendations() {
+    const firstItem = (this.data.order && this.data.order.items || [])[0]
+    if (!firstItem || !firstItem.productId) return Promise.resolve()
+    return productApi.get(firstItem.productId).then((detailRes) => {
+      const categoryId = detailRes && detailRes.data && detailRes.data.categoryId
+      return productApi.page({ page: 1, size: 4, categoryId, isRecommend: 1 })
+    }).then((res) => {
+      const list = ((res && res.data && res.data.list) || []).filter((item) => Number(item.id) !== Number(firstItem.productId)).slice(0, 2)
+      this.setData({ repurchaseRecommendations: list.map((item) => ({ ...item, minPriceText: this.fmtPrice(item.minPrice), mainImage: resolveImageUrl(item.mainImage || '') })) })
+    }).catch(() => this.setData({ repurchaseRecommendations: [] }))
+  },
+
+  goRepurchaseProduct(e) {
+    const productId = e.currentTarget.dataset.productid
+    const coupon = this.data.repurchaseCoupon
+    if (!productId || !coupon || !coupon.available) return this.goUseRepurchaseCoupon()
+    wx.setStorageSync('order_selected_coupon_id', coupon.id)
+    wx.navigateTo({ url: `/pages/product/detail?id=${productId}` })
   },
 
   loadDetail(orderNo) {

@@ -54,6 +54,16 @@
     </view>
   </view>
 
+  <view wx:if="{{repurchaseEnabled && repurchaseCoupon}}" class="repurchase-card card">
+    <view class="repurchase-head"><view><view class="repurchase-title">本单赠送复购券</view><view class="repurchase-sub">下次下单可直接抵扣</view></view><view class="repurchase-state">{{repurchaseCoupon.available ? repurchaseCoupon.expiryText : (repurchaseCoupon.unavailableReason || repurchaseCoupon.statusText)}}</view></view>
+    <view class="repurchase-content"><view class="repurchase-price"><text>¥</text>{{repurchaseCoupon.amountText}}</view><view class="repurchase-condition">满{{repurchaseCoupon.thresholdText}}元可用</view><view class="repurchase-action {{repurchaseCoupon.available ? '' : 'disabled'}}" bindtap="goUseRepurchaseCoupon">{{repurchaseCoupon.available ? '去使用' : repurchaseCoupon.statusText}}</view></view>
+  </view>
+
+  <view wx:if="{{repurchaseEnabled && repurchaseRecommendations.length}}" class="repurchase-recommend card">
+    <view class="recommend-heading"><text>为你推荐</text><text>同类好物，使用复购券更优惠</text></view>
+    <view class="recommend-list"><view wx:for="{{repurchaseRecommendations}}" wx:key="id" class="recommend-product" data-productid="{{item.id}}" bindtap="goRepurchaseProduct"><image src="{{item.mainImage}}" mode="aspectFill"/><view class="recommend-product-info"><view>{{item.name}}</view><text>¥{{item.minPriceText}}</text></view><view class="recommend-buy">去选购</view></view></view>
+  </view>
+
   <view class="amount-card card">
     <view class="amount-row">
       <text>商品金额</text>

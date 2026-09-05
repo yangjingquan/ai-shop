@@ -20,4 +20,6 @@ public class CouponVO {
     private String statusText;
     private Boolean available;
     private String unavailableReason;
+    private String issueScene;
+    private String sourceOrderNo;
 }

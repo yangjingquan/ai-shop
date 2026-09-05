@@ -28,6 +28,12 @@ public class CouponTemplate extends BaseEntity {
     private Integer scopeType;
     private String scopeIdsJson;
     private Integer newUserOnly;
+    private String issueScene;
+    private Integer repurchaseTargetType;
+    private String repurchaseTargetIdsJson;
+    private BigDecimal repurchaseMinOrderAmount;
+    private Integer repurchaseFirstPurchaseOnly;
+    private Integer repurchasePriority;
     private Integer excludeActivityGoods;
     private Integer stackable;
     private Integer status;

@@ -16,6 +16,7 @@ import com.shop.order.service.RefundCompletionService;
 import com.shop.referral.service.ReferralService;
 import com.shop.product.service.ProductService;
 import com.shop.points.service.PointsMemberService;
+import com.shop.coupon.service.CouponIssueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,8 @@ public class RefundCompletionServiceImpl implements RefundCompletionService {
     private ReferralService referralService;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private PointsMemberService pointsMemberService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private CouponIssueService couponIssueService;
 
     @Override
     @Transactional
@@ -64,6 +67,9 @@ public class RefundCompletionServiceImpl implements RefundCompletionService {
             order.setUpdatedAt(completedAt);
             orderMapper.updateById(order);
         }
+
+        // 仅微信全额退款成功后回收未使用券；已使用券保持既有权益，避免逆向影响下一笔订单。
+        if (couponIssueService != null) couponIssueService.revokeAfterFullRefund(order, refund);
 
         GroupBuyMember member = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>()
                 .eq(GroupBuyMember::getOrderNo, order.getOrderNo()));

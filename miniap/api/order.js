@@ -34,6 +34,7 @@ function uploadRefundEvidence(filePath) {
 module.exports = {
   page: (params) => request({ url: '/api/wx/order/page', data: params }),
   detail: (orderNo) => request({ url: `/api/wx/order/${orderNo}` }),
+  repurchaseCoupon: (orderNo) => request({ url: `/api/wx/order/${orderNo}/repurchase-coupon` }),
   logistics: (orderNo, forceRefresh) => request({
     url: `/api/wx/order/${orderNo}/logistics`,
     data: forceRefresh ? { forceRefresh: true } : {},

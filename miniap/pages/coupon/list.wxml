@@ -8,9 +8,9 @@
   <view wx:if="{{coupons.length}}" class="coupon-list">
     <view wx:for="{{coupons}}" wx:key="id" class="coupon-card {{item.available ? '' : 'disabled'}}" data-coupon="{{item}}" bindtap="selectCoupon">
       <view class="coupon-left"><text class="yuan">¥</text><text class="amount">{{item.amountText}}</text></view>
-      <view class="coupon-mid"><view class="name">{{item.name}}</view><view class="condition">满{{item.thresholdText}}元可用</view><view class="date">{{item.validFrom}} 至 {{item.validTo}}</view><view wx:if="{{item.unavailableReason}}" class="reason">{{item.unavailableReason}}</view></view>
+      <view class="coupon-mid"><view class="name">{{item.name}}<text wx:if="{{item.issueScene === 'REPURCHASE_AFTER_PAID'}}" class="source-tag">复购券</text></view><view class="condition">满{{item.thresholdText}}元可用</view><view class="date">{{item.validFrom}} 至 {{item.validTo}}</view><view wx:if="{{item.expiryText && item.available}}" class="expiry">{{item.expiryText}}</view><view wx:if="{{item.unavailableReason}}" class="reason">{{item.unavailableReason}}</view></view>
       <view class="coupon-action">{{mode === 'select' && item.available ? '选择' : item.available ? '去使用' : item.statusText}}</view>
     </view>
   </view>
-  <view wx:elif="{{!loading}}" class="empty"><view class="empty-icon">券</view><view>暂无{{activeTab === 0 ? '可使用' : activeTab === 1 ? '已使用' : '已过期'}}优惠券</view></view>
+  <view wx:elif="{{!loading}}" class="empty"><view class="empty-icon">券</view><view>暂无{{activeTab === 0 ? '可使用' : activeTab === 1 ? '已使用' : '已失效/过期'}}优惠券</view></view>
 </view>

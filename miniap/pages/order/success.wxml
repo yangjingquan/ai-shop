@@ -10,6 +10,12 @@
     <button wx:else class="order-btn" bindtap="goOrder">查看订单</button>
   </view>
 
+  <view wx:if="{{repurchaseEnabled && repurchaseCoupon}}" class="repurchase-card card">
+    <view class="repurchase-top"><view class="repurchase-badge">购后礼</view><view class="repurchase-title">本单复购券已到账</view></view>
+    <view class="repurchase-main"><view><text class="repurchase-yuan">¥</text><text class="repurchase-amount">{{repurchaseCoupon.amountText}}</text></view><view class="repurchase-info"><view>满{{repurchaseCoupon.thresholdText}}元可用</view><view class="repurchase-expiry">{{repurchaseCoupon.available ? repurchaseCoupon.expiryText : (repurchaseCoupon.unavailableReason || repurchaseCoupon.statusText)}}</view></view></view>
+    <button class="repurchase-btn" disabled="{{!repurchaseCoupon.available}}" bindtap="goUseRepurchaseCoupon">{{repurchaseCoupon.available ? '去使用' : repurchaseCoupon.statusText}}</button>
+  </view>
+
   <view wx:if="{{pointsEnabled}}" class="points-reward-card card" bindtap="goPointsMall">
     <view class="reward-icon">积</view>
     <view class="points-reward-copy">
