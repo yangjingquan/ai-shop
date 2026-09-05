@@ -10,7 +10,7 @@ public interface PointsMemberService {
  PointsProfileVO signIn(Long userId, Long merchantId);
  List<PointsProductVO> mall(Long userId, Long merchantId);
  PointsRedeemVO redeem(Long userId, Long merchantId, PointsRedeemRequest request);
- MemberDayActivityVO memberDay(Long merchantId);
+ MemberDayActivityVO memberDay(Long userId, Long merchantId);
  Long receiveMemberDayCoupon(Long userId, Long merchantId);
  PointsRuleRequest rule(Long merchantId); void saveRule(Long merchantId, PointsRuleRequest request);
  List<PointsProductVO> merchantProducts(Long merchantId); Long saveProduct(Long merchantId, Long id, PointsProductRequest request); void deleteProduct(Long merchantId, Long id);

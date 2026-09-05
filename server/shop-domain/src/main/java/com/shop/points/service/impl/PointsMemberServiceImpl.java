@@ -111,7 +111,7 @@ public class PointsMemberServiceImpl implements PointsMemberService {
         record.setOrderNo(orderNo); redeemMapper.updateById(record); return redeemVO(record);
     }
 
-    @Override public MemberDayActivityVO memberDay(Long merchantId) { assertEnabled(merchantId); return activityVO(latestActivity(merchantId), currentActivity(merchantId) != null); }
+    @Override public MemberDayActivityVO memberDay(Long userId, Long merchantId) { assertEnabled(merchantId); MemberDayActivity activity=latestActivity(merchantId); boolean active=currentActivity(merchantId)!=null; MemberDayActivityVO vo=activityVO(activity,active); if(vo!=null&&active&&activity.getCouponTemplateId()!=null){String businessNo="MEMBER_DAY_COUPON:"+activity.getId()+":"+LocalDate.now();vo.setCouponReceived(ledgerMapper.selectCount(new LambdaQueryWrapper<PointsLedger>().eq(PointsLedger::getUserId,userId).eq(PointsLedger::getMerchantId,merchantId).eq(PointsLedger::getSource,"MEMBER_DAY_COUPON").eq(PointsLedger::getBusinessNo,businessNo))>0);}return vo; }
     @Override @Transactional public Long receiveMemberDayCoupon(Long userId, Long merchantId) {
         assertEnabled(merchantId); MemberDayActivity activity = currentActivity(merchantId);
         if (activity == null || activity.getCouponTemplateId() == null) throw new BusinessException(ErrorCode.MEMBER_DAY_INACTIVE);

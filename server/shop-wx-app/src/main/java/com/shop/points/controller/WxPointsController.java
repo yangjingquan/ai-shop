@@ -20,6 +20,6 @@ public class WxPointsController {
  @PostMapping("/sign-in") public ApiResult<PointsProfileVO> signIn(HttpServletRequest r){return ApiResult.success(pointsService.signIn(user(),merchant(r)));}
  @GetMapping("/mall") public ApiResult<List<PointsProductVO>> mall(HttpServletRequest r){return ApiResult.success(pointsService.mall(user(),merchant(r)));}
  @PostMapping("/redeem") public ApiResult<PointsRedeemVO> redeem(@RequestBody @Valid PointsRedeemRequest q,HttpServletRequest r){return ApiResult.success(pointsService.redeem(user(),merchant(r),q));}
- @GetMapping("/member-day") public ApiResult<MemberDayActivityVO> day(HttpServletRequest r){return ApiResult.success(pointsService.memberDay(merchant(r)));}
+ @GetMapping("/member-day") public ApiResult<MemberDayActivityVO> day(HttpServletRequest r){return ApiResult.success(pointsService.memberDay(user(),merchant(r)));}
  @PostMapping("/member-day/receive-coupon") public ApiResult<Long> receiveMemberDayCoupon(HttpServletRequest r){return ApiResult.success(pointsService.receiveMemberDayCoupon(user(),merchant(r)));}
 }
