@@ -126,10 +126,7 @@ public class BundleServiceImpl implements BundleService {
             activityMapper.insert(activity);
         } else {
             activityMapper.updateById(activity);
-            itemMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<BundleItem>()
-                    .eq(BundleItem::getBundleActivityId, id)
-                    .eq(BundleItem::getDeleted, 0)
-                    .set(BundleItem::getDeleted, 1));
+            itemMapper.purgeByActivityId(id);
         }
         int sort = 1;
         for (Long productId : itemProductIds) {
