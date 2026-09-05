@@ -11,7 +11,7 @@ const route = useRoute()
 const issueScene = computed<CouponIssueScene>(() => route.meta.couponIssueScene === 'REPURCHASE_AFTER_PAID'
   ? 'REPURCHASE_AFTER_PAID' : 'NEW_USER')
 const isRepurchase = computed(() => issueScene.value === 'REPURCHASE_AFTER_PAID')
-const sceneLabel = computed(() => isRepurchase.value ? '购后复购券' : '新人首单券')
+const sceneLabel = computed(() => isRepurchase.value ? '购后复购券' : '通用优惠券')
 const loading = ref(false)
 const saving = ref(false)
 const dialogVisible = ref(false)
@@ -29,7 +29,7 @@ const categoryOptions = computed(() => {
 
 function emptyForm(scene = issueScene.value): CouponTemplatePayload {
   return {
-    name: scene === 'REPURCHASE_AFTER_PAID' ? '购后复购券' : '新人首单券', image: '', amount: 20, thresholdAmount: 99, totalStock: 0,
+    name: scene === 'REPURCHASE_AFTER_PAID' ? '购后复购券' : '通用优惠券', image: '', amount: 20, thresholdAmount: 99, totalStock: 0,
     perUserLimit: 1, validityDays: 30, validFrom: null, validTo: null,
     scopeType: 0, scopeIds: [], newUserOnly: scene === 'REPURCHASE_AFTER_PAID' ? 0 : 1, issueScene: scene,
     repurchaseTargetType: 0, repurchaseTargetIds: [], repurchaseMinOrderAmount: 0,
@@ -97,7 +97,7 @@ watch(issueScene, load)
       <div>
         <span class="page-kicker">COUPON CAMPAIGNS</span>
         <h1 class="page-title">{{ sceneLabel }}配置</h1>
-        <p class="page-desc">{{ isRepurchase ? '支付成功后立即发放的复购券模板；停止活动或模板均不影响已发放券。' : '供新人首单、积分兑换和邀请奖励使用的优惠券模板。' }}</p>
+        <p class="page-desc">{{ isRepurchase ? '支付成功后立即发放的复购券模板；停止活动或模板均不影响已发放券。' : '供新人首单、积分兑换、会员日和邀请奖励等活动发放使用。' }}</p>
       </div>
       <div class="header-actions">
         <el-button @click="load">刷新</el-button>
@@ -105,7 +105,7 @@ watch(issueScene, load)
       </div>
     </div>
     <el-alert v-if="isRepurchase" title="复购券需要同时启用“营销活动 - 复购券”开关" description="第一版按支付成功立即发放；每个用户每个模板仅获得一张，支付成功后的全额退款会回收未使用券。" type="info" show-icon :closable="false" class="tip" />
-    <el-alert v-else title="新人券与复购券独立管理" description="此处仅展示新人券模板；如需配置支付成功后发放的券，请前往“购后复购券配置”。" type="info" show-icon :closable="false" class="tip" />
+    <el-alert v-else title="通用券与复购券独立管理" description="此处模板可由新人首单、积分兑换、会员日及邀请奖励使用，并非仅限新人；支付成功后自动发放的券请在“购后复购券配置”中维护。" type="info" show-icon :closable="false" class="tip" />
     <el-card>
       <el-table v-loading="loading" :data="list" stripe>
         <el-table-column prop="name" label="模板名称" min-width="150" />
