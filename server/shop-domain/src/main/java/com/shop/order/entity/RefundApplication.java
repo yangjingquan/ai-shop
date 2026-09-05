@@ -41,6 +41,9 @@ public class RefundApplication {
 
     private BigDecimal refundAmount;
 
+    /** 用户申请退款的订单商品与数量 JSON，满减订单据此重算剩余商品优惠。 */
+    private String refundItemJson;
+
     private String refundFailReason;
 
     private String refundRawPayload;

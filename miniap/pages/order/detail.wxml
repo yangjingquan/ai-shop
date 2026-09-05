@@ -81,6 +81,10 @@
       <text>{{order.couponName}}</text>
       <text>-¥{{order.couponDiscountAmountText}}</text>
     </view>
+    <view class="amount-row" wx:if="{{order.promotionActivityId}}">
+      <text>{{order.promotionName || '满减满折优惠'}}</text>
+      <text>-¥{{order.promotionDiscountAmountText}}</text>
+    </view>
     <view class="divider"></view>
     <view class="amount-row total">
       <text>{{order.totalLabel}}</text>

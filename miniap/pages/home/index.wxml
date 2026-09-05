@@ -43,6 +43,10 @@
       <view class="points-entry-day" catchtap="goMemberDay"><text>{{pointsEntry.active ? '今日会员日' : '积分会员日'}}</text><text>{{pointsEntry.active ? (pointsEntry.couponReceived ? '专享券已领取' : '去领专享券') : ('每月 ' + pointsEntry.dayOfMonth + ' 日') }} ›</text></view>
     </view>
 
+    <view wx:if="{{fullReductionActivity}}" class="full-reduction-entry" bindtap="onFullReduction">
+      <view><view class="full-reduction-kicker">BUY MORE, SAVE MORE</view><view class="full-reduction-title">{{fullReductionActivity.name}}</view><view class="full-reduction-rule">{{fullReductionActivity.rule}} · 下单自动优惠</view></view><view class="full-reduction-arrow">›</view>
+    </view>
+
     <view class="categories" wx:if="{{ topCategories.length }}">
       <view
         class="cat"

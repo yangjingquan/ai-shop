@@ -101,6 +101,7 @@ Page({
       if (res.code === 0) {
         const preview = {
           ...res.data,
+          promotionDiscountAmountText: this.formatPrice(res.data.promotionDiscountAmount || 0),
           groups: (res.data.groups || []).map(group => ({
             ...group,
             items: (group.items || []).map(item => ({
@@ -117,6 +118,10 @@ Page({
     }).catch(() => {
       this.setData({ preview: null });
     });
+  },
+
+  formatPrice(value) {
+    return Number(value || 0).toFixed(2)
   },
 
   loadGroupBuyPreview() {

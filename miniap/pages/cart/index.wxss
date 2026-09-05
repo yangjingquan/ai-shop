@@ -98,6 +98,9 @@
   font-weight: 900;
 }
 
+.promotion-progress { margin: 0 0 18rpx; padding: 22rpx 24rpx; border: 1rpx solid #ffd5bd; border-radius: 16rpx; background: linear-gradient(135deg, #fff9f3, #fff0e5); box-shadow: 0 10rpx 22rpx rgba(255,102,0,.08); }
+.promotion-title { display:flex; align-items:center; justify-content:space-between; color:#17191f; font-size:27rpx; font-weight:900; }.promotion-achieved { color:#e85219; font-size:23rpx; }.promotion-copy { margin-top:10rpx; color:#8c5a3e; font-size:23rpx; font-weight:700; }.promotion-track { height:12rpx; overflow:hidden; margin-top:16rpx; border-radius:20rpx; background:#f1ded1; }.promotion-fill { min-width:2%; max-width:100%; height:100%; border-radius:20rpx; background:linear-gradient(90deg,#ff7c35,#ff4b16); transition:width .2s ease; }
+
 .merchant-header .icon {
   opacity: 0.62;
 }

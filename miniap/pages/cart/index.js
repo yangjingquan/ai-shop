@@ -1,6 +1,7 @@
 const cartApi = require('../../api/cart')
 const productApi = require('../../api/product')
 const { resolveImageUrl } = require('../../utils/url')
+const promotionApi = require('../../api/promotion')
 
 const DELETE_ACTION_WIDTH_RPX = 144
 const OPEN_THRESHOLD_RATIO = 0.5
@@ -25,6 +26,7 @@ Page({
     recommendList: [],
     recommendPage: 1,
     recommendLoading: false,
+    promotion: null,
     touchStartX: 0,
     touchStartY: 0,
     touchStartSwipeX: 0,
@@ -143,6 +145,37 @@ Page({
       selectedIds: nextSelectedIds,
       allSelected: nextSelectedIds.length === selectableIds.length && selectableIds.length > 0,
       totalAmount: total.toFixed(2),
+    })
+    this.loadPromotion(nextSelectedIds)
+  },
+
+  loadPromotion(selectedIds) {
+    if (this.data.manageMode || !selectedIds.length) {
+      this.setData({ promotion: null })
+      return
+    }
+    promotionApi.cartProgress(selectedIds).then((res) => {
+      if (res.code !== 0) return
+      const promotion = res.data || null
+      if (!promotion || !promotion.activityId) return this.setData({ promotion: null })
+      this.setData({ promotion: {
+        ...promotion,
+        discountText: this.formatPrice(promotion.discountAmount),
+        qualifiedText: this.formatPrice(promotion.qualifiedAmount),
+        remainingText: this.formatPrice(promotion.remainingAmount),
+        thresholdText: promotion.thresholdAmount ? this.formatPrice(promotion.thresholdAmount) : '',
+        achieved: Number(promotion.discountAmount || 0) > 0,
+      } })
+      if (Number(promotion.discountAmount || 0) <= 0) this.loadPromotionRecommendations(promotion.recommendProductIds || [])
+    }).catch(() => this.setData({ promotion: null }))
+  },
+
+  loadPromotionRecommendations(productIds) {
+    if (!productIds.length) return
+    Promise.all(productIds.slice(0, 4).map(id => productApi.get(id).catch(() => null))).then((responses) => {
+      const products = responses.map(res => res && res.data).filter(Boolean)
+      if (!products.length) return
+      this.setData({ recommendList: this.normalizeRecommendData(products) })
     })
   },
 

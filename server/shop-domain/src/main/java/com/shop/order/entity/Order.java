@@ -48,6 +48,12 @@ public class Order extends BaseEntity {
 
     private String couponSnapshotJson;
 
+    private Long promotionActivityId;
+
+    private BigDecimal promotionDiscountAmount;
+
+    private String promotionSnapshotJson;
+
     private BigDecimal payAmount;
 
     private Integer payMethod;

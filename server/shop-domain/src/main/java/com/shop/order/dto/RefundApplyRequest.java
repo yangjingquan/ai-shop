@@ -3,6 +3,7 @@ package com.shop.order.dto;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -21,4 +22,7 @@ public class RefundApplyRequest {
 
     @Size(max = 6, message = "退款凭证最多6张")
     private List<@Size(max = 500, message = "退款凭证地址过长") String> evidenceUrls;
+
+    /** 指定退款商品时由服务端根据剩余商品与活动快照计算应退金额。 */
+    private List<@Valid RefundItemRequest> items;
 }

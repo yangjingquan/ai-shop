@@ -107,6 +107,7 @@ Page({
           freightAmountText: this.fmtPrice(raw.freightAmount),
           discountAmountText: this.fmtPrice(raw.discountAmount),
           couponDiscountAmountText: this.fmtPrice(raw.couponDiscountAmount),
+          promotionDiscountAmountText: this.fmtPrice(raw.promotionDiscountAmount),
           payAmountText: this.fmtPrice(raw.payAmount),
           groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
@@ -316,7 +317,37 @@ Page({
       confirmColor: '#ff4b43',
       success: (modalRes) => {
         if (!modalRes.confirm) return
-        this.promptRefundAmount(modalRes.content || '')
+        this.chooseRefundItems(modalRes.content || '')
+      },
+    })
+  },
+
+  chooseRefundItems(reason) {
+    const items = (this.data.order && this.data.order.items) || []
+    wx.showActionSheet({
+      itemList: ['整单退款', ...items.map(item => `${item.productName} ×${item.quantity}`)],
+      success: (sheetRes) => {
+        if (sheetRes.tapIndex === 0) return this.promptRefundAmount(reason)
+        const item = items[sheetRes.tapIndex - 1]
+        this.promptRefundItemQuantity(reason, item)
+      },
+    })
+  },
+
+  promptRefundItemQuantity(reason, item) {
+    wx.showModal({
+      title: '退款商品数量',
+      editable: true,
+      placeholderText: `请输入 1-${item.quantity}`,
+      confirmColor: '#ff4b43',
+      success: (modalRes) => {
+        if (!modalRes.confirm) return
+        const quantity = Number(String(modalRes.content || '').trim())
+        if (!Number.isInteger(quantity) || quantity < 1 || quantity > Number(item.quantity || 0)) {
+          wx.showToast({ title: '退款数量不正确', icon: 'none' })
+          return
+        }
+        this.submitRefund(reason, { items: [{ orderItemId: item.id, quantity }] })
       },
     })
   },
@@ -335,22 +366,27 @@ Page({
           wx.showToast({ title: '退款金额格式不正确', icon: 'none' })
           return
         }
-        this.chooseRefundEvidence().then((filePaths) => {
+        const payload = {}
+        if (amountText) payload.refundAmount = amount.toFixed(2)
+        this.submitRefund(reason, payload)
+      },
+    })
+  },
+
+  submitRefund(reason, payload) {
+    const orderNo = this.data.order && this.data.order.orderNo
+    this.chooseRefundEvidence().then((filePaths) => {
           if (!filePaths.length) return []
           wx.showLoading({ title: '上传凭证中', mask: true })
           return filePaths.reduce((promise, filePath) => promise.then((urls) =>
             orderApi.uploadRefundEvidence(filePath).then((url) => urls.concat(url))), Promise.resolve([]))
             .finally(() => wx.hideLoading())
         }).then((evidenceUrls) => {
-          const payload = { reason, evidenceUrls }
-          if (amountText) payload.refundAmount = amount.toFixed(2)
-          return orderApi.refund(orderNo, payload)
+          return orderApi.refund(orderNo, { ...payload, reason, evidenceUrls })
         }).then(() => {
           wx.showToast({ title: '已提交退款申请', icon: 'success' })
           this.reloadDetail()
         }).catch(() => this.reloadDetail())
-      },
-    })
   },
 
   chooseRefundEvidence() {

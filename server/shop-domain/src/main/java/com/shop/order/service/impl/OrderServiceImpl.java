@@ -9,6 +9,9 @@ import com.shop.coupon.dto.CouponCheckoutResult;
 import com.shop.coupon.dto.CouponItemContext;
 import com.shop.coupon.dto.CouponUseContext;
 import com.shop.coupon.service.CouponService;
+import com.shop.marketing.dto.PromotionCheckoutResult;
+import com.shop.marketing.dto.PromotionPricingItem;
+import com.shop.marketing.service.PromotionService;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.response.PageResult;
@@ -84,6 +87,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderCancellationService orderCancellationService;
     private final PlatformTransactionManager transactionManager;
     private final CouponService couponService;
+    private final PromotionService promotionService;
 
     private static final java.util.regex.Pattern SHIP_NO_PATTERN =
             java.util.regex.Pattern.compile("^[A-Za-z0-9]{5,30}$");
@@ -209,25 +213,43 @@ public class OrderServiceImpl implements OrderService {
             grandTotal = grandTotal.add(groupTotal);
         }
 
-        CouponCheckoutResult couponResult = couponService.calculate(userId,
-                new CouponUseContext(cartItems.get(0).getMerchantId(), grandTotal, couponItems),
-                req.getCouponId(), false, null);
+        Long promotionMerchantId = cartItems.get(0).getMerchantId();
+        PromotionCheckoutResult promotion = promotionService.calculate(promotionMerchantId,
+                cartItems.stream().map(item -> {
+                    Product product = productMap.get(item.getProductId());
+                    ProductSku sku = skuMap.get(item.getSkuId());
+                    return new PromotionPricingItem(item.getProductId(), product == null ? null : product.getCategoryId(),
+                            sku == null ? BigDecimal.ZERO : sku.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+                }).toList());
+        CouponCheckoutResult couponResult;
+        if (promotion.getActivityId() != null && !promotion.isCouponStackable()) {
+            couponResult = new CouponCheckoutResult();
+            couponResult.setUnavailableReason("当前满减满折活动不可与优惠券叠加");
+        } else {
+            couponResult = couponService.calculate(userId,
+                    new CouponUseContext(promotionMerchantId, grandTotal.subtract(promotion.getDiscountAmount()), couponItems),
+                    req.getCouponId(), false, null);
+        }
         BigDecimal couponDiscount = couponResult.getDiscountAmount();
         if (!groups.isEmpty()) {
             OrderPreviewVO.MerchantGroup group = groups.get(0);
-            group.setDiscountAmount(couponDiscount);
-            group.setPayAmount(group.getTotalAmount().subtract(couponDiscount).max(BigDecimal.ZERO));
+            group.setDiscountAmount(couponDiscount.add(promotion.getDiscountAmount()));
+            group.setPayAmount(group.getTotalAmount().subtract(couponDiscount).subtract(promotion.getDiscountAmount()).max(BigDecimal.ZERO));
         }
 
         OrderPreviewVO vo = new OrderPreviewVO();
         vo.setGroups(groups);
         vo.setTotalAmount(grandTotal);
-        vo.setDiscountAmount(couponDiscount);
-        vo.setPayAmount(grandTotal.subtract(couponDiscount).max(BigDecimal.ZERO));
+        vo.setDiscountAmount(couponDiscount.add(promotion.getDiscountAmount()));
+        vo.setPayAmount(grandTotal.subtract(couponDiscount).subtract(promotion.getDiscountAmount()).max(BigDecimal.ZERO));
         vo.setCouponId(couponResult.getSelectedCouponId());
         vo.setCouponName(couponResult.getSelectedCouponName());
         vo.setCouponDiscountAmount(couponDiscount);
         vo.setCouponMessage(couponResult.getUnavailableReason());
+        vo.setPromotionActivityId(promotion.getActivityId());
+        vo.setPromotionName(promotion.getActivityName());
+        vo.setPromotionDiscountAmount(promotion.getDiscountAmount());
+        vo.setPromotion(promotion);
         vo.setCoupons(couponResult.getCoupons());
         vo.setAddress(new AddressSnapshot(
                 address.getReceiver(), address.getPhone(),
@@ -331,8 +353,19 @@ public class OrderServiceImpl implements OrderService {
                             sku.getPrice().multiply(BigDecimal.valueOf(ci.getQuantity())),
                             Integer.valueOf(1).equals(product.getIsGroupBuy()));
                 }).toList();
-                CouponCheckoutResult couponResult = couponService.calculate(userId,
-                        new CouponUseContext(mid, expectedTotal, couponItems), req.getCouponId(), true, orderNo);
+                PromotionCheckoutResult promotion = promotionService.calculate(mid, groupItems.stream().map(ci -> {
+                    Product product = productMap.get(ci.getProductId());
+                    ProductSku sku = skuMap.get(ci.getSkuId());
+                    return new PromotionPricingItem(ci.getProductId(), product.getCategoryId(),
+                            sku.getPrice().multiply(BigDecimal.valueOf(ci.getQuantity())));
+                }).toList());
+                CouponCheckoutResult couponResult;
+                if (promotion.getActivityId() != null && !promotion.isCouponStackable()) {
+                    couponResult = new CouponCheckoutResult();
+                } else {
+                    couponResult = couponService.calculate(userId,
+                            new CouponUseContext(mid, expectedTotal.subtract(promotion.getDiscountAmount()), couponItems), req.getCouponId(), true, orderNo);
+                }
                 BigDecimal couponDiscount = couponResult.getDiscountAmount();
 
                 // 先插入 order
@@ -343,7 +376,7 @@ public class OrderServiceImpl implements OrderService {
                 order.setStatus(OrderStatus.WAIT_PAY.getCode());
                 order.setTotalAmount(BigDecimal.ZERO);
                 order.setFreightAmount(BigDecimal.ZERO);
-                order.setDiscountAmount(couponDiscount);
+                order.setDiscountAmount(couponDiscount.add(promotion.getDiscountAmount()));
                 order.setCouponId(couponResult.getSelectedCouponId());
                 order.setCouponTemplateId(couponResult.getSelectedCouponTemplateId());
                 order.setCouponDiscountAmount(couponDiscount);
@@ -351,10 +384,17 @@ public class OrderServiceImpl implements OrderService {
                         "couponId", couponResult.getSelectedCouponId(),
                         "name", couponResult.getSelectedCouponName(),
                         "discountAmount", couponDiscount)));
+                order.setPromotionActivityId(promotion.getActivityId());
+                order.setPromotionDiscountAmount(promotion.getDiscountAmount());
+                order.setPromotionSnapshotJson(promotion.getActivityId() == null ? null : toJson(Map.of(
+                        "activityId", promotion.getActivityId(), "name", promotion.getActivityName(),
+                        "type", promotion.getActivityType(), "qualifiedAmount", promotion.getQualifiedAmount(),
+                        "thresholdAmount", promotion.getThresholdAmount(), "discountAmount", promotion.getDiscountAmount())));
                 order.setPayAmount(BigDecimal.ZERO);
                 order.setAddressSnapshot(addrJson);
                 order.setRemark(req.getRemark() != null ? req.getRemark() : "");
                 orderMapper.insert(order);
+                promotionService.reserve(orderNo, promotion);
 
                 BigDecimal totalAmount = BigDecimal.ZERO;
 
@@ -389,7 +429,7 @@ public class OrderServiceImpl implements OrderService {
 
                 // 更新订单金额
                 order.setTotalAmount(totalAmount);
-                order.setPayAmount(totalAmount.subtract(couponDiscount).max(BigDecimal.ZERO));
+                order.setPayAmount(totalAmount.subtract(couponDiscount).subtract(promotion.getDiscountAmount()).max(BigDecimal.ZERO));
                 orderMapper.updateById(order);
 
                 // recalc 每个 product
@@ -717,6 +757,7 @@ public class OrderServiceImpl implements OrderService {
 
         List<OrderDetailVO.OrderItemVO> itemVOs = items.stream().map(i -> {
             OrderDetailVO.OrderItemVO iv = new OrderDetailVO.OrderItemVO();
+            iv.setId(i.getId());
             iv.setProductId(i.getProductId());
             iv.setSkuId(i.getSkuId());
             iv.setProductName(i.getProductName());
@@ -739,6 +780,9 @@ public class OrderServiceImpl implements OrderService {
         vo.setCouponTemplateId(order.getCouponTemplateId());
         vo.setCouponDiscountAmount(order.getCouponDiscountAmount());
         vo.setCouponName(readCouponName(order.getCouponSnapshotJson()));
+        vo.setPromotionActivityId(order.getPromotionActivityId());
+        vo.setPromotionName(readCouponName(order.getPromotionSnapshotJson()));
+        vo.setPromotionDiscountAmount(order.getPromotionDiscountAmount());
         vo.setPayAmount(order.getPayAmount());
         vo.setOrderType(order.getOrderType());
         vo.setGroupBuyGroupId(order.getGroupBuyGroupId());
@@ -931,8 +975,7 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.REFUND_ORDER_NOT_REFUNDABLE);
         }
 
-        BigDecimal refundAmount = req == null || req.getRefundAmount() == null
-                ? order.getPayAmount() : req.getRefundAmount();
+        BigDecimal refundAmount = calculateRefundAmount(order, req);
         if (refundAmount.compareTo(BigDecimal.ZERO) <= 0
                 || refundAmount.compareTo(order.getPayAmount()) > 0) {
             throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "退款金额不能超过订单实付金额");
@@ -959,6 +1002,7 @@ public class OrderServiceImpl implements OrderService {
                 : req.getEvidenceUrls().stream().filter(Objects::nonNull).map(String::trim)
                 .filter(value -> !value.isEmpty()).distinct().toList());
         app.setRefundAmount(refundAmount);
+        app.setRefundItemJson(refundItemsJson(req));
         app.setStatus(RefundStatus.PENDING.getCode());
         app.setAutoRefund(0);
         app.setReturnRequired((st == OrderStatus.WAIT_RECEIVE.getCode()
@@ -967,6 +1011,63 @@ public class OrderServiceImpl implements OrderService {
         app.setReturnShipNo("");
         app.setReturnReceiveNote("");
         refundApplicationMapper.insert(app);
+    }
+
+    private BigDecimal calculateRefundAmount(Order order, RefundApplyRequest req) {
+        if (req == null || req.getItems() == null || req.getItems().isEmpty()) {
+            return req == null || req.getRefundAmount() == null ? order.getPayAmount() : req.getRefundAmount();
+        }
+        List<OrderItem> orderItems = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, order.getId()));
+        Map<Long, OrderItem> byId = orderItems.stream().collect(Collectors.toMap(OrderItem::getId, item -> item));
+        Map<Long, Integer> prior = successfulRefundedQuantities(order.getOrderNo());
+        Map<Long, Integer> requested = new HashMap<>();
+        for (RefundItemRequest item : req.getItems()) {
+            OrderItem orderItem = byId.get(item.getOrderItemId());
+            if (orderItem == null) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "退款商品不属于该订单");
+            requested.merge(item.getOrderItemId(), item.getQuantity(), Integer::sum);
+            if (requested.get(item.getOrderItemId()) + prior.getOrDefault(item.getOrderItemId(), 0) > orderItem.getQuantity()) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "退款商品数量超过可退数量");
+            }
+        }
+        BigDecimal remainingGoods = BigDecimal.ZERO;
+        List<PromotionPricingItem> remainingItems = new ArrayList<>();
+        Map<Long, Product> products = productMapper.selectBatchIds(orderItems.stream().map(OrderItem::getProductId).distinct().toList()).stream().collect(Collectors.toMap(Product::getId, item -> item));
+        for (OrderItem item : orderItems) {
+            int remaining = item.getQuantity() - prior.getOrDefault(item.getId(), 0) - requested.getOrDefault(item.getId(), 0);
+            if (remaining <= 0) continue;
+            BigDecimal subtotal = item.getUnitPrice().multiply(BigDecimal.valueOf(remaining));
+            remainingGoods = remainingGoods.add(subtotal);
+            Product product = products.get(item.getProductId());
+            remainingItems.add(new PromotionPricingItem(item.getProductId(), product == null ? null : product.getCategoryId(), subtotal));
+        }
+        BigDecimal remainingPromotion = order.getPromotionActivityId() == null ? BigDecimal.ZERO
+                : promotionService.calculateActivity(order.getPromotionActivityId(), remainingItems).getDiscountAmount();
+        BigDecimal originalCoupon = order.getCouponDiscountAmount() == null ? BigDecimal.ZERO : order.getCouponDiscountAmount();
+        BigDecimal couponAfterRefund = order.getTotalAmount() == null || order.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0 ? BigDecimal.ZERO
+                : originalCoupon.multiply(remainingGoods).divide(order.getTotalAmount(), 2, java.math.RoundingMode.HALF_UP);
+        BigDecimal previouslyRefunded = refundApplicationMapper.selectList(new LambdaQueryWrapper<RefundApplication>().eq(RefundApplication::getOrderNo, order.getOrderNo()).eq(RefundApplication::getStatus, RefundStatus.SUCCESS.getCode())).stream().map(RefundApplication::getRefundAmount).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal expectedRemainingPaid = remainingGoods.subtract(remainingPromotion).subtract(couponAfterRefund).max(BigDecimal.ZERO);
+        BigDecimal amount = order.getPayAmount().subtract(previouslyRefunded).subtract(expectedRemainingPaid).max(BigDecimal.ZERO);
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "按活动规则重算后无可退金额");
+        return amount;
+    }
+
+    private Map<Long, Integer> successfulRefundedQuantities(String orderNo) {
+        Map<Long, Integer> result = new HashMap<>();
+        for (RefundApplication app : refundApplicationMapper.selectList(new LambdaQueryWrapper<RefundApplication>().eq(RefundApplication::getOrderNo, orderNo).eq(RefundApplication::getStatus, RefundStatus.SUCCESS.getCode()))) {
+            if (app.getRefundItemJson() == null || app.getRefundItemJson().isBlank()) continue;
+            try {
+                List<RefundItemRequest> items = new com.fasterxml.jackson.databind.ObjectMapper().readValue(app.getRefundItemJson(), new com.fasterxml.jackson.core.type.TypeReference<List<RefundItemRequest>>() {});
+                for (RefundItemRequest item : items) result.merge(item.getOrderItemId(), item.getQuantity(), Integer::sum);
+            } catch (Exception ignored) { }
+        }
+        return result;
+    }
+
+    private String refundItemsJson(RefundApplyRequest req) {
+        if (req == null || req.getItems() == null || req.getItems().isEmpty()) return null;
+        try { return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(req.getItems()); }
+        catch (Exception e) { throw new BusinessException(ErrorCode.SYSTEM_ERROR); }
     }
 
     @Override

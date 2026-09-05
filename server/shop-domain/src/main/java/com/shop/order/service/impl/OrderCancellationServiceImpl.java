@@ -15,6 +15,7 @@ import com.shop.order.mapper.OrderMapper;
 import com.shop.order.service.OrderCancellationService;
 import com.shop.product.service.ProductService;
 import com.shop.seckill.service.SeckillService;
+import com.shop.marketing.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,8 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
     /** 可选注入，保持订单取消纯单测构造器兼容；正式容器会注入秒杀库存释放服务。 */
     @Autowired(required = false)
     private SeckillService seckillService;
+    @Autowired(required = false)
+    private PromotionService promotionService;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -99,6 +102,7 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
         order.setCancelReason(reason);
         orderMapper.updateById(order);
         couponService.releaseBeforePaymentCancel(order.getId(), order.getOrderNo());
+        if (promotionService != null) promotionService.release(order.getOrderNo());
         if (Integer.valueOf(2).equals(order.getOrderType()) && seckillService != null) {
             seckillService.releaseForOrder(order.getOrderNo(), reason);
         }

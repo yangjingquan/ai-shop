@@ -7,6 +7,7 @@ const couponApi = require('../../api/coupon')
 const seckillApi = require('../../api/seckill')
 const referralApi = require('../../api/referral')
 const pointsApi = require('../../api/points')
+const promotionApi = require('../../api/promotion')
 const auth = require('../../utils/auth')
 const { resolveImageUrl } = require('../../utils/url')
 
@@ -23,6 +24,7 @@ Page({
     newUserCoupon: null,
     referralCampaign: null,
     pointsEntry: null,
+    fullReductionActivity: null,
   },
 
   onLoad() {
@@ -68,6 +70,7 @@ Page({
       this.loadNewUserCoupon(marketingEnabled)
       this.loadReferralCampaign(marketingEnabled.REFERRAL)
       this.loadPointsEntry(marketingEnabled.POINTS_MEMBER_DAY)
+      this.loadFullReduction(marketingEnabled.FULL_REDUCTION)
     } finally {
       this.setData({ loading: false })
     }
@@ -89,6 +92,22 @@ Page({
     } catch (_) {
       this.setData({ pointsEntry: null })
     }
+  },
+
+  loadFullReduction(enabled) {
+    if (!enabled) return this.setData({ fullReductionActivity: null })
+    promotionApi.active().then((res) => {
+      const item = res && res.data && res.data[0]
+      if (!item) return this.setData({ fullReductionActivity: null })
+      const tier = (item.thresholds || [])[0] || {}
+      this.setData({ fullReductionActivity: {
+        name: item.name,
+        type: item.activityType,
+        rule: item.activityType === 'FULL_DISCOUNT'
+          ? `满${Number(tier.thresholdAmount || 0).toFixed(0)}享${tier.discountRate || ''}折`
+          : `满${Number(tier.thresholdAmount || 0).toFixed(0)}减${Number(tier.reductionAmount || 0).toFixed(0)}`,
+      } })
+    }).catch(() => this.setData({ fullReductionActivity: null }))
   },
 
   goPointsMall() { wx.navigateTo({ url: '/pages/points/mall' }) },
@@ -347,6 +366,12 @@ Page({
   onSeckill() {
     if (!this.data.marketingEnabled.SECKILL) return
     wx.navigateTo({ url: '/pages/activity/seckill/list' })
+  },
+
+  onFullReduction() {
+    marketingCapabilities.ensure('FULL_REDUCTION').then((enabled) => {
+      if (enabled) wx.navigateTo({ url: '/pages/promotion/full-reduction' })
+    })
   },
 
   onProduct(e) {

@@ -1,0 +1,6 @@
+<view class="promotion-page page-shell">
+  <view class="hero"><view class="hero-kicker">SHOP MORE · SAVE MORE</view><view class="hero-title">满减满折</view><view class="hero-desc">多买多省，优惠自动计算</view></view>
+  <view wx:if="{{activities.length}}" class="activity-list"><view wx:for="{{activities}}" wx:key="id" class="activity-card card"><view class="activity-head"><view><view class="activity-name">{{item.name}}</view><view class="activity-type">{{item.activityType === 'FULL_DISCOUNT' ? '满折活动' : '满减活动'}}</view></view><view class="priority">优先级 {{item.priority}}</view></view><view class="rules"><view wx:for="{{item.rules}}" wx:key="*this" class="rule">{{item}}</view></view><view class="activity-note">适用商品以结算页实时计算结果为准</view></view></view>
+  <view wx:elif="{{!loading}}" class="empty card">当前暂无可参与活动</view>
+  <button class="shop-btn" bindtap="goCart">去购物车凑单</button>
+</view>

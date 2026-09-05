@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.List;
+import com.shop.marketing.dto.PromotionCheckoutResult;
 
 @Data
 public class OrderPreviewVO {
@@ -23,6 +24,14 @@ public class OrderPreviewVO {
     private BigDecimal couponDiscountAmount;
 
     private String couponMessage;
+
+    private Long promotionActivityId;
+
+    private String promotionName;
+
+    private BigDecimal promotionDiscountAmount;
+
+    private PromotionCheckoutResult promotion;
 
     private List<com.shop.coupon.dto.CouponVO> coupons;
 

@@ -10,6 +10,13 @@
     <view class="shop-btn" bindtap="goCategory">去逛逛</view>
   </view>
 
+  <view wx:if="{{promotion && !manageMode}}" class="promotion-progress card">
+    <view class="promotion-title"><text>{{promotion.activityName}}</text><text wx:if="{{promotion.achieved}}" class="promotion-achieved">已省 ¥{{promotion.discountText}}</text></view>
+    <view wx:if="{{promotion.achieved}}" class="promotion-copy">已满 ¥{{promotion.thresholdText}}，本单享受{{promotion.activityType === 'FULL_DISCOUNT' ? '满折' : '满减'}}优惠</view>
+    <view wx:else class="promotion-copy">再购 ¥{{promotion.remainingText}}，即可享受活动优惠</view>
+    <view class="promotion-track"><view class="promotion-fill" style="width: {{promotion.achieved ? 100 : (promotion.qualifiedAmount / promotion.thresholdAmount * 100)}}%;"></view></view>
+  </view>
+
   <block wx:for="{{merchantGroups}}" wx:key="merchantId">
     <view class="swipe-wrap" wx:for="{{item.items}}" wx:for-item="cartItem" wx:key="id">
       <view class="delete-action" data-id="{{cartItem.id}}" bindtap="deleteItem">
@@ -59,7 +66,7 @@
 
   <view class="guess-section">
     <view class="guess-head">
-      <view class="guess-title">猜你喜欢</view>
+      <view class="guess-title">{{promotion && promotion.recommendProductIds && promotion.recommendProductIds.length ? '凑单推荐' : '猜你喜欢'}}</view>
       <view class="change-btn {{recommendLoading ? 'loading' : ''}}" bindtap="changeRecommend">{{recommendLoading ? '加载中' : '换一批'}}</view>
     </view>
     <view class="guess-grid">

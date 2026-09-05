@@ -43,6 +43,12 @@ public class OrderDetailVO {
 
     private String couponName;
 
+    private Long promotionActivityId;
+
+    private String promotionName;
+
+    private BigDecimal promotionDiscountAmount;
+
     private BigDecimal payAmount;
 
     private Long merchantId;
@@ -112,6 +118,8 @@ public class OrderDetailVO {
 
     @Data
     public static class OrderItemVO {
+
+        private Long id;
 
         private Long productId;
 

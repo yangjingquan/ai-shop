@@ -88,6 +88,10 @@ onMounted(load)
             />
           </div>
           <el-button
+            v-if="feature.code === 'FULL_REDUCTION' && feature.enabled === 1"
+            link type="primary" class="feature-link" @click="router.push('/merchant/full-reduction')"
+          >去配置满减满折 →</el-button>
+          <el-button
             v-if="feature.code === 'GROUP_BUY' && feature.enabled === 1"
             link
             type="primary"

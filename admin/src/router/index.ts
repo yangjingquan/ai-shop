@@ -148,6 +148,12 @@ const routes: RouteRecordRaw[] = [
         meta: { roles: ['merchant'], permission: 'merchant:seckill:view' },
       },
       {
+        path: 'merchant/full-reduction',
+        name: 'MerchantFullReduction',
+        component: () => import('@/views/merchant/FullReductionActivity.vue'),
+        meta: { roles: ['merchant'], permission: 'merchant:promotion:view' },
+      },
+      {
         path: 'merchant/referral',
         name: 'MerchantReferral',
         component: () => import('@/views/merchant/MerchantReferralActivity.vue'),
