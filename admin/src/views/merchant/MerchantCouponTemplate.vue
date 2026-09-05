@@ -14,7 +14,7 @@ function emptyForm(): CouponTemplatePayload {
   return {
     name: '新人首单券', amount: 20, thresholdAmount: 99, totalStock: 0,
     perUserLimit: 1, validityDays: 30, validFrom: null, validTo: null,
-    scopeType: 0, scopeIds: [], excludeActivityGoods: 1, stackable: 0, status: 1,
+    scopeType: 0, scopeIds: [], newUserOnly: 1, excludeActivityGoods: 1, stackable: 0, status: 1,
   }
 }
 
@@ -96,6 +96,7 @@ onMounted(load)
         <el-form-item label="使用门槛"><el-input-number v-model="form.thresholdAmount" :min="0" :precision="2" :step="10" /></el-form-item>
         <el-form-item label="总库存"><el-input-number v-model="form.totalStock" :min="0" :step="100" /><span class="hint">0 表示不限</span></el-form-item>
         <el-form-item label="有效期"><el-input-number v-model="form.validityDays" :min="1" :max="365" /><span class="hint">领取后生效天数</span></el-form-item>
+        <el-form-item label="新人限定"><el-switch v-model="form.newUserOnly" :active-value="1" :inactive-value="0" /></el-form-item>
         <el-form-item label="排除活动商品"><el-switch v-model="form.excludeActivityGoods" :active-value="1" :inactive-value="0" /></el-form-item>
         <el-form-item label="保存后状态"><el-radio-group v-model="form.status"><el-radio :value="1">启用</el-radio><el-radio :value="0">草稿</el-radio></el-radio-group></el-form-item>
       </el-form>

@@ -5,6 +5,7 @@ const homeApi = require('../../api/home')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
 const couponApi = require('../../api/coupon')
 const seckillApi = require('../../api/seckill')
+const referralApi = require('../../api/referral')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
@@ -18,6 +19,7 @@ Page({
     seckillSummary: null,
     now: Date.now(),
     newUserCoupon: null,
+    referralCampaign: null,
   },
 
   onLoad() {
@@ -61,6 +63,7 @@ Page({
       this.setData({ banners, topCategories: top, products: list, marketingEnabled })
       this.loadSeckillSummary(marketingEnabled.SECKILL)
       this.loadNewUserCoupon(marketingEnabled)
+      this.loadReferralCampaign(marketingEnabled.REFERRAL)
     } finally {
       this.setData({ loading: false })
     }
@@ -155,6 +158,17 @@ Page({
     const app = getApp()
     app.globalData.newUserCouponPopupShown = true
     this.setData({ newUserCoupon: null })
+  },
+
+  loadReferralCampaign(enabled) {
+    if (!enabled) return this.setData({ referralCampaign: null })
+    referralApi.current().then((res) => this.setData({ referralCampaign: res && res.data || null })).catch(() => this.setData({ referralCampaign: null }))
+  },
+
+  onReferral() {
+    const campaign = this.data.referralCampaign
+    if (!campaign || !campaign.id) return
+    wx.navigateTo({ url: `/pages/activity/referral/index?campaignId=${campaign.id}` })
   },
 
   claimNewUserCoupon() {

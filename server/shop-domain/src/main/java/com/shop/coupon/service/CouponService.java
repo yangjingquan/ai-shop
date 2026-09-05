@@ -19,6 +19,12 @@ public interface CouponService {
 
     Long receiveNewUserCoupon(Long userId, Long merchantId, Long templateId);
 
+    /** 按模板向指定用户发券，供邀请奖励等服务端奖励使用。 */
+    Long issueTemplate(Long userId, Long merchantId, Long templateId);
+
+    /** 撤销一张尚未使用的用户券；已使用券不做逆向扣减。 */
+    boolean invalidateCoupon(Long userId, Long merchantId, Long couponId);
+
     List<CouponVO> listUserCoupons(Long userId, Long merchantId, Integer status);
 
     CouponCheckoutResult calculate(Long userId, CouponUseContext context, Long requestedCouponId,

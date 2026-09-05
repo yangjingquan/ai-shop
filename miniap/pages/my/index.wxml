@@ -59,5 +59,9 @@
       <view class="menu-left"><view class="message-icon coupon-menu-icon">券</view><text>优惠券</text></view>
       <view class="menu-right"><text wx:if="{{couponCount > 0}}" class="unread-badge">{{couponCount}}</text><image class="icon icon-sm arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" /></view>
     </view>
+    <view wx:if="{{referralEnabled}}" class="menu-item" hover-class="menu-item-hover" bindtap="goReferral">
+      <view class="menu-left"><view class="message-icon referral-menu-icon">礼</view><text>分享有礼</text></view>
+      <image class="icon icon-sm arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" />
+    </view>
   </view>
 </view>

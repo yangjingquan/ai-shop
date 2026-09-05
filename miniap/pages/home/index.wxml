@@ -103,6 +103,11 @@
         <view class="speaker"></view>
       </view>
     </view>
+
+    <view wx:if="{{referralCampaign}}" class="referral-entry" bindtap="onReferral">
+      <view class="referral-entry-copy"><view class="referral-entry-kicker">SHARE &amp; REWARD</view><view class="referral-entry-title">分享有礼·老带新返券</view><view class="referral-entry-desc">邀请好友首单成功，按阶梯领取店铺券</view></view>
+      <view class="referral-entry-arrow">›</view>
+    </view>
   </view>
 
   <view wx:if="{{newUserCoupon}}" class="coupon-mask">

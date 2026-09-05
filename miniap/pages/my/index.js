@@ -13,6 +13,7 @@ Page({
     unreadCount: 0,
     couponEnabled: false,
     couponCount: 0,
+    referralEnabled: false,
   },
 
   onShow() {
@@ -27,6 +28,9 @@ Page({
 
   async loadCouponEntry() {
     const featureMap = await marketingCapabilities.load(false).catch(() => ({}))
+    const referralEnabled = !!(featureMap.REFERRAL
+      && (featureMap.REFERRAL.enabled === true || Number(featureMap.REFERRAL.enabled) === 1))
+    this.setData({ referralEnabled })
     const enabled = !!(featureMap.NEW_USER_COUPON
       && (featureMap.NEW_USER_COUPON.enabled === true || Number(featureMap.NEW_USER_COUPON.enabled) === 1))
     if (!enabled) { this.setData({ couponEnabled: false, couponCount: 0 }); return }
@@ -35,6 +39,10 @@ Page({
   },
 
   goCoupons() { wx.navigateTo({ url: '/pages/coupon/list' }) },
+
+  goReferral() {
+    wx.navigateTo({ url: '/pages/activity/referral/index' })
+  },
 
   loadUnreadCount() {
     notificationApi.unreadCount().then((res) => {

@@ -17,6 +17,7 @@ import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderPaymentService;
 import com.shop.product.service.ProductService;
 import com.shop.seckill.service.SeckillService;
+import com.shop.referral.service.ReferralService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,8 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     /** 可选注入，保持支付回调纯单测构造器兼容。 */
     @Autowired(required = false)
     private SeckillService seckillService;
+    @Autowired(required = false)
+    private ReferralService referralService;
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaidCallback(String orderNo, String transactionId, String rawPayload) {
@@ -88,6 +91,7 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
                 seckillService.handleOrderPaid(orderNo);
             }
         }
+        if (referralService != null) referralService.handleOrderPaid(order);
 
         List<OrderItem> items = orderItemMapper.selectList(
                 new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, order.getId()));

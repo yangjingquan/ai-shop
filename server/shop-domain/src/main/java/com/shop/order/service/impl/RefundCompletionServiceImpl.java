@@ -13,6 +13,7 @@ import com.shop.order.enums.OrderStatus;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.service.RefundCompletionService;
+import com.shop.referral.service.ReferralService;
 import com.shop.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,8 @@ public class RefundCompletionServiceImpl implements RefundCompletionService {
     private final ProductService productService;
     private final GroupBuyMemberMapper memberMapper;
     private final GroupBuyGroupMapper groupMapper;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ReferralService referralService;
 
     @Override
     @Transactional
@@ -57,6 +60,7 @@ public class RefundCompletionServiceImpl implements RefundCompletionService {
         GroupBuyMember member = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>()
                 .eq(GroupBuyMember::getOrderNo, order.getOrderNo()));
         if (member == null) {
+            if (referralService != null) referralService.handleOrderRefunded(order.getOrderNo());
             return;
         }
         if (member.getStatus() != GroupBuyMemberStatus.REFUNDED.getCode()) {
@@ -74,6 +78,7 @@ public class RefundCompletionServiceImpl implements RefundCompletionService {
                 groupMapper.updateById(group);
             }
         }
+        if (referralService != null) referralService.handleOrderRefunded(order.getOrderNo());
     }
 
     private void releaseOrderStock(Order order) {

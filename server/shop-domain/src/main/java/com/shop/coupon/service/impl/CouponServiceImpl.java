@@ -134,15 +134,46 @@ public class CouponServiceImpl implements CouponService {
     @Transactional
     public Long receiveNewUserCoupon(Long userId, Long merchantId, Long templateId) {
         marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.NEW_USER_COUPON);
+        if (hasSuccessfulOrder(userId, merchantId)) {
+            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "当前用户不符合新人资格");
+        }
+        return issueTemplateInternal(userId, merchantId, templateId, true);
+    }
+
+    @Override
+    @Transactional
+    public Long issueTemplate(Long userId, Long merchantId, Long templateId) {
+        return issueTemplateInternal(userId, merchantId, templateId, false);
+    }
+
+    @Override
+    @Transactional
+    public boolean invalidateCoupon(Long userId, Long merchantId, Long couponId) {
+        if (userId == null || merchantId == null || couponId == null) return false;
+        UserCoupon coupon = userCouponMapper.selectOne(new LambdaQueryWrapper<UserCoupon>()
+                .eq(UserCoupon::getId, couponId)
+                .eq(UserCoupon::getUserId, userId)
+                .eq(UserCoupon::getMerchantId, merchantId)
+                .last("FOR UPDATE"));
+        if (coupon == null || coupon.getStatus() != UserCouponStatus.WAIT_USE.getCode()) return false;
+        coupon.setStatus(UserCouponStatus.INVALID.getCode());
+        userCouponMapper.updateById(coupon);
+        return true;
+    }
+
+    private Long issueTemplateInternal(Long userId, Long merchantId, Long templateId, boolean requireNewUser) {
         LocalDateTime now = LocalDateTime.now();
         CouponTemplate template = templateMapper.selectOne(new LambdaQueryWrapper<CouponTemplate>()
                 .eq(CouponTemplate::getId, templateId)
                 .eq(CouponTemplate::getMerchantId, merchantId)
                 .last("FOR UPDATE"));
-        if (template == null || !isActive(template, now) || !Integer.valueOf(1).equals(template.getNewUserOnly())) {
-            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "新人券已停止领取");
+        if (template == null || !isActive(template, now)) {
+            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "优惠券已停止发放");
         }
-        if (hasSuccessfulOrder(userId, merchantId)) {
+        if (requireNewUser && !Integer.valueOf(1).equals(template.getNewUserOnly())) {
+            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "当前优惠券不是新人券");
+        }
+        if (requireNewUser && hasSuccessfulOrder(userId, merchantId)) {
             throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "当前用户不符合新人资格");
         }
         long existing = userCouponMapper.selectCount(new LambdaQueryWrapper<UserCoupon>()
@@ -178,7 +209,7 @@ public class CouponServiceImpl implements CouponService {
         userCouponMapper.insert(coupon);
         template.setReceivedCount(Optional.ofNullable(template.getReceivedCount()).orElse(0) + 1);
         templateMapper.updateById(template);
-        log.info("new user coupon received userId={}, merchantId={}, couponId={}", userId, merchantId, coupon.getId());
+        log.info("coupon issued userId={}, merchantId={}, couponId={}, requireNewUser={}", userId, merchantId, coupon.getId(), requireNewUser);
         return coupon.getId();
     }
 
@@ -378,7 +409,8 @@ public class CouponServiceImpl implements CouponService {
         if (request.getAmount().compareTo(request.getThresholdAmount()) > 0 && request.getThresholdAmount().signum() > 0) {
             // 面额大于门槛并非绝对错误，但会导致全额减免；保留为合法配置。
         }
-        if (request.getPerUserLimit() > 1 || request.getScopeType() == null || request.getScopeType() < 0 || request.getScopeType() > 2
+        if (request.getPerUserLimit() > 1 || request.getNewUserOnly() == null || (request.getNewUserOnly() != 0 && request.getNewUserOnly() != 1)
+                || request.getScopeType() == null || request.getScopeType() < 0 || request.getScopeType() > 2
                 || request.getStatus() == null || request.getStatus() < 0 || request.getStatus() > 2) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "新人券每人限领1张，范围配置不合法");
         }
@@ -392,7 +424,8 @@ public class CouponServiceImpl implements CouponService {
         t.setTotalStock(request.getTotalStock()); t.setPerUserLimit(1); t.setValidityDays(request.getValidityDays());
         t.setValidFrom(request.getValidFrom()); t.setValidTo(request.getValidTo()); t.setScopeType(request.getScopeType());
         t.setScopeIdsJson(toJson(request.getScopeIds() == null ? List.of() : request.getScopeIds()));
-        t.setNewUserOnly(1); t.setExcludeActivityGoods(request.getExcludeActivityGoods() == null ? 1 : request.getExcludeActivityGoods());
+        t.setNewUserOnly(request.getNewUserOnly() == null ? 1 : request.getNewUserOnly());
+        t.setExcludeActivityGoods(request.getExcludeActivityGoods() == null ? 1 : request.getExcludeActivityGoods());
         t.setStackable(0); t.setStatus(request.getStatus() == null ? CouponTemplateStatus.ACTIVE.getCode() : request.getStatus());
     }
 

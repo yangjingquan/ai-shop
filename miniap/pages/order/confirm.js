@@ -224,7 +224,7 @@ Page({
           return this.payOrder(res.data).then(() => {
             wx.showToast({ title: '下单成功', icon: 'success' });
             setTimeout(() => wx.redirectTo({
-              url: `/pages/group-buy/group?groupId=${res.data.groupId}`,
+              url: `/pages/order/success?orderNo=${res.data.orderNo || ''}&groupId=${res.data.groupId || 0}`,
             }), 1000);
           }).catch(() => {
             this.setData({ submitting: false });
@@ -259,7 +259,7 @@ Page({
         }
         return this.payOrder(res.data).then(() => {
           wx.showToast({ title: '抢购成功，状态同步中', icon: 'success' })
-          setTimeout(() => wx.switchTab({ url: '/pages/order/list' }), 1000)
+          setTimeout(() => wx.redirectTo({ url: `/pages/order/success?orderNo=${res.data.orderNo || ''}` }), 1000)
         }).catch(() => {
           this.setData({ submitting: false })
           wx.showModal({
@@ -314,7 +314,7 @@ Page({
       const title = orders.length > 1 ? `已支付 ${paidCount} 笔订单` : '支付成功，状态同步中';
       wx.showToast({ title, icon: 'success' });
       setTimeout(() => {
-        wx.switchTab({ url: '/pages/order/list' });
+        wx.redirectTo({ url: `/pages/order/success?orderNo=${orders[0] && orders[0].orderNo || ''}` });
       }, 1000);
     }).catch(() => {
       this.setData({ submitting: false });

@@ -1,0 +1,5 @@
+<view class="success-page">
+  <view class="success-head"><view class="success-icon">✓</view><view class="success-title">支付成功</view><view class="success-subtitle">订单已提交，商家将尽快为你发货</view></view>
+  <view wx:if="{{campaign}}" class="invite-card card"><view class="invite-kicker">SHARE &amp; REWARD</view><view class="invite-title">邀请好友，解锁优惠券</view><view class="invite-desc">好友完成首单后，你可按邀请阶梯获得店铺券</view><view class="tier-preview"><view wx:for="{{campaign.tiers}}" wx:key="inviteCount" class="tier"><text>{{item.inviteCount}}人</text><text>得券</text></view></view><button class="primary-btn" bindtap="goInvite">去邀请好友</button></view>
+  <view class="actions"><button class="outline-btn" bindtap="goOrder">查看订单</button><button wx:if="{{groupId}}" class="outline-btn" bindtap="goGroup">查看拼团</button><button class="text-btn" bindtap="goHome">返回商城</button></view>
+</view>

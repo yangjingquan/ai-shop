@@ -1,0 +1,38 @@
+<view class="referral-page" wx:if="{{campaign}}">
+  <view class="hero">
+    <view class="spark spark-a">✦</view><view class="spark spark-b">✦</view>
+    <view class="kicker">SHARE &amp; REWARD</view>
+    <view class="title">分享有礼·老带新返券</view>
+    <view class="subtitle">{{campaign.shareDescription || '邀请好友完成首单，双方都能得券，多邀多得'}}</view>
+    <view class="safe-line">◉ 安全合规 · 无强制分享 · 无现金返利</view>
+  </view>
+
+  <view wx:if="{{isInvitee}}" class="landing-card card">
+    <view class="landing-kicker">NEW USER BENEFIT</view>
+    <view class="landing-title">新用户专享券</view>
+    <view class="landing-desc" wx:if="{{oldUser}}">当前账号已有购买记录，本次按普通用户浏览</view>
+    <view class="landing-desc" wx:else>首次下单立减，领券后即可使用</view>
+    <view wx:if="{{campaign.landingProductImage}}" class="landing-product" bindtap="goLanding">
+      <image src="{{campaign.landingProductImage}}" mode="aspectFill" />
+      <view class="landing-product-info"><view>{{campaign.landingProductName || '精选商品'}}</view><text>¥{{campaign.landingProductPrice}}</text></view>
+    </view>
+    <view wx:if="{{!oldUser && campaign.canClaimInviteeCoupon}}" class="coupon-ticket">
+      <view class="ticket-amount">¥<text>{{campaign.inviteeCouponAmount || '—'}}</text></view>
+      <view class="ticket-copy"><view>新用户专享券</view><text>具体门槛及有效期以券面为准</text></view>
+    </view>
+    <button wx:if="{{!oldUser}}" class="primary-btn" bindtap="claimCoupon" loading="{{claiming}}">领取优惠券并下单</button>
+    <button wx:else class="outline-btn" bindtap="goLanding">去逛逛</button>
+  </view>
+
+  <view wx:else class="progress-card card">
+    <view class="progress-head"><view><text class="progress-number">{{campaign.completedInviteCount || 0}}</text><text> 位好友已完成首单</text></view><text class="muted">{{campaign.pendingInviteCount || 0}} 人待完成</text></view>
+    <view class="tier-list"><view wx:for="{{campaign.tiers}}" wx:key="inviteCount" class="tier-row {{item.reached ? 'reached' : ''}}"><view class="tier-dot">{{item.reached ? '✓' : item.inviteCount}}</view><view class="tier-copy"><text>邀请满{{item.inviteCount}}人</text><text>{{item.couponName || '奖励券' }} ¥{{item.couponAmountText}}</text></view><text class="tier-status">{{item.rewarded ? '已发券' : item.reached ? '待发券' : '未达成'}}</text></view></view>
+    <view wx:if="{{campaign.remainingToNextTier}}" class="next-tip">再邀请 {{campaign.remainingToNextTier}} 人，可获得下一档优惠券</view>
+    <button class="primary-btn share-btn" open-type="share" bindtap="recordShare">邀请好友</button>
+    <view class="secondary-link" bindtap="goRewards">查看我的奖励 ›</view>
+  </view>
+
+  <view class="rule-card card"><view class="section-title">活动说明</view><view class="rule-row"><text class="rule-icon">1</text><view><text>邀请好友成为新用户</text><text>好友需在当前商户从未成功支付过订单</text></view></view><view class="rule-row"><text class="rule-icon">2</text><view><text>好友完成首次成功支付</text><text>系统将在支付回调成功后确认奖励</text></view></view><view class="rule-row"><text class="rule-icon">3</text><view><text>达到阶梯自动发放优惠券</text><text>活动仅限主动分享，具体规则以活动配置为准</text></view></view></view>
+  <view class="foot-note">本活动仅限新用户参与，奖励不兑现、不转赠，异常关系将被风控处理</view>
+</view>
+<view wx:if="{{!loading && !campaign}}" class="empty"><view class="empty-icon">券</view><view>活动暂未开始或已结束</view><button class="outline-btn" bindtap="goHome">返回商城</button></view>

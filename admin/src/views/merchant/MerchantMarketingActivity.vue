@@ -108,6 +108,13 @@ onMounted(load)
             class="feature-link"
             @click="router.push('/merchant/seckill')"
           >去配置秒杀活动 →</el-button>
+          <el-button
+            v-if="feature.code === 'REFERRAL' && feature.enabled === 1"
+            link
+            type="primary"
+            class="feature-link"
+            @click="router.push('/merchant/referral')"
+          >去配置邀请有礼 →</el-button>
         </el-card>
       </el-col>
     </el-row>

@@ -15,7 +15,7 @@ public enum MarketingActivityCode {
     FULL_REDUCTION("FULL_REDUCTION", "满减活动", "订单达到门槛后自动减免", false, "/pages/promotion/full-reduction"),
     REPURCHASE_COUPON("REPURCHASE_COUPON", "复购券", "鼓励已购买用户再次下单", false, "/pages/coupon/repurchase"),
     POINTS_MEMBER_DAY("POINTS_MEMBER_DAY", "积分会员日", "会员日享受积分或专属权益", false, "/pages/member/day"),
-    REFERRAL("REFERRAL", "邀请有礼", "邀请新用户注册或下单获得奖励", false, "/pages/referral/index"),
+    REFERRAL("REFERRAL", "邀请有礼", "邀请新用户首单后获得优惠券奖励", true, "/pages/activity/referral/index"),
     BUNDLE("BUNDLE", "组合购", "搭配购买多件商品享受组合优惠", false, "/pages/promotion/bundle"),
     PRESALE("PRESALE", "预售", "提前支付定金锁定未来商品", false, "/pages/presale/list"),
     LOTTERY_BLIND_BOX("LOTTERY_BLIND_BOX", "抽奖/盲盒", "通过抽奖或盲盒机制提升互动和转化", false, "/pages/lottery/index");

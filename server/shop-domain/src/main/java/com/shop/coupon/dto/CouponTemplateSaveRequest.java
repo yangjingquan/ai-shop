@@ -40,6 +40,7 @@ public class CouponTemplateSaveRequest {
     private LocalDateTime validTo;
     private Integer scopeType = 0;
     private List<Long> scopeIds;
+    private Integer newUserOnly = 1;
     private Integer excludeActivityGoods = 1;
     private Integer stackable = 0;
     private Integer status = 1;

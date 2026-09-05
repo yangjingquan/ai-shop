@@ -1,0 +1,7 @@
+<view class="rewards-page" wx:if="{{campaign}}">
+  <view class="reward-hero"><view class="kicker">MY REWARDS</view><view class="title">已成功邀请 {{campaign.completedInviteCount || 0}} 人</view><view class="subtitle">完成阶梯条件后，奖励优惠券将自动发放</view></view>
+  <view class="progress-card card"><view class="progress-title">邀请进度</view><view class="progress-track"><view class="progress-fill" style="width: {{campaign.progressPercent}}%;"></view></view><view class="progress-label"><text>已完成 {{campaign.completedInviteCount || 0}} 人</text><text>{{campaign.nextTierText}}</text></view></view>
+  <view class="reward-list card"><view class="section-title">已获得优惠券</view><view wx:if="{{rewards.length}}"><view wx:for="{{rewards}}" wx:key="id" class="reward-row"><view class="reward-amount"><text>¥</text>{{item.rewardAmount}}</view><view class="reward-copy"><view>{{item.rewardLabel}}</view><text>{{item.statusText}} · 触发订单 {{item.triggerOrderNo || '—'}}</text></view><button wx:if="{{item.status === 1}}" class="use-btn" data-reward="{{item}}" bindtap="goUse">去使用</button></view></view><view wx:else class="empty-inner">暂时还没有奖励，邀请好友一起逛逛吧</view></view>
+  <view class="foot-note">好友首单退款后，相关奖励可能进入待处理或撤销状态</view>
+</view>
+<view wx:if="{{!loading && !campaign}}" class="empty">活动暂未开始或已结束</view>
