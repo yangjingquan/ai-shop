@@ -38,6 +38,8 @@ Page({
   },
 
   goPoints() { wx.navigateTo({ url: '/pages/points/index' }) },
+  goPointsMall() { wx.navigateTo({ url: '/pages/points/mall' }) },
+  goMemberDay() { wx.navigateTo({ url: '/pages/points/member-day' }) },
 
   async loadCouponEntry() {
     const featureMap = await marketingCapabilities.load(false).catch(() => ({}))

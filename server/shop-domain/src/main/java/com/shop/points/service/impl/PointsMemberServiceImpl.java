@@ -62,7 +62,7 @@ public class PointsMemberServiceImpl implements PointsMemberService {
         PointsProfileVO vo = new PointsProfileVO(); vo.setBalance(account.getBalance()); vo.setJoinedAt(profile.getJoinedAt());
         vo.setRedeemableCouponCount(productMapper.selectCount(new LambdaQueryWrapper<PointsProduct>()
                 .eq(PointsProduct::getMerchantId, merchantId).isNotNull(PointsProduct::getCouponTemplateId).eq(PointsProduct::getStatus, 1)).intValue());
-        MemberDayActivity activity = currentActivity(merchantId); vo.setMemberDayActive(activity != null); vo.setMemberDay(activity == null ? null : activity.getDayOfMonth()); return vo;
+        MemberDayActivity activity = currentActivity(merchantId); PointsRule rule=activeRuleOrNull(merchantId); vo.setMemberDayActive(activity != null); vo.setMemberDay(activity == null ? null : activity.getDayOfMonth()); vo.setPayAmountYuan(rule==null?0:Math.max(1,safe(rule.getPayAmountYuan()))); vo.setPointsPerYuan(rule==null?0:safe(rule.getPointsPerYuan())); return vo;
     }
 
     @Override public List<PointsLedgerVO> ledger(Long userId, Long merchantId, int limit) {

@@ -38,6 +38,11 @@
       <view class="shoe"><view class="shoe-line"></view></view>
     </view>
 
+    <view wx:if="{{pointsEntry}}" class="points-entry" bindtap="goPointsMall">
+      <view class="points-entry-main"><view class="points-entry-kicker">MEMBER POINTS</view><view class="points-entry-value">{{pointsEntry.balance}}<text> 积分</text></view><view class="points-entry-desc">积分商城兑换精选好礼 ›</view></view>
+      <view class="points-entry-day" catchtap="goMemberDay"><text>{{pointsEntry.active ? '今日会员日' : '积分会员日'}}</text><text>{{pointsEntry.active ? (pointsEntry.couponReceived ? '专享券已领取' : '去领专享券') : ('每月 ' + pointsEntry.dayOfMonth + ' 日') }} ›</text></view>
+    </view>
+
     <view class="categories" wx:if="{{ topCategories.length }}">
       <view
         class="cat"

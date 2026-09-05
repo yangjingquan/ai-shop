@@ -6,6 +6,8 @@ const marketingCapabilities = require('../../utils/marketing-capabilities')
 const couponApi = require('../../api/coupon')
 const seckillApi = require('../../api/seckill')
 const referralApi = require('../../api/referral')
+const pointsApi = require('../../api/points')
+const auth = require('../../utils/auth')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
@@ -20,6 +22,7 @@ Page({
     now: Date.now(),
     newUserCoupon: null,
     referralCampaign: null,
+    pointsEntry: null,
   },
 
   onLoad() {
@@ -64,10 +67,33 @@ Page({
       this.loadSeckillSummary(marketingEnabled.SECKILL)
       this.loadNewUserCoupon(marketingEnabled)
       this.loadReferralCampaign(marketingEnabled.REFERRAL)
+      this.loadPointsEntry(marketingEnabled.POINTS_MEMBER_DAY)
     } finally {
       this.setData({ loading: false })
     }
   },
+
+  async loadPointsEntry(enabled) {
+    if (!enabled) return this.setData({ pointsEntry: null })
+    try {
+      await auth.silentLogin()
+      const [profileRes, dayRes] = await Promise.all([pointsApi.profile(), pointsApi.memberDay()])
+      const profile = (profileRes && profileRes.data) || {}
+      const day = (dayRes && dayRes.data) || {}
+      this.setData({ pointsEntry: {
+        balance: Number(profile.balance || 0),
+        dayOfMonth: day.dayOfMonth || profile.memberDay || 0,
+        active: !!day.active,
+        couponReceived: !!day.couponReceived,
+      } })
+    } catch (_) {
+      this.setData({ pointsEntry: null })
+    }
+  },
+
+  goPointsMall() { wx.navigateTo({ url: '/pages/points/mall' }) },
+
+  goMemberDay() { wx.navigateTo({ url: '/pages/points/member-day' }) },
 
   loadSeckillSummary(enabled) {
     if (!enabled) {

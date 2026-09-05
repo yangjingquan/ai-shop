@@ -32,6 +32,7 @@ Page({
     groupBuyGroups: [],
     selectedGroupId: 0,
     memberDayActive: false,
+    pointsEarnText: '',
   },
 
   onLoad(opts) {
@@ -177,12 +178,30 @@ Page({
       marketingCapabilities.load(false).then((map) => {
         const feature = map.POINTS_MEMBER_DAY
         if (feature && (feature.enabled === true || Number(feature.enabled) === 1)) {
-          pointsApi.memberDay().then((day) => this.setData({ memberDayActive: !!(day.data && day.data.active) })).catch(() => {})
+          Promise.all([pointsApi.profile(), pointsApi.memberDay()]).then(([profileRes, dayRes]) => {
+            const profile = (profileRes && profileRes.data) || {}
+            const day = (dayRes && dayRes.data) || {}
+            const payAmount = Number(profile.payAmountYuan || 0)
+            const points = Number(profile.pointsPerYuan || 0)
+            this.setData({
+              pointsEarnText: payAmount > 0 && points > 0 ? `每实付${payAmount}元赠${points}积分` : '',
+              memberDayActive: !!day.active && Number(day.doublePoints) === 1 && this.memberDayApplies(day, product),
+            })
+          }).catch(() => {})
         }
       }).catch(() => {})
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  memberDayApplies(day, product) {
+    const scopeType = Number(day && day.productScopeType || 0)
+    if (scopeType === 0) return true
+    try {
+      const ids = JSON.parse((day && day.productScopeIdsJson) || '[]').map(Number)
+      return scopeType === 1 ? ids.includes(Number(product.id)) : ids.includes(Number(product.categoryId))
+    } catch (_) { return false }
   },
 
   fmtPrice(v) {

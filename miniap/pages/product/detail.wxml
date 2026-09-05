@@ -21,7 +21,7 @@
       <view class="seckill-panel-row"><text>{{seckillLimitText}}</text><text class="seckill-stock">{{seckillRemainingText}}</text></view>
       <view class="seckill-panel-tip">秒杀商品不支持使用优惠券，售完即止</view>
     </view>
-    <view wx:if="{{memberDayActive && !seckillMode}}" class="member-day-tip">积分会员日进行中 · 下单享双倍积分</view>
+    <view wx:if="{{pointsEarnText && !seckillMode}}" class="points-earn-tip">积分权益 · {{pointsEarnText}}<text wx:if="{{memberDayActive}}">，当前商品双倍积分</text></view>
     <view wx:if="{{product.isGroupBuy === 1}}" class="group-buy-panel">
       <view class="group-buy-head"><view class="group-buy-price">¥{{product.groupBuyPriceText}}</view><view class="group-buy-meta">{{product.groupBuyRequiredText}}</view></view>
       <view wx:if="{{groupBuyGroups.length}}" class="active-group-title">正在进行的团</view>

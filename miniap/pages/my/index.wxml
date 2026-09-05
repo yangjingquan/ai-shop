@@ -30,9 +30,9 @@
     </view>
   </view>
 
-  <view wx:if="{{pointsEnabled}}" class="points-card" bindtap="goPoints">
-    <view><view class="points-card-label">我的积分</view><view class="points-card-value">{{pointsProfile.balance || 0}}</view><view class="points-card-desc">积分可兑换好礼 ›</view></view>
-    <view class="points-day"><text>积分会员日</text><text wx:if="{{pointsProfile.memberDay}}">每月{{pointsProfile.memberDay}}日</text></view>
+  <view wx:if="{{pointsEnabled}}" class="points-card">
+    <view class="points-card-main" bindtap="goPointsMall"><view class="points-card-label">我的积分</view><view class="points-card-value">{{pointsProfile.balance || 0}}</view><view class="points-card-desc">去积分商城兑换好礼 ›</view></view>
+    <view class="points-day" bindtap="goMemberDay"><text>{{pointsProfile.memberDayActive ? '今日会员日' : '积分会员日'}}</text><text wx:if="{{pointsProfile.memberDay}}">{{pointsProfile.memberDayActive ? '双倍积分进行中' : ('每月' + pointsProfile.memberDay + '日') }} ›</text></view>
   </view>
 
   <view class="menu card">
