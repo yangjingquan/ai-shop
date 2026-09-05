@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,7 +23,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PromotionServiceImpl implements PromotionService {
     private static final int SCOPE_CATEGORY = 1, SCOPE_PRODUCT = 2, SCOPE_EXCLUDED_PRODUCT = 3, SCOPE_RECOMMEND_PRODUCT = 4;
-    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Shanghai");
     private final PromotionActivityMapper activityMapper;
     private final PromotionThresholdMapper thresholdMapper;
     private final PromotionScopeMapper scopeMapper;
@@ -36,10 +34,7 @@ public class PromotionServiceImpl implements PromotionService {
                 .orderByDesc(PromotionActivity::getPriority).orderByDesc(PromotionActivity::getId)).stream().map(this::toVO).toList();
     }
     @Override public List<PromotionActivityVO> listActive(Long merchantId) {
-        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        return activityMapper.selectList(new LambdaQueryWrapper<PromotionActivity>().eq(PromotionActivity::getMerchantId, merchantId)
-                .eq(PromotionActivity::getStatus, 1).le(PromotionActivity::getStartAt, now).gt(PromotionActivity::getEndAt, now)
-                .orderByDesc(PromotionActivity::getPriority).orderByDesc(PromotionActivity::getId)).stream().map(this::toVO).toList();
+        return activityMapper.selectList(activeActivityQuery(merchantId)).stream().map(this::toVO).toList();
     }
     @Override public PromotionActivityVO get(Long merchantId, Long id) { return toVO(requireOwned(merchantId, id)); }
 
@@ -64,11 +59,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Override public PromotionCheckoutResult calculate(Long merchantId, List<PromotionPricingItem> items) {
         PromotionCheckoutResult result = new PromotionCheckoutResult();
         if (!marketingFeatureService.isEnabled(merchantId, MarketingActivityCode.FULL_REDUCTION) || items == null || items.isEmpty()) return result;
-        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        List<PromotionActivity> activities = activityMapper.selectList(new LambdaQueryWrapper<PromotionActivity>()
-                .eq(PromotionActivity::getMerchantId, merchantId).eq(PromotionActivity::getStatus, 1)
-                .le(PromotionActivity::getStartAt, now).gt(PromotionActivity::getEndAt, now)
-                .orderByDesc(PromotionActivity::getPriority).orderByDesc(PromotionActivity::getId));
+        List<PromotionActivity> activities = activityMapper.selectList(activeActivityQuery(merchantId));
         List<PromotionCheckoutResult.PromotionProgress> progresses = new ArrayList<>();
         List<Candidate> candidates = new ArrayList<>();
         Candidate presentation = null;
@@ -131,6 +122,12 @@ public class PromotionServiceImpl implements PromotionService {
     private BigDecimal discount(PromotionActivity activity, PromotionThreshold threshold, BigDecimal qualified) {
         BigDecimal value = "FULL_DISCOUNT".equals(activity.getActivityType()) ? qualified.multiply(BigDecimal.TEN.subtract(threshold.getDiscountRate())).divide(BigDecimal.TEN, 2, RoundingMode.HALF_UP) : threshold.getReductionAmount();
         if (threshold.getDiscountCap() != null) value = value.min(threshold.getDiscountCap()); return value.max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+    }
+    private LambdaQueryWrapper<PromotionActivity> activeActivityQuery(Long merchantId) {
+        return new LambdaQueryWrapper<PromotionActivity>()
+                .eq(PromotionActivity::getMerchantId, merchantId).eq(PromotionActivity::getStatus, 1)
+                .apply("start_at <= NOW() AND end_at > NOW()")
+                .orderByDesc(PromotionActivity::getPriority).orderByDesc(PromotionActivity::getId);
     }
     private Set<Long> scopeIds(Long activityId, int type) { return scopeMapper.selectList(new LambdaQueryWrapper<PromotionScope>().eq(PromotionScope::getActivityId, activityId).eq(PromotionScope::getTargetType, type)).stream().map(PromotionScope::getTargetId).collect(Collectors.toSet()); }
     private PromotionActivity requireOwned(Long merchantId, Long id) { PromotionActivity e = activityMapper.selectById(id); if (e == null || !Objects.equals(e.getMerchantId(), merchantId)) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "活动不存在或不属于当前商家"); return e; }
