@@ -31,6 +31,14 @@ public class OrderPreviewVO {
 
     private BigDecimal promotionDiscountAmount;
 
+    private Long bundleActivityId;
+
+    private String bundleName;
+
+    private BigDecimal bundleDiscountAmount;
+
+    private String bundleSnapshotJson;
+
     private PromotionCheckoutResult promotion;
 
     private List<com.shop.coupon.dto.CouponVO> coupons;
@@ -75,6 +83,8 @@ public class OrderPreviewVO {
         private BigDecimal unitPrice;
 
         private BigDecimal subtotal;
+
+        private String bundleGroupId;
 
         private boolean available;
 

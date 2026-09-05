@@ -667,6 +667,8 @@ public class OrderServiceImpl implements OrderService {
             vo.setStatusText(OrderStatus.statusText(o.getStatus()));
             vo.setPayAmount(o.getPayAmount());
             vo.setOrderType(o.getOrderType());
+            vo.setBundleActivityId(o.getBundleActivityId());
+            vo.setBundleName(readCouponName(o.getBundleSnapshotJson()));
             vo.setGroupBuyGroupId(o.getGroupBuyGroupId());
             GroupBuyGroup group = groupMap.get(o.getGroupBuyGroupId());
             if (group != null) {
@@ -700,6 +702,7 @@ public class OrderServiceImpl implements OrderService {
                 iv.setUnitPrice(i.getUnitPrice());
                 iv.setQuantity(i.getQuantity());
                 iv.setSubtotal(i.getSubtotal());
+                iv.setBundleGroupId(i.getBundleGroupId());
                 return iv;
             }).collect(Collectors.toList()));
             if (o.getStatus() == OrderStatus.WAIT_PAY.getCode() && o.getCreatedAt() != null) {
@@ -766,6 +769,7 @@ public class OrderServiceImpl implements OrderService {
             iv.setUnitPrice(i.getUnitPrice());
             iv.setQuantity(i.getQuantity());
             iv.setSubtotal(i.getSubtotal());
+            iv.setBundleGroupId(i.getBundleGroupId());
             return iv;
         }).collect(Collectors.toList());
 
@@ -785,6 +789,9 @@ public class OrderServiceImpl implements OrderService {
         vo.setPromotionDiscountAmount(order.getPromotionDiscountAmount());
         vo.setPayAmount(order.getPayAmount());
         vo.setOrderType(order.getOrderType());
+        vo.setBundleActivityId(order.getBundleActivityId());
+        vo.setBundleName(readCouponName(order.getBundleSnapshotJson()));
+        vo.setBundleDiscountAmount(order.getBundleDiscountAmount());
         vo.setGroupBuyGroupId(order.getGroupBuyGroupId());
         if (Integer.valueOf(1).equals(order.getOrderType()) && order.getGroupBuyGroupId() != null) {
             GroupBuyGroup group = groupBuyGroupMapper.selectById(order.getGroupBuyGroupId());
@@ -1014,6 +1021,13 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private BigDecimal calculateRefundAmount(Order order, RefundApplyRequest req) {
+        if (Integer.valueOf(4).equals(order.getOrderType())) {
+            if (req != null && ((req.getItems() != null && !req.getItems().isEmpty())
+                    || (req.getRefundAmount() != null && req.getRefundAmount().compareTo(order.getPayAmount()) != 0))) {
+                throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "搭配购订单第一版仅支持整包退款");
+            }
+            return order.getPayAmount();
+        }
         if (req == null || req.getItems() == null || req.getItems().isEmpty()) {
             return req == null || req.getRefundAmount() == null ? order.getPayAmount() : req.getRefundAmount();
         }

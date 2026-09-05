@@ -68,6 +68,7 @@ Page({
           ...item,
           statusText: this.displayStatusText(item),
           seckillLabel: this.data.seckillEnabled && item.orderType === 2 ? '秒杀订单' : '',
+          bundleLabel: Number(item.orderType) === 4 ? (item.bundleName || '搭配购套餐') : '',
           firstItemImage: resolveImageUrl(item.firstItemImage || ''),
           canDelete: item.status === 3 || item.status === 4,
           swipeOffset: 0,

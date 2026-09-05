@@ -130,6 +130,10 @@ onMounted(load)
             v-if="feature.code === 'POINTS_MEMBER_DAY' && feature.enabled === 1"
             link type="primary" class="feature-link" @click="router.push('/merchant/points')"
           >去配置积分会员日 →</el-button>
+          <el-button
+            v-if="feature.code === 'BUNDLE' && feature.enabled === 1"
+            link type="primary" class="feature-link" @click="router.push('/merchant/bundles')"
+          >去配置搭配购套餐 →</el-button>
         </el-card>
       </el-col>
     </el-row>

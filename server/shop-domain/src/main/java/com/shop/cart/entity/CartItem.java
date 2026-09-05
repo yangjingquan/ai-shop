@@ -19,4 +19,8 @@ public class CartItem extends BaseEntity {
     private Long skuId;
 
     private Integer quantity;
+
+    private String bundleGroupId;
+
+    private Long bundleActivityId;
 }

@@ -57,6 +57,9 @@ public class WxPromotionController {
         if (cartItems.size() != request.getCartItemIds().size() || cartItems.stream().anyMatch(item -> !CurrentUserHolder.get().getUserId().equals(item.getUserId()) || !merchantId.equals(item.getMerchantId()))) {
             throw new BusinessException(ErrorCode.CART_ITEM_NOT_OWNED);
         }
+        if (cartItems.stream().anyMatch(item -> item.getBundleGroupId() != null)) {
+            return ApiResult.success(null);
+        }
         Map<Long, Product> products = productMapper.selectBatchIds(cartItems.stream().map(CartItem::getProductId).distinct().toList()).stream().collect(Collectors.toMap(Product::getId, item -> item));
         Map<Long, ProductSku> skus = skuMapper.selectBatchIds(cartItems.stream().map(CartItem::getSkuId).distinct().toList()).stream().collect(Collectors.toMap(ProductSku::getId, item -> item));
         List<PromotionPricingItem> items = cartItems.stream().map(item -> {

@@ -98,7 +98,7 @@ onMounted(fetchList)
       <el-table v-loading="loading" :data="list" stripe>
         <el-table-column prop="orderNo" label="订单号" min-width="190" />
         <el-table-column prop="merchantName" label="商家" width="140" />
-        <el-table-column label="类型" width="80"><template #default="{ row }">{{ row.orderType === 1 ? '拼团' : '普通' }}</template></el-table-column>
+        <el-table-column label="类型" width="90"><template #default="{ row }">{{ row.orderType === 1 ? '拼团' : row.orderType === 2 ? '秒杀' : row.orderType === 3 ? '积分兑换' : row.orderType === 4 ? '搭配购' : '普通' }}</template></el-table-column>
         <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag>{{ statusText[row.status] || row.statusText }}</el-tag></template></el-table-column>
         <el-table-column label="实付金额" width="120"><template #default="{ row }">{{ money(row.payAmount) }}</template></el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180" />

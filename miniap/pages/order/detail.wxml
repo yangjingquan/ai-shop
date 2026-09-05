@@ -9,7 +9,7 @@
 
   <view class="items-card card">
     <view class="section-head">
-      <view class="merchant-title"><text>{{order.merchantName || '潮选商城'}}</text><text wx:if="{{seckillEnabled && order.orderType === 2}}" class="seckill-order-tag">秒杀订单</text></view>
+      <view class="merchant-title"><text>{{order.merchantName || '潮选商城'}}</text><text wx:if="{{seckillEnabled && order.orderType === 2}}" class="seckill-order-tag">秒杀订单</text><text wx:if="{{order.bundleLabel}}" class="seckill-order-tag">{{order.bundleLabel}}</text></view>
       <text class="status-text s{{order.status}}">{{order.statusText}}</text>
     </view>
 
@@ -73,7 +73,11 @@
       <text>运费</text>
       <text>¥{{order.freightAmountText}}</text>
     </view>
-    <view class="amount-row" wx:if="{{order.discountAmount > 0}}">
+    <view class="amount-row" wx:if="{{order.bundleActivityId}}">
+      <text>{{order.bundleName || '搭配购套餐'}}优惠</text>
+      <text>-¥{{order.bundleDiscountAmountText}}</text>
+    </view>
+    <view class="amount-row" wx:elif="{{order.discountAmount > 0}}">
       <text>优惠金额</text>
       <text>-¥{{order.discountAmountText}}</text>
     </view>

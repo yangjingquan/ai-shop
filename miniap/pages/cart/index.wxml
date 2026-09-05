@@ -1,142 +1,92 @@
 <view class="cart-page page-shell {{items.length === 0 ? 'is-empty' : ''}}">
   <view wx:if="{{items.length > 0}}" class="cart-topbar">
-    <view class="manage-btn" bindtap="toggleManageMode">{{manageMode ? '完成' : '管理'}}</view>
+    <text class="cart-count">共 <text class="cart-count-value">{{itemCount}}</text> 件商品</text>
+    <button size="mini" class="manage-btn" bindtap="toggleManageMode">{{manageMode ? '完成' : '管理'}}</button>
   </view>
 
   <view wx:if="{{items.length === 0}}" class="cart-empty-card">
     <image class="empty-icon" src="/assets/icons/cart.png" mode="aspectFit" />
     <view class="empty-title">购物车还是空的</view>
     <view class="empty-desc">把喜欢的商品先装进来吧</view>
-    <view class="shop-btn" bindtap="goCategory">去逛逛</view>
+    <button size="mini" class="shop-btn" bindtap="goCategory">去逛逛</button>
   </view>
 
-  <view wx:if="{{promotion && !manageMode}}" class="promotion-progress card">
-    <view class="promotion-title"><text>{{promotion.activityName}}</text><text wx:if="{{promotion.achieved}}" class="promotion-achieved">已省 ¥{{promotion.discountText}}</text></view>
-    <view wx:if="{{promotion.achieved}}" class="promotion-copy">已满 ¥{{promotion.thresholdText}}，本单享受{{promotion.activityType === 'FULL_DISCOUNT' ? '满折' : '满减'}}优惠</view>
-    <view wx:else class="promotion-copy">再购 ¥{{promotion.remainingText}}，即可享受活动优惠</view>
-    <view class="promotion-track"><view class="promotion-fill" style="width: {{promotion.achieved ? 100 : (promotion.qualifiedAmount / promotion.thresholdAmount * 100)}}%;"></view></view>
-  </view>
-
-  <block wx:for="{{merchantGroups}}" wx:key="merchantId">
-    <view class="swipe-wrap" wx:for="{{item.items}}" wx:for-item="cartItem" wx:key="id">
-      <view class="delete-action" data-id="{{cartItem.id}}" bindtap="deleteItem">
-        <text>删除</text>
-      </view>
-      <view
-        class="cart-item card"
-        style="transform: translateX({{cartItem.swipeX}}px);"
-        data-id="{{cartItem.id}}"
-        bindtouchstart="onItemTouchStart"
-        bindtouchmove="onItemTouchMove"
-        bindtouchend="onItemTouchEnd"
-        bindtouchcancel="onItemTouchCancel"
-      >
-        <view
-          class="check-btn {{cartItem.selected ? 'checked' : ''}} {{(!manageMode && cartItem.available === false) ? 'disabled' : ''}}"
-          data-id="{{cartItem.id}}"
-          data-checked="{{cartItem.selected}}"
-          bindtap="toggleSelect"
-        >
-          <image wx:if="{{cartItem.selected}}" class="check-icon" src="/assets/icons/check-primary.png" mode="aspectFit" />
+  <view class="merchant-card" wx:for="{{merchantGroups}}" wx:key="merchantId" wx:for-item="group">
+    <view wx:if="{{merchantGroups.length > 1}}" class="merchant-header">
+      <image class="icon icon-sm" src="/assets/icons/shop.png" mode="aspectFit" />
+      <text>{{group.merchantName || '店铺商品'}}</text>
+    </view>
+    <view class="swipe-wrap" wx:for="{{group.items}}" wx:for-item="cartItem" wx:key="id">
+      <view class="delete-action" data-id="{{cartItem.id}}" bindtap="deleteItem" aria-role="button" aria-label="删除{{cartItem.productName}}"><text>删除</text></view>
+      <view wx:if="{{cartItem.bundleMain}}" class="bundle-cart-header"><text class="bundle-tag">搭配购</text><text>{{cartItem.bundleName || '套餐商品'}}</text><text class="bundle-cart-tip">整套结算</text></view>
+      <view class="cart-item {{cartItem.available === false ? 'is-unavailable' : ''}}" style="transform: translateX({{cartItem.swipeX}}px);" data-id="{{cartItem.id}}" bindtouchstart="onItemTouchStart" bindtouchmove="onItemTouchMove" bindtouchend="onItemTouchEnd" bindtouchcancel="onItemTouchCancel">
+        <view class="item-check" data-id="{{cartItem.id}}" catchtap="toggleSelect" aria-role="checkbox" aria-checked="{{cartItem.selected}}" aria-label="选择{{cartItem.productName}}">
+          <view class="check-btn {{cartItem.selected ? 'checked' : ''}} {{(!manageMode && cartItem.available === false) ? 'disabled' : ''}}">
+            <image wx:if="{{cartItem.selected}}" class="check-icon" src="/assets/icons/check-primary.png" mode="aspectFit" />
+          </view>
         </view>
         <image class="item-img" src="{{cartItem.mainImage}}" mode="aspectFill" data-id="{{cartItem.productId}}" bindtap="goProductDetail" />
         <view class="item-info">
           <view class="item-name" data-id="{{cartItem.productId}}" bindtap="goProductDetail">{{cartItem.productName}}</view>
-          <view class="item-spec">{{cartItem.specText}}</view>
+          <view wx:if="{{cartItem.specText}}" class="item-spec"><text>{{cartItem.specText}}</text></view>
           <view class="item-bottom">
-            <text class="item-price">¥{{cartItem.unitPriceText}}</text>
-            <view class="qty-stepper">
-              <view class="qty-btn {{cartItem.quantity <= 1 ? 'disabled' : ''}}" data-id="{{cartItem.id}}" bindtap="onQtyMinus">
-                <image class="icon icon-sm" src="/assets/icons/minus.png" mode="aspectFit" />
-              </view>
+            <text class="item-price"><text class="price-symbol">¥</text>{{cartItem.unitPriceText}}</text>
+            <view wx:if="{{!cartItem.bundleGroupId}}" class="qty-stepper">
+              <view class="qty-btn {{cartItem.quantity <= 1 ? 'disabled' : ''}}" data-id="{{cartItem.id}}" catchtap="onQtyMinus" aria-role="button" aria-label="减少数量"><image class="icon" src="/assets/icons/minus.png" mode="aspectFit" /></view>
               <text class="qty-num">{{cartItem.quantity}}</text>
-              <view class="qty-btn {{cartItem.stock && cartItem.quantity >= cartItem.stock ? 'disabled' : ''}}" data-id="{{cartItem.id}}" bindtap="onQtyPlus">
-                <image class="icon icon-sm" src="/assets/icons/plus.png" mode="aspectFit" />
-              </view>
+              <view class="qty-btn {{cartItem.stock && cartItem.quantity >= cartItem.stock ? 'disabled' : ''}}" data-id="{{cartItem.id}}" catchtap="onQtyPlus" aria-role="button" aria-label="增加数量"><image class="icon" src="/assets/icons/plus.png" mode="aspectFit" /></view>
             </view>
+            <text wx:else class="bundle-item-label">套餐商品</text>
           </view>
-          <view wx:if="{{!cartItem.available}}" class="unavailable-tip">
-            <image class="icon icon-sm" src="/assets/icons/warning.png" mode="aspectFit" />
-            <text>{{cartItem.unavailableText}}</text>
-          </view>
+          <view wx:if="{{!cartItem.available}}" class="unavailable-tip">{{cartItem.unavailableText}}</view>
         </view>
       </view>
     </view>
-  </block>
+  </view>
 
-  <view wx:if="{{promotion && !promotion.achieved && !manageMode && promotionRecommendList.length}}" class="guess-section promotion-recommend-section">
+  <view wx:if="{{promotion && !manageMode}}" class="promotion-section {{promotion.achieved ? 'is-achieved' : ''}}">
+    <view wx:if="{{promotion.achieved}}" class="promotion-success">
+      <view class="promotion-success-copy"><text class="promotion-tag">{{promotion.activityType === 'FULL_DISCOUNT' ? '满折' : '满减'}}</text><text>已享活动优惠</text></view>
+      <text class="promotion-saving">已省 ¥{{promotion.discountText}}</text>
+    </view>
+    <block wx:else>
+      <view class="promotion-heading"><text class="promotion-title">{{promotionRecommendList.length ? '凑单推荐' : '再添一点，享优惠'}}</text><text class="promotion-tag">{{promotion.activityType === 'FULL_DISCOUNT' ? '满折' : '满减'}}</text></view>
+      <view class="promotion-copy">还差 <text class="promotion-gap">¥{{promotion.remainingText}}</text>，解锁{{promotion.activityType === 'FULL_DISCOUNT' ? '满折' : '满减'}}优惠</view>
+      <view class="promotion-rule">{{promotion.ruleText || promotion.activityName}}</view>
+      <view class="promotion-track"><view class="promotion-fill" style="width: {{promotion.progressPercent}}%;"></view></view>
+      <scroll-view wx:if="{{promotionRecommendList.length}}" class="promotion-scroll" scroll-x enhanced show-scrollbar="{{false}}" aria-label="凑单商品，左右滑动查看更多">
+        <view class="promotion-products">
+          <view class="promotion-product" wx:for="{{promotionRecommendList}}" wx:key="id" data-id="{{item.id}}" bindtap="goProductDetail" aria-role="button" aria-label="选购{{item.name}}，{{item.priceText}}元">
+            <image class="promotion-product-img" src="{{item.mainImage}}" mode="aspectFill" />
+            <view class="promotion-product-name">{{item.name}}</view>
+            <view class="promotion-product-bottom"><text class="promotion-product-price"><text class="price-symbol">¥</text>{{item.priceText}}</text><text class="promotion-product-action">选购</text></view>
+          </view>
+        </view>
+      </scroll-view>
+    </block>
+  </view>
+
+  <view wx:if="{{!manageMode && (recommendList.length || recommendLoading)}}" class="guess-section">
     <view class="guess-head">
-      <view class="guess-title">凑单推荐</view>
+      <view><view class="guess-title">猜你喜欢</view><view class="guess-subtitle">再逛逛，发现心仪好物</view></view>
+      <button size="mini" class="change-btn {{recommendLoading ? 'loading' : ''}}" bindtap="changeRecommend" disabled="{{recommendLoading}}"><image class="refresh-icon" src="/assets/icons/refresh.svg" mode="aspectFit" /><text>{{recommendLoading ? '加载中' : '换一批'}}</text></button>
     </view>
     <view class="guess-grid">
-      <view
-        class="guess-card"
-        wx:for="{{promotionRecommendList}}"
-        wx:key="id"
-        data-id="{{item.id}}"
-        bindtap="goProductDetail"
-      >
-        <image class="guess-img" src="{{item.mainImage}}" mode="aspectFill" />
-        <view class="guess-info">
-          <view class="guess-name">{{item.name}}</view>
-          <view class="guess-price">¥{{item.priceText}}</view>
-        </view>
+      <view class="guess-card" wx:for="{{recommendList}}" wx:key="id" data-id="{{item.id}}" bindtap="goProductDetail" aria-role="button" aria-label="查看{{item.name}}">
+        <view class="guess-image-wrap"><image class="guess-img" src="{{item.mainImage}}" mode="aspectFill" lazy-load /></view>
+        <view class="guess-info"><view class="guess-name">{{item.name}}</view><view class="guess-price"><text class="price-symbol">¥</text>{{item.priceText}}</view></view>
       </view>
     </view>
   </view>
 
-  <view class="guess-section">
-    <view class="guess-head">
-      <view class="guess-title">猜你喜欢</view>
-      <view class="change-btn {{recommendLoading ? 'loading' : ''}}" bindtap="changeRecommend">{{recommendLoading ? '加载中' : '换一批'}}</view>
+  <view class="bottom-bar" wx:if="{{items.length > 0}}">
+    <view class="select-all" bindtap="selectAll" aria-role="checkbox" aria-checked="{{allSelected}}" aria-label="全选商品">
+      <view class="check-btn {{allSelected ? 'checked' : ''}}"><image wx:if="{{allSelected}}" class="check-icon" src="/assets/icons/check-primary.png" mode="aspectFit" /></view><text>全选</text>
     </view>
-    <view class="guess-grid">
-      <view
-        class="guess-card"
-        wx:for="{{recommendList}}"
-        wx:key="id"
-        data-id="{{item.id}}"
-        bindtap="goProductDetail"
-      >
-        <image class="guess-img" src="{{item.mainImage}}" mode="aspectFill" />
-        <view class="guess-info">
-          <view class="guess-name">{{item.name}}</view>
-          <view class="guess-price">¥{{item.priceText}}</view>
-        </view>
-      </view>
-    </view>
-  </view>
-
-  <view class="bottom-bar" wx:if="{{items.length > 0 && !manageMode}}">
-    <view class="select-all">
-      <view
-        class="check-btn bottom-check {{allSelected ? 'checked' : ''}}"
-        data-checked="{{allSelected}}"
-        bindtap="selectAll"
-      >
-        <image wx:if="{{allSelected}}" class="check-icon" src="/assets/icons/check-primary.png" mode="aspectFit" />
-      </view>
-      <text>全选</text>
-    </view>
-    <view class="total-wrap">
-      <text class="total-label">合计</text>
-      <text class="total">¥{{totalAmount}}</text>
-    </view>
-    <button class="checkout-btn" bindtap="goCheckout">去结算({{selectedIds.length}})</button>
-  </view>
-
-  <view class="bottom-bar manage-bottom" wx:if="{{items.length > 0 && manageMode}}">
-    <view class="select-all">
-      <view
-        class="check-btn bottom-check {{allSelected ? 'checked' : ''}}"
-        data-checked="{{allSelected}}"
-        bindtap="selectAll"
-      >
-        <image wx:if="{{allSelected}}" class="check-icon" src="/assets/icons/check-primary.png" mode="aspectFit" />
-      </view>
-      <text>全选</text>
-    </view>
-    <view class="total-wrap manage-total-spacer"></view>
-    <button class="batch-delete-btn" bindtap="batchDeleteSelected">删除({{selectedIds.length}})</button>
+    <block wx:if="{{!manageMode}}">
+      <view class="total-wrap"><text class="total-label">商品合计</text><text class="total"><text class="price-symbol">¥</text>{{totalAmount}}</text></view>
+      <button size="mini" class="checkout-btn" bindtap="goCheckout">去结算（{{selectedIds.length}}）</button>
+    </block>
+    <block wx:else><view class="manage-count">已选 {{selectedIds.length}} 项</view><button size="mini" class="batch-delete-btn" bindtap="batchDeleteSelected">删除</button></block>
   </view>
 </view>

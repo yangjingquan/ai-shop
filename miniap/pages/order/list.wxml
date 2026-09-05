@@ -36,6 +36,7 @@
         <view class="order-head">
           <text class="state-text s{{item.status}}">{{item.statusText}}</text>
           <text wx:if="{{item.seckillLabel}}" class="seckill-order-tag">{{item.seckillLabel}}</text>
+          <text wx:if="{{item.bundleLabel}}" class="seckill-order-tag">{{item.bundleLabel}}</text>
           <text wx:if="{{item.refundStatusText}}" class="refund-status">{{item.refundStatusText}}</text>
         <text wx:if="{{groupBuyEnabled && item.orderType === 1 && item.groupBuyProgress}}" class="group-progress">{{item.groupBuyProgress}}</text>
         </view>

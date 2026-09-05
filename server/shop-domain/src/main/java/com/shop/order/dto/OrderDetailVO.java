@@ -17,6 +17,12 @@ public class OrderDetailVO {
 
     private Integer orderType;
 
+    private Long bundleActivityId;
+
+    private String bundleName;
+
+    private BigDecimal bundleDiscountAmount;
+
     private Long groupBuyGroupId;
 
     private Integer groupBuyRequiredCount;
@@ -136,5 +142,7 @@ public class OrderDetailVO {
         private Integer quantity;
 
         private BigDecimal subtotal;
+
+        private String bundleGroupId;
     }
 }

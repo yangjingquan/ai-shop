@@ -18,5 +18,7 @@ public class OrderCreateRequest {
     /** 可选；服务端会重新校验归属、有效期、门槛和商品范围。 */
     private Long couponId;
 
+    private String bundleGroupId;
+
     private String remark;
 }

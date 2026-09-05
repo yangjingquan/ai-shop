@@ -49,12 +49,17 @@
     </block>
   </view>
 
-  <view class="section card promotion-summary" wx:if="{{preview && preview.promotionActivityId}}">
+  <view class="section card bundle-summary" wx:if="{{preview && preview.bundleActivityId}}">
+    <view class="section-title promotion-title-row"><text>{{preview.bundleName || '搭配购套餐'}}</text><text>已优惠 ¥{{preview.bundleDiscountAmount}}</text></view>
+    <view class="promotion-summary-desc">套餐商品不参与优惠券、满减或其他活动，价格以本次结算为准。</view>
+  </view>
+
+  <view class="section card promotion-summary" wx:if="{{preview && preview.promotionActivityId && !preview.bundleActivityId}}">
     <view class="section-title promotion-title-row"><text>{{preview.promotionName || '满减满折'}}</text><text>已优惠 ¥{{preview.promotionDiscountAmountText}}</text></view>
     <view class="promotion-summary-desc">优惠已按参与商品金额实时计算，提交订单时将再次校验。</view>
   </view>
 
-  <view class="section card coupon-section" wx:if="{{preview && mode === 'cart'}}" bindtap="chooseCoupon">
+  <view class="section card coupon-section" wx:if="{{preview && mode === 'cart' && !preview.bundleActivityId}}" bindtap="chooseCoupon">
     <view class="section-title coupon-title-row"><text>优惠券</text><text class="coupon-choice">{{preview.couponName ? '已优惠¥' + preview.couponDiscountAmount : '选择优惠券'}}</text><image class="icon icon-sm arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" /></view>
     <view wx:if="{{preview.couponName}}" class="coupon-selected">{{preview.couponName}} · 立减 ¥{{preview.couponDiscountAmount}}</view>
     <view wx:elif="{{preview.couponMessage}}" class="coupon-message">{{preview.couponMessage}}</view>

@@ -73,6 +73,7 @@ const merchantMenus: MenuItem[] = [
       { index: 'merchant-full-reduction', label: '满减满折', path: '/merchant/full-reduction', desc: '阶梯优惠与预算', icon: '满', permission: 'merchant:promotion:view' },
       { index: 'merchant-referral', label: '邀请有礼', path: '/merchant/referral', desc: '老带新返券', icon: '礼', permission: 'merchant:referral:view' },
       { index: 'merchant-points', label: '积分会员日', path: '/merchant/points', desc: '积分、兑换与会员日', icon: '积', permission: 'merchant:points:view' },
+      { index: 'merchant-bundles', label: '搭配购套餐', path: '/merchant/bundles', desc: '主商品与配件组合', icon: '搭', permission: 'merchant:marketing:view' },
     ],
   },
   { index: 'merchant-order-ship', label: '订单发货', path: '/merchant/order-ship', desc: '履约处理', icon: '单', permission: 'merchant:order:view' },

@@ -91,6 +91,14 @@ Page({
         return
       }
       product.mainImage = resolveImageUrl(product.mainImage || '')
+      if (product.bundle) {
+        product.bundle.mainProductImage = resolveImageUrl(product.bundle.mainProductImage || product.mainImage || '')
+        product.bundle.items = (product.bundle.items || []).map(item => ({ ...item, mainImage: resolveImageUrl(item.mainImage || '') }))
+        const mainPrice = Number((product.bundle.mainSkus || [])[0]?.price || 0)
+        const accessoryPrice = (product.bundle.items || []).reduce((sum, item) => sum + Number((item.skus || [])[0]?.price || 0), 0)
+        product.bundle.originalAmountText = this.fmtPrice(mainPrice + accessoryPrice)
+        product.bundle.discountAmountText = this.fmtPrice(product.bundle.discountAmount)
+      }
       product.images = Array.isArray(product.images) ? product.images.map(resolveImageUrl).filter(Boolean) : []
       product.skus = Array.isArray(product.skus)
         ? product.skus.map((sku) => ({
@@ -307,6 +315,11 @@ Page({
 
   onCartTab() {
     wx.switchTab({ url: '/pages/cart/index' })
+  },
+
+  openBundle() {
+    if (!this.data.product || !this.data.product.bundle) return
+    wx.navigateTo({ url: `/pages/promotion/bundle?productId=${this.data.product.id}` })
   },
 
   onSelectVal(e) {

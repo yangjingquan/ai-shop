@@ -108,6 +108,8 @@ Page({
           discountAmountText: this.fmtPrice(raw.discountAmount),
           couponDiscountAmountText: this.fmtPrice(raw.couponDiscountAmount),
           promotionDiscountAmountText: this.fmtPrice(raw.promotionDiscountAmount),
+          bundleDiscountAmountText: this.fmtPrice(raw.bundleDiscountAmount),
+          bundleLabel: Number(raw.orderType) === 4 ? (raw.bundleName || '搭配购套餐') : '',
           payAmountText: this.fmtPrice(raw.payAmount),
           groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
@@ -324,6 +326,9 @@ Page({
 
   chooseRefundItems(reason) {
     const items = (this.data.order && this.data.order.items) || []
+    if (Number(this.data.order && this.data.order.orderType) === 4) {
+      return this.submitRefund(reason, {})
+    }
     wx.showActionSheet({
       itemList: ['整单退款', ...items.map(item => `${item.productName} ×${item.quantity}`)],
       success: (sheetRes) => {

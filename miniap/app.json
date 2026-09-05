@@ -23,7 +23,8 @@
     "pages/activity/seckill/list",
     "pages/notification/list",
     "pages/webview/index",
-    "pages/promotion/full-reduction"
+    "pages/promotion/full-reduction",
+    "pages/promotion/bundle"
   ],
   "window": {
     "navigationBarBackgroundColor": "#ffffff",

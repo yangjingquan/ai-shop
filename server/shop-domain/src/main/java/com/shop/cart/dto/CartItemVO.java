@@ -32,6 +32,16 @@ public class CartItemVO {
 
     private Integer quantity;
 
+    private String bundleGroupId;
+
+    private Long bundleActivityId;
+
+    private String bundleName;
+
+    private Boolean bundleMain;
+
+    private java.util.List<Long> bundleItemIds;
+
     /** 行小计 = unitPrice * quantity */
     private BigDecimal subtotal;
 

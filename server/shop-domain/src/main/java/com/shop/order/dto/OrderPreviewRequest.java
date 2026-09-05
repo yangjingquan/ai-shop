@@ -17,4 +17,7 @@ public class OrderPreviewRequest {
 
     /** 可选；为空时服务端自动推荐当前订单可用的最优新人券。 */
     private Long couponId;
+
+    /** 搭配购购物车分组；传入时由套餐服务处理并禁止其他优惠。 */
+    private String bundleGroupId;
 }

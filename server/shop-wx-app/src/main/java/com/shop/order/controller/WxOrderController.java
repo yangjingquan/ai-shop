@@ -9,6 +9,7 @@ import com.shop.wx.config.WxMerchantResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import com.shop.order.dto.*;
 import com.shop.order.service.OrderService;
+import com.shop.bundle.service.BundleService;
 import com.shop.coupon.dto.RepurchaseCouponVO;
 import com.shop.coupon.service.CouponIssueService;
 import jakarta.validation.Valid;
@@ -23,6 +24,7 @@ import java.util.List;
 public class WxOrderController {
 
     private final OrderService orderService;
+    private final BundleService bundleService;
     private final CouponIssueService couponIssueService;
     private final com.shop.order.service.LogisticsService logisticsService;
     private final WxMerchantResolver wxMerchantResolver;
@@ -31,7 +33,11 @@ public class WxOrderController {
     public ApiResult<OrderPreviewVO> preview(@RequestBody @Valid OrderPreviewRequest req, HttpServletRequest request) {
         Long userId = CurrentUserHolder.get().getUserId();
         Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
-        return ApiResult.success(orderService.preview(userId, merchantId, req));
+        boolean bundleRequest = req.getBundleGroupId() != null
+                || bundleService.containsBundleCartItems(userId, merchantId, req.getCartItemIds());
+        return ApiResult.success(!bundleRequest
+                ? orderService.preview(userId, merchantId, req)
+                : bundleService.previewOrder(userId, merchantId, req));
     }
 
     @RateLimit(key = "order_create", limit = 1, windowSec = 5, by = RateLimit.By.USER)
@@ -39,7 +45,11 @@ public class WxOrderController {
     public ApiResult<List<OrderCreateVO>> create(@RequestBody @Valid OrderCreateRequest req, HttpServletRequest request) {
         Long userId = CurrentUserHolder.get().getUserId();
         Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
-        return ApiResult.success(orderService.create(userId, merchantId, req));
+        boolean bundleRequest = req.getBundleGroupId() != null
+                || bundleService.containsBundleCartItems(userId, merchantId, req.getCartItemIds());
+        return ApiResult.success(!bundleRequest
+                ? orderService.create(userId, merchantId, req)
+                : bundleService.createOrder(userId, merchantId, req));
     }
 
     @OpLog(action = "ORDER_CANCEL", targetType = "ORDER", targetIdExpr = "#orderNo")

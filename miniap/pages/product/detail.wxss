@@ -62,6 +62,7 @@
   font-size: 24rpx;
   color: #9aa0a6;
 }
+.bundle-entry { margin-top:18rpx; padding:18rpx 20rpx; display:flex; align-items:center; gap:12rpx; border-radius:14rpx; background:#fff1e4; }.bundle-entry-copy { flex:1; min-width:0; }.bundle-entry-title { color:#e95318; font-size:27rpx; font-weight:700; }.bundle-entry-desc { margin-top:6rpx; color:#a96743; font-size:23rpx; }.bundle-entry .arrow { opacity:.5; }
 .group-buy-panel {
   margin-top: 18rpx;
   padding: 20rpx;

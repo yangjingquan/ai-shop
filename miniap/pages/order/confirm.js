@@ -21,6 +21,7 @@ Page({
     groupId: 0,
     sessionId: 0,
     seckillSkuId: 0,
+    bundleGroupId: '',
     selectedCouponId: null,
     memberDayActive: false,
   },
@@ -37,6 +38,7 @@ Page({
       groupId: Number(options.groupId || 0),
       sessionId: Number(options.sessionId || 0),
       seckillSkuId: Number(options.seckillSkuId || 0),
+      bundleGroupId: options.bundleGroupId || '',
     });
     this.loadDefaultAddress();
     marketingCapabilities.load(false).then((map) => {
@@ -95,7 +97,8 @@ Page({
       data: {
         cartItemIds: this.data.cartItemIds,
         addressId: this.data.addressId,
-        couponId: this.data.selectedCouponId || null
+        couponId: this.data.selectedCouponId || null,
+        bundleGroupId: this.data.bundleGroupId || null,
       }
     }).then(res => {
       if (res.code === 0) {
@@ -299,7 +302,8 @@ Page({
       data: {
         cartItemIds: this.data.cartItemIds,
         addressId: this.data.addressId,
-        couponId: this.data.selectedCouponId || null
+        couponId: this.data.selectedCouponId || null,
+        bundleGroupId: this.data.bundleGroupId || null,
       }
     }).then(res => {
       if (res.code === 0) {

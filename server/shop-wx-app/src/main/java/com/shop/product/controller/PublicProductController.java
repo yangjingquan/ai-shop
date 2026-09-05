@@ -8,6 +8,7 @@ import com.shop.product.service.ProductService;
 import com.shop.wx.config.WxMerchantResolver;
 import com.shop.marketing.enums.MarketingActivityCode;
 import com.shop.marketing.service.MarketingFeatureService;
+import com.shop.bundle.service.BundleService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ public class PublicProductController {
     private final ProductService productService;
     private final WxMerchantResolver wxMerchantResolver;
     private final MarketingFeatureService marketingFeatureService;
+    private final BundleService bundleService;
 
     @GetMapping("/page")
     public ApiResult<PageResult<ProductListVO>> page(
@@ -49,6 +51,9 @@ public class PublicProductController {
         ProductDetailVO product = productService.publicGet(id, merchantId);
         if (!marketingFeatureService.isEnabled(merchantId, MarketingActivityCode.GROUP_BUY)) {
             hideGroupBuyFields(product);
+        }
+        if (marketingFeatureService.isEnabled(merchantId, MarketingActivityCode.BUNDLE)) {
+            product.setBundle(bundleService.findActiveForProduct(merchantId, id));
         }
         return ApiResult.success(product);
     }

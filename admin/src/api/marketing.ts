@@ -16,6 +16,57 @@ export const marketingApi = {
     request.put<unknown, void>(`/api/merchant/marketing/features/${code}`, { enabled }),
 }
 
+export interface BundleSku {
+  id: number
+  specText?: string
+  price: number
+  stock: number
+  image?: string
+}
+
+export interface BundleItem {
+  id?: number
+  productId: number
+  productName?: string
+  mainImage?: string
+  required?: number
+  skus?: BundleSku[]
+}
+
+export interface BundleActivity {
+  id?: number
+  name: string
+  mainProductId: number
+  mainProductName?: string
+  mainProductImage?: string
+  mainSkus?: BundleSku[]
+  discountAmount: number
+  startAt: string
+  endAt: string
+  status: number
+  statusText?: string
+  active?: boolean
+  items: BundleItem[]
+}
+
+export interface BundleActivityPayload {
+  name: string
+  mainProductId: number
+  itemProductIds: number[]
+  discountAmount: number
+  startAt: string
+  endAt: string
+  status: number
+}
+
+export const bundleApi = {
+  list: () => request.get<unknown, BundleActivity[]>('/api/merchant/bundles'),
+  get: (id: number) => request.get<unknown, BundleActivity>(`/api/merchant/bundles/${id}`),
+  create: (data: BundleActivityPayload) => request.post<unknown, number>('/api/merchant/bundles', data),
+  update: (id: number, data: BundleActivityPayload) => request.put<unknown, void>(`/api/merchant/bundles/${id}`, data),
+  disable: (id: number) => request.delete<unknown, void>(`/api/merchant/bundles/${id}`),
+}
+
 export interface ReferralTier {
   inviteCount: number
   inviterCouponTemplateId: number | null

@@ -7,6 +7,7 @@ import com.shop.cart.dto.CartUpdateRequest;
 import com.shop.cart.entity.CartItem;
 import com.shop.cart.mapper.CartItemMapper;
 import com.shop.cart.service.CartService;
+import com.shop.bundle.mapper.BundleActivityMapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.merchant.entity.Merchant;
@@ -38,6 +39,7 @@ public class CartServiceImpl implements CartService {
     private final ProductSkuMapper skuMapper;
     private final ProductMapper productMapper;
     private final MerchantMapper merchantMapper;
+    private final BundleActivityMapper bundleActivityMapper;
 
     @Override
     @Transactional
@@ -126,6 +128,15 @@ public class CartServiceImpl implements CartService {
             }
         }
 
+        Map<Long, String> bundleNames = new HashMap<>();
+        Map<String, List<Long>> bundleItemIds = new HashMap<>();
+        List<Long> bundleIds = items.stream().map(CartItem::getBundleActivityId).filter(Objects::nonNull).distinct().toList();
+        if (!bundleIds.isEmpty()) {
+            bundleActivityMapper.selectBatchIds(bundleIds).forEach(b -> bundleNames.put(b.getId(), b.getName()));
+            items.stream().filter(item -> item.getBundleGroupId() != null).forEach(item ->
+                    bundleItemIds.computeIfAbsent(item.getBundleGroupId(), ignored -> new ArrayList<>()).add(item.getId()));
+        }
+
         List<CartItemVO> result = new ArrayList<>(items.size());
         for (CartItem ci : items) {
             CartItemVO vo = new CartItemVO();
@@ -135,6 +146,13 @@ public class CartServiceImpl implements CartService {
             vo.setProductId(ci.getProductId());
             vo.setSkuId(ci.getSkuId());
             vo.setQuantity(ci.getQuantity());
+            vo.setBundleGroupId(ci.getBundleGroupId());
+            vo.setBundleActivityId(ci.getBundleActivityId());
+            vo.setBundleName(bundleNames.get(ci.getBundleActivityId()));
+            vo.setBundleMain(ci.getBundleActivityId() != null
+                    && !bundleItemIds.getOrDefault(ci.getBundleGroupId(), List.of()).isEmpty()
+                    && ci.getId().equals(bundleItemIds.get(ci.getBundleGroupId()).stream().min(Long::compareTo).orElse(null)));
+            vo.setBundleItemIds(bundleItemIds.get(ci.getBundleGroupId()));
 
             ProductSku sku = skuMap.get(ci.getSkuId());
             Product product = productMap.get(ci.getProductId());
@@ -187,6 +205,9 @@ public class CartServiceImpl implements CartService {
             throw new BusinessException(ErrorCode.CART_QUANTITY_EXCEEDED);
         }
         CartItem item = mustOwn(userId, merchantId, cartItemId);
+        if (item.getBundleGroupId() != null) {
+            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "套餐商品不支持单独修改数量");
+        }
         if (req.getQuantity() == 0) {
             cartItemMapper.deleteById(item.getId());
             return;
@@ -212,7 +233,14 @@ public class CartServiceImpl implements CartService {
     @Transactional
     public void delete(Long userId, Long merchantId, Long cartItemId) {
         CartItem item = mustOwn(userId, merchantId, cartItemId);
-        cartItemMapper.deleteById(item.getId());
+        if (item.getBundleGroupId() == null) {
+            cartItemMapper.deleteById(item.getId());
+            return;
+        }
+        cartItemMapper.delete(new LambdaQueryWrapper<CartItem>()
+                .eq(CartItem::getUserId, userId)
+                .eq(CartItem::getMerchantId, item.getMerchantId())
+                .eq(CartItem::getBundleGroupId, item.getBundleGroupId()));
     }
 
     @Override
@@ -240,6 +268,16 @@ public class CartServiceImpl implements CartService {
             throw new BusinessException(ErrorCode.CART_ITEM_NOT_OWNED);
         }
 
+        List<String> bundleGroups = items.stream().map(CartItem::getBundleGroupId)
+                .filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (!bundleGroups.isEmpty()) {
+            List<CartItem> bundleItems = cartItemMapper.selectList(new LambdaQueryWrapper<CartItem>()
+                    .eq(CartItem::getUserId, userId)
+                    .in(CartItem::getBundleGroupId, bundleGroups));
+            distinctIds = new ArrayList<>(distinctIds);
+            distinctIds.addAll(bundleItems.stream().map(CartItem::getId).toList());
+            distinctIds = distinctIds.stream().distinct().collect(Collectors.toList());
+        }
         cartItemMapper.delete(new LambdaQueryWrapper<CartItem>()
                 .eq(CartItem::getUserId, userId)
                 .in(CartItem::getId, distinctIds));

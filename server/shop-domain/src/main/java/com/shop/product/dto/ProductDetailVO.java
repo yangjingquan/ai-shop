@@ -5,6 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import com.shop.bundle.dto.BundleActivityVO;
 
 @Data
 public class ProductDetailVO {
@@ -42,6 +43,8 @@ public class ProductDetailVO {
 
     private List<SpecVO> specs = new ArrayList<>();
     private List<SkuVO> skus = new ArrayList<>();
+
+    private BundleActivityVO bundle;
 
     @Data
     public static class SpecVO {

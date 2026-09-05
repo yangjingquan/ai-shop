@@ -21,7 +21,7 @@ public class Order extends BaseEntity {
 
     private Integer status;
 
-    /** 0 普通订单 / 1 团购订单 / 2 秒杀订单 / 3 积分兑换订单 */
+    /** 0 普通订单 / 1 团购订单 / 2 秒杀订单 / 3 积分兑换订单 / 4 搭配购订单 */
     private Integer orderType;
 
     /** 积分兑换订单关联记录；仅 orderType=3 使用。 */
@@ -34,11 +34,16 @@ public class Order extends BaseEntity {
 
     private Long seckillSkuId;
 
+    /** 4=搭配购订单。 */
+    private Long bundleActivityId;
+
     private BigDecimal totalAmount;
 
     private BigDecimal freightAmount;
 
     private BigDecimal discountAmount;
+
+    private BigDecimal bundleDiscountAmount;
 
     private Long couponId;
 
@@ -53,6 +58,8 @@ public class Order extends BaseEntity {
     private BigDecimal promotionDiscountAmount;
 
     private String promotionSnapshotJson;
+
+    private String bundleSnapshotJson;
 
     private BigDecimal payAmount;
 

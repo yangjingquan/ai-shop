@@ -21,6 +21,7 @@ Page({
     selectedIds: [],
     merchantGroups: [],
     totalAmount: '0.00',
+    itemCount: 0,
     allSelected: false,
     manageMode: false,
     recommendList: [],
@@ -37,6 +38,7 @@ Page({
   },
 
   onShow() {
+    this.promotionActivitiesPromise = null
     this.loadCart()
     if (!this.data.recommendList.length) {
       this.loadRecommend(true)
@@ -98,6 +100,9 @@ Page({
             unitPrice,
             unitPriceText: this.formatPrice(unitPrice),
             stock: Number(item.stock || 0),
+            bundleGroupId: item.bundleGroupId || '',
+            bundleActivityId: Number(item.bundleActivityId || 0),
+            bundleItemIds: (item.bundleItemIds || []).map(Number),
             available: item.available !== false,
             unavailableText: this.getUnavailableText(item.unavailableReason),
             selected: this.data.selectedIds.includes(Number(item.id)),
@@ -111,9 +116,7 @@ Page({
   },
 
   updateCartState(items, selectedIds) {
-    const selectableIds = this.data.manageMode
-      ? items.map(i => i.id)
-      : items.filter(i => i.available !== false).map(i => i.id)
+    const selectableIds = this.getSelectableIds(items)
     const selectableSet = new Set(selectableIds)
     const nextSelectedIds = selectedIds
       .map(Number)
@@ -146,8 +149,20 @@ Page({
       selectedIds: nextSelectedIds,
       allSelected: nextSelectedIds.length === selectableIds.length && selectableIds.length > 0,
       totalAmount: total.toFixed(2),
+      itemCount: items.reduce((count, item) => count + Number(item.quantity || 0), 0),
     })
     this.loadPromotion(nextSelectedIds)
+  },
+
+  getSelectableIds(items) {
+    if (this.data.manageMode) return items.map(item => item.id)
+    const unavailableBundleGroups = new Set(items
+      .filter(item => item.bundleGroupId && item.available === false)
+      .map(item => item.bundleGroupId))
+    return items
+      .filter(item => item.available !== false
+        && (!item.bundleGroupId || !unavailableBundleGroups.has(item.bundleGroupId)))
+      .map(item => item.id)
   },
 
   loadPromotion(selectedIds) {
@@ -162,17 +177,43 @@ Page({
       const promotion = res.data || null
       if (!promotion || !promotion.activityId) return this.setData({ promotion: null, promotionRecommendList: [] })
       const achieved = Number(promotion.discountAmount || 0) > 0
+      const threshold = Number(promotion.thresholdAmount || 0)
       this.setData({ promotion: {
         ...promotion,
         discountText: this.formatPrice(promotion.discountAmount),
         qualifiedText: this.formatPrice(promotion.qualifiedAmount),
         remainingText: this.formatPrice(promotion.remainingAmount),
         thresholdText: promotion.thresholdAmount ? this.formatPrice(promotion.thresholdAmount) : '',
+        progressPercent: threshold > 0 ? Math.min(100, Math.max(0, Number(promotion.qualifiedAmount || 0) / threshold * 100)) : 0,
+        ruleText: '',
         achieved,
       }, promotionRecommendList: [] })
+      this.loadPromotionRule(promotion, requestId)
       if (!achieved) this.loadPromotionRecommendations(promotion.recommendProductIds || [], requestId)
     }).catch(() => {
       if (requestId === this.promotionRequestId) this.setData({ promotion: null, promotionRecommendList: [] })
+    })
+  },
+
+  loadPromotionRule(promotion, requestId) {
+    // 同一次进入购物车共享配置请求；切换选中商品时只更新当前活动的阶梯文案。
+    if (!this.promotionActivitiesPromise) {
+      this.promotionActivitiesPromise = promotionApi.active().then(res => Array.isArray(res.data) ? res.data : []).catch(() => [])
+    }
+    this.promotionActivitiesPromise.then((activities) => {
+      if (requestId !== this.promotionRequestId || !this.data.promotion) return
+      const activity = activities.find(item => Number(item.id) === Number(promotion.activityId))
+      const tier = activity && (activity.thresholds || []).find(item => Number(item.thresholdAmount) === Number(promotion.thresholdAmount))
+      if (!tier) return
+      const threshold = Number(tier.thresholdAmount)
+      let ruleText = ''
+      if (activity.activityType === 'FULL_DISCOUNT' && Number(tier.discountRate) > 0) {
+        ruleText = `满 ${threshold} 元享 ${Number(tier.discountRate)} 折`
+        if (Number(tier.discountCap) > 0) ruleText += `，最高优惠 ${Number(tier.discountCap)} 元`
+      } else if (activity.activityType === 'FULL_REDUCTION' && Number(tier.reductionAmount) > 0) {
+        ruleText = `满 ${threshold} 元减 ${Number(tier.reductionAmount)} 元`
+      }
+      this.setData({ 'promotion.ruleText': ruleText })
     })
   },
 
@@ -208,20 +249,23 @@ Page({
     if (!item || (!this.data.manageMode && item.available === false)) return
 
     const selectedIds = [...this.data.selectedIds]
-    const idx = selectedIds.indexOf(cartItemId)
-    if (idx > -1) {
-      selectedIds.splice(idx, 1)
-    } else {
-      selectedIds.push(cartItemId)
+    const bundleIds = item.bundleGroupId
+      ? this.data.items.filter(i => i.bundleGroupId === item.bundleGroupId).map(i => i.id)
+      : [cartItemId]
+    if (!this.data.manageMode && item.bundleGroupId
+      && bundleIds.some(id => this.data.items.find(i => i.id === id)?.available === false)) {
+      wx.showToast({ title: '套餐内有商品暂不可购买', icon: 'none' })
+      return
     }
+    const isSelected = bundleIds.every(id => selectedIds.includes(id))
+    const next = new Set(selectedIds)
+    bundleIds.forEach(id => isSelected ? next.delete(id) : next.add(id))
     this.closeSwipeItems()
-    this.updateCartState(this.data.items, selectedIds)
+    this.updateCartState(this.data.items, [...next])
   },
 
   selectAll() {
-    const selectableIds = this.data.manageMode
-      ? this.data.items.map(i => i.id)
-      : this.data.items.filter(i => i.available !== false).map(i => i.id)
+    const selectableIds = this.getSelectableIds(this.data.items)
     const checked = this.data.allSelected
     const selectedIds = checked ? [] : selectableIds
     this.closeSwipeItems()
@@ -231,14 +275,14 @@ Page({
   onQtyMinus(e) {
     const id = Number(e.currentTarget.dataset.id)
     const item = this.data.items.find(i => i.id === id)
-    if (!item || item.quantity <= 1) return
+    if (!item || item.bundleGroupId || item.quantity <= 1) return
     this.updateQuantity(id, item.quantity - 1)
   },
 
   onQtyPlus(e) {
     const id = Number(e.currentTarget.dataset.id)
     const item = this.data.items.find(i => i.id === id)
-    if (!item) return
+    if (!item || item.bundleGroupId) return
     if (item.stock && item.quantity >= item.stock) {
       wx.showToast({ title: '库存不足', icon: 'none' })
       return
@@ -320,6 +364,10 @@ Page({
 
   deleteItem(e) {
     const id = Number(e.currentTarget.dataset.id)
+    const current = this.data.items.find(item => item.id === id)
+    const ids = current && current.bundleGroupId
+      ? this.data.items.filter(item => item.bundleGroupId === current.bundleGroupId).map(item => item.id)
+      : [id]
     wx.showModal({
       title: '确认删除商品？',
       content: '删除后可在商品详情页重新加入购物车。',
@@ -328,10 +376,12 @@ Page({
       confirmColor: '#ff4b43',
       success: (modalRes) => {
         if (modalRes.confirm) {
-          cartApi.remove(id).then(res => {
+          const request = ids.length > 1 ? cartApi.batchRemove(ids) : cartApi.remove(id)
+          request.then(res => {
             if (res.code === 0) {
-              const items = this.data.items.filter(item => item.id !== id)
-              const selectedIds = this.data.selectedIds.filter(sid => sid !== id)
+              const idSet = new Set(ids)
+              const items = this.data.items.filter(item => !idSet.has(item.id))
+              const selectedIds = this.data.selectedIds.filter(sid => !idSet.has(sid))
               this.updateCartState(items, selectedIds)
               this.resetTouchState()
               wx.showToast({ title: '已删除', icon: 'success' })
@@ -428,6 +478,16 @@ Page({
     const merchantIds = new Set(selectedItems.map(i => i.merchantId))
     if (merchantIds.size > 1) {
       wx.showToast({ title: '不支持跨商家下单', icon: 'none' })
+      return
+    }
+    const bundleGroups = [...new Set(selectedItems.map(item => item.bundleGroupId).filter(Boolean))]
+    if (bundleGroups.length > 0) {
+      if (bundleGroups.length !== 1 || selectedItems.some(item => !item.bundleGroupId)) {
+        wx.showToast({ title: '套餐需单独结算', icon: 'none' })
+        return
+      }
+      const group = selectedItems.find(item => item.bundleGroupId === bundleGroups[0])
+      wx.navigateTo({ url: `/pages/order/confirm?mode=bundle&bundleGroupId=${bundleGroups[0]}&cartItemIds=${(group.bundleItemIds || this.data.selectedIds).join(',')}` })
       return
     }
     const idsParam = this.data.selectedIds.join(',')
