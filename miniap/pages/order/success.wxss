@@ -1,2 +1,28 @@
-.success-page { min-height: 100vh; padding: 52rpx 24rpx 60rpx; background: #f7f4ed; color: #17191f; box-sizing: border-box; }.success-head { text-align: center; }.success-icon { width: 112rpx; height: 112rpx; margin: 0 auto; border-radius: 50%; color: #fff; background: #2fb26b; font-size: 76rpx; line-height: 112rpx; font-weight: 900; }.success-title { margin-top: 22rpx; font-size: 40rpx; font-weight: 950; }.success-subtitle { margin-top: 10rpx; color: #8b8e97; font-size: 24rpx; }.card { margin-top: 48rpx; padding: 28rpx; border-radius: 22rpx; background: #fff; box-shadow: 0 12rpx 28rpx rgba(50,44,36,.06); }.invite-card { background: linear-gradient(145deg, #fff8ef, #fff); }.invite-kicker { color: #e45d1b; font-size: 21rpx; letter-spacing: .14em; font-weight: 800; }.invite-title { margin-top: 10rpx; color: #c94712; font-size: 38rpx; font-weight: 950; }.invite-desc { margin-top: 8rpx; color: #866c57; font-size: 24rpx; }.tier-preview { display: flex; gap: 12rpx; margin-top: 26rpx; }.tier { flex: 1; padding: 18rpx 8rpx; border-radius: 14rpx; color: #a65325; background: #fff4e6; text-align: center; font-size: 22rpx; }.tier text { display: block; }.tier text:first-child { color: #f4511e; font-size: 30rpx; font-weight: 900; }.primary-btn, .outline-btn { width: 100%; height: 84rpx; display: flex; align-items: center; justify-content: center; margin: 22rpx 0 0; padding: 0; border-radius: 18rpx; line-height: normal; font-size: 29rpx; font-weight: 800; }.primary-btn { color: #fff; background: #ff6600; }.outline-btn { color: #ff6600; background: #fff7f0; border: 1rpx solid #ffd0ae; }.actions { margin-top: 18rpx; }.actions .outline-btn { display: inline-flex; width: calc(50% - 8rpx); margin-right: 12rpx; }.actions .outline-btn:last-of-type { margin-right: 0; }.text-btn { display: block; margin: 24rpx auto 0; padding: 0; color: #8b8e97; background: transparent; font-size: 24rpx; line-height: 1.4; }
-.points-reward-card { display:flex; align-items:center; justify-content:space-between; margin-top:36rpx; padding:28rpx; border:1rpx solid #ffd8b6; background:linear-gradient(135deg,#fff8ef,#fff); }.points-reward-kicker { color:#e45d1b; font-size:19rpx; letter-spacing:.12em; font-weight:800; }.points-reward-title { margin-top:8rpx; color:#2d241f; font-size:31rpx; font-weight:900; }.points-reward-desc { margin-top:8rpx; color:#a36c49; font-size:23rpx; }.points-mall-btn { flex:0 0 auto; height:64rpx; margin:0 0 0 20rpx; padding:0 22rpx; border-radius:16rpx; color:#fff; background:#ff6600; font-size:24rpx; font-weight:800; }
+.success-page { min-height: 100vh; padding: 42rpx 24rpx 60rpx; background: #f7f4ed; color: #1f2329; box-sizing: border-box; }
+.success-head { text-align: center; }
+.success-icon { width: 96rpx; height: 96rpx; margin: 0 auto; border-radius: 50%; color: #fff; background: #2fb26b; font-size: 64rpx; line-height: 96rpx; font-weight: 900; }
+.success-title { margin-top: 18rpx; font-size: 40rpx; font-weight: 800; letter-spacing: 1rpx; }
+.success-subtitle { margin-top: 10rpx; color: #8b8e97; font-size: 24rpx; }
+.order-action { margin-top: 34rpx; }
+.order-btn { width: 100%; height: 84rpx; margin: 0; padding: 0; border-radius: 18rpx; color: #fff; background: #ff6600; font-size: 29rpx; font-weight: 700; box-shadow: 0 10rpx 20rpx rgba(255, 102, 0, .16); }
+.card { margin-top: 20rpx; padding: 26rpx; border: 1rpx solid #eef0f3; border-radius: 16rpx; background: #fff; box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, .04); }
+.points-reward-card { display: flex; align-items: center; min-height: 100rpx; box-sizing: border-box; border-color: #ffe0c5; background: #fffaf5; }
+.reward-icon, .invite-icon { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: 60rpx; height: 60rpx; border-radius: 50%; color: #ff6600; background: #fff0e3; font-size: 27rpx; font-weight: 700; }
+.points-reward-copy { flex: 1; min-width: 0; margin-left: 18rpx; }
+.points-reward-title { color: #2d241f; font-size: 29rpx; font-weight: 700; }
+.points-reward-desc { margin-top: 8rpx; color: #a36c49; font-size: 22rpx; }
+.points-action { display: flex; align-items: center; gap: 6rpx; margin-left: 18rpx; color: #ff6600; font-size: 24rpx; font-weight: 600; white-space: nowrap; }
+.action-arrow { font-size: 32rpx; font-weight: 400; line-height: 1; }
+.invite-card { background: #fff; }
+.invite-heading { display: flex; align-items: center; }
+.invite-copy { min-width: 0; margin-left: 18rpx; }
+.invite-title { color: #2d241f; font-size: 29rpx; font-weight: 700; }
+.invite-desc { margin-top: 8rpx; color: #8b8e97; font-size: 22rpx; line-height: 1.45; }
+.tier-preview { display: flex; gap: 12rpx; margin-top: 22rpx; }
+.tier { flex: 1; padding: 12rpx 6rpx; border-radius: 12rpx; color: #8b6a53; background: #fff7ef; text-align: center; font-size: 20rpx; }
+.tier text { display: block; }
+.tier text:first-child { color: #e45d1b; font-size: 26rpx; font-weight: 700; }
+.invite-btn { width: 100%; height: 68rpx; margin: 20rpx 0 0; padding: 0; border: 1rpx solid #ffd1b0; border-radius: 16rpx; color: #e45d1b; background: #fffaf5; font-size: 25rpx; font-weight: 600; }
+.footer-actions { margin-top: 22rpx; text-align: center; }
+.order-detail-link, .text-btn { display: block; margin: 0 auto; padding: 0; color: #7d838d; background: transparent; font-size: 24rpx; line-height: 1.5; }
+.order-detail-link { margin-bottom: 16rpx; color: #ff6600; }
