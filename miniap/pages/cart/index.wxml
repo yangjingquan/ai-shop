@@ -64,9 +64,30 @@
     </view>
   </block>
 
+  <view wx:if="{{promotion && !promotion.achieved && !manageMode && promotionRecommendList.length}}" class="guess-section promotion-recommend-section">
+    <view class="guess-head">
+      <view class="guess-title">凑单推荐</view>
+    </view>
+    <view class="guess-grid">
+      <view
+        class="guess-card"
+        wx:for="{{promotionRecommendList}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="goProductDetail"
+      >
+        <image class="guess-img" src="{{item.mainImage}}" mode="aspectFill" />
+        <view class="guess-info">
+          <view class="guess-name">{{item.name}}</view>
+          <view class="guess-price">¥{{item.priceText}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <view class="guess-section">
     <view class="guess-head">
-      <view class="guess-title">{{promotion && promotion.recommendProductIds && promotion.recommendProductIds.length ? '凑单推荐' : '猜你喜欢'}}</view>
+      <view class="guess-title">猜你喜欢</view>
       <view class="change-btn {{recommendLoading ? 'loading' : ''}}" bindtap="changeRecommend">{{recommendLoading ? '加载中' : '换一批'}}</view>
     </view>
     <view class="guess-grid">

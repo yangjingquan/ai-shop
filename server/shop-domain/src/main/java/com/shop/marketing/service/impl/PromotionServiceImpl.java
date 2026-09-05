@@ -52,7 +52,11 @@ public class PromotionServiceImpl implements PromotionService {
     }
     @Override @Transactional public void updateStatus(Long merchantId, Long id, Integer status) {
         if (status == null || status < 0 || status > 2) throw new BusinessException(ErrorCode.PARAM_ERROR);
-        PromotionActivity entity = requireOwned(merchantId, id); entity.setStatus(status); activityMapper.updateById(entity);
+        PromotionActivity entity = requireOwned(merchantId, id);
+        if (status == 1 && thresholdMapper.selectCount(new LambdaQueryWrapper<PromotionThreshold>().eq(PromotionThreshold::getActivityId, id)) == 0) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "请先配置至少一个优惠阶梯再启用活动");
+        }
+        entity.setStatus(status); activityMapper.updateById(entity);
     }
 
     @Override public PromotionCheckoutResult calculate(Long merchantId, List<PromotionPricingItem> items) {
@@ -67,12 +71,14 @@ public class PromotionServiceImpl implements PromotionService {
         List<Candidate> candidates = new ArrayList<>();
         Candidate presentation = null;
         for (PromotionActivity activity : activities) {
-            Candidate candidate = candidate(activity, items); if (presentation == null) presentation = candidate;
+            Candidate candidate = candidate(activity, items);
+            if (candidate.threshold == null) continue;
+            if (presentation == null) presentation = candidate;
             progresses.add(candidate.progress); if (candidate.discount.compareTo(BigDecimal.ZERO) > 0) candidates.add(candidate);
         }
         result.setProgresses(progresses);
         Candidate selected = candidates.isEmpty() ? presentation : candidates.get(0); // query order enforces merchant configured priority.
-        if (selected == null) return result;
+        if (selected == null || selected.threshold == null) return result;
         result.setActivityId(selected.activity.getId()); result.setActivityName(selected.activity.getName()); result.setActivityType(selected.activity.getActivityType());
         result.setQualifiedAmount(selected.qualified); result.setThresholdAmount(selected.threshold.getThresholdAmount()); result.setDiscountAmount(selected.discount);
         result.setNextThresholdAmount(selected.progress.getNextThresholdAmount()); result.setRemainingAmount(selected.progress.getRemainingAmount());

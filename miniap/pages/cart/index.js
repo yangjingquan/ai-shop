@@ -26,6 +26,7 @@ Page({
     recommendList: [],
     recommendPage: 1,
     recommendLoading: false,
+    promotionRecommendList: [],
     promotion: null,
     touchStartX: 0,
     touchStartY: 0,
@@ -150,32 +151,37 @@ Page({
   },
 
   loadPromotion(selectedIds) {
+    const requestId = (this.promotionRequestId || 0) + 1
+    this.promotionRequestId = requestId
     if (this.data.manageMode || !selectedIds.length) {
-      this.setData({ promotion: null })
+      this.setData({ promotion: null, promotionRecommendList: [] })
       return
     }
     promotionApi.cartProgress(selectedIds).then((res) => {
-      if (res.code !== 0) return
+      if (requestId !== this.promotionRequestId || res.code !== 0) return
       const promotion = res.data || null
-      if (!promotion || !promotion.activityId) return this.setData({ promotion: null })
+      if (!promotion || !promotion.activityId) return this.setData({ promotion: null, promotionRecommendList: [] })
+      const achieved = Number(promotion.discountAmount || 0) > 0
       this.setData({ promotion: {
         ...promotion,
         discountText: this.formatPrice(promotion.discountAmount),
         qualifiedText: this.formatPrice(promotion.qualifiedAmount),
         remainingText: this.formatPrice(promotion.remainingAmount),
         thresholdText: promotion.thresholdAmount ? this.formatPrice(promotion.thresholdAmount) : '',
-        achieved: Number(promotion.discountAmount || 0) > 0,
-      } })
-      if (Number(promotion.discountAmount || 0) <= 0) this.loadPromotionRecommendations(promotion.recommendProductIds || [])
-    }).catch(() => this.setData({ promotion: null }))
+        achieved,
+      }, promotionRecommendList: [] })
+      if (!achieved) this.loadPromotionRecommendations(promotion.recommendProductIds || [], requestId)
+    }).catch(() => {
+      if (requestId === this.promotionRequestId) this.setData({ promotion: null, promotionRecommendList: [] })
+    })
   },
 
-  loadPromotionRecommendations(productIds) {
-    if (!productIds.length) return
+  loadPromotionRecommendations(productIds, requestId) {
+    if (!productIds.length) return this.setData({ promotionRecommendList: [] })
     Promise.all(productIds.slice(0, 4).map(id => productApi.get(id).catch(() => null))).then((responses) => {
+      if (requestId !== this.promotionRequestId) return
       const products = responses.map(res => res && res.data).filter(Boolean)
-      if (!products.length) return
-      this.setData({ recommendList: this.normalizeRecommendData(products) })
+      this.setData({ promotionRecommendList: this.normalizeRecommendData(products) })
     })
   },
 
