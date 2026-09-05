@@ -75,6 +75,9 @@ public class CartServiceImpl implements CartService {
                 .eq(CartItem::getSkuId, req.getSkuId())
                 .last("FOR UPDATE"));
         if (exist != null) {
+            if (exist.getBundleGroupId() != null) {
+                throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "套餐商品需整组操作");
+            }
             int newQty = exist.getQuantity() + req.getQuantity();
             if (newQty > MAX_CART_ITEM_QUANTITY || newQty > sku.getStock()) {
                 throw new BusinessException(newQty > sku.getStock()

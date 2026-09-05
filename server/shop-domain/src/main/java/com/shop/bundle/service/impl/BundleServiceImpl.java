@@ -186,6 +186,14 @@ public class BundleServiceImpl implements BundleService {
     @Transactional
     public BundleCartResult addToCart(Long userId, Long merchantId, BundleCartRequest request) {
         BundleActivity activity = activeActivity(merchantId, request.getBundleId());
+        Long existingBundle = cartItemMapper.selectCount(new LambdaQueryWrapper<CartItem>()
+                .eq(CartItem::getUserId, userId)
+                .eq(CartItem::getMerchantId, merchantId)
+                .eq(CartItem::getBundleActivityId, activity.getId())
+                .isNotNull(CartItem::getBundleGroupId));
+        if (existingBundle != null && existingBundle > 0) {
+            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "该套餐已在购物车中，请勿重复添加");
+        }
         Selection selection = selectSkus(activity, request.getMainSkuId(), request.getItemSkuIds());
         String groupId = UUID.randomUUID().toString().replace("-", "");
         List<Long> ids = new ArrayList<>();
