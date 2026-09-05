@@ -16,6 +16,7 @@ import com.shop.user.mapper.UserMapper;
 import com.shop.user.service.UserService;
 import com.shop.user.service.WxApiClient;
 import com.shop.user.service.WxPhoneApiClient;
+import com.shop.points.service.PointsMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +36,7 @@ public class UserServiceImpl implements UserService {
     private final MerchantMapper merchantMapper;
     private final MerchantWechatConfigService merchantWechatConfigService;
     private final JwtUtil jwtUtil;
+    private final PointsMemberService pointsMemberService;
 
     @Override
     public WxLoginResponse wxLogin(String code, String merchantCode) {
@@ -84,6 +86,8 @@ public class UserServiceImpl implements UserService {
             user.setOpenid(openid);
             user.setLastLoginAt(LocalDateTime.now());
             userMapper.insert(user);
+            // 积分功能按商家总开关启用；关闭时不创建账户或赠分流水。
+            pointsMemberService.registerMember(user.getId(), merchant.getId());
         } else {
             user.setLastLoginAt(LocalDateTime.now());
             userMapper.updateById(user);

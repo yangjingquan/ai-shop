@@ -70,6 +70,7 @@ const merchantMenus: MenuItem[] = [
       { index: 'merchant-coupon-templates', label: '新人券配置', path: '/merchant/coupon-templates', desc: '券模板与库存', icon: '券', permission: 'merchant:coupon:view' },
       { index: 'merchant-seckill', label: '秒杀活动', path: '/merchant/seckill', desc: '场次与库存', icon: '秒', permission: 'merchant:seckill:view' },
       { index: 'merchant-referral', label: '邀请有礼', path: '/merchant/referral', desc: '老带新返券', icon: '礼', permission: 'merchant:referral:view' },
+      { index: 'merchant-points', label: '积分会员日', path: '/merchant/points', desc: '积分、兑换与会员日', icon: '积', permission: 'merchant:points:view' },
     ],
   },
   { index: 'merchant-order-ship', label: '订单发货', path: '/merchant/order-ship', desc: '履约处理', icon: '单', permission: 'merchant:order:view' },

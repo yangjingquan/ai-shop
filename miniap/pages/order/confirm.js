@@ -2,6 +2,8 @@ const app = getApp();
 const { resolveImageUrl } = require('../../utils/url')
 const groupBuyApi = require('../../api/group-buy')
 const seckillApi = require('../../api/seckill')
+const pointsApi = require('../../api/points')
+const marketingCapabilities = require('../../utils/marketing-capabilities')
 
 Page({
   data: {
@@ -20,6 +22,7 @@ Page({
     sessionId: 0,
     seckillSkuId: 0,
     selectedCouponId: null,
+    memberDayActive: false,
   },
 
   onLoad(options) {
@@ -36,6 +39,12 @@ Page({
       seckillSkuId: Number(options.seckillSkuId || 0),
     });
     this.loadDefaultAddress();
+    marketingCapabilities.load(false).then((map) => {
+      const feature = map.POINTS_MEMBER_DAY
+      if (feature && (feature.enabled === true || Number(feature.enabled) === 1)) {
+        pointsApi.memberDay().then((res) => this.setData({ memberDayActive: !!(res.data && res.data.active) })).catch(() => {})
+      }
+    }).catch(() => {})
   },
 
   onShow() {

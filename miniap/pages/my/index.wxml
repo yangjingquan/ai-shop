@@ -30,6 +30,11 @@
     </view>
   </view>
 
+  <view wx:if="{{pointsEnabled}}" class="points-card" bindtap="goPoints">
+    <view><view class="points-card-label">我的积分</view><view class="points-card-value">{{pointsProfile.balance || 0}}</view><view class="points-card-desc">积分可兑换好礼 ›</view></view>
+    <view class="points-day"><text>积分会员日</text><text wx:if="{{pointsProfile.memberDay}}">每月{{pointsProfile.memberDay}}日</text></view>
+  </view>
+
   <view class="menu card">
     <view class="menu-item" hover-class="menu-item-hover" bindtap="goNotifications">
       <view class="menu-left">

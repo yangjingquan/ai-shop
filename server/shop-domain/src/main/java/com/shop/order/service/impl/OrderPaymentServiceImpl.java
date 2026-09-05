@@ -18,6 +18,7 @@ import com.shop.order.service.OrderPaymentService;
 import com.shop.product.service.ProductService;
 import com.shop.seckill.service.SeckillService;
 import com.shop.referral.service.ReferralService;
+import com.shop.points.service.PointsMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +49,8 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     private SeckillService seckillService;
     @Autowired(required = false)
     private ReferralService referralService;
+    @Autowired(required = false)
+    private PointsMemberService pointsMemberService;
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaidCallback(String orderNo, String transactionId, String rawPayload) {
@@ -92,6 +95,7 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
             }
         }
         if (referralService != null) referralService.handleOrderPaid(order);
+        if (pointsMemberService != null) pointsMemberService.rewardPaidOrder(order);
 
         List<OrderItem> items = orderItemMapper.selectList(
                 new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, order.getId()));

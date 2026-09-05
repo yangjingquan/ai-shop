@@ -119,3 +119,12 @@ export const couponTemplateApi = {
   status: (id: number, status: number) =>
     request.put<unknown, void>(`/api/merchant/marketing/coupons/templates/${id}/status`, null, { params: { status } }),
 }
+
+export interface PointsRule { registerPoints: number; payAmountYuan: number; pointsPerYuan: number; signInPoints: number; validDays: number; deductionPerYuan: number; deductionMaxPoints: number; status: number }
+export interface PointsProduct { id?: number; productId?: number | null; skuId?: number | null; couponTemplateId?: number | null; title: string; image?: string; pointsPrice: number; stock: number; perUserLimit: number; validFrom?: string | null; validTo?: string | null; status: number; physical?: boolean; redeemedCount?: number }
+export interface MemberDayActivity { id?: number; name: string; dayOfMonth: number; startTime: string; endTime: string; doublePoints: number; couponTemplateId?: number | null; productScopeType: number; productScopeIdsJson?: string; stackable: number; status: number; active?: boolean; statusText?: string }
+export const pointsApi = {
+  rule: () => request.get<unknown, PointsRule>('/api/merchant/points/rule'), saveRule: (data: PointsRule) => request.put<unknown, void>('/api/merchant/points/rule', data),
+  products: () => request.get<unknown, PointsProduct[]>('/api/merchant/points/products'), createProduct: (data: PointsProduct) => request.post<unknown, number>('/api/merchant/points/products', data), updateProduct: (id: number, data: PointsProduct) => request.put<unknown, number>(`/api/merchant/points/products/${id}`, data),
+  memberDay: () => request.get<unknown, MemberDayActivity | null>('/api/merchant/points/member-day'), saveMemberDay: (data: MemberDayActivity) => request.put<unknown, void>('/api/merchant/points/member-day', data),
+}

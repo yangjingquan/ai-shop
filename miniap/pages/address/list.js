@@ -7,7 +7,7 @@ Page({
   },
 
   onLoad(opts) {
-    this.setData({ selectMode: opts && opts.select === '1' })
+    this.setData({ selectMode: opts && opts.select ? opts.select : false })
   },
 
   onShow() {
@@ -25,7 +25,7 @@ Page({
   onSelect(e) {
     if (!this.data.selectMode) return
     const id = e.currentTarget.dataset.id
-    wx.setStorageSync('order_selected_address_id', id)
+    wx.setStorageSync(this.data.selectMode === 'points' ? 'points_selected_address_id' : 'order_selected_address_id', id)
     wx.navigateBack()
   },
 

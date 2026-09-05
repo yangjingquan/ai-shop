@@ -14,6 +14,8 @@ Page({
     couponEnabled: false,
     couponCount: 0,
     referralEnabled: false,
+    pointsEnabled: false,
+    pointsProfile: null,
   },
 
   onShow() {
@@ -24,7 +26,18 @@ Page({
     this.loadProfile()
     this.loadUnreadCount()
     this.loadCouponEntry()
+    this.loadPointsEntry()
   },
+
+  async loadPointsEntry() {
+    const featureMap = await marketingCapabilities.load(false).catch(() => ({}))
+    const enabled = !!(featureMap.POINTS_MEMBER_DAY && (featureMap.POINTS_MEMBER_DAY.enabled === true || Number(featureMap.POINTS_MEMBER_DAY.enabled) === 1))
+    if (!enabled) { this.setData({ pointsEnabled: false, pointsProfile: null }); return }
+    this.setData({ pointsEnabled: true })
+    require('../../api/points').profile().then(res => this.setData({ pointsProfile: res.data || {} })).catch(() => {})
+  },
+
+  goPoints() { wx.navigateTo({ url: '/pages/points/index' }) },
 
   async loadCouponEntry() {
     const featureMap = await marketingCapabilities.load(false).catch(() => ({}))

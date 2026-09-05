@@ -21,8 +21,11 @@ public class Order extends BaseEntity {
 
     private Integer status;
 
-    /** 0 普通订单 / 1 团购订单 / 2 秒杀订单 */
+    /** 0 普通订单 / 1 团购订单 / 2 秒杀订单 / 3 积分兑换订单 */
     private Integer orderType;
+
+    /** 积分兑换订单关联记录；仅 orderType=3 使用。 */
+    private Long pointsRedeemId;
 
     private Long groupBuyGroupId;
 

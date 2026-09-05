@@ -4,6 +4,7 @@ const groupBuyApi = require('../../api/group-buy')
 const seckillApi = require('../../api/seckill')
 const { resolveImageUrl } = require('../../utils/url')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
+const pointsApi = require('../../api/points')
 
 Page({
   data: {
@@ -30,6 +31,7 @@ Page({
     seckillLimitText: '',
     groupBuyGroups: [],
     selectedGroupId: 0,
+    memberDayActive: false,
   },
 
   onLoad(opts) {
@@ -172,6 +174,12 @@ Page({
         seckillLimitText: `每人限购${product.userLimit || 1}件`,
       })
       this.applyInitialSku()
+      marketingCapabilities.load(false).then((map) => {
+        const feature = map.POINTS_MEMBER_DAY
+        if (feature && (feature.enabled === true || Number(feature.enabled) === 1)) {
+          pointsApi.memberDay().then((day) => this.setData({ memberDayActive: !!(day.data && day.data.active) })).catch(() => {})
+        }
+      }).catch(() => {})
     } finally {
       this.setData({ loading: false })
     }

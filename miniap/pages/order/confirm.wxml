@@ -61,6 +61,11 @@
     <view class="seckill-rule-text">当前活动库存仅剩 {{preview.remainingStock}} 件</view>
   </view>
 
+  <view wx:if="{{preview && memberDayActive && mode !== 'seckill'}}" class="section card member-day-order-tip">
+    <view class="section-title">会员日权益</view>
+    <view>积分会员日进行中，本单支付成功后可获双倍积分。</view>
+  </view>
+
   <view class="bottom-bar" wx:if="{{!noAddress}}">
     <text>合计：<text class="amount">¥{{preview.payAmount || preview.totalAmount || '0.00'}}</text></text>
     <button class="submit-btn" bindtap="submitOrder" disabled="{{submitting}}">

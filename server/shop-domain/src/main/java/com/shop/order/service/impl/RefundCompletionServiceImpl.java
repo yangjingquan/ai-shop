@@ -15,6 +15,7 @@ import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.service.RefundCompletionService;
 import com.shop.referral.service.ReferralService;
 import com.shop.product.service.ProductService;
+import com.shop.points.service.PointsMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,10 +36,17 @@ public class RefundCompletionServiceImpl implements RefundCompletionService {
     private final GroupBuyGroupMapper groupMapper;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private ReferralService referralService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private PointsMemberService pointsMemberService;
 
     @Override
     @Transactional
     public void completeIfFullRefund(RefundApplication refund, Order order, LocalDateTime completedAt) {
+        // 积分按每张成功退款单冲正；账本业务键保证微信重复通知不会重复扣减。
+        if (pointsMemberService != null) {
+            pointsMemberService.reverseRefund(order.getMerchantId(), order.getUserId(),
+                    "REFUND:" + refund.getId(), refund.getRefundAmount(), order.getOrderNo());
+        }
         if (refund.getRefundAmount() == null || order.getPayAmount() == null
                 || refund.getRefundAmount().compareTo(order.getPayAmount()) < 0) {
             return;

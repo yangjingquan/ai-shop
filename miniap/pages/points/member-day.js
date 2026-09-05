@@ -1,0 +1,2 @@
+const pointsApi=require('../../api/points');const marketingCapabilities=require('../../utils/marketing-capabilities');
+Page({data:{activity:null,items:[]},onShow(){marketingCapabilities.ensure('POINTS_MEMBER_DAY').then(ok=>ok&&Promise.all([pointsApi.memberDay(),pointsApi.mall()]).then(([a,m])=>this.setData({activity:a.data,items:(m.data||[]).slice(0,4)})))},goMall(){wx.navigateTo({url:'/pages/points/mall'})},receiveCoupon(){pointsApi.receiveMemberDayCoupon().then(()=>wx.showToast({title:'会员券已到账'}))}})

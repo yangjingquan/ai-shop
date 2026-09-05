@@ -1,6 +1,7 @@
 .confirm-page { padding: 20rpx 20rpx 156rpx; }
 .seckill-rule-card { border-left: 8rpx solid #ff551b; }
 .seckill-rule-text { margin-top: 10rpx; color: #8a9098; font-size: 24rpx; line-height: 1.6; }
+.member-day-order-tip { border-left: 8rpx solid #ff8a28; color: #ff6600; font-size: 25rpx; line-height: 1.6; }
 .section { margin-bottom: 20rpx; padding: 24rpx; }
 .section-title { margin-bottom: 18rpx; }
 .address-card { display: flex; align-items: center; font-size: 28rpx; line-height: 1.55; }
