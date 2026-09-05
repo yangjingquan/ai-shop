@@ -1,4 +1,4 @@
-const request = require('../utils/request')
+const { request } = require('../utils/request')
 
 module.exports = {
   product: (productId) => request({ url: `/api/wx/bundles/product/${productId}` }),

@@ -1,6 +1,6 @@
-const bundleApi = require('../../../api/bundle')
-const marketingCapabilities = require('../../../utils/marketing-capabilities')
-const { resolveImageUrl } = require('../../../utils/url')
+const bundleApi = require('../../api/bundle')
+const marketingCapabilities = require('../../utils/marketing-capabilities')
+const { resolveImageUrl } = require('../../utils/url')
 
 Page({
   data: { bundle: null, productId: 0, mainSkuId: 0, selectedItemSkuIds: [], preview: null, loading: true, submitting: false },
