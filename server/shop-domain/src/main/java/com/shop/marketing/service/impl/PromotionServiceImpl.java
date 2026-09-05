@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PromotionServiceImpl implements PromotionService {
     private static final int SCOPE_CATEGORY = 1, SCOPE_PRODUCT = 2, SCOPE_EXCLUDED_PRODUCT = 3, SCOPE_RECOMMEND_PRODUCT = 4;
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Shanghai");
     private final PromotionActivityMapper activityMapper;
     private final PromotionThresholdMapper thresholdMapper;
     private final PromotionScopeMapper scopeMapper;
@@ -34,7 +36,7 @@ public class PromotionServiceImpl implements PromotionService {
                 .orderByDesc(PromotionActivity::getPriority).orderByDesc(PromotionActivity::getId)).stream().map(this::toVO).toList();
     }
     @Override public List<PromotionActivityVO> listActive(Long merchantId) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         return activityMapper.selectList(new LambdaQueryWrapper<PromotionActivity>().eq(PromotionActivity::getMerchantId, merchantId)
                 .eq(PromotionActivity::getStatus, 1).le(PromotionActivity::getStartAt, now).gt(PromotionActivity::getEndAt, now)
                 .orderByDesc(PromotionActivity::getPriority).orderByDesc(PromotionActivity::getId)).stream().map(this::toVO).toList();
@@ -62,7 +64,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Override public PromotionCheckoutResult calculate(Long merchantId, List<PromotionPricingItem> items) {
         PromotionCheckoutResult result = new PromotionCheckoutResult();
         if (!marketingFeatureService.isEnabled(merchantId, MarketingActivityCode.FULL_REDUCTION) || items == null || items.isEmpty()) return result;
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         List<PromotionActivity> activities = activityMapper.selectList(new LambdaQueryWrapper<PromotionActivity>()
                 .eq(PromotionActivity::getMerchantId, merchantId).eq(PromotionActivity::getStatus, 1)
                 .le(PromotionActivity::getStartAt, now).gt(PromotionActivity::getEndAt, now)
