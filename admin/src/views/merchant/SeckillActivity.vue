@@ -59,6 +59,7 @@ async function openEdit(row: SeckillActivity) {
     description: detail.description || '',
     preheatAt: detail.preheatAt || '',
     sessions: (detail.sessions || []).map((session) => ({
+      id: session.id,
       name: session.name,
       startAt: session.startAt || '',
       endAt: session.endAt || '',

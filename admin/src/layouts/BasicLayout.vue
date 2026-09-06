@@ -60,8 +60,7 @@ const merchantMenus: MenuItem[] = [
     ],
   },
   { index: 'merchant-banners', label: 'Banner 配置', path: '/merchant/banners', desc: '首页轮播', icon: '图', permission: 'merchant:banner:view' },
-      { index: 'merchant-marketing', label: '营销活动', path: '/merchant/marketing', desc: '活动开关', icon: '营', permission: 'merchant:marketing:view' },
-      { index: 'merchant-lottery', label: '互动抽奖盲盒', path: '/merchant/lottery', desc: '活动与奖品', icon: '抽', permission: 'merchant:lottery:view' },
+  { index: 'merchant-marketing', label: '营销活动', path: '/merchant/marketing', desc: '活动开关', icon: '营', permission: 'merchant:marketing:view' },
   {
     index: 'merchant-activity-configuration',
     label: '活动配置',
@@ -76,6 +75,7 @@ const merchantMenus: MenuItem[] = [
       { index: 'merchant-referral', label: '邀请有礼', path: '/merchant/referral', desc: '老带新返券', icon: '礼', permission: 'merchant:referral:view' },
       { index: 'merchant-points', label: '积分会员日', path: '/merchant/points', desc: '积分、兑换与会员日', icon: '积', permission: 'merchant:points:view' },
       { index: 'merchant-bundles', label: '搭配购套餐', path: '/merchant/bundles', desc: '主商品与配件组合', icon: '搭', permission: 'merchant:marketing:view' },
+      { index: 'merchant-lottery', label: '互动抽奖盲盒', path: '/merchant/lottery', desc: '活动与奖品', icon: '抽', permission: 'merchant:lottery:view' },
     ],
   },
   { index: 'merchant-order-ship', label: '订单发货', path: '/merchant/order-ship', desc: '履约处理', icon: '单', permission: 'merchant:order:view' },
@@ -188,10 +188,6 @@ onMounted(loadMerchantName)
         </template>
       </el-menu>
 
-      <div class="aside-card">
-        <span>今日经营提醒</span>
-        <strong>关注库存、发货与售后处理效率</strong>
-      </div>
     </el-aside>
 
     <el-container class="layout-main">
@@ -370,34 +366,6 @@ onMounted(loadMerchantName)
 .menu-desc {
   font-size: 12px;
   opacity: 0.62;
-}
-
-.aside-card {
-  position: absolute;
-  right: 14px;
-  bottom: 18px;
-  left: 14px;
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 18px;
-  color: #fff7ea;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.aside-card span,
-.aside-card strong {
-  display: block;
-}
-
-.aside-card span {
-  color: rgba(255, 247, 234, 0.58);
-  font-size: 12px;
-}
-
-.aside-card strong {
-  margin-top: 8px;
-  font-size: 13px;
-  line-height: 1.45;
 }
 
 .layout-main {

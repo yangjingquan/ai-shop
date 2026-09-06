@@ -124,6 +124,26 @@ class CouponServiceImplTest {
     }
 
     @Test
+    void issuesAnotherPointsCouponWhenConfiguredLimitAllowsIt() {
+        CouponServiceImpl service = new CouponServiceImpl(templateMapper, userCouponMapper, orderMapper, marketingFeatureService);
+        CouponTemplate template = new CouponTemplate();
+        template.setId(103L); template.setMerchantId(9L); template.setName("可重复兑换券");
+        template.setIssueScene(CouponIssueScene.NEW_USER); template.setStatus(1);
+        template.setAmount(new BigDecimal("10")); template.setThresholdAmount(new BigDecimal("39"));
+        template.setScopeType(0); template.setExcludeActivityGoods(1); template.setValidityDays(30);
+        template.setPerUserLimit(3); template.setTotalStock(0); template.setReceivedCount(1); template.setUsedCount(0);
+        when(templateMapper.selectOne(any())).thenReturn(template);
+        when(userCouponMapper.selectCount(any())).thenReturn(1L);
+
+        service.issueTemplateForPoints(7L, 9L, 103L);
+
+        ArgumentCaptor<UserCoupon> couponCaptor = ArgumentCaptor.forClass(UserCoupon.class);
+        verify(userCouponMapper).insert(couponCaptor.capture());
+        assertEquals(103L, couponCaptor.getValue().getTemplateId());
+        verify(templateMapper).updateById(template);
+    }
+
+    @Test
     void persistsConfiguredPerUserLimit() {
         CouponServiceImpl service = new CouponServiceImpl(templateMapper, userCouponMapper, orderMapper, marketingFeatureService);
         CouponTemplateSaveRequest request = templateRequest(CouponIssueScene.NEW_USER);
