@@ -494,10 +494,11 @@ public class PresaleServiceImpl implements PresaleService {
             }
             Product product = productMapper.selectById(item.getProductId());
             ProductSku sku = productSkuMapper.selectById(item.getSkuId());
+            BigDecimal basePrice = sku == null ? null : sku.getPrice();
             if (product == null || sku == null || !merchantId.equals(product.getMerchantId()) || !product.getId().equals(sku.getProductId())
                     || !Integer.valueOf(1).equals(product.getStatus()) || !Integer.valueOf(1).equals(sku.getActive())
-                    || item.getUserLimit() == null || item.getUserLimit() < 1
-                    || item.getFinalPrice() == null || item.getFinalPrice().compareTo(item.getDepositDeductionAmount()) <= 0) {
+                    || item.getUserLimit() == null || item.getUserLimit() < 1 || item.getDepositDeductionAmount() == null
+                    || basePrice == null || basePrice.compareTo(item.getDepositDeductionAmount()) <= 0) {
                 throw new BusinessException(ErrorCode.PRESALE_CONFIG_INVALID);
             }
             LambdaQueryWrapper<PresaleSku> q = new LambdaQueryWrapper<PresaleSku>()
@@ -519,7 +520,8 @@ public class PresaleServiceImpl implements PresaleService {
             PresaleSku config = new PresaleSku();
             config.setActivityId(activityId); config.setMerchantId(merchantId); config.setProductId(item.getProductId()); config.setSkuId(item.getSkuId());
             config.setDepositAmount(item.getDepositAmount()); config.setDepositDeductionAmount(item.getDepositDeductionAmount());
-            config.setFinalPrice(item.getFinalPrice()); config.setBalanceAmount(item.getFinalPrice().subtract(item.getDepositDeductionAmount())); config.setUserLimit(item.getUserLimit()); config.setDepositCount(0); config.setBalanceSoldCount(0);
+            BigDecimal basePrice = sku.getPrice();
+            config.setFinalPrice(basePrice); config.setBalanceAmount(basePrice.subtract(item.getDepositDeductionAmount())); config.setUserLimit(item.getUserLimit()); config.setDepositCount(0); config.setBalanceSoldCount(0);
             skuMapper.insert(config);
         }
     }
