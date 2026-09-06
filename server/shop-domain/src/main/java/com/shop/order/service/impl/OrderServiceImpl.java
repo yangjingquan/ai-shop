@@ -12,6 +12,7 @@ import com.shop.coupon.service.CouponService;
 import com.shop.marketing.dto.PromotionCheckoutResult;
 import com.shop.marketing.dto.PromotionPricingItem;
 import com.shop.marketing.service.PromotionService;
+import com.shop.presale.service.PresaleService;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.response.PageResult;
@@ -88,6 +89,9 @@ public class OrderServiceImpl implements OrderService {
     private final PlatformTransactionManager transactionManager;
     private final CouponService couponService;
     private final PromotionService promotionService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private PresaleService presaleService;
 
     private static final java.util.regex.Pattern SHIP_NO_PATTERN =
             java.util.regex.Pattern.compile("^[A-Za-z0-9]{5,30}$");
@@ -537,6 +541,11 @@ public class OrderServiceImpl implements OrderService {
         if (order == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
+        if (Integer.valueOf(6).equals(order.getOrderType()) && presaleService != null) {
+            closeWechatPaymentBeforeCancellation(order);
+            presaleService.cancelOrRefundDeposit(userId, order.getMerchantId(), orderNo);
+            return;
+        }
         if (!OrderStatus.canCancel(order.getStatus())) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_NOT_ALLOWED);
         }
@@ -906,6 +915,12 @@ public class OrderServiceImpl implements OrderService {
             }
             throw new BusinessException(ErrorCode.ORDER_NOT_WAIT_SHIP);
         }
+        if (presaleService != null) {
+            Order shipped = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo));
+            if (shipped != null && Integer.valueOf(6).equals(shipped.getOrderType())) {
+                presaleService.syncShipping(merchantId, orderNo);
+            }
+        }
     }
 
     @Override
@@ -920,6 +935,12 @@ public class OrderServiceImpl implements OrderService {
                 throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
             }
             throw new BusinessException(ErrorCode.ORDER_NOT_WAIT_RECEIVE);
+        }
+        if (presaleService != null) {
+            Order received = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo));
+            if (received != null && Integer.valueOf(6).equals(received.getOrderType())) {
+                presaleService.syncFinished(userId, orderNo);
+            }
         }
     }
 
@@ -958,6 +979,13 @@ public class OrderServiceImpl implements OrderService {
                 .last("FOR UPDATE"));
         if (order == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        if (presaleService != null && Integer.valueOf(6).equals(order.getOrderType())) {
+            String afterSalesOrderNo = presaleService.afterSalesOrderNo(userId, orderNo);
+            if (!orderNo.equals(afterSalesOrderNo)) {
+                refundApply(userId, afterSalesOrderNo, req);
+                return;
+            }
         }
 
         // 只有待处理申请阻止再次申请；被拒绝的申请允许用户重新提交。
@@ -1251,8 +1279,11 @@ public class OrderServiceImpl implements OrderService {
         if (order.getStatus() != OrderStatus.WAIT_PAY.getCode()) {
             throw new BusinessException(ErrorCode.ORDER_NOT_REPAYABLE);
         }
+        if (presaleService != null && Integer.valueOf(6).equals(order.getOrderType())) {
+            presaleService.assertPayable(userId, order.getMerchantId(), orderNo);
+        }
         // 超时 30 分钟不可再支付
-        if (order.getCreatedAt() != null
+        if (!Integer.valueOf(6).equals(order.getOrderType()) && order.getCreatedAt() != null
                 && order.getCreatedAt().plusMinutes(30).isBefore(LocalDateTime.now())) {
             throw new BusinessException(ErrorCode.ORDER_NOT_REPAYABLE);
         }

@@ -70,6 +70,8 @@ Page({
           seckillLabel: this.data.seckillEnabled && item.orderType === 2 ? '秒杀订单' : '',
           bundleLabel: Number(item.orderType) === 4 ? (item.bundleName || '搭配购套餐') : '',
           lotteryLabel: Number(item.orderType) === 5 ? '抽奖实物奖品' : '',
+          presaleLabel: Number(item.orderType) === 6 ? '预售订单' : '',
+          isPresale: Number(item.orderType) === 6,
           firstItemImage: resolveImageUrl(item.firstItemImage || ''),
           canDelete: item.status === 3 || item.status === 4,
           swipeOffset: 0,
@@ -78,7 +80,7 @@ Page({
             ? `${item.groupBuyPaidCount || 0}/${item.groupBuyRequiredCount} 人`
             : '',
           refundStatusText: item.refundStatus === 0 ? '退款申请处理中' : item.refundStatus === 1 ? '退款处理中' : item.refundStatus === 2 ? '退款申请已拒绝' : item.refundStatus === 3 ? '退款成功' : item.refundStatus === 4 ? '退款失败，可重新申请' : item.refundStatus === 5 ? '请填写退货物流' : item.refundStatus === 6 ? '商家正在验货' : '',
-          totalLabel: item.status === 0 ? '需支付' : '实付',
+          totalLabel: item.status === 0 ? '需支付' : item.status === 8 || item.status === 9 ? '已付定金' : '实付',
           items: (item.items || []).map((goods) => ({
             ...goods,
             mainImage: resolveImageUrl(goods.mainImage || ''),

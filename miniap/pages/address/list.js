@@ -29,6 +29,8 @@ Page({
       ? 'points_selected_address_id'
       : this.data.selectMode === 'lottery'
         ? 'lottery_selected_address_id'
+        : this.data.selectMode === 'presale'
+          ? 'presale_selected_address_id'
         : 'order_selected_address_id'
     wx.setStorageSync(storageKey, id)
     wx.navigateBack()

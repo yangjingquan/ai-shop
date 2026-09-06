@@ -21,6 +21,7 @@ import com.shop.referral.service.ReferralService;
 import com.shop.points.service.PointsMemberService;
 import com.shop.coupon.service.CouponIssueService;
 import com.shop.marketing.service.PromotionService;
+import com.shop.presale.service.PresaleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +58,9 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     private CouponIssueService couponIssueService;
     @Autowired(required = false)
     private PromotionService promotionService;
+    /** 可选注入，保持既有支付服务单测构造器兼容。 */
+    @Autowired(required = false)
+    private PresaleService presaleService;
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaidCallback(String orderNo, String transactionId, String rawPayload) {
@@ -89,6 +93,11 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
         order.setPayTime(LocalDateTime.now());
         order.setPayTransactionId(transactionId);
         order.setPayMethod(1);
+        if (Integer.valueOf(6).equals(order.getOrderType()) && presaleService != null) {
+            orderMapper.updateById(order);
+            presaleService.handleOrderPaid(orderNo, transactionId, rawPayload);
+            return;
+        }
         if (Integer.valueOf(1).equals(order.getOrderType())) {
             order.setStatus(OrderStatus.WAIT_GROUP.getCode());
             orderMapper.updateById(order);

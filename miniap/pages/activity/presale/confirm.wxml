@@ -1,0 +1,50 @@
+<view class="confirm-page" wx:if="{{activity && selectedSku}}">
+  <view class="goods-card card">
+    <image class="goods-image" src="{{selectedSku.mainImage}}" mode="aspectFill" />
+    <view class="goods-info">
+      <view class="goods-name">{{selectedSku.productName || activity.name}}</view>
+      <view class="goods-spec">{{selectedSku.specText || '默认规格'}}</view>
+      <view class="goods-price">定金 ¥{{selectedSku.depositText}} <text>尾款 ¥{{selectedSku.balanceText}}</text></view>
+    </view>
+    <view class="quantity-control">
+      <view class="quantity-btn" data-delta="-1" bindtap="changeQuantity"><image src="/assets/icons/minus.png" mode="aspectFit" /></view>
+      <text>{{quantity}}</text>
+      <view class="quantity-btn" data-delta="1" bindtap="changeQuantity"><image src="/assets/icons/plus.png" mode="aspectFit" /></view>
+    </view>
+  </view>
+
+  <view class="address-card card" bindtap="chooseAddress">
+    <image class="address-icon" src="/assets/icons/location.png" mode="aspectFit" />
+    <view wx:if="{{address}}" class="address-info">
+      <view class="receiver-line">{{address.receiver}} {{address.phone}}</view>
+      <view class="address-text">{{address.region}} {{address.detail}}</view>
+    </view>
+    <view wx:else class="address-empty">请选择收货地址</view>
+    <image class="arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" />
+  </view>
+
+  <view class="amount-card card">
+    <view class="section-title">预售金额</view>
+    <view class="amount-row"><text>定金</text><text>¥{{selectedSku.totalDepositText}}</text></view>
+    <view class="amount-row"><text>定金膨胀抵扣</text><text class="discount">-¥{{selectedSku.totalDeductionText}}</text></view>
+    <view class="amount-row"><text>尾款</text><text>¥{{selectedSku.totalBalanceText}}</text></view>
+    <view class="divider"></view>
+    <view class="amount-row total"><text>本次支付定金</text><text>¥{{selectedSku.totalDepositText}}</text></view>
+    <view class="amount-note">尾款支付金额 = 商品最终价 - 定金膨胀抵扣 - 已付定金。预计发货：{{activity.expectedShipAt || '以活动详情为准'}}</view>
+  </view>
+
+  <view class="rule-card card">
+    <view class="section-title">预售规则确认</view>
+    <view class="rule-line">定金支付成功后锁定预售权益，不占用最终可发货库存。</view>
+    <view class="rule-line">尾款期内支付尾款，系统实时校验库存，库存不足时不会超卖。</view>
+    <view class="rule-line">尾款支付前可修改收货地址，发货后不可修改。</view>
+    <view class="agreement" bindtap="toggleAgreement"><view class="checkbox {{agreed ? 'checked' : ''}}"><image wx:if="{{agreed}}" src="/assets/icons/check-primary.png" mode="aspectFit" /></view><text>我已阅读并同意预售规则</text></view>
+  </view>
+
+  <view class="bottom-bar">
+    <view><text class="bottom-label">定金</text><text class="bottom-price">¥{{selectedSku.totalDepositText}}</text></view>
+    <button class="submit-btn" bindtap="submit" disabled="{{submitting}}">{{submitting ? '提交中...' : '立即支付定金'}}</button>
+  </view>
+</view>
+
+<view class="loading-text" wx:elif="{{!activity}}">加载中...</view>

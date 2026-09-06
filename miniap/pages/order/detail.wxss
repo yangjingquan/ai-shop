@@ -96,6 +96,13 @@
 .status-text.s5 { color: #f59e0b; }
 .status-text.s6 { color: #16a34a; }
 .status-text.s7 { color: #dc2626; }
+.status-text.s8 { color: #ff6b1a; }
+.status-text.s9 { color: #dc2626; }
+
+.presale-summary { margin-top: 18rpx; padding: 20rpx; border-radius: 14rpx; background: linear-gradient(135deg, #fff8ef, #fff1e8); border: 1rpx solid #ffd7bd; }
+.presale-summary-head { display: flex; align-items: center; justify-content: space-between; color: #2d241f; font-size: 25rpx; font-weight: 900; }.presale-stage { color: #e45d1b; font-size: 22rpx; }
+.presale-amount-grid { display: flex; gap: 10rpx; margin-top: 16rpx; }.presale-amount-grid view { flex: 1; padding: 14rpx 10rpx; border-radius: 12rpx; background: rgba(255,255,255,.75); }.presale-amount-grid text { display: block; color: #8b6e5c; font-size: 20rpx; }.presale-amount-grid text:last-child { margin-top: 8rpx; color: #2d241f; font-size: 24rpx; font-weight: 900; }.presale-amount-grid .discount { color: #ff4b43; }
+.presale-timeline { margin-top: 20rpx; }.timeline-step { display: flex; align-items: center; min-height: 48rpx; color: #a1a4aa; }.timeline-step.active { color: #e45d1b; }.timeline-dot { width: 32rpx; height: 32rpx; display: flex; align-items: center; justify-content: center; margin-right: 14rpx; border-radius: 50%; color: #fff; background: #c9ced5; font-size: 18rpx; font-weight: 900; }.timeline-step.active .timeline-dot { background: #ff681a; }.timeline-step text { display: block; font-size: 23rpx; font-weight: 850; }.timeline-step text:last-child { margin-top: 4rpx; color: #8b8e97; font-size: 20rpx; font-weight: 700; }.timeline-line { width: 2rpx; height: 20rpx; margin: 0 0 0 15rpx; background: #e6c5b1; }.presale-deadline { margin-top: 14rpx; color: #a65a32; font-size: 21rpx; font-weight: 800; }
 
 .group-info { margin-top: 16rpx; padding: 20rpx; border-radius: 8rpx; background: #fff7ed; color: #7c2d12; font-size: 26rpx; line-height: 1.6; }
 .group-result { margin-top: 16rpx; padding: 20rpx; border-radius: 14rpx; }
@@ -269,6 +276,7 @@
   align-items: center;
   padding: 24rpx 0 0;
 }
+.presale-actions { padding-top: 12rpx; }
 
 .btn {
   height: 64rpx;

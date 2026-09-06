@@ -120,6 +120,10 @@ onMounted(load)
             @click="router.push('/merchant/seckill')"
           >去配置秒杀活动 →</el-button>
           <el-button
+            v-if="feature.code === 'PRESALE' && feature.enabled === 1"
+            link type="primary" class="feature-link" @click="router.push('/merchant/presales')"
+          >去配置预售活动 →</el-button>
+          <el-button
             v-if="feature.code === 'REFERRAL' && feature.enabled === 1"
             link
             type="primary"

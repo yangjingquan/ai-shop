@@ -9,6 +9,7 @@ const referralApi = require('../../api/referral')
 const pointsApi = require('../../api/points')
 const promotionApi = require('../../api/promotion')
 const lotteryApi = require('../../api/lottery')
+const presaleApi = require('../../api/presale')
 const auth = require('../../utils/auth')
 const { resolveImageUrl } = require('../../utils/url')
 
@@ -27,6 +28,7 @@ Page({
     pointsEntry: null,
     fullReductionActivity: null,
     lotteryActivity: null,
+    presaleActivity: null,
   },
 
   onLoad() {
@@ -74,6 +76,7 @@ Page({
       this.loadPointsEntry(marketingEnabled.POINTS_MEMBER_DAY)
       this.loadFullReduction(marketingEnabled.FULL_REDUCTION)
       this.loadLottery(marketingEnabled.LOTTERY_BLIND_BOX)
+      this.loadPresale(marketingEnabled.PRESALE)
     } finally {
       this.setData({ loading: false })
     }
@@ -118,6 +121,20 @@ Page({
     lotteryApi.current()
       .then((res) => this.setData({ lotteryActivity: res && res.data || null }))
       .catch(() => this.setData({ lotteryActivity: null }))
+  },
+
+  loadPresale(enabled) {
+    if (!enabled) return this.setData({ presaleActivity: null })
+    presaleApi.active().then((res) => {
+      const activity = (res && res.data && res.data[0]) || null
+      this.setData({ presaleActivity: activity })
+    }).catch(() => this.setData({ presaleActivity: null }))
+  },
+
+  onPresale() {
+    marketingCapabilities.ensure('PRESALE').then((enabled) => {
+      if (enabled) wx.navigateTo({ url: '/pages/activity/presale/list' })
+    })
   },
 
   onLottery() {

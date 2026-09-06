@@ -1,12 +1,14 @@
 const orderApi = require('../../api/order')
 const groupBuyApi = require('../../api/group-buy')
 const productApi = require('../../api/product')
+const presaleApi = require('../../api/presale')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
 const { resolveImageUrl } = require('../../utils/url')
 
 Page({
   data: {
     order: null,
+    presale: null,
     orderNo: '',
     groupBuyEnabled: false,
     seckillEnabled: false,
@@ -20,11 +22,27 @@ Page({
   onLoad(options) {
     const orderNo = options.orderNo || ''
     this.setData({ orderNo })
-    this.refreshMarketingState().then(() => this.loadDetail(orderNo).then(() => this.loadRepurchaseCoupon(orderNo)))
+    this.refreshMarketingState().then(() => this.loadDetail(orderNo)
+      .then(() => this.loadPresaleOrder(orderNo))
+      .then(() => this.loadRepurchaseCoupon(orderNo)))
   },
 
   onShow() {
-    if (this.data.orderNo && this.data.order) this.refreshMarketingState().then(() => this.loadRepurchaseCoupon(this.data.orderNo))
+    if (this.data.orderNo && this.data.order) {
+      const addressId = wx.getStorageSync('presale_selected_address_id')
+      if (addressId && Number(this.data.order.orderType) === 6 && this.data.presale && this.data.presale.canChangeAddress) {
+        wx.removeStorageSync('presale_selected_address_id')
+        presaleApi.updateAddress(this.data.orderNo, Number(addressId)).then(() => {
+          wx.showToast({ title: '地址已更新', icon: 'success' })
+        }).catch(() => {}).finally(() => {
+          this.refreshMarketingState().then(() => this.loadDetail(this.data.orderNo).then(() => this.loadPresaleOrder(this.data.orderNo)))
+        })
+        return
+      }
+      this.refreshMarketingState().then(() => this.loadDetail(this.data.orderNo)
+        .then(() => this.loadPresaleOrder(this.data.orderNo))
+        .then(() => this.loadRepurchaseCoupon(this.data.orderNo)))
+    }
   },
 
   refreshMarketingState() {
@@ -123,7 +141,7 @@ Page({
           refundEvidenceUrls: Array.isArray(raw.refundEvidenceUrls)
             ? raw.refundEvidenceUrls.map((url) => resolveImageUrl(url)).filter(Boolean)
             : [],
-          totalLabel: raw.status === 0 ? '需支付' : '实付款',
+          totalLabel: raw.status === 0 ? '需支付' : raw.status === 8 || raw.status === 9 ? '已付定金' : '实付款',
           items: (raw.items || []).map((item) => ({
             ...item,
             mainImage: resolveImageUrl(item.mainImage || ''),
@@ -136,6 +154,27 @@ Page({
       .finally(() => {
         this.setData({ loading: false })
       })
+  },
+
+  loadPresaleOrder(orderNo) {
+    if (!orderNo || Number(this.data.order && this.data.order.orderType) !== 6) {
+      this.setData({ presale: null })
+      return Promise.resolve()
+    }
+    return presaleApi.order(orderNo).then((res) => {
+      const raw = res.data || {}
+      const presale = {
+        ...raw,
+        mainImage: resolveImageUrl(raw.mainImage || ''),
+        depositAmountText: this.fmtPrice(raw.depositAmount),
+        depositDeductionAmountText: this.fmtPrice(raw.depositDeductionAmount),
+        balanceAmountText: this.fmtPrice(raw.balanceAmount),
+        finalAmountText: this.fmtPrice(raw.finalAmount),
+        balanceDeadlineText: raw.balanceDeadline ? this.formatTime(raw.balanceDeadline) : '',
+        expectedShipAtText: raw.expectedShipAt ? this.formatTime(raw.expectedShipAt) : '以活动安排为准',
+      }
+      this.setData({ presale })
+    }).catch(() => this.setData({ presale: null }))
   },
 
   fmtPrice(value) {
@@ -159,7 +198,57 @@ Page({
   },
 
   reloadDetail() {
-    return this.loadDetail(this.data.orderNo || (this.data.order && this.data.order.orderNo))
+    const orderNo = this.data.orderNo || (this.data.order && this.data.order.orderNo)
+    return this.loadDetail(orderNo).then(() => this.loadPresaleOrder(orderNo))
+  },
+
+  payPresaleBalance() {
+    const orderNo = this.data.order && this.data.order.orderNo
+    if (!orderNo || !this.data.presale || !this.data.presale.canPayBalance) return
+    presaleApi.createBalance(orderNo).then((res) => {
+      const payParams = res.data && res.data.payParams
+      if (!payParams) throw new Error('missing pay params')
+      return new Promise((resolve, reject) => {
+        wx.requestPayment({
+          timeStamp: payParams.timeStamp,
+          nonceStr: payParams.nonceStr,
+          package: payParams.packageStr,
+          signType: payParams.signType || 'RSA',
+          paySign: payParams.paySign,
+          success: resolve,
+          fail: reject,
+        })
+      })
+    }).then(() => {
+      wx.showToast({ title: '尾款支付成功', icon: 'success' })
+      return this.reloadDetail()
+    }).catch((err) => {
+      if (err && err.message === 'missing pay params') wx.showToast({ title: '支付参数错误', icon: 'none' })
+      else wx.showToast({ title: '尾款支付未完成，可稍后重试', icon: 'none' })
+      return this.reloadDetail()
+    })
+  },
+
+  refundPresaleDeposit() {
+    const orderNo = this.data.order && this.data.order.orderNo
+    if (!orderNo || !this.data.presale || !this.data.presale.canRefundDeposit) return
+    wx.showModal({
+      title: '申请退定金',
+      content: '确认申请退回已支付的定金吗？',
+      confirmColor: '#ff4b43',
+      success: (modalRes) => {
+        if (!modalRes.confirm) return
+        presaleApi.refund(orderNo).then(() => {
+          wx.showToast({ title: '退款申请已提交', icon: 'success' })
+          this.reloadDetail()
+        }).catch(() => this.reloadDetail())
+      },
+    })
+  },
+
+  changePresaleAddress() {
+    if (!this.data.presale || !this.data.presale.canChangeAddress) return
+    wx.navigateTo({ url: '/pages/address/list?select=presale' })
   },
 
   cancelOrder() {

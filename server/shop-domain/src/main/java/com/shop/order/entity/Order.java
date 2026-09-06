@@ -21,7 +21,7 @@ public class Order extends BaseEntity {
 
     private Integer status;
 
-    /** 0 普通订单 / 1 团购订单 / 2 秒杀订单 / 3 积分兑换订单 / 4 搭配购订单 */
+    /** 0 普通订单 / 1 团购订单 / 2 秒杀订单 / 3 积分兑换订单 / 4 搭配购订单 / 6 预售支付订单 */
     private Integer orderType;
 
     /** 积分兑换订单关联记录；仅 orderType=3 使用。 */
@@ -39,6 +39,12 @@ public class Order extends BaseEntity {
 
     /** 5=抽奖实物奖励订单。 */
     private Long lotteryRewardId;
+
+    /** 预售中心订单 ID；orderType=6 使用。 */
+    private Long presaleOrderId;
+
+    /** 预售支付阶段：1=定金，2=尾款。 */
+    private Integer presaleStage;
 
     private BigDecimal totalAmount;
 

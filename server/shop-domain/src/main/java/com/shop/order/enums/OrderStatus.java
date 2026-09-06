@@ -13,7 +13,9 @@ public enum OrderStatus {
     CANCELLED(4, "已取消"),
     WAIT_GROUP(5, "待成团"),
     GROUP_SUCCESS(6, "已成团"),
-    GROUP_FAILED_WAIT_REFUND(7, "拼团失败/待退款");
+    GROUP_FAILED_WAIT_REFUND(7, "拼团失败/待退款"),
+    PRESALE_WAIT_BALANCE(8, "待付尾款"),
+    PRESALE_OVERDUE(9, "尾款逾期");
 
     private final int code;
     private final String text;

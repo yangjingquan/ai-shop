@@ -38,6 +38,7 @@
           <text wx:if="{{item.seckillLabel}}" class="seckill-order-tag">{{item.seckillLabel}}</text>
           <text wx:if="{{item.bundleLabel}}" class="seckill-order-tag">{{item.bundleLabel}}</text>
           <text wx:if="{{item.lotteryLabel}}" class="seckill-order-tag">{{item.lotteryLabel}}</text>
+          <text wx:if="{{item.presaleLabel}}" class="presale-order-tag">{{item.presaleLabel}}</text>
           <text wx:if="{{item.refundStatusText}}" class="refund-status">{{item.refundStatusText}}</text>
         <text wx:if="{{groupBuyEnabled && item.orderType === 1 && item.groupBuyProgress}}" class="group-progress">{{item.groupBuyProgress}}</text>
         </view>
@@ -108,6 +109,9 @@
                 data-productid="{{item.items[0].productId}}"
                 data-skuid="{{item.items[0].skuId}}"
               >再来一单</view>
+            </block>
+            <block wx:elif="{{item.isPresale && (item.status === 8 || item.status === 9)}}">
+              <view class="btn primary" catchtap="goDetail" data-orderno="{{item.orderNo}}">查看预售</view>
             </block>
           </view>
         </view>

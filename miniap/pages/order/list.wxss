@@ -91,6 +91,7 @@
 }
 
 .seckill-order-tag { margin-left: 12rpx; padding: 4rpx 10rpx; border-radius: 8rpx; color: #ff551b; background: #fff0e8; font-size: 20rpx; }
+.presale-order-tag { margin-left: 12rpx; padding: 4rpx 10rpx; border-radius: 8rpx; color: #e45d1b; background: #fff0e8; font-size: 20rpx; font-weight: 800; }
 
 .state-text {
   flex: 0 0 auto;

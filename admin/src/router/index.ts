@@ -160,6 +160,12 @@ const routes: RouteRecordRaw[] = [
         meta: { roles: ['merchant'], permission: 'merchant:seckill:view' },
       },
       {
+        path: 'merchant/presales',
+        name: 'MerchantPresale',
+        component: () => import('@/views/merchant/PresaleActivity.vue'),
+        meta: { roles: ['merchant'], permission: 'merchant:presale:view' },
+      },
+      {
         path: 'merchant/full-reduction',
         name: 'MerchantFullReduction',
         component: () => import('@/views/merchant/FullReductionActivity.vue'),

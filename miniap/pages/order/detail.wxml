@@ -1,6 +1,6 @@
 <view class="detail-page" wx:if="{{order}}">
   <view class="address-card card">
-    <view class="pin">⌖</view>
+    <image class="pin" src="/assets/icons/location.png" mode="aspectFit" />
     <view class="address-info">
       <view class="receiver-line">{{order.address.receiver}} {{order.address.phone}}</view>
       <view class="address-text">{{order.address.region}} {{order.address.detail}}</view>
@@ -51,6 +51,23 @@
         <text>¥{{item.unitPriceText}}</text>
         <text class="qty">x{{item.quantity}}</text>
       </view>
+    </view>
+
+    <view wx:if="{{presale}}" class="presale-summary">
+      <view class="presale-summary-head"><text>{{presale.activityName}}</text><text class="presale-stage">{{presale.stageText}}</text></view>
+      <view class="presale-amount-grid">
+        <view><text>已付定金</text><text>¥{{presale.depositAmountText}}</text></view>
+        <view><text>膨胀抵扣</text><text class="discount">-¥{{presale.depositDeductionAmountText}}</text></view>
+        <view><text>待付尾款</text><text>¥{{presale.balanceAmountText}}</text></view>
+      </view>
+      <view class="presale-timeline">
+        <view class="timeline-step active"><view class="timeline-dot"></view><view><text>支付定金</text><text wx:if="{{presale.depositPaidAt}}">已锁定预售权益</text></view></view>
+        <view class="timeline-line"></view>
+        <view class="timeline-step {{presale.stage >= 2 ? 'active' : ''}}"><view class="timeline-dot">2</view><view><text>支付尾款</text><text>尾款期内完成支付</text></view></view>
+        <view class="timeline-line"></view>
+        <view class="timeline-step {{presale.stage >= 3 ? 'active' : ''}}"><view class="timeline-dot">3</view><view><text>预计发货</text><text>{{presale.expectedShipAtText}}</text></view></view>
+      </view>
+      <view wx:if="{{presale.balanceDeadlineText && presale.stage === 1}}" class="presale-deadline">尾款支付截止：{{presale.balanceDeadlineText}}</view>
     </view>
   </view>
 
@@ -196,6 +213,15 @@
     <view class="btn dark" catchtap="buyAgain">再来一单</view>
     <view wx:if="{{order.canRefund}}" class="btn primary" catchtap="refundApply">重新申请退款</view>
     <view class="btn danger" catchtap="deleteOrder">删除订单</view>
+  </view>
+  <view class="actions presale-actions" wx:if="{{presale && (presale.stage === 1 || presale.stage === 6)}}">
+    <view wx:if="{{presale.canChangeAddress}}" class="btn" catchtap="changePresaleAddress">修改地址</view>
+    <view wx:if="{{presale.canRefundDeposit}}" class="btn" catchtap="refundPresaleDeposit">申请退定金</view>
+    <view wx:if="{{presale.canPayBalance}}" class="btn primary" catchtap="payPresaleBalance">支付尾款</view>
+  </view>
+  <view class="actions presale-actions" wx:elif="{{presale && presale.stage === 2}}">
+    <view wx:if="{{presale.canChangeAddress}}" class="btn" catchtap="changePresaleAddress">修改地址</view>
+    <view wx:if="{{presale.canPayBalance}}" class="btn primary" catchtap="payPresaleBalance">继续支付尾款</view>
   </view>
 </view>
 
