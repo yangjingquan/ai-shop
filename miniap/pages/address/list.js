@@ -25,7 +25,12 @@ Page({
   onSelect(e) {
     if (!this.data.selectMode) return
     const id = e.currentTarget.dataset.id
-    wx.setStorageSync(this.data.selectMode === 'points' ? 'points_selected_address_id' : 'order_selected_address_id', id)
+    const storageKey = this.data.selectMode === 'points'
+      ? 'points_selected_address_id'
+      : this.data.selectMode === 'lottery'
+        ? 'lottery_selected_address_id'
+        : 'order_selected_address_id'
+    wx.setStorageSync(storageKey, id)
     wx.navigateBack()
   },
 

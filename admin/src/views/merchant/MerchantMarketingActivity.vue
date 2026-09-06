@@ -134,6 +134,10 @@ onMounted(load)
             v-if="feature.code === 'BUNDLE' && feature.enabled === 1"
             link type="primary" class="feature-link" @click="router.push('/merchant/bundles')"
           >去配置搭配购套餐 →</el-button>
+          <el-button
+            v-if="feature.code === 'LOTTERY_BLIND_BOX'"
+            link type="primary" class="feature-link" @click="router.push('/merchant/lottery')"
+          >去配置抽奖盲盒{{ feature.enabled === 1 ? ' →' : '（先配置后发布）' }}</el-button>
         </el-card>
       </el-col>
     </el-row>

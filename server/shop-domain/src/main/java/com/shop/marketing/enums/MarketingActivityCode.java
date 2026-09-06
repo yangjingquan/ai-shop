@@ -18,7 +18,7 @@ public enum MarketingActivityCode {
     REFERRAL("REFERRAL", "邀请有礼", "邀请新用户首单后获得优惠券奖励", true, "/pages/activity/referral/index"),
     BUNDLE("BUNDLE", "搭配购", "主商品搭配配件组成套餐并享受固定优惠", true, "/pages/promotion/bundle"),
     PRESALE("PRESALE", "预售", "提前支付定金锁定未来商品", false, "/pages/presale/list"),
-    LOTTERY_BLIND_BOX("LOTTERY_BLIND_BOX", "抽奖/盲盒", "通过抽奖或盲盒机制提升互动和转化", false, "/pages/lottery/index");
+    LOTTERY_BLIND_BOX("LOTTERY_BLIND_BOX", "抽奖/盲盒", "通过抽奖或盲盒机制提升互动和转化", true, "/pages/activity/lottery/index");
 
     private final String code;
     private final String name;

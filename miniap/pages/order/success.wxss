@@ -1,4 +1,7 @@
 .success-page { min-height: 100vh; padding: 42rpx 24rpx 60rpx; background: #f7f4ed; color: #1f2329; box-sizing: border-box; }
+.lottery-entry { display: flex; align-items: center; min-height: 132rpx; padding: 16rpx 20rpx; box-sizing: border-box; border-color: #f35b16; background: #f35b16; color: #fff7e9; }
+.lottery-entry-image { flex: 0 0 auto; width: 108rpx; height: 108rpx; border-radius: 14rpx; background: #ffbd4a; }
+.lottery-entry-copy { min-width: 0; margin-left: 16rpx; }.lottery-entry-kicker { color: #ffe6a8; font-size: 17rpx; letter-spacing: 2rpx; }.lottery-entry-title { margin-top: 7rpx; color: #fff; font-size: 30rpx; font-weight: 800; }.lottery-entry-desc { margin-top: 7rpx; color: #ffe3be; font-size: 21rpx; }.lottery-entry-arrow { margin-left: auto; padding-left: 10rpx; color: #fff; font-size: 22rpx; font-weight: 700; white-space: nowrap; }
 .success-head { text-align: center; }
 .success-icon { width: 96rpx; height: 96rpx; margin: 0 auto; border-radius: 50%; color: #fff; background: #2fb26b; font-size: 64rpx; line-height: 96rpx; font-weight: 900; }
 .success-title { margin-top: 18rpx; font-size: 40rpx; font-weight: 800; letter-spacing: 1rpx; }

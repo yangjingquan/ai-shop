@@ -60,7 +60,8 @@ const merchantMenus: MenuItem[] = [
     ],
   },
   { index: 'merchant-banners', label: 'Banner 配置', path: '/merchant/banners', desc: '首页轮播', icon: '图', permission: 'merchant:banner:view' },
-  { index: 'merchant-marketing', label: '营销活动', path: '/merchant/marketing', desc: '活动开关', icon: '营', permission: 'merchant:marketing:view' },
+      { index: 'merchant-marketing', label: '营销活动', path: '/merchant/marketing', desc: '活动开关', icon: '营', permission: 'merchant:marketing:view' },
+      { index: 'merchant-lottery', label: '互动抽奖盲盒', path: '/merchant/lottery', desc: '活动与奖品', icon: '抽', permission: 'merchant:lottery:view' },
   {
     index: 'merchant-activity-configuration',
     label: '活动配置',

@@ -11,5 +11,6 @@ public class MemberProfile extends BaseEntity {
     private Long userId;
     private Long merchantId;
     private Integer status;
+    private Integer level;
     private LocalDateTime joinedAt;
 }

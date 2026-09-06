@@ -110,13 +110,14 @@ Page({
           promotionDiscountAmountText: this.fmtPrice(raw.promotionDiscountAmount),
           bundleDiscountAmountText: this.fmtPrice(raw.bundleDiscountAmount),
           bundleLabel: Number(raw.orderType) === 4 ? (raw.bundleName || '搭配购套餐') : '',
+          lotteryLabel: Number(raw.orderType) === 5 ? '抽奖实物奖品' : '',
           payAmountText: this.fmtPrice(raw.payAmount),
           groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
           statusText: this.displayStatusText(raw),
           groupBuyStatusText: raw.groupBuyStatusText || '',
           refundStatusText: raw.refundStatus === 0 ? '退款申请处理中' : raw.refundStatus === 1 ? '退款处理中' : raw.refundStatus === 2 ? '退款申请已拒绝' : raw.refundStatus === 3 ? '退款成功' : raw.refundStatus === 4 ? '退款失败，可重新申请' : raw.refundStatus === 5 ? '请填写退货物流' : raw.refundStatus === 6 ? '商家正在验货' : '',
-          canRefund: ![0, 1, 5, 6].includes(raw.refundStatus)
+          canRefund: raw.orderType !== 5 && ![0, 1, 5, 6].includes(raw.refundStatus)
             && ([1, 2, 3, 6, 7].includes(raw.status)
               || (raw.status === 4 && raw.cancelReason === 'REFUNDED' && raw.refundStatus === 4)),
           refundEvidenceUrls: Array.isArray(raw.refundEvidenceUrls)

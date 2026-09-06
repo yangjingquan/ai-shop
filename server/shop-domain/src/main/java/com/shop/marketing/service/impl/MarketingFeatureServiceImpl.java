@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MarketingFeatureServiceImpl implements MarketingFeatureService {
     private static final String CACHE_PREFIX = "merchant:marketing:features:";
-    private static final Duration CACHE_TTL = Duration.ofHours(1);
+    private static final Duration CACHE_TTL = Duration.ofMinutes(10);
     private static final String GROUP_BUY_CONFIG = "{\"durationHours\":24,\"userLimit\":1,\"showActiveGroups\":1,\"formedTemplateId\":\"sg0sw0AxgcxKZN1_Rz03ggc50HltbY1FK-Me2ZDGWcc\",\"expiringTemplateId\":\"RevYrSvVjLuJ4WEhySpfQ2FrWEyDKGyxcHYz-QiyzN0\",\"failedTemplateId\":\"9eLlvp1elpSJeHU-BgET6tZL2NOaqZfj6CB8vTX8s0A\"}";
 
     private final MerchantMarketingFeatureMapper featureMapper;
@@ -96,6 +96,9 @@ public class MarketingFeatureServiceImpl implements MarketingFeatureService {
         MarketingActivityCode activity = MarketingActivityCode.fromCode(code);
         if (activity == null) {
             throw new BusinessException(ErrorCode.MARKETING_ACTIVITY_NOT_FOUND);
+        }
+        if (!activity.isImplemented()) {
+            throw new BusinessException(ErrorCode.MARKETING_ACTIVITY_DISABLED);
         }
         if (enabled == null || (enabled != 0 && enabled != 1)) {
             throw new BusinessException(ErrorCode.PARAM_ERROR);

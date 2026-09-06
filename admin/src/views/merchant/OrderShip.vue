@@ -246,6 +246,7 @@ onMounted(loadOrders)
           <template #default="{ row }">
             <el-tag v-if="row.orderType === 1" type="warning" size="small">拼团</el-tag>
             <el-tag v-else-if="row.orderType === 4" type="danger" size="small">搭配购</el-tag>
+            <el-tag v-else-if="row.orderType === 5" type="success" size="small">抽奖实物</el-tag>
             <span v-else>普通</span>
           </template>
         </el-table-column>

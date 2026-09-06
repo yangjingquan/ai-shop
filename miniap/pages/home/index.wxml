@@ -47,6 +47,12 @@
       <view><view class="full-reduction-kicker">BUY MORE, SAVE MORE</view><view class="full-reduction-title">{{fullReductionActivity.name}}</view><view class="full-reduction-rule">{{fullReductionActivity.rule}} · 下单自动优惠</view></view><view class="full-reduction-arrow">›</view>
     </view>
 
+    <view wx:if="{{lotteryActivity}}" class="lottery-entry" bindtap="onLottery">
+      <image class="lottery-entry-image" src="{{lotteryActivity.entryImage || '/assets/lottery/blind-box-hero.png'}}" mode="aspectFill" />
+      <view class="lottery-entry-copy"><view class="lottery-entry-kicker">DAILY SURPRISE</view><view class="lottery-entry-title">互动抽奖盲盒</view><view class="lottery-entry-desc">登录即可参与 · 每日 {{lotteryActivity.dailyChances || 1}} 次</view></view>
+      <view class="lottery-entry-arrow">去抽奖 ›</view>
+    </view>
+
     <view class="categories" wx:if="{{ topCategories.length }}">
       <view
         class="cat"

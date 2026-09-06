@@ -1,6 +1,7 @@
 package com.shop.marketing.controller;
 
 import com.shop.common.response.ApiResult;
+import com.shop.common.aop.OpLog;
 import com.shop.common.security.CurrentUserHolder;
 import com.shop.common.security.RequirePermission;
 import com.shop.marketing.dto.MarketingFeatureUpdateRequest;
@@ -30,6 +31,7 @@ public class MerchantMarketingController {
     }
 
     @PutMapping("/features/{code}")
+    @OpLog(action = "MARKETING_FEATURE_STATUS", targetType = "MARKETING_FEATURE", targetIdExpr = "#code")
     @RequirePermission("merchant:marketing:feature:update")
     public ApiResult<Void> update(@PathVariable String code,
                                   @RequestBody @Valid MarketingFeatureUpdateRequest req) {

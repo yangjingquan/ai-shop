@@ -37,6 +37,9 @@ public class Order extends BaseEntity {
     /** 4=搭配购订单。 */
     private Long bundleActivityId;
 
+    /** 5=抽奖实物奖励订单。 */
+    private Long lotteryRewardId;
+
     private BigDecimal totalAmount;
 
     private BigDecimal freightAmount;

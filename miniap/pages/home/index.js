@@ -8,6 +8,7 @@ const seckillApi = require('../../api/seckill')
 const referralApi = require('../../api/referral')
 const pointsApi = require('../../api/points')
 const promotionApi = require('../../api/promotion')
+const lotteryApi = require('../../api/lottery')
 const auth = require('../../utils/auth')
 const { resolveImageUrl } = require('../../utils/url')
 
@@ -25,6 +26,7 @@ Page({
     referralCampaign: null,
     pointsEntry: null,
     fullReductionActivity: null,
+    lotteryActivity: null,
   },
 
   onLoad() {
@@ -71,6 +73,7 @@ Page({
       this.loadReferralCampaign(marketingEnabled.REFERRAL)
       this.loadPointsEntry(marketingEnabled.POINTS_MEMBER_DAY)
       this.loadFullReduction(marketingEnabled.FULL_REDUCTION)
+      this.loadLottery(marketingEnabled.LOTTERY_BLIND_BOX)
     } finally {
       this.setData({ loading: false })
     }
@@ -108,6 +111,21 @@ Page({
           : `满${Number(tier.thresholdAmount || 0).toFixed(0)}减${Number(tier.reductionAmount || 0).toFixed(0)}`,
       } })
     }).catch(() => this.setData({ fullReductionActivity: null }))
+  },
+
+  loadLottery(enabled) {
+    if (!enabled) return this.setData({ lotteryActivity: null })
+    lotteryApi.current()
+      .then((res) => this.setData({ lotteryActivity: res && res.data || null }))
+      .catch(() => this.setData({ lotteryActivity: null }))
+  },
+
+  onLottery() {
+    const activity = this.data.lotteryActivity
+    if (!activity || !activity.id) return
+    marketingCapabilities.ensure('LOTTERY_BLIND_BOX').then((enabled) => {
+      if (enabled) wx.navigateTo({ url: `/pages/activity/lottery/index?id=${activity.id}` })
+    })
   },
 
   goPointsMall() { wx.navigateTo({ url: '/pages/points/mall' }) },

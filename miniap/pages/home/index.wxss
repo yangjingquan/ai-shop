@@ -625,3 +625,11 @@ page {
   background: radial-gradient(circle at 50% 30%, #17191f 0 18rpx, #fff 20rpx 30rpx, #17191f 32rpx 36rpx, transparent 38rpx), radial-gradient(circle at 50% 72%, #17191f 0 26rpx, #fff 28rpx 42rpx, transparent 44rpx), #ff755e;
   transform: rotate(7deg);
 }
+.lottery-entry { display: flex; align-items: center; position: relative; overflow: hidden; min-height: 144rpx; margin-top: 18rpx; padding: 18rpx 22rpx; box-sizing: border-box; border-radius: 18rpx; color: #fff7e9; background: #f35b16; box-shadow: 0 12rpx 22rpx rgba(243, 91, 22, .18); }
+.lottery-entry::after { content: ''; position: absolute; right: -58rpx; top: -68rpx; width: 210rpx; height: 210rpx; border-radius: 50%; background: rgba(255, 194, 71, .28); }
+.lottery-entry-image { flex: 0 0 auto; width: 126rpx; height: 126rpx; border-radius: 14rpx; background: #ffbd4a; }
+.lottery-entry-copy { position: relative; z-index: 1; min-width: 0; margin-left: 18rpx; }
+.lottery-entry-kicker { color: #ffe6a8; font-size: 18rpx; letter-spacing: 2rpx; }
+.lottery-entry-title { margin-top: 8rpx; color: #fff; font-size: 34rpx; font-weight: 800; }
+.lottery-entry-desc { margin-top: 8rpx; color: #ffe3be; font-size: 22rpx; }
+.lottery-entry-arrow { position: relative; z-index: 1; margin-left: auto; padding-left: 12rpx; color: #fff; font-size: 23rpx; font-weight: 700; white-space: nowrap; }

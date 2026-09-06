@@ -3,17 +3,19 @@ const referralApi = require('../../api/referral')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
 const pointsApi = require('../../api/points')
 const orderApi = require('../../api/order')
+const lotteryApi = require('../../api/lottery')
 
 Page({
-  data: { orderNo: '', groupId: 0, campaign: null, pointsEnabled: false, pointsEarned: 0, repurchaseEnabled: false, repurchaseCoupon: null, loading: true },
+  data: { orderNo: '', groupId: 0, campaign: null, pointsEnabled: false, pointsEarned: 0, repurchaseEnabled: false, repurchaseCoupon: null, lotteryActivity: null, loading: true },
   onLoad(options) {
     this.setData({ orderNo: options.orderNo || '', groupId: Number(options.groupId || 0) })
     marketingCapabilities.load(false).then(() => {
       const referralEnabled = marketingCapabilities.isEnabled('REFERRAL')
       const pointsEnabled = marketingCapabilities.isEnabled('POINTS_MEMBER_DAY')
       const repurchaseEnabled = marketingCapabilities.isEnabled('REPURCHASE_COUPON')
+      const lotteryEnabled = marketingCapabilities.isEnabled('LOTTERY_BLIND_BOX')
       this.setData({ pointsEnabled, repurchaseEnabled })
-      if (!referralEnabled && !pointsEnabled && !repurchaseEnabled) return
+      if (!referralEnabled && !pointsEnabled && !repurchaseEnabled && !lotteryEnabled) return
       return auth.silentLogin().then(() => Promise.all([
         referralEnabled ? referralApi.current().then((res) => this.setData({ campaign: res && res.data })).catch(() => {}) : Promise.resolve(),
         pointsEnabled && this.data.orderNo ? pointsApi.ledger(100).then((res) => {
@@ -21,6 +23,7 @@ Page({
           this.setData({ pointsEarned: Math.max(0, Number(ledger && ledger.changeValue || 0)) })
         }).catch(() => {}) : Promise.resolve(),
         repurchaseEnabled && this.data.orderNo ? this.loadRepurchaseCoupon() : Promise.resolve(),
+        lotteryEnabled ? lotteryApi.current().then((res) => this.setData({ lotteryActivity: res && res.data || null })).catch(() => {}) : Promise.resolve(),
       ]))
     }).catch(() => {}).finally(() => this.setData({ loading: false }))
   },
@@ -38,6 +41,7 @@ Page({
   },
   goHome() { wx.switchTab({ url: '/pages/home/index' }) },
   goPointsMall() { wx.navigateTo({ url: '/pages/points/mall' }) },
+  goLottery() { const activity = this.data.lotteryActivity; if (activity && activity.id) wx.navigateTo({ url: `/pages/activity/lottery/index?id=${activity.id}` }) },
   formatCoupon(coupon) {
     const validTo = new Date(coupon.validTo)
     const left = validTo.getTime() - Date.now()

@@ -1,0 +1,15 @@
+<view class="lottery-page">
+  <view wx:if="{{activity}}" class="lottery-hero">
+    <image class="hero-image" src="{{activity.themeImage || '/assets/lottery/blind-box-hero.png'}}" mode="aspectFill" />
+    <view class="hero-shade"></view>
+    <view class="hero-copy"><view class="hero-kicker">TRANSPARENT RULES · DAILY SURPRISE</view><view class="hero-title">{{activity.name || '互动抽奖盲盒'}}</view><view class="hero-subtitle">低成本参与，每日都有惊喜</view></view>
+  </view>
+  <view wx:if="{{activity}}" class="content">
+    <view class="chance-card"><view><view class="chance-label">今日剩余抽奖次数</view><view class="chance-value">{{activity.remainingChances || 0}} <text>次</text></view></view><view class="chance-links"><view class="reward-link" bindtap="goRecords">抽奖记录 ›</view><view class="reward-link" bindtap="goRewards">我的奖品 ›</view></view></view>
+    <view class="prize-card card"><view class="section-title">奖品池 <text>概率公开</text></view><view class="prize-grid"><view wx:for="{{activity.prizes}}" wx:key="id" class="prize-item"><image wx:if="{{item.image}}" class="prize-image" src="{{item.image}}" mode="aspectFit"/><view wx:else class="prize-symbol">{{item.prizeType === 'POINTS' ? '积' : item.prizeType === 'COUPON' ? '券' : item.prizeType === 'PHYSICAL' ? '礼' : '谢'}}</view><view class="prize-name">{{item.name}}</view><view class="prize-probability">概率 {{item.probabilityText}}</view></view></view></view>
+    <view class="rule-card card"><view class="section-title">参与规则 <text bindtap="showRules">查看详情 ›</text></view><view class="rule-line">登录后参与，每日限 {{activity.dailyChances || 1}} 次</view><view class="rule-line">{{activity.condition.minMemberLevel > 1 ? ('会员等级达到 ' + activity.condition.minMemberLevel + ' 级') : '会员等级不限'}} · {{activity.condition.minPoints > 0 ? ('积分不少于 ' + activity.condition.minPoints) : '积分门槛不限'}}</view><view class="rule-line">{{activity.condition.firstOrderOnly ? '仅限首单用户' : activity.condition.repurchaseOnly ? '仅限复购用户' : '首单/复购均可参与'}}</view></view>
+    <button class="primary-btn draw-btn" loading="{{drawing}}" disabled="{{drawing || activity.remainingChances <= 0}}" bindtap="draw">{{drawing ? '抽奖中…' : activity.remainingChances > 0 ? '开始抽奖' : '今日次数已用完'}}</button>
+    <view class="notice">中奖后可在“我的奖品”查看；实物奖品支持抽奖后或稍后填写地址</view>
+  </view>
+  <view wx:if="{{ruleVisible}}" class="mask" catchtap="hideRules"><view class="rule-dialog" catchtap="noop"><view class="dialog-title">活动规则</view><scroll-view scroll-y class="dialog-scroll"><text>{{activity.ruleText || '每位用户每日可参与抽奖，奖品概率以页面公示为准。活动结束后未使用的抽奖机会失效。'}}</text></scroll-view><button class="outline-btn" bindtap="hideRules">知道了</button></view></view>
+</view>
