@@ -10,7 +10,7 @@
   <view class="items-card card">
     <view class="section-head">
       <view class="merchant-title"><text>{{order.merchantName || '潮选商城'}}</text><text wx:if="{{seckillEnabled && order.orderType === 2}}" class="seckill-order-tag">秒杀订单</text><text wx:if="{{order.bundleLabel}}" class="seckill-order-tag">{{order.bundleLabel}}</text><text wx:if="{{order.lotteryLabel}}" class="seckill-order-tag">{{order.lotteryLabel}}</text></view>
-      <text class="status-text s{{order.status}}">{{order.statusText}}</text>
+      <text class="status-text s{{presale ? presale.statusCode : order.status}}">{{presale ? presale.stageText : order.statusText}}</text>
     </view>
 
     <view wx:if="{{groupBuyEnabled && order.orderType === 1}}" class="group-info">
@@ -58,10 +58,10 @@
       <view class="presale-amount-grid">
         <view><text>已付定金</text><text>¥{{presale.depositAmountText}}</text></view>
         <view><text>膨胀抵扣</text><text class="discount">-¥{{presale.depositDeductionAmountText}}</text></view>
-        <view><text>待付尾款</text><text>¥{{presale.balanceAmountText}}</text></view>
+        <view><text>{{presale.balancePaid ? '已付尾款' : '待付尾款'}}</text><text>¥{{presale.balanceAmountText}}</text></view>
       </view>
       <view class="presale-timeline">
-        <view class="timeline-step active"><view class="timeline-dot"></view><view><text>支付定金</text><text wx:if="{{presale.depositPaidAt}}">已锁定预售权益</text></view></view>
+        <view class="timeline-step active"><view class="timeline-dot">1</view><view><text>支付定金</text><text wx:if="{{presale.depositPaidAt}}">已锁定预售权益</text></view></view>
         <view class="timeline-line"></view>
         <view class="timeline-step {{presale.stage >= 2 ? 'active' : ''}}"><view class="timeline-dot">2</view><view><text>支付尾款</text><text>尾款期内完成支付</text></view></view>
         <view class="timeline-line"></view>

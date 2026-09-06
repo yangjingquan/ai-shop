@@ -163,9 +163,12 @@ Page({
     }
     return presaleApi.order(orderNo).then((res) => {
       const raw = res.data || {}
+      const stage = Number(raw.stage)
       const presale = {
         ...raw,
         mainImage: resolveImageUrl(raw.mainImage || ''),
+        statusCode: this.presaleStatusCode(stage, this.data.order && this.data.order.status),
+        balancePaid: !!raw.balancePaidAt || [3, 4, 5].includes(stage),
         depositAmountText: this.fmtPrice(raw.depositAmount),
         depositDeductionAmountText: this.fmtPrice(raw.depositDeductionAmount),
         balanceAmountText: this.fmtPrice(raw.balanceAmount),
@@ -175,6 +178,16 @@ Page({
       }
       this.setData({ presale })
     }).catch(() => this.setData({ presale: null }))
+  },
+
+  presaleStatusCode(stage, fallback) {
+    if (stage === 0) return 0
+    if (stage === 1 || stage === 2) return 8
+    if (stage === 3) return 1
+    if (stage === 4) return 3
+    if (stage === 5 || stage === 6) return 9
+    if (stage === 7) return 4
+    return fallback
   },
 
   fmtPrice(value) {
