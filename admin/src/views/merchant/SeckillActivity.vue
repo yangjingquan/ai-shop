@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { productApi, type ProductDetailVO, type ProductListVO } from '@/api/product'
 import { seckillApi, type SeckillActivity, type SeckillSessionConfig, type SeckillSkuConfig } from '@/api/seckill'
 
@@ -10,6 +10,15 @@ const activities = ref<SeckillActivity[]>([])
 const products = ref<ProductListVO[]>([])
 const dialogVisible = ref(false)
 const editingId = ref<number | null>(null)
+
+const activityStarted = computed(() => {
+  if (!editingId.value) return false
+  return (form.value.sessions || []).some((session) => {
+    if (!session.startAt) return false
+    const startAt = new Date(session.startAt.replace(' ', 'T')).getTime()
+    return !Number.isNaN(startAt) && startAt <= Date.now()
+  })
+})
 
 function emptySku(): SeckillSkuConfig {
   return { productId: null, skuId: null, activityPrice: null, activityStock: null, userLimit: 1, skuOptions: [] }
@@ -99,6 +108,10 @@ function selectedSku(sku: SeckillSkuConfig) {
   return (sku.skuOptions || []).find((item) => item.id === sku.skuId)
 }
 
+function lockedAfterStart(item: { id?: number }) {
+  return activityStarted.value && !!item.id
+}
+
 function sessionCount(row: SeckillActivity) {
   return row.sessions?.length || 0
 }
@@ -119,8 +132,11 @@ function validate() {
     if (!session.name || !session.startAt || !session.endAt) return '请完整填写场次信息'
     if (!session.skus.length) return '每个场次至少配置一个 SKU'
     for (const sku of session.skus) {
+      if (!sku.productId || !sku.skuId || !sku.activityPrice || !sku.activityStock) return '请完整填写商品、SKU、活动价和库存'
+      // 活动开始后已有 SKU 的商品状态可能已经变化，只校验其值存在；后端会校验不可变字段未被修改。
+      if (activityStarted.value && sku.id) continue
       const selected = selectedSku(sku)
-      if (!sku.productId || !sku.skuId || !selected || !sku.activityPrice || !sku.activityStock) return '请完整填写商品、SKU、活动价和库存'
+      if (!selected) return '请完整填写商品、SKU、活动价和库存'
       if (Number(sku.activityPrice) >= Number(selected.price)) return '秒杀价必须低于日常销售价'
       if (Number(sku.activityStock) > Number(selected.stock)) return '活动库存不能超过当前 SKU 库存'
     }
@@ -136,17 +152,19 @@ async function save() {
   }
   saving.value = true
   try {
-    // 详情接口包含 soldCount、productName、specText 等只读字段，保存时只提交可编辑字段。
+    // 详情接口包含 soldCount、productName、specText 等只读字段，保存时只提交可编辑字段和实体 ID。
     const payload: SeckillActivity = {
       activityName: form.value.activityName,
       description: form.value.description,
       preheatAt: form.value.preheatAt || null,
       sessions: (form.value.sessions || []).map((session) => ({
+        id: session.id,
         name: session.name,
         startAt: session.startAt,
         endAt: session.endAt,
         sort: session.sort,
         skus: session.skus.map((sku) => ({
+          id: sku.id,
           productId: sku.productId,
           skuId: sku.skuId,
           activityPrice: sku.activityPrice,
@@ -167,10 +185,7 @@ async function save() {
 
 async function confirmEdit(row: SeckillActivity) {
   if (!row.id) return
-  try {
-    await ElMessageBox.confirm('活动开始后不允许整体编辑，请确认当前所有场次尚未开始。', '编辑秒杀活动', { type: 'warning' })
-    await openEdit(row)
-  } catch { /* cancelled */ }
+  await openEdit(row)
 }
 
 onMounted(load)
@@ -186,7 +201,7 @@ onMounted(load)
       </div>
       <div class="page-actions"><el-button @click="load">刷新</el-button><el-button type="primary" @click="openCreate">新建活动</el-button></div>
     </div>
-    <el-alert title="使用前请先在营销活动中启用“限时秒杀”开关" description="秒杀价必须低于 SKU 日常价；秒杀订单不参与优惠券，活动开始后不可整体编辑。" type="info" show-icon :closable="false" class="tip" />
+    <el-alert title="使用前请先在营销活动中启用“限时秒杀”开关" description="秒杀价必须低于 SKU 日常价；秒杀订单不参与优惠券。活动开始后，预热时间、场次时间和已存在 SKU 配置不可修改，但可以新增 SKU。" type="info" show-icon :closable="false" class="tip" />
     <el-table v-loading="loading" :data="activities" class="activity-table">
       <el-table-column prop="name" label="活动名称" min-width="180" />
       <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.statusText }}</el-tag></template></el-table-column>
@@ -200,18 +215,18 @@ onMounted(load)
       <el-form label-width="100px">
         <el-form-item label="活动名称"><el-input v-model="form.activityName" maxlength="128" placeholder="如：周末数码秒杀" /></el-form-item>
         <el-form-item label="活动说明"><el-input v-model="form.description" maxlength="500" placeholder="展示在会场顶部的说明" /></el-form-item>
-        <el-form-item label="预热时间"><el-date-picker v-model="form.preheatAt" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="可选" /></el-form-item>
+        <el-form-item label="预热时间"><el-date-picker v-model="form.preheatAt" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="可选" :disabled="activityStarted" /></el-form-item>
         <div v-for="(session, sessionIndex) in form.sessions" :key="sessionIndex" class="session-editor">
-          <div class="session-editor-head"><strong>场次 {{ sessionIndex + 1 }}</strong><el-button v-if="(form.sessions || []).length > 1" link type="danger" @click="removeSession(sessionIndex)">删除场次</el-button></div>
+          <div class="session-editor-head"><strong>场次 {{ sessionIndex + 1 }}</strong><el-button v-if="(form.sessions || []).length > 1" link type="danger" :disabled="activityStarted && !!session.id" @click="removeSession(sessionIndex)">删除场次</el-button></div>
           <el-form-item label="场次名称"><el-input v-model="session.name" placeholder="如：10:00 抢购场" /></el-form-item>
-          <el-form-item label="时间"><el-date-picker v-model="session.startAt" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="开始时间" /><span class="to">至</span><el-date-picker v-model="session.endAt" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="结束时间" /></el-form-item>
+          <el-form-item label="时间"><el-date-picker v-model="session.startAt" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="开始时间" :disabled="lockedAfterStart(session)" /><span class="to">至</span><el-date-picker v-model="session.endAt" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="结束时间" :disabled="lockedAfterStart(session)" /></el-form-item>
           <div v-for="(sku, skuIndex) in session.skus" :key="skuIndex" class="sku-editor">
-            <el-select v-model="sku.productId" filterable placeholder="选择商品" @change="productChanged(sku)"><el-option v-for="product in products" :key="product.id" :label="product.name" :value="product.id" /></el-select>
-            <el-select v-model="sku.skuId" placeholder="选择 SKU" :disabled="!sku.skuOptions?.length"><el-option v-for="option in sku.skuOptions" :key="option.id" :label="`${option.specText || '默认规格'} · ¥${option.price} · 库存${option.stock}`" :value="option.id" /></el-select>
-            <div class="sku-field"><span class="sku-field-label">秒杀价（元）</span><el-input-number v-model="sku.activityPrice" :min="0.01" :precision="2" placeholder="请输入价格" /></div>
-            <div class="sku-field"><span class="sku-field-label">活动库存（件）</span><el-input-number v-model="sku.activityStock" :min="1" :precision="0" placeholder="请输入库存" /></div>
-            <div class="sku-field"><span class="sku-field-label">每人限购（件）</span><el-input-number v-model="sku.userLimit" :min="1" :max="99" :precision="0" /></div>
-            <el-button link type="danger" @click="removeSku(session, skuIndex)">移除</el-button>
+            <el-select v-model="sku.productId" filterable placeholder="选择商品" :disabled="lockedAfterStart(sku)" @change="productChanged(sku)"><el-option v-for="product in products" :key="product.id" :label="product.name" :value="product.id" /></el-select>
+            <el-select v-model="sku.skuId" placeholder="选择 SKU" :disabled="lockedAfterStart(sku) || !sku.skuOptions?.length"><el-option v-for="option in sku.skuOptions" :key="option.id" :label="`${option.specText || '默认规格'} · ¥${option.price} · 库存${option.stock}`" :value="option.id" /></el-select>
+            <div class="sku-field"><span class="sku-field-label">秒杀价（元）</span><el-input-number v-model="sku.activityPrice" :min="0.01" :precision="2" placeholder="请输入价格" :disabled="lockedAfterStart(sku)" /></div>
+            <div class="sku-field"><span class="sku-field-label">活动库存（件）</span><el-input-number v-model="sku.activityStock" :min="1" :precision="0" placeholder="请输入库存" :disabled="lockedAfterStart(sku)" /></div>
+            <div class="sku-field"><span class="sku-field-label">每人限购（件）</span><el-input-number v-model="sku.userLimit" :min="1" :max="99" :precision="0" :disabled="lockedAfterStart(sku)" /></div>
+            <el-button link type="danger" :disabled="lockedAfterStart(sku)" @click="removeSku(session, skuIndex)">移除</el-button>
           </div>
           <el-button link type="primary" @click="addSku(session)">+ 添加 SKU</el-button>
         </div>

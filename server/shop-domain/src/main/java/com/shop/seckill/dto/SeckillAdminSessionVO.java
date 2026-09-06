@@ -18,6 +18,7 @@ public class SeckillAdminSessionVO {
 
     @Data
     public static class Sku {
+        private Long id;
         private Long productId;
         private Long skuId;
         private BigDecimal activityPrice;

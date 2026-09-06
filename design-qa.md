@@ -1,36 +1,32 @@
 # Design QA
 
-source visual truth path: `/var/folders/gd/133fk3b92tl_glzpvs2kxf9r0000gn/T/codex-clipboard-9b3b2fbd-54e0-449a-851b-0ed2dad9fe8a.png` (图 2，目标下拉菜单与个人中心)
-implementation screenshot path: not captured for the protected backend state; the local preview reached `/login` at `http://127.0.0.1:5180/login`
-viewport: local preview screenshot `1280 x 720` CSS viewport; source image `2557 x 559` pixels, resized by the app display to `2048 x 448`; no density normalization applied because the states could not be aligned
-state: source is authenticated ERP personal-center page with user menu open; implementation is unauthenticated login page
+source visual truth paths:
+- `/var/folders/gd/133fk3b92tl_glzpvs2kxf9r0000gn/T/codex-clipboard-106cf343-929c-45bf-a6bf-e6de3eb26380.png` — 退款处理中
+- `/var/folders/gd/133fk3b92tl_glzpvs2kxf9r0000gn/T/codex-clipboard-b96be9fa-b121-40b8-8266-1b966d5f6fd0.png` — 已成团
+
+implementation preview: 微信开发者工具，`pages/group-buy/group`，iPhone 12/13 Pro 131%
+state: 已成团终态；退款处理中分支同步完成结构与样式检查
 
 ## Comparison evidence
 
-- Full-view comparison: blocked because the implementation could not reach an authenticated `/admin/profile` or `/merchant/password` route without a user session.
-- Focused region comparison: blocked for the same reason; the user menu and password page are protected by the router guard.
-- Static implementation checks passed: the new shared page is routed for both roles, the header exposes a click-triggered user dropdown, and the dropdown has `个人中心` and `退出登录` commands.
-- Browser console errors checked on the reachable local login page: none.
-
-## Findings
-
-- [P1] Authenticated visual comparison unavailable.
-  Location: `/admin/profile`, `/merchant/password`, and the shared header dropdown.
-  Evidence: the source requires an authenticated state; the local preview redirects unauthenticated requests to `/login`.
-  Impact: exact spacing, menu placement, responsive behavior, and final visual parity cannot be confirmed in-browser.
-  Fix: capture the authenticated implementation with a test session and compare the open dropdown and password page at the source viewport.
+- 顶部重复的终态 `hero` 区域已移除，页面从结果卡开始。
+- 结果卡、商品卡、详情信息卡的纵向层级与参考图一致。
+- “查看订单”使用白底红框，“查看物流”使用红色实心按钮。
+- 页面级按钮样式覆盖全局橙色按钮，避免主题色被公共样式覆盖。
+- 微信开发者工具实时预览已确认：终态页面不再出现“团购结果 / 已成团 / 退款处理中”的重复顶部信息。
+- 开发者工具问题面板：0 个问题。
 
 ## Implementation Checklist
 
-- [x] Both roles route to a shared password page.
-- [x] Header password and logout buttons are merged into a current-user dropdown.
-- [x] Dropdown includes `个人中心` and `退出登录`.
-- [x] Password submission keeps role-specific encrypted APIs and invalidates the current session.
-- [x] `pnpm build` passes.
-- [ ] Authenticated browser screenshot and visual comparison.
+- [x] 已成团状态移除顶部重复信息区。
+- [x] 退款处理中状态移除顶部重复信息区。
+- [x] 进行中状态保留团购进度与倒计时。
+- [x] 统一结果卡、商品卡、详情卡间距和圆角层级。
+- [x] 修正本页按钮主题色并完成实时预览检查。
+- [x] `git diff --check` 通过。
 
-## Comparison history
+## Follow-up notes
 
-No P0/P1/P2 visual iteration was run because the authenticated implementation state was unavailable.
+当前预览账号直接打开的是已成团详情；退款处理中分支已按相同终态布局完成代码检查，待后续有可切换的失败团数据时可再补一张实机截图。
 
-final result: blocked
+final result: passed

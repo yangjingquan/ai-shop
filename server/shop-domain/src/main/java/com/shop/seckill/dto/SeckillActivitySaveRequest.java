@@ -25,6 +25,7 @@ public class SeckillActivitySaveRequest {
 
     @Data
     public static class Session {
+        private Long id;
         @NotEmpty
         @Size(max = 64)
         private String name;
@@ -40,6 +41,7 @@ public class SeckillActivitySaveRequest {
 
     @Data
     public static class Sku {
+        private Long id;
         @NotNull
         private Long productId;
         @NotNull

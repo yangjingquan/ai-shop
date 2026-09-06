@@ -2,6 +2,7 @@ import request from '@/utils/request'
 import type { PageResult } from '@/api/merchant'
 
 export interface SeckillSkuConfig {
+  id?: number
   productId: number | null
   skuId: number | null
   activityPrice: number | null
@@ -11,6 +12,7 @@ export interface SeckillSkuConfig {
 }
 
 export interface SeckillSessionConfig {
+  id?: number
   name: string
   startAt: string
   endAt: string

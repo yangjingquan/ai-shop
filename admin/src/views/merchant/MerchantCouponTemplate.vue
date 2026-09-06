@@ -104,7 +104,7 @@ watch(issueScene, load)
         <el-button v-permission="'merchant:coupon:create'" type="primary" @click="openCreate">新增{{ sceneLabel }}</el-button>
       </div>
     </div>
-    <el-alert v-if="isRepurchase" title="复购券需要同时启用“营销活动 - 复购券”开关" description="第一版按支付成功立即发放；每个用户每个模板仅获得一张，支付成功后的全额退款会回收未使用券。" type="info" show-icon :closable="false" class="tip" />
+    <el-alert v-if="isRepurchase" title="复购券需要同时启用“营销活动 - 复购券”开关" description="第一版按支付成功立即发放；每个用户每个模板的领取上限按下方配置，支付成功后的全额退款会回收未使用券。" type="info" show-icon :closable="false" class="tip" />
     <el-alert v-else title="通用券与复购券独立管理" description="此处模板可由新人首单、积分兑换、会员日及邀请奖励使用，并非仅限新人；支付成功后自动发放的券请在“购后复购券配置”中维护。" type="info" show-icon :closable="false" class="tip" />
     <el-card>
       <el-table v-loading="loading" :data="list" stripe>
@@ -129,6 +129,7 @@ watch(issueScene, load)
         <el-form-item label="使用门槛"><el-input-number v-model="form.thresholdAmount" :min="0" :precision="2" :step="10" /></el-form-item>
         <el-form-item label="总库存"><el-input-number v-model="form.totalStock" :min="0" :step="100" /><span class="hint">0 表示不限</span></el-form-item>
         <el-form-item label="有效期"><el-input-number v-model="form.validityDays" :min="1" :max="365" /><span class="hint">领取后生效天数</span></el-form-item>
+        <el-form-item label="每人最多领取"><el-input-number v-model="form.perUserLimit" :min="1" :max="9999" /><span class="hint">每个用户最多领取数量</span></el-form-item>
         <template v-if="isRepurchase">
           <el-form-item label="触发节点"><el-tag type="success">支付成功立即发放</el-tag></el-form-item>
           <el-form-item label="目标订单"><el-select v-model="form.repurchaseTargetType"><el-option :value="0" label="所有普通订单"/><el-option :value="1" label="指定商品"/><el-option :value="2" label="指定分类"/></el-select></el-form-item>
@@ -137,7 +138,6 @@ watch(issueScene, load)
           <el-form-item label="最低实付金额"><el-input-number v-model="form.repurchaseMinOrderAmount" :min="0" :precision="2" :step="10" /><span class="hint">0 表示不限制</span></el-form-item>
           <el-form-item label="仅首笔购买"><el-switch v-model="form.repurchaseFirstPurchaseOnly" :active-value="1" :inactive-value="0" /></el-form-item>
           <el-form-item label="匹配优先级"><el-input-number v-model="form.repurchasePriority" :min="0" /><span class="hint">数值越大越优先；每笔订单最多发一张</span></el-form-item>
-          <el-form-item label="每人上限"><el-tag>每模板仅 1 张（P1 固定）</el-tag></el-form-item>
         </template>
         <el-form-item v-else label="新人限定"><el-tag>仅首单用户（固定）</el-tag></el-form-item>
         <el-form-item label="排除活动商品"><el-switch v-model="form.excludeActivityGoods" :active-value="1" :inactive-value="0" /></el-form-item>

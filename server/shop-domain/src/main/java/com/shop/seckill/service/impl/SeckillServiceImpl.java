@@ -332,17 +332,24 @@ public class SeckillServiceImpl implements SeckillService {
     @Override
     @Transactional
     public void updateActivity(Long merchantId, Long operatorId, Long activityId, SeckillActivitySaveRequest request) {
-        validateRequest(merchantId, request);
+        if (request == null) throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID);
         SeckillActivity activity = mustActivity(merchantId, activityId);
-        LocalDateTime firstStart = request.getSessions().stream().map(SeckillActivitySaveRequest.Session::getStartAt)
+        List<SeckillSession> existingSessions = sessionMapper.selectList(new LambdaQueryWrapper<SeckillSession>()
+                .eq(SeckillSession::getActivityId, activityId));
+        LocalDateTime firstStart = existingSessions.stream().map(SeckillSession::getStartAt)
                 .min(LocalDateTime::compareTo).orElseThrow();
-        if (!LocalDateTime.now().isBefore(firstStart)) {
-            throw new BusinessException(ErrorCode.SECKILL_ACTIVITY_STARTED);
-        }
+        boolean started = !LocalDateTime.now().isBefore(firstStart);
+        if (started) validateStartedRequest(merchantId, request);
+        else validateRequest(merchantId, request);
         activity.setName(request.getActivityName().trim());
         activity.setDescription(request.getDescription() == null ? "" : request.getDescription().trim());
-        activity.setPreheatAt(request.getPreheatAt());
+        if (!started) activity.setPreheatAt(request.getPreheatAt());
         activityMapper.updateById(activity);
+        if (started) {
+            updateStartedActivity(merchantId, activityId, request, existingSessions);
+            evictSessions(merchantId);
+            return;
+        }
         List<Long> sessionIds = sessionMapper.selectList(new LambdaQueryWrapper<SeckillSession>()
                 .eq(SeckillSession::getActivityId, activityId)).stream().map(SeckillSession::getId).toList();
         if (!sessionIds.isEmpty()) {
@@ -351,6 +358,131 @@ public class SeckillServiceImpl implements SeckillService {
         }
         saveSessions(merchantId, activityId, request.getSessions());
         evictSessions(merchantId);
+    }
+
+    /**
+     * 已开始的活动不能重建已有场次和 SKU，否则会把已售数量与活动库存重置。
+     * 这里仅更新活动名称、说明、场次名称/排序，并追加请求中没有 ID 的新 SKU。
+     */
+    private void updateStartedActivity(Long merchantId, Long activityId,
+                                       SeckillActivitySaveRequest request,
+                                       List<SeckillSession> existingSessions) {
+        Map<Long, SeckillSession> existingSessionMap = existingSessions.stream()
+                .collect(Collectors.toMap(SeckillSession::getId, s -> s));
+        Set<Long> requestedSessionIds = new HashSet<>();
+
+        for (SeckillActivitySaveRequest.Session requestedSession : request.getSessions()) {
+            SeckillSession existingSession = requestedSession.getId() == null ? null
+                    : existingSessionMap.get(requestedSession.getId());
+            if (requestedSession.getId() != null && existingSession == null) {
+                throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID.getCode(), "场次不存在或不属于当前活动");
+            }
+            if (existingSession == null) {
+                if (requestedSession.getSkus().stream().anyMatch(sku -> sku.getId() != null)) {
+                    throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID.getCode(), "新场次不能携带已有 SKU");
+                }
+                saveSessions(merchantId, activityId, List.of(requestedSession));
+                continue;
+            }
+            if (!requestedSessionIds.add(existingSession.getId())
+                    || !existingSession.getStartAt().equals(requestedSession.getStartAt())
+                    || !existingSession.getEndAt().equals(requestedSession.getEndAt())) {
+                throw new BusinessException(ErrorCode.SECKILL_ACTIVITY_STARTED.getCode(), "活动开始后不能修改场次时间");
+            }
+
+            existingSession.setName(requestedSession.getName().trim());
+            existingSession.setSort(requestedSession.getSort() == null ? 0 : requestedSession.getSort());
+            sessionMapper.updateById(existingSession);
+            updateStartedSessionSkus(merchantId, existingSession, requestedSession.getSkus());
+        }
+        if (requestedSessionIds.size() != existingSessions.size()) {
+            throw new BusinessException(ErrorCode.SECKILL_ACTIVITY_STARTED.getCode(), "活动开始后不能删除已有场次");
+        }
+    }
+
+    private void updateStartedSessionSkus(Long merchantId, SeckillSession existingSession,
+                                          List<SeckillActivitySaveRequest.Sku> requestedSkus) {
+        List<SeckillSku> existingSkus = seckillSkuMapper.selectList(new LambdaQueryWrapper<SeckillSku>()
+                .eq(SeckillSku::getSessionId, existingSession.getId()));
+        Map<Long, SeckillSku> existingSkuMap = existingSkus.stream()
+                .collect(Collectors.toMap(SeckillSku::getId, s -> s));
+        Set<Long> requestedExistingSkuIds = new HashSet<>();
+        for (SeckillActivitySaveRequest.Sku requestedSku : requestedSkus) {
+            SeckillSku existingSku = requestedSku.getId() == null ? null : existingSkuMap.get(requestedSku.getId());
+            if (requestedSku.getId() != null && existingSku == null) {
+                throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID.getCode(), "SKU 不存在或不属于当前场次");
+            }
+            if (existingSku == null) {
+                saveSku(merchantId, existingSession.getId(), requestedSku);
+                continue;
+            }
+            if (!requestedExistingSkuIds.add(existingSku.getId())
+                    || !Objects.equals(existingSku.getProductId(), requestedSku.getProductId())
+                    || !Objects.equals(existingSku.getSkuId(), requestedSku.getSkuId())
+                    || requestedSku.getActivityPrice() == null
+                    || existingSku.getActivityPrice().compareTo(requestedSku.getActivityPrice()) != 0
+                    || !Objects.equals(existingSku.getActivityStock(), requestedSku.getActivityStock())
+                    || !Objects.equals(existingSku.getUserLimit(), requestedSku.getUserLimit())) {
+                throw new BusinessException(ErrorCode.SECKILL_ACTIVITY_STARTED.getCode(), "活动开始后不能修改已有 SKU 配置");
+            }
+        }
+        if (requestedExistingSkuIds.size() != existingSkus.size()) {
+            throw new BusinessException(ErrorCode.SECKILL_ACTIVITY_STARTED.getCode(), "活动开始后不能删除已有 SKU");
+        }
+    }
+
+    private void validateStartedRequest(Long merchantId, SeckillActivitySaveRequest request) {
+        if (request.getActivityName() == null || request.getActivityName().isBlank()
+                || request.getSessions() == null || request.getSessions().isEmpty()) {
+            throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID);
+        }
+        List<SeckillActivitySaveRequest.Session> sessions = request.getSessions();
+        for (int i = 0; i < sessions.size(); i++) {
+            SeckillActivitySaveRequest.Session session = sessions.get(i);
+            if (session == null || session.getName() == null || session.getName().isBlank()
+                    || session.getStartAt() == null || session.getEndAt() == null
+                    || !session.getStartAt().isBefore(session.getEndAt())
+                    || session.getSkus() == null || session.getSkus().isEmpty()) {
+                throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID);
+            }
+            if (request.getPreheatAt() != null && request.getPreheatAt().isAfter(session.getStartAt())) {
+                throw new BusinessException(ErrorCode.SECKILL_TIME_INVALID.getCode(), "预热时间不能晚于场次开始时间");
+            }
+            for (int j = i + 1; j < sessions.size(); j++) {
+                SeckillActivitySaveRequest.Session other = sessions.get(j);
+                if (other == null || other.getStartAt() == null || other.getEndAt() == null
+                        || (session.getStartAt().isBefore(other.getEndAt())
+                        && other.getStartAt().isBefore(session.getEndAt()))) {
+                    throw new BusinessException(ErrorCode.SECKILL_TIME_INVALID.getCode(), "秒杀场次时间不能重叠");
+                }
+            }
+            Set<Long> configuredSkuIds = new HashSet<>();
+            for (SeckillActivitySaveRequest.Sku sku : session.getSkus()) {
+                if (sku == null || sku.getSkuId() == null || !configuredSkuIds.add(sku.getSkuId())) {
+                    throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID);
+                }
+                // 已有 SKU 的价格、活动库存等字段只在 updateStartedSessionSkus 中与数据库比对；
+                // 只有追加的 SKU 才需要按当前商品状态和库存校验。
+                if (sku.getId() == null) validateSkuConfig(merchantId, sku);
+            }
+        }
+    }
+
+    private void validateSkuConfig(Long merchantId, SeckillActivitySaveRequest.Sku item) {
+        if (item.getProductId() == null || item.getActivityStock() == null || item.getActivityStock() <= 0
+                || item.getUserLimit() == null || item.getUserLimit() < 1 || item.getUserLimit() > 99
+                || item.getActivityPrice() == null || item.getActivityPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID);
+        }
+        Product product = productMapper.selectById(item.getProductId());
+        ProductSku sku = productSkuMapper.selectById(item.getSkuId());
+        if (product == null || sku == null || !merchantId.equals(product.getMerchantId())
+                || !product.getId().equals(sku.getProductId()) || !Integer.valueOf(1).equals(sku.getActive())
+                || !Integer.valueOf(1).equals(product.getStatus())
+                || item.getActivityPrice().compareTo(sku.getPrice()) >= 0
+                || item.getActivityStock() > Optional.ofNullable(sku.getStock()).orElse(0)) {
+            throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID.getCode(), "商品、价格或活动库存不符合秒杀规则");
+        }
     }
 
     private void saveSessions(Long merchantId, Long activityId, List<SeckillActivitySaveRequest.Session> sessions) {
@@ -364,19 +496,22 @@ public class SeckillServiceImpl implements SeckillService {
             session.setSort(request.getSort() == null ? 0 : request.getSort());
             sessionMapper.insert(session);
             for (SeckillActivitySaveRequest.Sku requestSku : request.getSkus()) {
-                ProductSku productSku = productSkuMapper.selectById(requestSku.getSkuId());
-                SeckillSku sku = new SeckillSku();
-                sku.setSessionId(session.getId());
-                sku.setMerchantId(merchantId);
-                sku.setProductId(requestSku.getProductId());
-                sku.setSkuId(requestSku.getSkuId());
-                sku.setActivityPrice(requestSku.getActivityPrice());
-                sku.setActivityStock(requestSku.getActivityStock());
-                sku.setSoldCount(0);
-                sku.setUserLimit(requestSku.getUserLimit());
-                seckillSkuMapper.insert(sku);
+                saveSku(merchantId, session.getId(), requestSku);
             }
         }
+    }
+
+    private void saveSku(Long merchantId, Long sessionId, SeckillActivitySaveRequest.Sku requestSku) {
+        SeckillSku sku = new SeckillSku();
+        sku.setSessionId(sessionId);
+        sku.setMerchantId(merchantId);
+        sku.setProductId(requestSku.getProductId());
+        sku.setSkuId(requestSku.getSkuId());
+        sku.setActivityPrice(requestSku.getActivityPrice());
+        sku.setActivityStock(requestSku.getActivityStock());
+        sku.setSoldCount(0);
+        sku.setUserLimit(requestSku.getUserLimit());
+        seckillSkuMapper.insert(sku);
     }
 
     private void validateRequest(Long merchantId, SeckillActivitySaveRequest request) {
@@ -410,15 +545,7 @@ public class SeckillServiceImpl implements SeckillService {
                         || item.getActivityPrice() == null || item.getActivityPrice().compareTo(BigDecimal.ZERO) <= 0) {
                     throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID);
                 }
-                Product product = productMapper.selectById(item.getProductId());
-                ProductSku sku = productSkuMapper.selectById(item.getSkuId());
-                if (product == null || sku == null || !merchantId.equals(product.getMerchantId())
-                        || !product.getId().equals(sku.getProductId()) || !Integer.valueOf(1).equals(sku.getActive())
-                        || !Integer.valueOf(1).equals(product.getStatus())
-                        || item.getActivityPrice().compareTo(sku.getPrice()) >= 0
-                        || item.getActivityStock() > Optional.ofNullable(sku.getStock()).orElse(0)) {
-                    throw new BusinessException(ErrorCode.SECKILL_CONFIG_INVALID.getCode(), "商品、价格或活动库存不符合秒杀规则");
-                }
+                validateSkuConfig(merchantId, item);
             }
         }
     }
@@ -531,6 +658,7 @@ public class SeckillServiceImpl implements SeckillService {
             SeckillAdminSessionVO.Sku sku = new SeckillAdminSessionVO.Sku();
             Product product = products.get(config.getProductId());
             ProductSku productSku = skus.get(config.getSkuId());
+            sku.setId(config.getId());
             sku.setProductId(config.getProductId());
             sku.setSkuId(config.getSkuId());
             sku.setActivityPrice(config.getActivityPrice());

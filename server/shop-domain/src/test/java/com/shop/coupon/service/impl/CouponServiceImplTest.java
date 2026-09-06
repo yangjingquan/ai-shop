@@ -107,6 +107,36 @@ class CouponServiceImplTest {
     }
 
     @Test
+    void rejectsPointsCouponWhenUserAlreadyReachedTemplateLimit() {
+        CouponServiceImpl service = new CouponServiceImpl(templateMapper, userCouponMapper, orderMapper, marketingFeatureService);
+        CouponTemplate template = new CouponTemplate();
+        template.setId(102L); template.setMerchantId(9L); template.setName("积分兑换券");
+        template.setIssueScene(CouponIssueScene.NEW_USER); template.setStatus(1);
+        template.setAmount(new BigDecimal("10")); template.setThresholdAmount(new BigDecimal("39"));
+        template.setScopeType(0); template.setExcludeActivityGoods(1); template.setValidityDays(30);
+        template.setPerUserLimit(1); template.setTotalStock(0); template.setReceivedCount(1); template.setUsedCount(0);
+        when(templateMapper.selectOne(any())).thenReturn(template);
+        when(userCouponMapper.selectCount(any())).thenReturn(1L);
+
+        assertThrows(RuntimeException.class, () -> service.issueTemplateForPoints(7L, 9L, 102L));
+        verify(userCouponMapper, never()).insert(any());
+        verify(templateMapper, never()).updateById(any());
+    }
+
+    @Test
+    void persistsConfiguredPerUserLimit() {
+        CouponServiceImpl service = new CouponServiceImpl(templateMapper, userCouponMapper, orderMapper, marketingFeatureService);
+        CouponTemplateSaveRequest request = templateRequest(CouponIssueScene.NEW_USER);
+        request.setPerUserLimit(3);
+
+        service.createTemplate(9L, request);
+
+        ArgumentCaptor<CouponTemplate> templateCaptor = ArgumentCaptor.forClass(CouponTemplate.class);
+        verify(templateMapper).insert(templateCaptor.capture());
+        assertEquals(3, templateCaptor.getValue().getPerUserLimit());
+    }
+
+    @Test
     void exposesFullRefundReasonForInvalidCoupon() {
         CouponServiceImpl service = new CouponServiceImpl(templateMapper, userCouponMapper, orderMapper, marketingFeatureService);
         UserCoupon coupon = coupon(4L, new BigDecimal("15"), new BigDecimal("99"), 0);

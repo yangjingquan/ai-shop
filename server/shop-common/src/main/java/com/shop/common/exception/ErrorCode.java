@@ -69,6 +69,7 @@ public enum ErrorCode {
     POINTS_PRODUCT_SOLD_OUT(293, "积分商品已售罄"),
     POINTS_REDEEM_LIMIT(294, "已达到兑换上限"),
     MEMBER_DAY_INACTIVE(295, "会员日活动未开始或已结束"),
+    POINTS_COUPON_LIMIT(296, "该优惠券已达到每人领取上限"),
     SECKILL_NOT_FOUND(280, "秒杀活动不存在"),
     SECKILL_NOT_STARTED(281, "秒杀活动尚未开始"),
     SECKILL_ENDED(282, "秒杀活动已结束"),

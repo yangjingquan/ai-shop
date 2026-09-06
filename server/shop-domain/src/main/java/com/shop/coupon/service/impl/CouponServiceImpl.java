@@ -154,6 +154,12 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     @Transactional
+    public Long issueTemplateForPoints(Long userId, Long merchantId, Long templateId) {
+        return issueTemplateInternal(userId, merchantId, templateId, false, CouponIssueScene.NEW_USER, null, true).getCouponId();
+    }
+
+    @Override
+    @Transactional
     public RepurchaseIssueResult issueRepurchaseCoupon(Long userId, Long merchantId, Long templateId, String sourceOrderNo) {
         marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.REPURCHASE_COUPON);
         return issueTemplateInternal(userId, merchantId, templateId, false,
@@ -184,6 +190,11 @@ public class CouponServiceImpl implements CouponService {
 
     private RepurchaseIssueResult issueTemplateInternal(Long userId, Long merchantId, Long templateId, boolean requireNewUser,
                                                         String expectedScene, String sourceOrderNo) {
+        return issueTemplateInternal(userId, merchantId, templateId, requireNewUser, expectedScene, sourceOrderNo, false);
+    }
+
+    private RepurchaseIssueResult issueTemplateInternal(Long userId, Long merchantId, Long templateId, boolean requireNewUser,
+                                                        String expectedScene, String sourceOrderNo, boolean rejectDuplicate) {
         LocalDateTime now = LocalDateTime.now();
         CouponTemplate template = templateMapper.selectOne(new LambdaQueryWrapper<CouponTemplate>()
                 .eq(CouponTemplate::getId, templateId)
@@ -205,6 +216,9 @@ public class CouponServiceImpl implements CouponService {
                 .eq(UserCoupon::getUserId, userId)
                 .eq(UserCoupon::getTemplateId, templateId));
         if (existing >= Math.max(1, Optional.ofNullable(template.getPerUserLimit()).orElse(1))) {
+            if (rejectDuplicate) {
+                throw new BusinessException(ErrorCode.POINTS_COUPON_LIMIT);
+            }
             UserCoupon issued = userCouponMapper.selectOne(new LambdaQueryWrapper<UserCoupon>()
                     .eq(UserCoupon::getUserId, userId).eq(UserCoupon::getTemplateId, templateId)
                     .orderByDesc(UserCoupon::getId).last("LIMIT 1"));
@@ -455,8 +469,8 @@ public class CouponServiceImpl implements CouponService {
                 || request.getStatus() == null || request.getStatus() < 0 || request.getStatus() > 2) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "优惠券发放场景或范围配置不合法");
         }
-        if (request.getPerUserLimit() == null || request.getPerUserLimit() != 1) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "第一版每个模板每人仅可获得一张");
+        if (request.getPerUserLimit() == null || request.getPerUserLimit() < 1 || request.getPerUserLimit() > 9999) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "每个用户最多领取数量需在 1 到 9999 张之间");
         }
         if (repurchase && (request.getRepurchaseTargetType() == null || request.getRepurchaseTargetType() < 0
                 || request.getRepurchaseTargetType() > 2
@@ -478,7 +492,7 @@ public class CouponServiceImpl implements CouponService {
 
     private void applyRequest(CouponTemplate t, CouponTemplateSaveRequest request) {
         t.setName(request.getName().trim()); t.setImage(request.getImage() == null ? "" : request.getImage()); t.setAmount(request.getAmount()); t.setThresholdAmount(request.getThresholdAmount());
-        t.setTotalStock(request.getTotalStock()); t.setPerUserLimit(1); t.setValidityDays(request.getValidityDays());
+        t.setTotalStock(request.getTotalStock()); t.setPerUserLimit(request.getPerUserLimit()); t.setValidityDays(request.getValidityDays());
         t.setValidFrom(request.getValidFrom()); t.setValidTo(request.getValidTo()); t.setScopeType(request.getScopeType());
         t.setScopeIdsJson(toJson(request.getScopeIds() == null ? List.of() : request.getScopeIds()));
         boolean repurchase = CouponIssueScene.REPURCHASE_AFTER_PAID.equals(request.getIssueScene());

@@ -25,6 +25,9 @@ public interface CouponService {
     /** 按模板向指定用户发券，供邀请奖励等服务端奖励使用。 */
     Long issueTemplate(Long userId, Long merchantId, Long templateId);
 
+    /** 积分兑换专用发券；达到模板每人领取上限时必须失败，避免扣积分但不发新券。 */
+    Long issueTemplateForPoints(Long userId, Long merchantId, Long templateId);
+
     RepurchaseIssueResult issueRepurchaseCoupon(Long userId, Long merchantId, Long templateId, String sourceOrderNo);
 
     /** 撤销一张尚未使用的用户券；已使用券不做逆向扣减。 */
