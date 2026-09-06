@@ -1,6 +1,7 @@
 package com.shop.points.controller;
 
 import com.shop.common.response.ApiResult;
+import com.shop.common.response.PageResult;
 import com.shop.common.security.CurrentUserHolder;
 import com.shop.points.dto.*;
 import com.shop.points.service.PointsMemberService;
@@ -17,6 +18,7 @@ public class WxPointsController {
  private Long merchant(HttpServletRequest r){ return merchantResolver.requireActiveMerchant(r); } private Long user(){ return CurrentUserHolder.get().getUserId(); }
  @GetMapping("/profile") public ApiResult<PointsProfileVO> profile(HttpServletRequest r){return ApiResult.success(pointsService.profile(user(),merchant(r)));}
  @GetMapping("/ledger") public ApiResult<List<PointsLedgerVO>> ledger(@RequestParam(defaultValue="30") int limit,HttpServletRequest r){return ApiResult.success(pointsService.ledger(user(),merchant(r),limit));}
+ @GetMapping("/redeem-records") public ApiResult<PageResult<PointsRedeemRecordVO>> redeemRecords(@RequestParam(defaultValue="1") int page,@RequestParam(defaultValue="10") int size,HttpServletRequest r){return ApiResult.success(pointsService.redeemRecords(user(),merchant(r),page,size));}
  @PostMapping("/sign-in") public ApiResult<PointsProfileVO> signIn(HttpServletRequest r){return ApiResult.success(pointsService.signIn(user(),merchant(r)));}
  @GetMapping("/mall") public ApiResult<List<PointsProductVO>> mall(HttpServletRequest r){return ApiResult.success(pointsService.mall(user(),merchant(r)));}
  @PostMapping("/redeem") public ApiResult<PointsRedeemVO> redeem(@RequestBody @Valid PointsRedeemRequest q,HttpServletRequest r){return ApiResult.success(pointsService.redeem(user(),merchant(r),q));}

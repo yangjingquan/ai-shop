@@ -271,6 +271,15 @@ public class PresaleServiceImpl implements PresaleService {
             }
             order.setStatus(OrderStatus.WAIT_SHIP.getCode());
             orderMapper.updateById(order);
+            // 尾款单是商家实际发货单，原始定金单是用户可见订单；尾款支付成功后两者都进入待发货。
+            // 发货时 syncShipping 会把原始定金单同步为待收货，保持用户侧订单生命周期连续。
+            Order depositOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                    .eq(Order::getOrderNo, presale.getDepositOrderNo())
+                    .last("FOR UPDATE"));
+            if (depositOrder != null && depositOrder.getStatus() == OrderStatus.PRESALE_WAIT_BALANCE.getCode()) {
+                depositOrder.setStatus(OrderStatus.WAIT_SHIP.getCode());
+                orderMapper.updateById(depositOrder);
+            }
             presale.setStage(WAIT_SHIP);
             presale.setBalancePaidAt(now);
             presaleOrderMapper.updateById(presale);

@@ -1,5 +1,6 @@
 package com.shop.points.service;
 import com.shop.order.entity.Order;
+import com.shop.common.response.PageResult;
 import com.shop.points.dto.*;
 import java.math.BigDecimal;
 import java.util.List;
@@ -7,6 +8,7 @@ public interface PointsMemberService {
  void registerMember(Long userId, Long merchantId);
  PointsProfileVO profile(Long userId, Long merchantId);
  List<PointsLedgerVO> ledger(Long userId, Long merchantId, int limit);
+ PageResult<PointsRedeemRecordVO> redeemRecords(Long userId, Long merchantId, int page, int size);
  PointsProfileVO signIn(Long userId, Long merchantId);
  List<PointsProductVO> mall(Long userId, Long merchantId);
  PointsRedeemVO redeem(Long userId, Long merchantId, PointsRedeemRequest request);

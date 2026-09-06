@@ -1,10 +1,13 @@
 package com.shop.points.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
+import com.shop.common.response.PageResult;
 import com.shop.coupon.entity.CouponTemplate;
 import com.shop.coupon.enums.CouponIssueScene;
 import com.shop.coupon.mapper.CouponTemplateMapper;
@@ -70,6 +73,47 @@ public class PointsMemberServiceImpl implements PointsMemberService {
         assertEnabled(merchantId); return ledgerMapper.selectList(new LambdaQueryWrapper<PointsLedger>().eq(PointsLedger::getUserId, userId)
                 .eq(PointsLedger::getMerchantId, merchantId).orderByDesc(PointsLedger::getId).last("LIMIT " + Math.min(Math.max(limit, 1), 100)))
                 .stream().map(this::ledgerVO).toList();
+    }
+
+    @Override
+    public PageResult<PointsRedeemRecordVO> redeemRecords(Long userId, Long merchantId, int page, int size) {
+        assertEnabled(merchantId);
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 20);
+        IPage<PointsRedeemRecord> result = redeemMapper.selectPage(new Page<>(safePage, safeSize),
+                new LambdaQueryWrapper<PointsRedeemRecord>()
+                        .eq(PointsRedeemRecord::getUserId, userId)
+                        .eq(PointsRedeemRecord::getMerchantId, merchantId)
+                        .eq(PointsRedeemRecord::getStatus, 1)
+                        .orderByDesc(PointsRedeemRecord::getId));
+        List<PointsRedeemRecord> records = result.getRecords();
+        if (records.isEmpty()) return PageResult.of(List.of(), result.getTotal(), safePage, safeSize);
+
+        Set<Long> productIds = records.stream().map(PointsRedeemRecord::getPointsProductId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, PointsProduct> products = productIds.isEmpty() ? Map.of() : productMapper.selectBatchIds(productIds)
+                .stream().collect(Collectors.toMap(PointsProduct::getId, item -> item));
+
+        Set<String> orderNos = records.stream().map(PointsRedeemRecord::getOrderNo)
+                .filter(value -> value != null && !value.isBlank()).collect(Collectors.toSet());
+        Map<String, Order> orders = orderNos.isEmpty() ? Map.of() : orderMapper.selectList(new LambdaQueryWrapper<Order>()
+                        .eq(Order::getUserId, userId)
+                        .eq(Order::getMerchantId, merchantId)
+                        .eq(Order::getOrderType, 3)
+                        .in(Order::getOrderNo, orderNos))
+                .stream().collect(Collectors.toMap(Order::getOrderNo, item -> item));
+
+        Set<String> redeemNos = records.stream().map(PointsRedeemRecord::getRedeemNo).collect(Collectors.toSet());
+        Map<String, PointsLedger> ledgers = ledgerMapper.selectList(new LambdaQueryWrapper<PointsLedger>()
+                        .eq(PointsLedger::getUserId, userId)
+                        .eq(PointsLedger::getMerchantId, merchantId)
+                        .eq(PointsLedger::getSource, "REDEEM")
+                        .in(PointsLedger::getBusinessNo, redeemNos))
+                .stream().collect(Collectors.toMap(PointsLedger::getBusinessNo, item -> item));
+
+        List<PointsRedeemRecordVO> list = records.stream().map(record -> redeemRecordVO(record,
+                products.get(record.getPointsProductId()), orders.get(record.getOrderNo()), ledgers.get(record.getRedeemNo()))).toList();
+        return PageResult.of(list, result.getTotal(), safePage, safeSize);
     }
 
     @Override @Transactional
@@ -157,6 +201,32 @@ public class PointsMemberServiceImpl implements PointsMemberService {
     }
     private int safe(Integer n) { return n == null ? 0 : n; }
     private PointsLedgerVO ledgerVO(PointsLedger x){ PointsLedgerVO v=new PointsLedgerVO();v.setId(x.getId());v.setChangeValue(x.getChangeValue());v.setBalanceAfter(x.getBalanceAfter());v.setSource(x.getSource());v.setDescription(x.getDescription());v.setBusinessNo(x.getBusinessNo());v.setCreatedAt(x.getCreatedAt());return v; }
+    private PointsRedeemRecordVO redeemRecordVO(PointsRedeemRecord record, PointsProduct product, Order order, PointsLedger ledger) {
+        PointsRedeemRecordVO vo = new PointsRedeemRecordVO();
+        vo.setId(record.getId());
+        vo.setRedeemNo(record.getRedeemNo());
+        vo.setTitle(product != null && product.getTitle() != null && !product.getTitle().isBlank()
+                ? product.getTitle() : redeemTitle(ledger));
+        vo.setImage(product == null ? "" : displayImage(product));
+        vo.setRedeemType(record.getCouponId() != null ? "COUPON" : "PHYSICAL");
+        vo.setPointsCost(record.getPointsCost());
+        vo.setQuantity(record.getQuantity());
+        vo.setOrderNo(record.getOrderNo());
+        vo.setCouponId(record.getCouponId());
+        if (order != null) {
+            vo.setOrderStatus(order.getStatus());
+            vo.setStatusText(order.getStatus() == null ? "兑换成功" : OrderStatus.statusText(order.getStatus()));
+        } else {
+            vo.setStatusText(record.getCouponId() != null ? "已兑换" : "兑换成功");
+        }
+        vo.setCreatedAt(record.getCreatedAt());
+        return vo;
+    }
+    private String redeemTitle(PointsLedger ledger) {
+        if (ledger == null || ledger.getDescription() == null || ledger.getDescription().isBlank()) return "积分兑换商品";
+        String description = ledger.getDescription();
+        return description.startsWith("兑换：") ? description.substring(3) : description;
+    }
     private PointsProductVO productVO(PointsProduct p, Long uid, Long mid){ PointsProductVO v=new PointsProductVO();v.setId(p.getId());v.setProductId(p.getProductId());v.setSkuId(p.getSkuId());v.setCouponTemplateId(p.getCouponTemplateId());v.setTitle(p.getTitle());v.setImage(displayImage(p));v.setPointsPrice(p.getPointsPrice());v.setStock(p.getStock());v.setPerUserLimit(p.getPerUserLimit());v.setStatus(p.getStatus());v.setPhysical(p.getProductId()!=null); if(uid!=null) v.setRedeemedCount(redeemMapper.selectList(new LambdaQueryWrapper<PointsRedeemRecord>().eq(PointsRedeemRecord::getUserId,uid).eq(PointsRedeemRecord::getMerchantId,mid).eq(PointsRedeemRecord::getPointsProductId,p.getId()).eq(PointsRedeemRecord::getStatus,1)).stream().mapToInt(record->safe(record.getQuantity())).sum());return v; }
     private String resolveExchangeImage(PointsProductRequest req){ if(req.getProductId()!=null){ ProductSku sku=req.getSkuId()==null?null:skuMapper.selectById(req.getSkuId()); if(sku!=null&&sku.getImage()!=null&&!sku.getImage().isBlank())return sku.getImage(); Product goods=goodsMapper.selectById(req.getProductId()); if(goods!=null&&goods.getMainImage()!=null&&!goods.getMainImage().isBlank())return goods.getMainImage(); } if(req.getCouponTemplateId()!=null){ CouponTemplate template=couponTemplateMapper.selectById(req.getCouponTemplateId()); if(template!=null&&template.getImage()!=null&&!template.getImage().isBlank())return template.getImage(); } return req.getImage()==null?"":req.getImage(); }
     private String displayImage(PointsProduct p){ if(p.getProductId()!=null){ ProductSku sku=p.getSkuId()==null?null:skuMapper.selectById(p.getSkuId()); if(sku!=null&&sku.getImage()!=null&&!sku.getImage().isBlank())return sku.getImage(); Product goods=goodsMapper.selectById(p.getProductId()); if(goods!=null&&goods.getMainImage()!=null&&!goods.getMainImage().isBlank())return goods.getMainImage(); } if(p.getCouponTemplateId()!=null){ CouponTemplate template=couponTemplateMapper.selectById(p.getCouponTemplateId()); if(template!=null&&template.getImage()!=null&&!template.getImage().isBlank())return template.getImage(); } return p.getImage()==null?"":p.getImage(); }

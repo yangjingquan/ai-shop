@@ -67,6 +67,7 @@ Page({
         const list = ((res.data && res.data.list) || []).map((item) => ({
           ...item,
           statusText: this.displayStatusText(item),
+          displayStatusCode: this.displayStatusCode(item),
           seckillLabel: this.data.seckillEnabled && item.orderType === 2 ? '秒杀订单' : '',
           bundleLabel: Number(item.orderType) === 4 ? (item.bundleName || '搭配购套餐') : '',
           lotteryLabel: Number(item.orderType) === 5 ? '抽奖实物奖品' : '',
@@ -80,7 +81,7 @@ Page({
             ? `${item.groupBuyPaidCount || 0}/${item.groupBuyRequiredCount} 人`
             : '',
           refundStatusText: item.refundStatus === 0 ? '退款申请处理中' : item.refundStatus === 1 ? '退款处理中' : item.refundStatus === 2 ? '退款申请已拒绝' : item.refundStatus === 3 ? '退款成功' : item.refundStatus === 4 ? '退款失败，可重新申请' : item.refundStatus === 5 ? '请填写退货物流' : item.refundStatus === 6 ? '商家正在验货' : '',
-          totalLabel: item.status === 0 ? '需支付' : item.status === 8 || item.status === 9 ? '已付定金' : '实付',
+          totalLabel: this.totalLabel(item),
           items: (item.items || []).map((goods) => ({
             ...goods,
             mainImage: resolveImageUrl(goods.mainImage || ''),
@@ -104,11 +105,48 @@ Page({
   },
 
   displayStatusText(item) {
+    if (Number(item.orderType) === 6 && item.presaleStage !== undefined && item.presaleStage !== null) {
+      return item.presaleStageText || this.presaleStageText(item.presaleStage)
+    }
     if (this.data.groupBuyEnabled || item.orderType !== 1) return item.statusText
     if (item.status === 5) return '订单处理中'
     if (item.status === 6) return '待发货'
     if (item.status === 7) return item.refundStatusText || '退款处理中'
     return item.statusText
+  },
+
+  displayStatusCode(item) {
+    if (Number(item.orderType) !== 6 || item.presaleStage === undefined || item.presaleStage === null) {
+      return item.status
+    }
+    const stage = Number(item.presaleStage)
+    if (stage === 0) return 0
+    if (stage === 1 || stage === 2) return 8
+    if (stage === 3) return 1
+    if (stage === 4) return 3
+    if (stage === 5 || stage === 6) return 9
+    if (stage === 7) return 4
+    return item.status
+  },
+
+  presaleStageText(stage) {
+    return ({
+      0: '待支付定金',
+      1: '待付尾款',
+      2: '尾款待支付',
+      3: '待发货',
+      4: '已完成',
+      5: '退款处理中',
+      6: '尾款逾期待处理',
+      7: '已取消',
+    })[Number(stage)] || '预售订单'
+  },
+
+  totalLabel(item) {
+    if (Number(item.orderType) === 6 && item.presaleBalancePaid) return '已付尾款'
+    if (item.status === 0) return '需支付'
+    if (item.status === 8 || item.status === 9) return '已付定金'
+    return '实付'
   },
 
   switchTab(e) {

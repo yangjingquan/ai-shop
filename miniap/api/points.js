@@ -2,6 +2,7 @@ const { request } = require('../utils/request')
 module.exports = {
   profile: () => request({ url: '/api/wx/points/profile' }),
   ledger: (limit = 30) => request({ url: '/api/wx/points/ledger', data: { limit } }),
+  redeemRecords: (page = 1, size = 10) => request({ url: '/api/wx/points/redeem-records', data: { page, size } }),
   signIn: () => request({ url: '/api/wx/points/sign-in', method: 'POST' }),
   mall: () => request({ url: '/api/wx/points/mall' }),
   redeem: (data) => request({ url: '/api/wx/points/redeem', method: 'POST', data }),

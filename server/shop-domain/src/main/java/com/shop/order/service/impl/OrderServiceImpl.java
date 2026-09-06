@@ -13,6 +13,8 @@ import com.shop.marketing.dto.PromotionCheckoutResult;
 import com.shop.marketing.dto.PromotionPricingItem;
 import com.shop.marketing.service.PromotionService;
 import com.shop.presale.service.PresaleService;
+import com.shop.presale.entity.PresaleOrder;
+import com.shop.presale.mapper.PresaleOrderMapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.response.PageResult;
@@ -89,6 +91,8 @@ public class OrderServiceImpl implements OrderService {
     private final PlatformTransactionManager transactionManager;
     private final CouponService couponService;
     private final PromotionService promotionService;
+
+    private final PresaleOrderMapper presaleOrderMapper;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private PresaleService presaleService;
@@ -630,7 +634,27 @@ public class OrderServiceImpl implements OrderService {
                 .orderByDesc(Order::getCreatedAt)
                 .orderByDesc(Order::getId);
         if (status != null) {
-            q.eq(Order::getStatus, status);
+            List<Integer> presaleStages = presaleStagesForOrderStatus(status);
+            if (presaleStages.isEmpty()) {
+                q.eq(Order::getStatus, status);
+            } else {
+                List<Long> presaleFilterIds = presaleOrderMapper.selectList(
+                                new LambdaQueryWrapper<PresaleOrder>()
+                                        .select(PresaleOrder::getId)
+                                        .eq(PresaleOrder::getUserId, userId)
+                                        .in(PresaleOrder::getStage, presaleStages))
+                        .stream()
+                        .map(PresaleOrder::getId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+                if (presaleFilterIds.isEmpty()) {
+                    q.eq(Order::getStatus, status);
+                } else {
+                    q.and(wrapper -> wrapper.eq(Order::getStatus, status)
+                            .or()
+                            .in(Order::getPresaleOrderId, presaleFilterIds));
+                }
+            }
         }
 
         IPage<Order> pageReq = new Page<>(page, size);
@@ -669,6 +693,18 @@ public class OrderServiceImpl implements OrderService {
             groupBuyGroupMapper.selectBatchIds(groupIds).forEach(g -> groupMap.put(g.getId(), g));
         }
 
+        // 预售订单的原始定金订单会保留 status=待付尾款，实际履约阶段以 presale_order.stage 为准。
+        final Map<Long, PresaleOrder> presaleMap = new HashMap<>();
+        List<Long> presaleIds = result.getRecords().stream()
+                .filter(o -> Integer.valueOf(6).equals(o.getOrderType()) && o.getPresaleOrderId() != null)
+                .map(Order::getPresaleOrderId)
+                .distinct()
+                .collect(Collectors.toList());
+        if (!presaleIds.isEmpty()) {
+            presaleOrderMapper.selectBatchIds(presaleIds)
+                    .forEach(item -> presaleMap.put(item.getId(), item));
+        }
+
         List<OrderListVO> list = result.getRecords().stream().map(o -> {
             OrderListVO vo = new OrderListVO();
             vo.setOrderNo(o.getOrderNo());
@@ -676,6 +712,14 @@ public class OrderServiceImpl implements OrderService {
             vo.setStatusText(OrderStatus.statusText(o.getStatus()));
             vo.setPayAmount(o.getPayAmount());
             vo.setOrderType(o.getOrderType());
+            if (Integer.valueOf(6).equals(o.getOrderType())) {
+                PresaleOrder presale = presaleMap.get(o.getPresaleOrderId());
+                if (presale != null) {
+                    vo.setPresaleStage(presale.getStage());
+                    vo.setPresaleStageText(presaleStageText(presale.getStage()));
+                    vo.setPresaleBalancePaid(presale.getBalancePaidAt() != null);
+                }
+            }
             vo.setBundleActivityId(o.getBundleActivityId());
             vo.setBundleName(readCouponName(o.getBundleSnapshotJson()));
             vo.setGroupBuyGroupId(o.getGroupBuyGroupId());
@@ -879,6 +923,32 @@ public class OrderServiceImpl implements OrderService {
             if (item.getCode() == status) return item.getText();
         }
         return "团购状态未知";
+    }
+
+    private String presaleStageText(Integer stage) {
+        if (stage == null) return "预售订单";
+        return switch (stage) {
+            case 0 -> "待支付定金";
+            case 1 -> "待付尾款";
+            case 2 -> "尾款待支付";
+            case 3 -> "待发货";
+            case 4 -> "已完成";
+            case 5 -> "退款处理中";
+            case 6 -> "尾款逾期待处理";
+            case 7 -> "已取消";
+            default -> "预售订单";
+        };
+    }
+
+    private List<Integer> presaleStagesForOrderStatus(Integer status) {
+        if (status == null) return List.of();
+        return switch (status) {
+            case 1 -> List.of(3);       // 待发货
+            case 3 -> List.of(4);       // 已完成
+            case 4 -> List.of(7);       // 已取消
+            case 7 -> List.of(5);       // 退款处理中
+            default -> List.of();
+        };
     }
 
     // ==================== ship / confirmReceive / refund ====================

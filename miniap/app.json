@@ -21,6 +21,7 @@
     "pages/order/detail",
     "pages/points/index",
     "pages/points/mall",
+    "pages/points/records/index",
     "pages/points/member-day",
     "pages/group-buy/list",
     "pages/group-buy/group",

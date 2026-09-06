@@ -34,7 +34,7 @@
       <view wx:if="{{item.canDelete}}" class="swipe-delete" catchtap="deleteOrder" data-orderno="{{item.orderNo}}">删除</view>
       <view class="order-card" style="{{item.swipeStyle}}" data-index="{{index}}" data-orderno="{{item.orderNo}}" bindtap="goDetail">
         <view class="order-head">
-          <text class="state-text s{{item.status}}">{{item.statusText}}</text>
+          <text class="state-text s{{item.displayStatusCode}}">{{item.statusText}}</text>
           <text wx:if="{{item.seckillLabel}}" class="seckill-order-tag">{{item.seckillLabel}}</text>
           <text wx:if="{{item.bundleLabel}}" class="seckill-order-tag">{{item.bundleLabel}}</text>
           <text wx:if="{{item.lotteryLabel}}" class="seckill-order-tag">{{item.lotteryLabel}}</text>

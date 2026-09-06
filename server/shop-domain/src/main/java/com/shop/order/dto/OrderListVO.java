@@ -17,6 +17,13 @@ public class OrderListVO {
 
     private Integer orderType;
 
+    /** 预售中心阶段，预售订单使用；普通订单为空。 */
+    private Integer presaleStage;
+
+    private String presaleStageText;
+
+    private Boolean presaleBalancePaid;
+
     private Long bundleActivityId;
 
     private String bundleName;

@@ -12,5 +12,6 @@ Page({
   time(value) { const d = new Date(typeof value === 'number' ? value : String(value || '').replace(' ', 'T')); if (isNaN(d)) return ''; const p=n=>String(n).padStart(2,'0'); return `${d.getMonth()+1}-${p(d.getDate())}` },
   signIn() { if (this.data.signedToday) return; pointsApi.signIn().then(res => { this.setData({ profile: res.data || this.data.profile, signedToday: true }); wx.showToast({ title: '签到成功' }); this.load() }) },
   goMall() { wx.navigateTo({ url: '/pages/points/mall' }) }, goMemberDay() { wx.navigateTo({ url: '/pages/points/member-day' }) },
+  goRecords() { wx.navigateTo({ url: '/pages/points/records/index' }) },
   goLottery() { const activity = this.data.lotteryActivity; if (activity && activity.id) wx.navigateTo({ url: `/pages/activity/lottery/index?id=${activity.id}` }) },
 })
