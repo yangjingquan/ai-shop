@@ -2,8 +2,11 @@ const auth = require('../../../utils/auth')
 const lotteryApi = require('../../../api/lottery')
 const marketingCapabilities = require('../../../utils/marketing-capabilities')
 
+const DRAW_ANIMATION_MS = 1700
+const REVEAL_ANIMATION_MS = 450
+
 Page({
-  data: { activity: null, activityId: 0, loading: true, drawing: false, ruleVisible: false },
+  data: { activity: null, activityId: 0, loading: true, drawing: false, drawPhase: 'idle', drawMessage: '', ruleVisible: false },
 
   onLoad(options) {
     this.setData({ activityId: Number(options && options.id || 0) })
@@ -42,12 +45,19 @@ Page({
         wx.showToast({ title: '请登录后参与抽奖', icon: 'none' })
         return
       }
-      this.setData({ drawing: true })
+      this.setData({ drawing: true, drawPhase: 'drawing', drawMessage: '抽奖中…' })
+      const startedAt = Date.now()
       const key = `lottery_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
       return lotteryApi.draw(activity.id, key).then((res) => {
-        wx.setStorageSync('lottery_last_result', res && res.data)
-        wx.redirectTo({ url: `/pages/activity/lottery/result?id=${activity.id}` })
-      }).catch(() => {}).finally(() => this.setData({ drawing: false }))
+        const waitMs = Math.max(0, DRAW_ANIMATION_MS - (Date.now() - startedAt))
+        return new Promise((resolve) => setTimeout(resolve, waitMs)).then(() => {
+          this.setData({ drawPhase: 'revealing', drawMessage: '揭晓中…' })
+          return new Promise((resolve) => setTimeout(resolve, REVEAL_ANIMATION_MS))
+        }).then(() => {
+          wx.setStorageSync('lottery_last_result', res && res.data)
+          wx.redirectTo({ url: `/pages/activity/lottery/result?id=${activity.id}` })
+        })
+      }).catch(() => {}).finally(() => this.setData({ drawing: false, drawPhase: 'idle', drawMessage: '' }))
     })
   },
 
