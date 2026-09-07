@@ -11,6 +11,7 @@ import com.shop.groupbuy.dto.GroupBuyCreateVO;
 import com.shop.groupbuy.dto.GroupBuyGroupVO;
 import com.shop.groupbuy.dto.GroupBuyMemberVO;
 import com.shop.groupbuy.dto.GroupBuyProductDetailVO;
+import com.shop.groupbuy.dto.GroupBuyQuoteRequest;
 import com.shop.groupbuy.entity.GroupBuyGroup;
 import com.shop.groupbuy.entity.GroupBuyMember;
 import com.shop.groupbuy.entity.GroupRefundTask;
@@ -32,6 +33,9 @@ import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.WxPayService;
+import com.shop.pricing.dto.QuoteRequest;
+import com.shop.pricing.dto.QuoteResult;
+import com.shop.pricing.service.QuoteService;
 import com.shop.notification.service.UserNotificationService;
 import com.shop.product.dto.ProductDetailVO;
 import com.shop.product.dto.ProductListVO;
@@ -85,6 +89,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     private final MarketingFeatureService marketingFeatureService;
     private final GroupBuyMessageService groupBuyMessageService;
     private final ObjectMapper objectMapper;
+    private final QuoteService quoteService;
 
     @Override
     public PageResult<ProductListVO> productPage(int page, int size, Long merchantId, Long categoryId, String keyword) {
@@ -115,6 +120,20 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             vo.setGroups(active.stream().map(this::toGroupVO).collect(Collectors.toList()));
         }
         return vo;
+    }
+
+    @Override
+    public QuoteResult quote(Long userId, Long merchantId, GroupBuyQuoteRequest request) {
+        Product product = productMapper.selectById(request.getProductId()); ProductSku sku = skuMapper.selectById(request.getSkuId());
+        if (product == null || sku == null || !merchantId.equals(product.getMerchantId()) || !product.getId().equals(sku.getProductId())
+                || !Integer.valueOf(1).equals(product.getIsGroupBuy()) || !Integer.valueOf(1).equals(product.getStatus())) throw new BusinessException(ErrorCode.GROUP_BUY_PRODUCT_NOT_FOUND);
+        if (userAddressMapper.selectOne(new LambdaQueryWrapper<UserAddress>().eq(UserAddress::getId, request.getAddressId()).eq(UserAddress::getUserId, userId)) == null) throw new BusinessException(ErrorCode.ADDRESS_NOT_FOUND);
+        validateGroupBuyConfig(product.getGroupBuyPrice(), product.getGroupBuyRequiredCount());
+        BigDecimal original = sku.getPrice().multiply(BigDecimal.valueOf(request.getQuantity()));
+        QuoteRequest quote = new QuoteRequest(); quote.setUserId(userId); quote.setMerchantId(merchantId); quote.setScene("GROUP_BUY");
+        quote.setOriginalAmount(original); quote.setActivityDiscountAmount(original.subtract(product.getGroupBuyPrice().multiply(BigDecimal.valueOf(request.getQuantity())))); quote.setActivityName("拼团");
+        QuoteRequest.QuoteItem item = new QuoteRequest.QuoteItem(); item.setProductId(product.getId()); item.setSkuId(sku.getId()); item.setQuantity(request.getQuantity()); item.setOriginalUnitPrice(sku.getPrice()); item.setActivityUnitPrice(product.getGroupBuyPrice()); quote.setItems(List.of(item));
+        return quoteService.quote(quote);
     }
 
     @Override
@@ -428,6 +447,11 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         if (address == null) {
             throw new BusinessException(ErrorCode.ADDRESS_NOT_FOUND);
         }
+        QuoteResult quote = quoteService.requireValid(userId, product.getMerchantId(), req.getQuoteId(), req.getRuleVersion(), "GROUP_BUY");
+        BigDecimal original = sku.getPrice().multiply(BigDecimal.valueOf(req.getQuantity()));
+        BigDecimal groupPayable = product.getGroupBuyPrice().multiply(BigDecimal.valueOf(req.getQuantity()));
+        if (quote.getOriginalAmount().compareTo(original) != 0 || quote.getActivityDiscountAmount().compareTo(original.subtract(groupPayable)) != 0
+                || quote.getPayableAmount().compareTo(groupPayable) != 0) throw new BusinessException(ErrorCode.QUOTE_EXPIRED);
 
         GroupBuyGroup group;
         if (openNewGroup) {
@@ -478,15 +502,16 @@ public class GroupBuyServiceImpl implements GroupBuyService {
 
         Order order = new Order();
         order.setOrderNo(orderNo);
+        order.setQuoteId(quote.getQuoteId()); order.setRuleVersion(quote.getRuleVersion()); order.setPricingSnapshotJson(quote.getPricingSnapshotJson());
         order.setUserId(userId);
         order.setMerchantId(product.getMerchantId());
         order.setStatus(OrderStatus.WAIT_PAY.getCode());
         order.setOrderType(1);
         order.setGroupBuyGroupId(group.getId());
-        order.setTotalAmount(total);
+        order.setTotalAmount(original);
         order.setFreightAmount(BigDecimal.ZERO);
-        order.setDiscountAmount(BigDecimal.ZERO);
-        order.setPayAmount(total);
+        order.setDiscountAmount(original.subtract(total));
+        order.setPayAmount(quote.getPayableAmount());
         order.setAddressSnapshot(toJson(new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail())));
         order.setRemark(req.getRemark() != null ? req.getRemark() : "");
         orderMapper.insert(order);
@@ -502,6 +527,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         item.setUnitPrice(product.getGroupBuyPrice());
         item.setQuantity(req.getQuantity());
         item.setSubtotal(total);
+        item.setPricingSnapshotJson(quote.getPricingSnapshotJson());
         orderItemMapper.insert(item);
 
         GroupBuyMember member = new GroupBuyMember();
@@ -517,7 +543,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         GroupBuyCreateVO vo = new GroupBuyCreateVO();
         vo.setGroupId(group.getId());
         vo.setOrderNo(orderNo);
-        vo.setPayAmount(total);
+        vo.setPayAmount(quote.getPayableAmount());
         return vo;
     }
 

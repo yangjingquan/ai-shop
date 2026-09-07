@@ -12,6 +12,9 @@ import com.shop.coupon.service.CouponService;
 import com.shop.marketing.dto.PromotionCheckoutResult;
 import com.shop.marketing.dto.PromotionPricingItem;
 import com.shop.marketing.service.PromotionService;
+import com.shop.pricing.dto.QuoteRequest;
+import com.shop.pricing.dto.QuoteResult;
+import com.shop.pricing.service.QuoteService;
 import com.shop.presale.service.PresaleService;
 import com.shop.presale.entity.PresaleOrder;
 import com.shop.presale.mapper.PresaleOrderMapper;
@@ -91,6 +94,7 @@ public class OrderServiceImpl implements OrderService {
     private final PlatformTransactionManager transactionManager;
     private final CouponService couponService;
     private final PromotionService promotionService;
+    private final QuoteService quoteService;
 
     private final PresaleOrderMapper presaleOrderMapper;
 
@@ -245,11 +249,18 @@ public class OrderServiceImpl implements OrderService {
             group.setPayAmount(group.getTotalAmount().subtract(couponDiscount).subtract(promotion.getDiscountAmount()).max(BigDecimal.ZERO));
         }
 
+        QuoteResult quote = quoteService.quote(quoteRequest(userId, promotionMerchantId, "NORMAL", grandTotal,
+                promotion.getDiscountAmount(), couponDiscount, BigDecimal.ZERO, couponResult.getSelectedCouponId(),
+                promotion.getActivityName(), cartItems, productMap, skuMap));
         OrderPreviewVO vo = new OrderPreviewVO();
         vo.setGroups(groups);
         vo.setTotalAmount(grandTotal);
         vo.setDiscountAmount(couponDiscount.add(promotion.getDiscountAmount()));
-        vo.setPayAmount(grandTotal.subtract(couponDiscount).subtract(promotion.getDiscountAmount()).max(BigDecimal.ZERO));
+        vo.setPayAmount(quote.getPayableAmount());
+        vo.setOriginalAmount(quote.getOriginalAmount()); vo.setActivityDiscountAmount(quote.getActivityDiscountAmount());
+        vo.setPointsDiscountAmount(quote.getPointsDiscountAmount()); vo.setFreightAmount(quote.getFreightAmount());
+        vo.setQuoteId(quote.getQuoteId()); vo.setRuleVersion(quote.getRuleVersion()); vo.setQuoteExpiresAt(quote.getExpiresAt());
+        vo.setUnavailableReasons(quote.getUnavailableReasons());
         vo.setCouponId(couponResult.getSelectedCouponId());
         vo.setCouponName(couponResult.getSelectedCouponName());
         vo.setCouponDiscountAmount(couponDiscount);
@@ -259,6 +270,7 @@ public class OrderServiceImpl implements OrderService {
         vo.setPromotionDiscountAmount(promotion.getDiscountAmount());
         vo.setPromotion(promotion);
         vo.setCoupons(couponResult.getCoupons());
+        if (!groups.isEmpty()) groups.get(0).setPayAmount(quote.getPayableAmount());
         vo.setAddress(new AddressSnapshot(
                 address.getReceiver(), address.getPhone(),
                 address.getRegion(), address.getDetail()));
@@ -367,18 +379,30 @@ public class OrderServiceImpl implements OrderService {
                     return new PromotionPricingItem(ci.getProductId(), product.getCategoryId(),
                             sku.getPrice().multiply(BigDecimal.valueOf(ci.getQuantity())));
                 }).toList());
+                CouponCheckoutResult couponPreview;
+                if (promotion.getActivityId() != null && !promotion.isCouponStackable()) {
+                    couponPreview = new CouponCheckoutResult();
+                } else {
+                    couponPreview = couponService.calculate(userId,
+                            new CouponUseContext(mid, expectedTotal.subtract(promotion.getDiscountAmount()), couponItems), req.getCouponId(), false, null);
+                }
+                QuoteResult quote = quoteService.requireValid(userId, mid, req.getQuoteId(), req.getRuleVersion(), "NORMAL");
+                assertQuoteMatches(quote, expectedTotal, promotion.getDiscountAmount(), couponPreview.getDiscountAmount());
                 CouponCheckoutResult couponResult;
                 if (promotion.getActivityId() != null && !promotion.isCouponStackable()) {
-                    couponResult = new CouponCheckoutResult();
+                    couponResult = couponPreview;
                 } else {
                     couponResult = couponService.calculate(userId,
                             new CouponUseContext(mid, expectedTotal.subtract(promotion.getDiscountAmount()), couponItems), req.getCouponId(), true, orderNo);
                 }
                 BigDecimal couponDiscount = couponResult.getDiscountAmount();
+                assertQuoteMatches(quote, expectedTotal, promotion.getDiscountAmount(), couponDiscount);
 
                 // 先插入 order
                 Order order = new Order();
                 order.setOrderNo(orderNo);
+                order.setQuoteId(quote.getQuoteId());
+                order.setRuleVersion(quote.getRuleVersion());
                 order.setUserId(userId);
                 order.setMerchantId(mid);
                 order.setStatus(OrderStatus.WAIT_PAY.getCode());
@@ -398,6 +422,7 @@ public class OrderServiceImpl implements OrderService {
                         "activityId", promotion.getActivityId(), "name", promotion.getActivityName(),
                         "type", promotion.getActivityType(), "qualifiedAmount", promotion.getQualifiedAmount(),
                         "thresholdAmount", promotion.getThresholdAmount(), "discountAmount", promotion.getDiscountAmount())));
+                order.setPricingSnapshotJson(quote.getPricingSnapshotJson());
                 order.setPayAmount(BigDecimal.ZERO);
                 order.setAddressSnapshot(addrJson);
                 order.setRemark(req.getRemark() != null ? req.getRemark() : "");
@@ -432,12 +457,13 @@ public class OrderServiceImpl implements OrderService {
                     oi.setUnitPrice(unitPrice);
                     oi.setQuantity(ci.getQuantity());
                     oi.setSubtotal(subtotal);
+                    oi.setPricingSnapshotJson(quote.getPricingSnapshotJson());
                     orderItemMapper.insert(oi);
                 }
 
                 // 更新订单金额
                 order.setTotalAmount(totalAmount);
-                order.setPayAmount(totalAmount.subtract(couponDiscount).subtract(promotion.getDiscountAmount()).max(BigDecimal.ZERO));
+                order.setPayAmount(quote.getPayableAmount());
                 orderMapper.updateById(order);
 
                 // recalc 每个 product
@@ -500,6 +526,30 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+    }
+
+    private QuoteRequest quoteRequest(Long userId, Long merchantId, String scene, BigDecimal original,
+                                      BigDecimal activityDiscount, BigDecimal couponDiscount, BigDecimal freight, Long couponId,
+                                      String activityName, List<CartItem> items, Map<Long, Product> productMap,
+                                      Map<Long, ProductSku> skuMap) {
+        QuoteRequest request = new QuoteRequest(); request.setUserId(userId); request.setMerchantId(merchantId); request.setScene(scene);
+        request.setOriginalAmount(original); request.setActivityDiscountAmount(activityDiscount); request.setCouponDiscountAmount(couponDiscount);
+        request.setFreightAmount(freight); request.setCouponId(couponId); request.setActivityName(activityName);
+        request.setItems(items.stream().map(item -> {
+            ProductSku sku = skuMap.get(item.getSkuId()); QuoteRequest.QuoteItem quoteItem = new QuoteRequest.QuoteItem();
+            quoteItem.setProductId(item.getProductId()); quoteItem.setSkuId(item.getSkuId()); quoteItem.setQuantity(item.getQuantity());
+            quoteItem.setOriginalUnitPrice(sku == null ? BigDecimal.ZERO : sku.getPrice()); quoteItem.setActivityUnitPrice(sku == null ? BigDecimal.ZERO : sku.getPrice());
+            return quoteItem;
+        }).toList());
+        return request;
+    }
+
+    private void assertQuoteMatches(QuoteResult quote, BigDecimal original, BigDecimal activityDiscount, BigDecimal couponDiscount) {
+        BigDecimal payable = original.subtract(activityDiscount).subtract(couponDiscount).max(BigDecimal.ZERO);
+        if (quote.getOriginalAmount().compareTo(original) != 0 || quote.getActivityDiscountAmount().compareTo(activityDiscount) != 0
+                || quote.getCouponDiscountAmount().compareTo(couponDiscount) != 0 || quote.getPayableAmount().compareTo(payable) != 0) {
+            throw new BusinessException(ErrorCode.QUOTE_EXPIRED);
+        }
     }
 
     private void validateSingleMerchantCheckout(List<CartItem> cartItems) {

@@ -19,6 +19,13 @@ public class SeckillOrderPreviewVO {
     private BigDecimal freightAmount;
     private BigDecimal discountAmount;
     private BigDecimal payAmount;
+    private String quoteId;
+    private Long ruleVersion;
+    private BigDecimal originalAmount;
+    private BigDecimal activityDiscountAmount;
+    private BigDecimal couponDiscountAmount;
+    private BigDecimal pointsDiscountAmount;
+    private java.time.LocalDateTime quoteExpiresAt;
     private Integer userLimit;
     private Integer remainingStock;
     private String ruleText;

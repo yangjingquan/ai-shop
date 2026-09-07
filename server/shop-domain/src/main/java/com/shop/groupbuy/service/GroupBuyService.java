@@ -6,10 +6,13 @@ import com.shop.groupbuy.dto.GroupBuyCreateVO;
 import com.shop.groupbuy.dto.GroupBuyGroupVO;
 import com.shop.groupbuy.dto.GroupBuyProductDetailVO;
 import com.shop.product.dto.ProductListVO;
+import com.shop.groupbuy.dto.GroupBuyQuoteRequest;
+import com.shop.pricing.dto.QuoteResult;
 
 public interface GroupBuyService {
     PageResult<ProductListVO> productPage(int page, int size, Long merchantId, Long categoryId, String keyword);
     GroupBuyProductDetailVO productDetail(Long productId, Long merchantId);
+    QuoteResult quote(Long userId, Long merchantId, GroupBuyQuoteRequest request);
     GroupBuyCreateVO openGroup(Long userId, GroupBuyCreateRequest req);
     GroupBuyCreateVO openGroup(Long userId, Long merchantId, GroupBuyCreateRequest req);
     GroupBuyCreateVO joinGroup(Long userId, Long groupId, GroupBuyCreateRequest req);

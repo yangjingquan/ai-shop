@@ -54,6 +54,16 @@
     <view class="promotion-summary-desc">套餐商品不参与优惠券、满减或其他活动，价格以本次结算为准。</view>
   </view>
 
+  <view class="section card" wx:if="{{preview}}">
+    <view class="section-title">价格明细</view>
+    <view class="price-line"><text>商品原价</text><text>¥{{preview.originalAmount || preview.totalAmount}}</text></view>
+    <view class="price-line" wx:if="{{preview.activityDiscountAmount || preview.promotionDiscountAmount || preview.bundleDiscountAmount}}"><text>活动优惠</text><text>-¥{{preview.activityDiscountAmount || preview.promotionDiscountAmount || preview.bundleDiscountAmount}}</text></view>
+    <view class="price-line" wx:if="{{preview.couponDiscountAmount}}"><text>优惠券</text><text>-¥{{preview.couponDiscountAmount}}</text></view>
+    <view class="price-line" wx:if="{{preview.pointsDiscountAmount}}"><text>积分抵扣</text><text>-¥{{preview.pointsDiscountAmount}}</text></view>
+    <view class="price-line"><text>运费</text><text>¥{{preview.freightAmount || '0.00'}}</text></view>
+    <view class="price-line price-total"><text>实付</text><text>¥{{preview.payAmount || preview.payableAmount || preview.totalAmount}}</text></view>
+  </view>
+
   <view class="section card promotion-summary" wx:if="{{preview && preview.promotionActivityId && !preview.bundleActivityId}}">
     <view class="section-title promotion-title-row"><text>{{preview.promotionName || '满减满折'}}</text><text>已优惠 ¥{{preview.promotionDiscountAmountText}}</text></view>
     <view class="promotion-summary-desc">优惠已按参与商品金额实时计算，提交订单时将再次校验。</view>

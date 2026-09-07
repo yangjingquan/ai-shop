@@ -20,5 +20,11 @@ public class OrderCreateRequest {
 
     private String bundleGroupId;
 
+    @NotNull
+    private String quoteId;
+
+    @NotNull
+    private Long ruleVersion;
+
     private String remark;
 }

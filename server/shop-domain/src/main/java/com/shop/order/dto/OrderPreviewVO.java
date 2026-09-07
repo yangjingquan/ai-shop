@@ -17,6 +17,16 @@ public class OrderPreviewVO {
 
     private BigDecimal payAmount;
 
+    /** I0-01 final quote contract. Create requests must return these values unchanged. */
+    private String quoteId;
+    private Long ruleVersion;
+    private BigDecimal originalAmount;
+    private BigDecimal activityDiscountAmount;
+    private BigDecimal pointsDiscountAmount;
+    private BigDecimal freightAmount;
+    private java.time.LocalDateTime quoteExpiresAt;
+    private List<String> unavailableReasons;
+
     private Long couponId;
 
     private String couponName;

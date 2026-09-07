@@ -15,6 +15,10 @@ public class Order extends BaseEntity {
 
     private String orderNo;
 
+    private String quoteId;
+
+    private Long ruleVersion;
+
     private Long userId;
 
     private Long merchantId;
@@ -67,6 +71,8 @@ public class Order extends BaseEntity {
     private BigDecimal promotionDiscountAmount;
 
     private String promotionSnapshotJson;
+
+    private String pricingSnapshotJson;
 
     private String bundleSnapshotJson;
 

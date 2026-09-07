@@ -35,6 +35,8 @@ public class OrderItem {
 
     private BigDecimal subtotal;
 
+    private String pricingSnapshotJson;
+
     private String bundleGroupId;
 
     private LocalDateTime createdAt;

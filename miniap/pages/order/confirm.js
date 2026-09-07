@@ -61,7 +61,7 @@ Page({
       const selectedAddress = (this.data.addresses || []).find(a => Number(a.id) === Number(selectedAddressId)) || this.data.selectedAddress;
       this.setData({ addressId: Number(selectedAddressId), selectedAddress, noAddress: false });
       this.loadPreview();
-    } else if (selectedCouponId && this.data.addressId) {
+    } else if ((selectedCouponId || this.data.preview) && this.data.addressId) {
       this.loadPreview();
     }
   },
@@ -128,7 +128,7 @@ Page({
   },
 
   loadGroupBuyPreview() {
-    groupBuyApi.productDetail(this.data.productId).then(res => {
+    Promise.all([groupBuyApi.productDetail(this.data.productId), groupBuyApi.quote({ productId: this.data.productId, skuId: this.data.skuId, quantity: this.data.quantity, addressId: this.data.addressId })]).then(([res, quoteRes]) => {
       const product = res.data && res.data.product;
       const sku = product && (product.skus || []).find(item => Number(item.id) === this.data.skuId);
       if (!product || !sku) {
@@ -139,13 +139,16 @@ Page({
       const unitPrice = Number(product.groupBuyPrice || sku.price || 0).toFixed(2);
       const quantity = Number(this.data.quantity || 1);
       const subtotal = (Number(unitPrice) * quantity).toFixed(2);
+      const quote = quoteRes.data || {}
       const preview = {
         address: this.data.selectedAddress || {},
-        totalAmount: subtotal,
+        ...quote,
+        totalAmount: quote.originalAmount || subtotal,
+        payAmount: quote.payableAmount || subtotal,
         groups: [{
           merchantId: product.merchantId || 0,
           merchantName: product.merchantName || '团购商品',
-          payAmount: subtotal,
+          payAmount: quote.payableAmount || subtotal,
           items: [{
             cartItemId: this.data.skuId,
             productName: product.name,
@@ -232,6 +235,8 @@ Page({
         skuId: this.data.skuId,
         quantity: this.data.quantity,
         addressId: this.data.addressId,
+        quoteId: this.data.preview && this.data.preview.quoteId,
+        ruleVersion: this.data.preview && this.data.preview.ruleVersion,
       };
       const request = this.data.groupId
         ? groupBuyApi.join(this.data.groupId, payload)
@@ -256,7 +261,8 @@ Page({
             });
           });
         }
-        wx.showToast({ title: res.msg, icon: 'none' });
+        if (this.refreshWhenQuoteExpired(res)) return;
+        wx.showToast({ title: res.msg || '下单失败', icon: 'none' });
         this.setData({ submitting: false });
       }).catch(() => this.setData({ submitting: false }));
       return;
@@ -268,8 +274,11 @@ Page({
         seckillSkuId: this.data.seckillSkuId,
         addressId: this.data.addressId,
         quantity: this.data.quantity,
+        quoteId: this.data.preview && this.data.preview.quoteId,
+        ruleVersion: this.data.preview && this.data.preview.ruleVersion,
       }).then((res) => {
         if (res.code !== 0) {
+          if (this.refreshWhenQuoteExpired(res)) return
           wx.showToast({ title: res.msg || '秒杀下单失败', icon: 'none' })
           this.setData({ submitting: false })
           return
@@ -304,12 +313,15 @@ Page({
         addressId: this.data.addressId,
         couponId: this.data.selectedCouponId || null,
         bundleGroupId: this.data.bundleGroupId || null,
+        quoteId: this.data.preview && this.data.preview.quoteId,
+        ruleVersion: this.data.preview && this.data.preview.ruleVersion,
       }
     }).then(res => {
       if (res.code === 0) {
         const orders = res.data || [];
         this.payCreatedOrders(orders);
       } else {
+        if (this.refreshWhenQuoteExpired(res)) return;
         wx.showToast({ title: res.msg, icon: 'none' });
         this.setData({ submitting: false });
       }
@@ -317,6 +329,14 @@ Page({
       this.setData({ submitting: false });
       wx.showToast({ title: '订单创建失败，请重试', icon: 'none' });
     });
+  },
+
+  refreshWhenQuoteExpired(res) {
+    if (Number(res && res.code) !== 274) return false;
+    this.loadPreview();
+    this.setData({ submitting: false });
+    wx.showToast({ title: '价格已更新，请确认后重试', icon: 'none' });
+    return true;
   },
 
   payCreatedOrders(orders) {

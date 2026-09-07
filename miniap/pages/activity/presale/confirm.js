@@ -13,6 +13,7 @@ Page({
     quantity: 1,
     addresses: [],
     address: null,
+    quote: null,
     agreed: false,
     submitting: false,
   },
@@ -34,7 +35,7 @@ Page({
           address: defaultAddress,
           presaleSkuId: selectedSku ? selectedSku.id : presaleSkuId,
           selectedSku: selectedSku ? this.formatSku(selectedSku) : null,
-        })
+        }, () => this.loadQuote())
       })
     }).catch(() => {})
   },
@@ -44,7 +45,7 @@ Page({
     if (!addressId) return
     wx.removeStorageSync('presale_selected_address_id')
     const address = (this.data.addresses || []).find((item) => Number(item.id) === Number(addressId))
-    if (address) this.setData({ address })
+    if (address) this.setData({ address }, () => this.loadQuote())
   },
 
   formatSku(sku) {
@@ -76,7 +77,19 @@ Page({
     const sku = this.data.selectedSku
     if (!sku) return
     const quantity = Math.max(1, Math.min(Number(sku.userLimit || 1), Number(this.data.quantity || 1) + delta))
-    this.setData({ quantity, selectedSku: this.formatSku({ ...sku, quantity }) })
+    this.setData({ quantity, selectedSku: this.formatSku({ ...sku, quantity }) }, () => this.loadQuote())
+  },
+
+  loadQuote() {
+    const { activityId, presaleSkuId, quantity, address } = this.data
+    if (!activityId || !presaleSkuId || !address) return Promise.resolve()
+    return presaleApi.quoteDeposit({ activityId, presaleSkuId, addressId: address.id, quantity }).then((res) => {
+      if (res.code !== 0) throw new Error(res.msg || '报价失败')
+      this.setData({ quote: res.data })
+    }).catch(() => {
+      this.setData({ quote: null })
+      wx.showToast({ title: '价格已更新，请刷新后重试', icon: 'none' })
+    })
   },
 
   toggleAgreement() {
@@ -84,7 +97,7 @@ Page({
   },
 
   submit() {
-    const { activityId, presaleSkuId, quantity, address, agreed, submitting } = this.data
+    const { activityId, presaleSkuId, quantity, address, agreed, quote, submitting } = this.data
     if (submitting) return
     if (!address) {
       wx.showToast({ title: '请选择收货地址', icon: 'none' })
@@ -94,8 +107,13 @@ Page({
       wx.showToast({ title: '请先同意预售规则', icon: 'none' })
       return
     }
+    if (!quote || !quote.quoteId) {
+      this.loadQuote()
+      wx.showToast({ title: '正在刷新价格，请稍后重试', icon: 'none' })
+      return
+    }
     this.setData({ submitting: true })
-    presaleApi.createDeposit({ activityId, presaleSkuId, addressId: address.id, quantity }).then((res) => {
+    presaleApi.createDeposit({ activityId, presaleSkuId, addressId: address.id, quantity, quoteId: quote.quoteId, ruleVersion: quote.ruleVersion }).then((res) => {
       const data = res.data || {}
       if (!data.payParams) throw new Error('missing pay params')
       return this.requestPayment(data.payParams).then(() => data)

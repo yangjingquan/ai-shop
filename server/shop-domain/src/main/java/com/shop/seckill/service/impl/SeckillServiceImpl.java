@@ -18,6 +18,9 @@ import com.shop.order.enums.OrderStatus;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.service.WxPayService;
+import com.shop.pricing.dto.QuoteRequest;
+import com.shop.pricing.dto.QuoteResult;
+import com.shop.pricing.service.QuoteService;
 import com.shop.product.entity.Product;
 import com.shop.product.entity.ProductSku;
 import com.shop.product.mapper.ProductMapper;
@@ -73,6 +76,7 @@ public class SeckillServiceImpl implements SeckillService {
     private final StringRedisTemplate redisTemplate;
     private final PlatformTransactionManager transactionManager;
     private final ObjectMapper objectMapper;
+    private final QuoteService quoteService;
 
     @Override
     public List<SeckillSessionVO> sessions(Long merchantId) {
@@ -175,10 +179,14 @@ public class SeckillServiceImpl implements SeckillService {
         vo.setActivityPrice(context.seckillSku.getActivityPrice());
         vo.setQuantity(quantity);
         BigDecimal total = context.seckillSku.getActivityPrice().multiply(BigDecimal.valueOf(quantity));
-        vo.setTotalAmount(total);
+        QuoteResult quote = quoteService.quote(seckillQuoteRequest(userId, merchantId, context, quantity));
+        vo.setTotalAmount(quote.getOriginalAmount());
         vo.setFreightAmount(BigDecimal.ZERO);
-        vo.setDiscountAmount(BigDecimal.ZERO);
-        vo.setPayAmount(total);
+        vo.setDiscountAmount(quote.getActivityDiscountAmount());
+        vo.setPayAmount(quote.getPayableAmount());
+        vo.setQuoteId(quote.getQuoteId()); vo.setRuleVersion(quote.getRuleVersion()); vo.setQuoteExpiresAt(quote.getExpiresAt());
+        vo.setOriginalAmount(quote.getOriginalAmount()); vo.setActivityDiscountAmount(quote.getActivityDiscountAmount());
+        vo.setCouponDiscountAmount(quote.getCouponDiscountAmount()); vo.setPointsDiscountAmount(quote.getPointsDiscountAmount());
         vo.setUserLimit(context.seckillSku.getUserLimit());
         vo.setRemainingStock(Math.min(context.seckillSku.getActivityStock(), context.productSku.getStock()));
         vo.setRuleText("限时秒杀商品不支持使用优惠券，每人限购" + context.seckillSku.getUserLimit() + "件");
@@ -204,6 +212,12 @@ public class SeckillServiceImpl implements SeckillService {
                 if (lockedSku == null) throw new BusinessException(ErrorCode.SECKILL_SOLD_OUT);
                 context.seckillSku = lockedSku;
                 validateCanBuy(userId, context, quantity);
+                QuoteResult quote = quoteService.requireValid(userId, merchantId, request.getQuoteId(), request.getRuleVersion(), "SECKILL");
+                BigDecimal original = context.productSku.getPrice().multiply(BigDecimal.valueOf(quantity));
+                BigDecimal activityDiscount = original.subtract(lockedSku.getActivityPrice().multiply(BigDecimal.valueOf(quantity)));
+                if (quote.getOriginalAmount().compareTo(original) != 0 || quote.getActivityDiscountAmount().compareTo(activityDiscount) != 0) {
+                    throw new BusinessException(ErrorCode.QUOTE_EXPIRED);
+                }
                 if (seckillSkuMapper.reserveStock(lockedSku.getId(), quantity) == 0) {
                     throw new BusinessException(ErrorCode.SECKILL_SOLD_OUT);
                 }
@@ -213,6 +227,7 @@ public class SeckillServiceImpl implements SeckillService {
                 String orderNo = generateOrderNo(userId);
                 Order created = new Order();
                 created.setOrderNo(orderNo);
+                created.setQuoteId(quote.getQuoteId()); created.setRuleVersion(quote.getRuleVersion()); created.setPricingSnapshotJson(quote.getPricingSnapshotJson());
                 created.setUserId(userId);
                 created.setMerchantId(merchantId);
                 created.setStatus(OrderStatus.WAIT_PAY.getCode());
@@ -220,10 +235,10 @@ public class SeckillServiceImpl implements SeckillService {
                 created.setSeckillSessionId(context.session.getId());
                 created.setSeckillSkuId(lockedSku.getId());
                 BigDecimal subtotal = lockedSku.getActivityPrice().multiply(BigDecimal.valueOf(quantity));
-                created.setTotalAmount(subtotal);
+                created.setTotalAmount(original);
                 created.setFreightAmount(BigDecimal.ZERO);
-                created.setDiscountAmount(BigDecimal.ZERO);
-                created.setPayAmount(subtotal);
+                created.setDiscountAmount(activityDiscount);
+                created.setPayAmount(quote.getPayableAmount());
                 created.setAddressSnapshot(toJson(new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail())));
                 created.setRemark(request.getRemark() == null ? "" : request.getRemark().trim());
                 orderMapper.insert(created);
@@ -240,6 +255,7 @@ public class SeckillServiceImpl implements SeckillService {
                 item.setUnitPrice(lockedSku.getActivityPrice());
                 item.setQuantity(quantity);
                 item.setSubtotal(subtotal);
+                item.setPricingSnapshotJson(quote.getPricingSnapshotJson());
                 orderItemMapper.insert(item);
 
                 SeckillOrder seckillOrder = new SeckillOrder();
@@ -282,6 +298,16 @@ public class SeckillServiceImpl implements SeckillService {
         order.setStatus(1);
         seckillOrderMapper.updateById(order);
         seckillSkuMapper.addSoldCount(order.getSeckillSkuId(), order.getQuantity());
+    }
+
+    private QuoteRequest seckillQuoteRequest(Long userId, Long merchantId, SeckillContext context, int quantity) {
+        BigDecimal original = context.productSku.getPrice().multiply(BigDecimal.valueOf(quantity));
+        BigDecimal activityPrice = context.seckillSku.getActivityPrice().multiply(BigDecimal.valueOf(quantity));
+        QuoteRequest request = new QuoteRequest(); request.setUserId(userId); request.setMerchantId(merchantId); request.setScene("SECKILL");
+        request.setOriginalAmount(original); request.setActivityDiscountAmount(original.subtract(activityPrice)); request.setActivityName(context.activity.getName());
+        QuoteRequest.QuoteItem item = new QuoteRequest.QuoteItem(); item.setProductId(context.product.getId()); item.setSkuId(context.productSku.getId());
+        item.setQuantity(quantity); item.setOriginalUnitPrice(context.productSku.getPrice()); item.setActivityUnitPrice(context.seckillSku.getActivityPrice()); request.setItems(List.of(item));
+        return request;
     }
 
     @Override

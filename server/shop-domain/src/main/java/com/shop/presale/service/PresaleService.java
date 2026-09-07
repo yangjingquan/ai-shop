@@ -2,6 +2,7 @@ package com.shop.presale.service;
 
 import com.shop.common.response.PageResult;
 import com.shop.order.dto.OrderCreateVO;
+import com.shop.pricing.dto.QuoteResult;
 import com.shop.presale.dto.*;
 
 import java.util.List;
@@ -10,6 +11,7 @@ public interface PresaleService {
     List<PresaleActivityVO> active(Long merchantId);
     PresaleActivityVO detail(Long merchantId, Long activityId);
     PresaleOrderVO order(Long userId, Long merchantId, String orderNo);
+    QuoteResult quoteDeposit(Long userId, Long merchantId, PresaleDepositQuoteRequest request);
     OrderCreateVO createDepositOrder(Long userId, Long merchantId, PresaleDepositOrderRequest request);
     OrderCreateVO createBalanceOrder(Long userId, Long merchantId, String orderNo);
     void refundDeposit(Long userId, Long merchantId, String orderNo);

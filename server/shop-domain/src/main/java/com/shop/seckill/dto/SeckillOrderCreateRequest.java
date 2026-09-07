@@ -14,5 +14,9 @@ public class SeckillOrderCreateRequest {
     private Long addressId;
     @Min(1)
     private Integer quantity = 1;
+    @NotNull
+    private String quoteId;
+    @NotNull
+    private Long ruleVersion;
     private String remark;
 }

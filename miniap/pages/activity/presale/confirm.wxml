@@ -29,7 +29,7 @@
     <view class="amount-row"><text>定金膨胀抵扣</text><text class="discount">-¥{{selectedSku.totalDeductionText}}</text></view>
     <view class="amount-row"><text>尾款</text><text>¥{{selectedSku.totalBalanceText}}</text></view>
     <view class="divider"></view>
-    <view class="amount-row total"><text>本次支付定金</text><text>¥{{selectedSku.totalDepositText}}</text></view>
+    <view class="amount-row total"><text>本次支付定金</text><text>¥{{quote ? quote.payableAmount : selectedSku.totalDepositText}}</text></view>
     <view class="amount-note">尾款支付金额 = 商品最终价 - 定金膨胀抵扣 - 已付定金。预计发货：{{activity.expectedShipAt || '以活动详情为准'}}</view>
   </view>
 
@@ -42,7 +42,7 @@
   </view>
 
   <view class="bottom-bar">
-    <view><text class="bottom-label">定金</text><text class="bottom-price">¥{{selectedSku.totalDepositText}}</text></view>
+    <view><text class="bottom-label">定金</text><text class="bottom-price">¥{{quote ? quote.payableAmount : selectedSku.totalDepositText}}</text></view>
     <button class="submit-btn" bindtap="submit" disabled="{{submitting}}">{{submitting ? '提交中...' : '立即支付定金'}}</button>
   </view>
 </view>

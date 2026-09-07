@@ -34,6 +34,11 @@ public class WxPresaleController {
         return ApiResult.success(presaleService.order(CurrentUserHolder.get().getUserId(), wxMerchantResolver.requireActiveMerchant(request), orderNo));
     }
 
+    @PostMapping("/deposit-quote")
+    public ApiResult<com.shop.pricing.dto.QuoteResult> quoteDeposit(@RequestBody @Valid PresaleDepositQuoteRequest request, HttpServletRequest servletRequest) {
+        return ApiResult.success(presaleService.quoteDeposit(CurrentUserHolder.get().getUserId(), wxMerchantResolver.requireActiveMerchant(servletRequest), request));
+    }
+
     @PostMapping("/deposit-orders")
     public ApiResult<com.shop.order.dto.OrderCreateVO> createDeposit(@RequestBody @Valid PresaleDepositOrderRequest request, HttpServletRequest servletRequest) {
         return ApiResult.success(presaleService.createDepositOrder(CurrentUserHolder.get().getUserId(), wxMerchantResolver.requireActiveMerchant(servletRequest), request));

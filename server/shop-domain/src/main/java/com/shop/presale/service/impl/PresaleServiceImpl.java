@@ -19,6 +19,9 @@ import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.WxPayService;
+import com.shop.pricing.dto.QuoteRequest;
+import com.shop.pricing.dto.QuoteResult;
+import com.shop.pricing.service.QuoteService;
 import com.shop.presale.dto.*;
 import com.shop.presale.entity.PresaleActivity;
 import com.shop.presale.entity.PresaleOrder;
@@ -74,6 +77,7 @@ public class PresaleServiceImpl implements PresaleService {
     private final MarketingFeatureService marketingFeatureService;
     private final ProductService productService;
     private final WxPayService wxPayService;
+    private final QuoteService quoteService;
 
     @Override
     public List<PresaleActivityVO> active(Long merchantId) {
@@ -131,6 +135,22 @@ public class PresaleServiceImpl implements PresaleService {
     }
 
     @Override
+    public QuoteResult quoteDeposit(Long userId, Long merchantId, PresaleDepositQuoteRequest request) {
+        marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.PRESALE);
+        PresaleActivity activity = mustActivity(merchantId, request.getActivityId());
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(activity.getDepositStartAt())) throw new BusinessException(ErrorCode.PRESALE_NOT_STARTED);
+        if (!now.isBefore(activity.getDepositEndAt())) throw new BusinessException(ErrorCode.PRESALE_DEPOSIT_ENDED);
+        PresaleSku config = skuMapper.selectById(request.getPresaleSkuId());
+        Product product = productMapper.selectById(config == null ? null : config.getProductId());
+        ProductSku productSku = config == null ? null : productSkuMapper.selectById(config.getSkuId());
+        validateSku(activity, config, product, productSku);
+        if (request.getQuantity() > config.getUserLimit()) throw new BusinessException(ErrorCode.PRESALE_CONFIG_INVALID.getCode(), "超过每人限购数量");
+        mustAddress(userId, request.getAddressId());
+        return depositQuote(userId, merchantId, activity, config, product, productSku, request.getQuantity());
+    }
+
+    @Override
     @Transactional
     public OrderCreateVO createDepositOrder(Long userId, Long merchantId, PresaleDepositOrderRequest request) {
         marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.PRESALE);
@@ -154,6 +174,10 @@ public class PresaleServiceImpl implements PresaleService {
         BigDecimal deduction = config.getDepositDeductionAmount().multiply(BigDecimal.valueOf(quantity));
         BigDecimal balance = config.getFinalPrice().subtract(config.getDepositDeductionAmount()).multiply(BigDecimal.valueOf(quantity));
         BigDecimal finalAmount = deposit.add(balance);
+        QuoteResult quote = quoteService.requireValid(userId, merchantId, request.getQuoteId(), request.getRuleVersion(), "PRESALE_DEPOSIT");
+        if (quote.getOriginalAmount().compareTo(deposit) != 0 || quote.getPayableAmount().compareTo(deposit) != 0) {
+            throw new BusinessException(ErrorCode.QUOTE_EXPIRED);
+        }
         String orderNo = generateOrderNo();
 
         PresaleOrder presale = new PresaleOrder();
@@ -180,8 +204,9 @@ public class PresaleServiceImpl implements PresaleService {
 
         AddressSnapshot addressSnapshot = new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail());
         Order order = paymentOrder(presale, orderNo, 1, deposit, addressSnapshot);
+        order.setQuoteId(quote.getQuoteId()); order.setRuleVersion(quote.getRuleVersion()); order.setPricingSnapshotJson(quote.getPricingSnapshotJson());
         orderMapper.insert(order);
-        insertItem(order, product, productSku, config.getDepositAmount(), quantity);
+        insertItem(order, product, productSku, config.getDepositAmount(), quantity, quote.getPricingSnapshotJson());
         return payVO(order);
     }
 
@@ -573,7 +598,9 @@ public class PresaleServiceImpl implements PresaleService {
     private PresaleOrder ownedOrder(Long userId, Long merchantId, String orderNo) { PresaleOrder order = presaleOrderMapper.selectByAnyOrderNo(userId, orderNo); if (order == null || !merchantId.equals(order.getMerchantId())) throw new BusinessException(ErrorCode.ORDER_NOT_FOUND); return order; }
     private void updateAddressSnapshot(String orderNo, String json) { if (orderNo == null) return; Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo)); if (order != null) { order.setAddressSnapshot(json); orderMapper.updateById(order); } }
     private void updateBaseStatus(String orderNo, int status, String reason) { Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo)); if (order != null) { order.setStatus(status); order.setCancelReason(reason); orderMapper.updateById(order); } }
-    private void insertItem(Order order, Product product, ProductSku sku, BigDecimal unitPrice, int quantity) { OrderItem item = new OrderItem(); item.setOrderId(order.getId()); item.setOrderNo(order.getOrderNo()); item.setProductId(product.getId()); item.setSkuId(sku.getId()); item.setProductName(product.getName()); item.setMainImage(product.getMainImage()); item.setSpecText(sku.getSpecText()); item.setUnitPrice(unitPrice); item.setQuantity(quantity); item.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(quantity))); orderItemMapper.insert(item); }
+    private QuoteResult depositQuote(Long userId, Long merchantId, PresaleActivity activity, PresaleSku config, Product product, ProductSku productSku, int quantity) { QuoteRequest request = new QuoteRequest(); request.setUserId(userId); request.setMerchantId(merchantId); request.setScene("PRESALE_DEPOSIT"); request.setOriginalAmount(config.getDepositAmount().multiply(BigDecimal.valueOf(quantity))); request.setActivityName(activity.getName()); QuoteRequest.QuoteItem item = new QuoteRequest.QuoteItem(); item.setProductId(product.getId()); item.setSkuId(productSku.getId()); item.setQuantity(quantity); item.setOriginalUnitPrice(config.getDepositAmount()); item.setActivityUnitPrice(config.getDepositAmount()); request.setItems(List.of(item)); return quoteService.quote(request); }
+    private void insertItem(Order order, Product product, ProductSku sku, BigDecimal unitPrice, int quantity) { insertItem(order, product, sku, unitPrice, quantity, null); }
+    private void insertItem(Order order, Product product, ProductSku sku, BigDecimal unitPrice, int quantity, String pricingSnapshotJson) { OrderItem item = new OrderItem(); item.setOrderId(order.getId()); item.setOrderNo(order.getOrderNo()); item.setProductId(product.getId()); item.setSkuId(sku.getId()); item.setProductName(product.getName()); item.setMainImage(product.getMainImage()); item.setSpecText(sku.getSpecText()); item.setUnitPrice(unitPrice); item.setQuantity(quantity); item.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(quantity))); item.setPricingSnapshotJson(pricingSnapshotJson); orderItemMapper.insert(item); }
     private Order paymentOrder(PresaleOrder presale, String orderNo, int stage, BigDecimal amount, AddressSnapshot address) { Order order = new Order(); order.setOrderNo(orderNo); order.setUserId(presale.getUserId()); order.setMerchantId(presale.getMerchantId()); order.setStatus(OrderStatus.WAIT_PAY.getCode()); order.setOrderType(6); order.setPresaleOrderId(presale.getId()); order.setPresaleStage(stage); order.setTotalAmount(amount); order.setFreightAmount(BigDecimal.ZERO); order.setDiscountAmount(BigDecimal.ZERO); order.setPayAmount(amount); order.setAddressSnapshot(toJson(address)); order.setRemark(""); order.setUserDeleted(0); return order; }
     private OrderCreateVO payVO(Order order) { OrderCreateVO vo = new OrderCreateVO(); vo.setOrderNo(order.getOrderNo()); vo.setPayAmount(order.getPayAmount()); try { vo.setPayParams(wxPayService.createJsapiPayParams(order)); } catch (RuntimeException ex) { log.warn("预售微信预下单失败，可稍后重新支付 orderNo={}", order.getOrderNo(), ex); } return vo; }
     private void createAutoRefund(Order order, String reason) { RefundApplication existing = refundMapper.selectOne(new LambdaQueryWrapper<RefundApplication>().eq(RefundApplication::getOrderNo, order.getOrderNo()).in(RefundApplication::getStatus, 0, 1, 3).orderByDesc(RefundApplication::getId).last("LIMIT 1")); if (existing != null) return; RefundApplication refund = new RefundApplication(); refund.setOrderNo(order.getOrderNo()); refund.setOutRefundNo("RF_PRESALE_" + order.getOrderNo()); refund.setUserId(order.getUserId()); refund.setMerchantId(order.getMerchantId()); refund.setReason(reason); refund.setStatus(RefundStatus.PENDING.getCode()); refund.setRefundAmount(order.getPayAmount()); refund.setAutoRefund(1); refund.setReturnRequired(0); refund.setEvidenceUrls(List.of()); refundMapper.insert(refund); }

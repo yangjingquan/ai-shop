@@ -22,6 +22,9 @@ import com.shop.order.enums.OrderStatus;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.service.WxPayService;
+import com.shop.pricing.dto.QuoteRequest;
+import com.shop.pricing.dto.QuoteResult;
+import com.shop.pricing.service.QuoteService;
 import com.shop.product.entity.Product;
 import com.shop.product.entity.ProductSku;
 import com.shop.product.mapper.ProductMapper;
@@ -61,6 +64,7 @@ public class BundleServiceImpl implements BundleService {
     private final SeckillSkuMapper seckillSkuMapper;
     private final WxPayService wxPayService;
     private final PlatformTransactionManager transactionManager;
+    private final QuoteService quoteService;
 
     @Override
     public List<BundleActivityVO> merchantList(Long merchantId) {
@@ -271,6 +275,11 @@ public class BundleServiceImpl implements BundleService {
         vo.setBundleDiscountAmount(bundle.getBundleDiscountAmount());
         vo.setBundleSnapshotJson(bundleSnapshot(context.activity, bundle));
         vo.setCouponMessage("搭配购套餐不参与其他优惠");
+        QuoteResult quote = quoteService.quote(bundleQuoteRequest(userId, merchantId, context.skus, bundle));
+        vo.setQuoteId(quote.getQuoteId()); vo.setRuleVersion(quote.getRuleVersion()); vo.setQuoteExpiresAt(quote.getExpiresAt());
+        vo.setOriginalAmount(quote.getOriginalAmount()); vo.setActivityDiscountAmount(quote.getActivityDiscountAmount());
+        vo.setPointsDiscountAmount(quote.getPointsDiscountAmount()); vo.setFreightAmount(quote.getFreightAmount());
+        vo.setPayAmount(quote.getPayableAmount()); group.setPayAmount(quote.getPayableAmount());
         vo.setAddress(new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail()));
         return vo;
     }
@@ -287,8 +296,13 @@ public class BundleServiceImpl implements BundleService {
         List<OrderCreateVO> results = new TransactionTemplate(transactionManager).execute(status -> {
             String orderNo = generateOrderNo(userId);
             BundlePreviewVO bundle = toPreview(context.activity, context.skus);
+            QuoteResult quote = quoteService.requireValid(userId, merchantId, request.getQuoteId(), request.getRuleVersion(), "BUNDLE");
+            if (quote.getOriginalAmount().compareTo(bundle.getOriginalAmount()) != 0
+                    || quote.getActivityDiscountAmount().compareTo(bundle.getBundleDiscountAmount()) != 0
+                    || quote.getPayableAmount().compareTo(bundle.getPayAmount()) != 0) throw new BusinessException(ErrorCode.QUOTE_EXPIRED);
             Order order = new Order();
             order.setOrderNo(orderNo);
+            order.setQuoteId(quote.getQuoteId()); order.setRuleVersion(quote.getRuleVersion()); order.setPricingSnapshotJson(quote.getPricingSnapshotJson());
             order.setUserId(userId);
             order.setMerchantId(merchantId);
             order.setStatus(OrderStatus.WAIT_PAY.getCode());
@@ -299,7 +313,7 @@ public class BundleServiceImpl implements BundleService {
             order.setDiscountAmount(bundle.getBundleDiscountAmount());
             order.setBundleDiscountAmount(bundle.getBundleDiscountAmount());
             order.setBundleSnapshotJson(bundleSnapshot(context.activity, bundle));
-            order.setPayAmount(bundle.getPayAmount());
+            order.setPayAmount(quote.getPayableAmount());
             order.setAddressSnapshot(toJson(new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail())));
             order.setRemark(request.getRemark() == null ? "" : request.getRemark());
             orderMapper.insert(order);
@@ -313,6 +327,7 @@ public class BundleServiceImpl implements BundleService {
                 item.setProductName(product.getName()); item.setMainImage(product.getMainImage());
                 item.setSpecText(sku.getSpecText()); item.setUnitPrice(sku.getPrice());
                 item.setQuantity(1); item.setSubtotal(sku.getPrice()); item.setBundleGroupId(context.groupId);
+                item.setPricingSnapshotJson(quote.getPricingSnapshotJson());
                 orderItemMapper.insert(item);
                 productService.recalcProduct(product.getId());
             }
@@ -326,6 +341,16 @@ public class BundleServiceImpl implements BundleService {
             try { vo.setPayParams(wxPayService.createJsapiPayParams(order)); } catch (RuntimeException ignored) { }
         }
         return results;
+    }
+
+    private QuoteRequest bundleQuoteRequest(Long userId, Long merchantId, List<ProductSku> skus, BundlePreviewVO bundle) {
+        QuoteRequest request = new QuoteRequest(); request.setUserId(userId); request.setMerchantId(merchantId); request.setScene("BUNDLE");
+        request.setOriginalAmount(bundle.getOriginalAmount()); request.setActivityDiscountAmount(bundle.getBundleDiscountAmount());
+        request.setActivityName(bundle.getBundleName()); request.setItems(skus.stream().map(sku -> {
+            QuoteRequest.QuoteItem item = new QuoteRequest.QuoteItem(); item.setProductId(sku.getProductId()); item.setSkuId(sku.getId());
+            item.setQuantity(1); item.setOriginalUnitPrice(sku.getPrice()); item.setActivityUnitPrice(sku.getPrice()); return item;
+        }).toList());
+        return request;
     }
 
     private BundleCartContext loadCartContext(Long userId, Long merchantId, List<Long> ids) {

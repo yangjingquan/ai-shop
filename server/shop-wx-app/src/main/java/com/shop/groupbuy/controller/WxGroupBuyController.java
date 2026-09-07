@@ -5,6 +5,7 @@ import com.shop.common.response.PageResult;
 import com.shop.common.security.CurrentUserHolder;
 import com.shop.groupbuy.dto.GroupBuyCreateRequest;
 import com.shop.groupbuy.dto.GroupBuyCreateVO;
+import com.shop.groupbuy.dto.GroupBuyQuoteRequest;
 import com.shop.groupbuy.dto.GroupBuyGroupVO;
 import com.shop.groupbuy.dto.GroupBuyProductDetailVO;
 import com.shop.groupbuy.dto.GroupBuySubscribeRequest;
@@ -16,6 +17,7 @@ import com.shop.product.dto.ProductListVO;
 import com.shop.wx.config.WxMerchantResolver;
 import com.shop.marketing.enums.MarketingActivityCode;
 import com.shop.marketing.service.MarketingFeatureService;
+import com.shop.pricing.dto.QuoteResult;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +48,12 @@ public class WxGroupBuyController {
         Long merchantId = wxMerchantResolver.currentMerchantId(request);
         marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.GROUP_BUY);
         return ApiResult.success(groupBuyService.productDetail(productId, merchantId));
+    }
+
+    @PostMapping("/quote")
+    public ApiResult<QuoteResult> quote(@RequestBody @Valid GroupBuyQuoteRequest req, HttpServletRequest request) {
+        Long merchantId = wxMerchantResolver.requireActiveMerchant(request);
+        return ApiResult.success(groupBuyService.quote(CurrentUserHolder.get().getUserId(), merchantId, req));
     }
 
     @PostMapping("/groups")
