@@ -402,6 +402,11 @@ public class BundleServiceImpl implements BundleService {
         }
         List<ProductSku> skus = skuMapper.selectBatchIds(skuIds);
         if (skus.size() != skuIds.size()) throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        Map<Long, ProductSku> skusById = skus.stream()
+                .collect(Collectors.toMap(ProductSku::getId, sku -> sku));
+        // selectBatchIds uses an SQL IN clause, whose result order is not guaranteed.
+        // Restore the request order so the first SKU remains the requested main SKU.
+        skus = skuIds.stream().map(skusById::get).toList();
         Product main = productMapper.selectById(activity.getMainProductId());
         if (main == null || !activity.getMerchantId().equals(main.getMerchantId()) || !Integer.valueOf(1).equals(main.getStatus())) throw new BusinessException(ErrorCode.PRODUCT_OFF_SHELF);
         if (skus.stream().anyMatch(s -> !Integer.valueOf(1).equals(s.getActive()) || s.getStock() == null || s.getStock() < 1)) throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
