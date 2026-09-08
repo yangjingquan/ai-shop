@@ -26,6 +26,7 @@ import com.shop.order.mapper.OrderMapper;
 import com.shop.order.service.WxPayService;
 import com.shop.order.service.OrderDomainModel;
 import com.shop.order.service.OrderStateMachine;
+import com.shop.inventory.service.ResourceReservationService;
 import com.shop.pricing.dto.QuoteRequest;
 import com.shop.pricing.dto.QuoteResult;
 import com.shop.pricing.service.QuoteService;
@@ -70,6 +71,8 @@ public class BundleServiceImpl implements BundleService {
     private final PlatformTransactionManager transactionManager;
     private final QuoteService quoteService;
     private final OrderStateMachine orderStateMachine;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ResourceReservationService resourceReservationService;
 
     @Override
     public List<BundleActivityVO> merchantList(Long merchantId) {
@@ -291,6 +294,8 @@ public class BundleServiceImpl implements BundleService {
 
     @Override
     public List<OrderCreateVO> createOrder(Long userId, Long merchantId, OrderCreateRequest request) {
+        List<OrderCreateVO> existing = existingOrder(userId, request.getClientRequestId());
+        if (existing != null) return existing;
         BundleCartContext context = loadCartContext(userId, merchantId, request.getCartItemIds());
         if (request.getBundleGroupId() != null && !request.getBundleGroupId().equals(context.groupId)) {
             throw new BusinessException(ErrorCode.CART_ITEM_INVALID);
@@ -308,6 +313,7 @@ public class BundleServiceImpl implements BundleService {
             Order order = new Order();
             order.setOrderNo(orderNo);
             order.setQuoteId(quote.getQuoteId()); order.setRuleVersion(quote.getRuleVersion()); order.setPricingSnapshotJson(quote.getPricingSnapshotJson());
+            order.setClientRequestId(normalizeRequestId(request.getClientRequestId()));
             order.setUserId(userId);
             order.setMerchantId(merchantId);
             order.setStatus(OrderStatus.WAIT_PAY.getCode());
@@ -327,7 +333,11 @@ public class BundleServiceImpl implements BundleService {
             for (CartItem cartItem : context.cartItems) {
                 Product product = productMapper.selectById(cartItem.getProductId());
                 ProductSku sku = skuMapper.selectById(cartItem.getSkuId());
-                if (skuMapper.deductStock(sku.getId(), 1) == 0) throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
+                if (resourceReservationService != null) {
+                    resourceReservationService.reserveSku(orderNo, merchantId, product.getId(), sku.getId(), 1, "套餐待支付订单");
+                } else if (skuMapper.deductStock(sku.getId(), 1) == 0) {
+                    throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
+                }
                 OrderItem item = new OrderItem();
                 item.setOrderId(order.getId()); item.setOrderNo(orderNo);
                 item.setProductId(product.getId()); item.setSkuId(sku.getId());
@@ -456,6 +466,13 @@ public class BundleServiceImpl implements BundleService {
     private String bundleSnapshot(BundleActivity a, BundlePreviewVO p) { return toJson(Map.of("bundleId", a.getId(), "name", a.getName(), "discountAmount", p.getBundleDiscountAmount(), "items", p.getItems())); }
     private String toJson(Object obj) { try { return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(obj); } catch (Exception e) { throw new IllegalStateException(e); } }
     private String generateOrderNo(Long userId) { Random random = new Random(); for (int i = 0; i < 100; i++) { String no = LocalDateTime.now().format(ORDER_TIME) + String.format("%04d", userId % 10000) + String.format("%04d", random.nextInt(10000)); if (orderMapper.selectCount(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, no)) == 0) return no; } throw new BusinessException(ErrorCode.SYSTEM_ERROR); }
+    private List<OrderCreateVO> existingOrder(Long userId, String clientRequestId) {
+        String requestId = normalizeRequestId(clientRequestId); if (requestId == null) return null;
+        List<Order> orders = orderMapper.selectList(new LambdaQueryWrapper<Order>().eq(Order::getUserId, userId).eq(Order::getClientRequestId, requestId));
+        if (orders.isEmpty()) return null;
+        return orders.stream().map(order -> { OrderCreateVO vo = new OrderCreateVO(); vo.setOrderNo(order.getOrderNo()); vo.setPayAmount(order.getPayAmount()); if (order.getStatus() == OrderStatus.WAIT_PAY.getCode()) try { vo.setPayParams(wxPayService.createJsapiPayParams(order)); } catch (RuntimeException ignored) {} return vo; }).toList();
+    }
+    private String normalizeRequestId(String value) { if (value == null || value.isBlank()) return null; String result = value.trim(); if (result.length() > 64) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "clientRequestId 长度不能超过 64"); return result; }
     private record Selection(List<ProductSku> items) {}
     private record BundleCartContext(String groupId, BundleActivity activity, List<CartItem> cartItems, List<ProductSku> skus) {}
 }

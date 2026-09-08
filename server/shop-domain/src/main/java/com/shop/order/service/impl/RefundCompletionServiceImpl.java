@@ -18,6 +18,7 @@ import com.shop.referral.service.ReferralService;
 import com.shop.product.service.ProductService;
 import com.shop.points.service.PointsMemberService;
 import com.shop.coupon.service.CouponIssueService;
+import com.shop.inventory.service.ResourceReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,8 @@ public class RefundCompletionServiceImpl implements RefundCompletionService {
     private CouponIssueService couponIssueService;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private OrderStateMachine orderStateMachine;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ResourceReservationService resourceReservationService;
 
     @Override
     @Transactional
@@ -61,7 +64,11 @@ public class RefundCompletionServiceImpl implements RefundCompletionService {
         if (order.getStatus() != OrderStatus.CANCELLED.getCode()) {
             if (order.getStatus() == OrderStatus.WAIT_SHIP.getCode()
                     || order.getStatus() == OrderStatus.GROUP_SUCCESS.getCode()) {
-                releaseOrderStock(order);
+                if (resourceReservationService != null) {
+                    resourceReservationService.restockConfirmedOrder(order.getOrderNo(), "全额退款成功且未发货");
+                } else {
+                    releaseOrderStock(order);
+                }
             }
 
             order.setCancelReason("REFUNDED");

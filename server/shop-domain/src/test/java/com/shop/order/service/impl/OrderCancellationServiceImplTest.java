@@ -11,6 +11,8 @@ import com.shop.order.enums.OrderStatus;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.product.service.ProductService;
+import com.shop.inventory.service.ResourceReservationService;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -24,6 +26,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyInt;
 
 @ExtendWith(MockitoExtension.class)
 class OrderCancellationServiceImplTest {
@@ -117,5 +122,22 @@ class OrderCancellationServiceImplTest {
         ArgumentCaptor<LambdaQueryWrapper<GroupBuyMember>> query = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
         verify(groupBuyMemberMapper).selectOne(query.capture());
         assertEquals(GroupBuyMemberStatus.CANCELLED.getCode(), member.getStatus());
+    }
+
+    @Test
+    void cancellationDelegatesToReservationStateMachineInsteadOfDirectStockRelease() {
+        Order order = new Order();
+        order.setId(9L); order.setOrderNo("RESERVED_ORDER"); order.setOrderType(0); order.setStatus(OrderStatus.WAIT_PAY.getCode());
+        when(orderMapper.selectOne(any())).thenReturn(order);
+        when(orderItemMapper.selectList(any())).thenReturn(List.of());
+        ResourceReservationService reservations = org.mockito.Mockito.mock(ResourceReservationService.class);
+        OrderCancellationServiceImpl service = new OrderCancellationServiceImpl(orderMapper, orderItemMapper,
+                groupBuyMemberMapper, productService, couponService);
+        ReflectionTestUtils.setField(service, "resourceReservationService", reservations);
+
+        assertTrue(service.cancelExpired(order.getId()));
+
+        verify(reservations).releaseOrder("RESERVED_ORDER", "TIMEOUT");
+        verify(orderMapper, never()).releaseStock(anyLong(), anyInt());
     }
 }

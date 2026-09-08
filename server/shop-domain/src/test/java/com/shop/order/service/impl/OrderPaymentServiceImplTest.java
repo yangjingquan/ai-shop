@@ -12,12 +12,14 @@ import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.PaymentLogMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.product.service.ProductService;
+import com.shop.inventory.service.ResourceReservationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -101,6 +103,22 @@ class OrderPaymentServiceImplTest {
         assertEquals("wx-normal-1", order.getPayTransactionId());
         verify(orderMapper).updateById(order);
         verify(refundApplicationMapper, never()).insert(any(RefundApplication.class));
+    }
+
+    @Test
+    void successfulPaymentConfirmsReservedResourcesExactlyOnce() {
+        Order order = cancelledOrder("");
+        order.setStatus(OrderStatus.WAIT_PAY.getCode());
+        ResourceReservationService reservations = org.mockito.Mockito.mock(ResourceReservationService.class);
+        when(orderMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(order);
+        when(orderItemMapper.selectList(any())).thenReturn(List.of());
+        OrderPaymentServiceImpl service = service();
+        ReflectionTestUtils.setField(service, "resourceReservationService", reservations);
+
+        service.handlePaidCallback(order.getOrderNo(), "wx-confirm-1", "{}");
+        service.handlePaidCallback(order.getOrderNo(), "wx-confirm-1", "{}");
+
+        verify(reservations).confirmOrder(order.getOrderNo());
     }
 
     private OrderPaymentServiceImpl service() {

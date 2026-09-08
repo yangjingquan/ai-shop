@@ -26,5 +26,8 @@ public class OrderCreateRequest {
     @NotNull
     private Long ruleVersion;
 
+    /** Reused after a network retry so the server can return the original order. */
+    private String clientRequestId;
+
     private String remark;
 }

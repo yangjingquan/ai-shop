@@ -52,6 +52,7 @@ import com.shop.product.entity.ProductSku;
 import com.shop.product.mapper.ProductMapper;
 import com.shop.product.mapper.ProductSkuMapper;
 import com.shop.product.service.ProductService;
+import com.shop.inventory.service.ResourceReservationService;
 import com.shop.user.entity.UserAddress;
 import com.shop.user.mapper.UserAddressMapper;
 import com.shop.user.service.UserAddressService;
@@ -105,6 +106,10 @@ public class OrderServiceImpl implements OrderService {
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private PresaleService presaleService;
+
+    /** I0-03 is optional here only to keep legacy isolated unit tests constructible. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ResourceReservationService resourceReservationService;
 
     private static final java.util.regex.Pattern SHIP_NO_PATTERN =
             java.util.regex.Pattern.compile("^[A-Za-z0-9]{5,30}$");
@@ -291,6 +296,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<OrderCreateVO> create(Long userId, Long merchantId, OrderCreateRequest req) {
+        List<OrderCreateVO> idempotentResult = existingCreateResult(userId, req == null ? null : req.getClientRequestId());
+        if (idempotentResult != null) return idempotentResult;
         // Redis 防连点
         String lockKey = "order:create:" + userId;
         String lockToken = UUID.randomUUID().toString();
@@ -408,6 +415,7 @@ public class OrderServiceImpl implements OrderService {
                 order.setOrderNo(orderNo);
                 order.setQuoteId(quote.getQuoteId());
                 order.setRuleVersion(quote.getRuleVersion());
+                order.setClientRequestId(normalizeRequestId(req.getClientRequestId()));
                 order.setUserId(userId);
                 order.setMerchantId(mid);
                 order.setStatus(OrderStatus.WAIT_PAY.getCode());
@@ -439,16 +447,27 @@ public class OrderServiceImpl implements OrderService {
 
                 BigDecimal totalAmount = BigDecimal.ZERO;
 
-                // 扣库存 + 建 order_item
+                // 同一订单可能含有多条相同 SKU 的购物车项；资源预占按 SKU 聚合，
+                // 避免同一 (orderNo, SKU) 唯一键被重复写入且数量不一致。
+                Map<Long, Integer> quantitiesBySku = new LinkedHashMap<>();
+                for (CartItem item : groupItems) {
+                    quantitiesBySku.merge(item.getSkuId(), item.getQuantity(), Integer::sum);
+                }
+                for (Map.Entry<Long, Integer> skuQuantity : quantitiesBySku.entrySet()) {
+                    ProductSku sku = skuMap.get(skuQuantity.getKey());
+                    Product product = productMap.get(sku.getProductId());
+                    if (resourceReservationService != null) {
+                        resourceReservationService.reserveSku(orderNo, mid, product.getId(), sku.getId(),
+                                skuQuantity.getValue(), "创建待支付订单");
+                    } else if (skuMapper.deductStock(sku.getId(), skuQuantity.getValue()) == 0) {
+                        throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
+                    }
+                }
+
+                // 建 order_item
                 for (CartItem ci : groupItems) {
                     ProductSku sku = skuMap.get(ci.getSkuId());
                     Product product = productMap.get(ci.getProductId());
-
-                    // 乐观锁扣库存
-                    int affected = skuMapper.deductStock(ci.getSkuId(), ci.getQuantity());
-                    if (affected == 0) {
-                        throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
-                    }
 
                     BigDecimal unitPrice = sku.getPrice();
                     BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(ci.getQuantity()));
@@ -536,6 +555,30 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+    }
+
+    private List<OrderCreateVO> existingCreateResult(Long userId, String clientRequestId) {
+        String requestId = normalizeRequestId(clientRequestId);
+        if (requestId == null) return null;
+        List<Order> existing = orderMapper.selectList(new LambdaQueryWrapper<Order>()
+                .eq(Order::getUserId, userId).eq(Order::getClientRequestId, requestId));
+        if (existing.isEmpty()) return null;
+        return existing.stream().map(order -> {
+            OrderCreateVO vo = new OrderCreateVO();
+            vo.setOrderNo(order.getOrderNo()); vo.setPayAmount(order.getPayAmount());
+            if (order.getStatus() == OrderStatus.WAIT_PAY.getCode()) {
+                try { vo.setPayParams(wxPayService.createJsapiPayParams(order)); }
+                catch (RuntimeException ex) { log.warn("幂等返回订单但预下单失败, orderNo={}", order.getOrderNo(), ex); }
+            }
+            return vo;
+        }).toList();
+    }
+
+    private String normalizeRequestId(String value) {
+        if (value == null || value.isBlank()) return null;
+        String result = value.trim();
+        if (result.length() > 64) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "clientRequestId 长度不能超过 64");
+        return result;
     }
 
     private QuoteRequest quoteRequest(Long userId, Long merchantId, String scene, BigDecimal original,

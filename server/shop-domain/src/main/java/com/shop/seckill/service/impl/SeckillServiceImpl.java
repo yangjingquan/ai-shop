@@ -30,6 +30,7 @@ import com.shop.product.entity.ProductSku;
 import com.shop.product.mapper.ProductMapper;
 import com.shop.product.mapper.ProductSkuMapper;
 import com.shop.product.service.ProductService;
+import com.shop.inventory.service.ResourceReservationService;
 import com.shop.product.dto.ProductDetailVO;
 import com.shop.seckill.dto.*;
 import com.shop.seckill.entity.SeckillActivity;
@@ -82,6 +83,8 @@ public class SeckillServiceImpl implements SeckillService {
     private final ObjectMapper objectMapper;
     private final QuoteService quoteService;
     private final OrderStateMachine orderStateMachine;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ResourceReservationService resourceReservationService;
 
     @Override
     public List<SeckillSessionVO> sessions(Long merchantId) {
@@ -200,6 +203,8 @@ public class SeckillServiceImpl implements SeckillService {
 
     @Override
     public OrderCreateVO createOrder(Long userId, Long merchantId, SeckillOrderCreateRequest request) {
+        OrderCreateVO existing = existingOrder(userId, request.getClientRequestId());
+        if (existing != null) return existing;
         marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.SECKILL);
         int quantity = safeQuantity(request.getQuantity());
         String lockKey = CREATE_LOCK_PREFIX + userId + ":" + request.getSessionId() + ":" + request.getSeckillSkuId();
@@ -226,13 +231,11 @@ public class SeckillServiceImpl implements SeckillService {
                 if (seckillSkuMapper.reserveStock(lockedSku.getId(), quantity) == 0) {
                     throw new BusinessException(ErrorCode.SECKILL_SOLD_OUT);
                 }
-                if (productSkuMapper.deductStock(context.productSku.getId(), quantity) == 0) {
-                    throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
-                }
                 String orderNo = generateOrderNo(userId);
                 Order created = new Order();
                 created.setOrderNo(orderNo);
                 created.setQuoteId(quote.getQuoteId()); created.setRuleVersion(quote.getRuleVersion()); created.setPricingSnapshotJson(quote.getPricingSnapshotJson());
+                created.setClientRequestId(normalizeRequestId(request.getClientRequestId()));
                 created.setUserId(userId);
                 created.setMerchantId(merchantId);
                 created.setStatus(OrderStatus.WAIT_PAY.getCode());
@@ -249,6 +252,14 @@ public class SeckillServiceImpl implements SeckillService {
                 OrderDomainModel.refreshOrderSnapshot(created);
                 orderMapper.insert(created);
                 orderStateMachine.recordCreated(created, "SECKILL_ORDER_CREATED");
+                if (resourceReservationService != null) {
+                    resourceReservationService.reserveSku(orderNo, merchantId, context.product.getId(), context.productSku.getId(),
+                            quantity, "秒杀待支付订单");
+                    resourceReservationService.reserveMarker(orderNo, merchantId, "SECKILL_STOCK",
+                            String.valueOf(lockedSku.getId()), quantity, "秒杀活动库存预占");
+                } else if (productSkuMapper.deductStock(context.productSku.getId(), quantity) == 0) {
+                    throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
+                }
 
                 OrderItem item = new OrderItem();
                 item.setOrderId(created.getId());
@@ -325,10 +336,31 @@ public class SeckillServiceImpl implements SeckillService {
                 .eq(SeckillOrder::getOrderNo, orderNo).last("FOR UPDATE"));
         if (order == null || order.getStatus() != 0 || Integer.valueOf(1).equals(order.getStockReleased())) return;
         seckillSkuMapper.releaseStock(order.getSeckillSkuId(), order.getQuantity());
+        if (resourceReservationService != null) resourceReservationService.releaseOrder(orderNo, reason);
         order.setStatus(2);
         order.setStockReleased(1);
         seckillOrderMapper.updateById(order);
         log.info("释放秒杀活动库存, orderNo={}, reason={}", orderNo, reason);
+    }
+
+    private OrderCreateVO existingOrder(Long userId, String clientRequestId) {
+        String requestId = normalizeRequestId(clientRequestId);
+        if (requestId == null) return null;
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                .eq(Order::getUserId, userId).eq(Order::getClientRequestId, requestId));
+        if (order == null) return null;
+        OrderCreateVO vo = new OrderCreateVO(); vo.setOrderNo(order.getOrderNo()); vo.setPayAmount(order.getPayAmount());
+        if (order.getStatus() == OrderStatus.WAIT_PAY.getCode()) {
+            try { vo.setPayParams(wxPayService.createJsapiPayParams(order)); } catch (RuntimeException ignored) { }
+        }
+        return vo;
+    }
+
+    private String normalizeRequestId(String value) {
+        if (value == null || value.isBlank()) return null;
+        String result = value.trim();
+        if (result.length() > 64) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "clientRequestId 长度不能超过 64");
+        return result;
     }
 
     @Override

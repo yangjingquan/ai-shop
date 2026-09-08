@@ -20,6 +20,7 @@ import com.shop.marketing.service.MarketingFeatureService;
 import com.shop.order.entity.Order;
 import com.shop.order.enums.OrderStatus;
 import com.shop.order.mapper.OrderMapper;
+import com.shop.inventory.service.ResourceReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,8 @@ public class CouponServiceImpl implements CouponService {
     private final UserCouponMapper userCouponMapper;
     private final OrderMapper orderMapper;
     private final MarketingFeatureService marketingFeatureService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ResourceReservationService resourceReservationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -310,6 +313,10 @@ public class CouponServiceImpl implements CouponService {
             selected.setUsedAt(now);
             selected.setUsedOrderNo(orderNo);
             userCouponMapper.updateById(selected);
+            if (resourceReservationService != null && orderNo != null) {
+                resourceReservationService.reserveMarker(orderNo, context.getMerchantId(), "COUPON",
+                        String.valueOf(selected.getId()), 1, "订单优惠券预占");
+            }
             CouponTemplate template = templateMapper.selectById(selected.getTemplateId());
             if (template != null) {
                 template.setUsedCount(Optional.ofNullable(template.getUsedCount()).orElse(0) + 1);

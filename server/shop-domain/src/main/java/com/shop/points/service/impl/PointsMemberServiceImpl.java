@@ -24,6 +24,7 @@ import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.service.OrderDomainModel;
 import com.shop.order.service.OrderStateMachine;
+import com.shop.inventory.service.ResourceReservationService;
 import com.shop.points.dto.*;
 import com.shop.points.entity.*;
 import com.shop.points.mapper.*;
@@ -58,6 +59,8 @@ public class PointsMemberServiceImpl implements PointsMemberService {
     private final OrderMapper orderMapper; private final OrderItemMapper orderItemMapper;
     private final CouponService couponService; private final CouponTemplateMapper couponTemplateMapper; private final ObjectMapper objectMapper;
     private final OrderStateMachine orderStateMachine;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ResourceReservationService resourceReservationService;
 
     @Override @Transactional
     public void registerMember(Long userId, Long merchantId) {
@@ -138,6 +141,13 @@ public class PointsMemberServiceImpl implements PointsMemberService {
 
     @Override @Transactional
     public PointsRedeemVO redeem(Long userId, Long merchantId, PointsRedeemRequest req) {
+        String clientRequestId = normalizeRequestId(req.getClientRequestId());
+        if (clientRequestId != null) {
+            PointsRedeemRecord existing = redeemMapper.selectOne(new LambdaQueryWrapper<PointsRedeemRecord>()
+                    .eq(PointsRedeemRecord::getUserId, userId).eq(PointsRedeemRecord::getMerchantId, merchantId)
+                    .eq(PointsRedeemRecord::getClientRequestId, clientRequestId));
+            if (existing != null) return redeemVO(existing);
+        }
         assertEnabled(merchantId); PointsProduct product = productMapper.selectById(req.getPointsProductId()); LocalDateTime now = LocalDateTime.now();
         if (product == null || !merchantId.equals(product.getMerchantId()) || !Integer.valueOf(1).equals(product.getStatus()) || !available(product, now)) throw new BusinessException(ErrorCode.POINTS_PRODUCT_NOT_FOUND);
         int quantity = req.getQuantity(); int limit = effectivePerUserLimit(product);
@@ -148,17 +158,19 @@ public class PointsMemberServiceImpl implements PointsMemberService {
         if (productMapper.deductStock(product.getId(), quantity) == 0) throw new BusinessException(ErrorCode.POINTS_PRODUCT_SOLD_OUT);
         String redeemNo = "PT" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
         int cost = Math.multiplyExact(product.getPointsPrice(), quantity); PointsLedger ledger = appendLedger(userId, merchantId, -cost, "REDEEM", redeemNo, null, "兑换：" + product.getTitle(), 0);
-        PointsRedeemRecord record = new PointsRedeemRecord(); record.setRedeemNo(redeemNo); record.setUserId(userId); record.setMerchantId(merchantId); record.setPointsProductId(product.getId()); record.setPointsCost(cost); record.setQuantity(quantity); record.setStatus(1);
-        if (product.getCouponTemplateId() != null) { record.setCouponId(couponService.issueTemplateForPoints(userId, merchantId, product.getCouponTemplateId())); redeemMapper.insert(record); return redeemVO(record); }
+        PointsRedeemRecord record = new PointsRedeemRecord(); record.setRedeemNo(redeemNo); record.setClientRequestId(clientRequestId); record.setUserId(userId); record.setMerchantId(merchantId); record.setPointsProductId(product.getId()); record.setPointsCost(cost); record.setQuantity(quantity); record.setStatus(1);
+        redeemMapper.insert(record);
+        if (resourceReservationService != null) { resourceReservationService.reserveMarker(redeemNo, merchantId, "POINTS_PRODUCT", String.valueOf(product.getId()), quantity, "积分商城库存预占"); resourceReservationService.reserveMarker(redeemNo, merchantId, "POINTS_BALANCE", String.valueOf(userId), cost, "积分权益扣减"); }
+        if (product.getCouponTemplateId() != null) { record.setCouponId(couponService.issueTemplateForPoints(userId, merchantId, product.getCouponTemplateId())); redeemMapper.updateById(record); if (resourceReservationService != null) resourceReservationService.confirmOrder(redeemNo); return redeemVO(record); }
         if (product.getProductId() == null || product.getSkuId() == null || req.getAddressId() == null) throw new BusinessException(ErrorCode.PARAM_ERROR);
         Product goods = goodsMapper.selectById(product.getProductId()); ProductSku sku = skuMapper.selectById(product.getSkuId()); UserAddress address = addressMapper.selectOne(new LambdaQueryWrapper<UserAddress>().eq(UserAddress::getId, req.getAddressId()).eq(UserAddress::getUserId, userId));
         if (goods == null || sku == null || address == null || !merchantId.equals(goods.getMerchantId()) || !Integer.valueOf(1).equals(goods.getStatus()) || !Integer.valueOf(1).equals(sku.getActive())) throw new BusinessException(ErrorCode.POINTS_PRODUCT_NOT_FOUND);
-        if (skuMapper.deductStock(sku.getId(), quantity) == 0) throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
-        redeemMapper.insert(record); String orderNo = "PO" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        Order order = new Order(); order.setOrderNo(orderNo); order.setUserId(userId); order.setMerchantId(merchantId); OrderDomainModel.initialize(order, OrderType.POINTS_REDEEM, FulfillmentMethod.EXPRESS); order.setPointsRedeemId(record.getId()); order.setStatus(OrderStatus.WAIT_SHIP.getCode()); order.setTotalAmount(BigDecimal.ZERO); order.setFreightAmount(BigDecimal.ZERO); order.setDiscountAmount(BigDecimal.ZERO); order.setPayAmount(BigDecimal.ZERO); order.setPayMethod(3); order.setPayTime(now); order.setRemark("积分兑换，商家包邮");
+        String orderNo = "PO" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        if (resourceReservationService != null) resourceReservationService.reserveSku(orderNo, merchantId, goods.getId(), sku.getId(), quantity, "积分兑换实物"); else if (skuMapper.deductStock(sku.getId(), quantity) == 0) throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
+        Order order = new Order(); order.setOrderNo(orderNo); order.setClientRequestId(clientRequestId); order.setUserId(userId); order.setMerchantId(merchantId); OrderDomainModel.initialize(order, OrderType.POINTS_REDEEM, FulfillmentMethod.EXPRESS); order.setPointsRedeemId(record.getId()); order.setStatus(OrderStatus.WAIT_SHIP.getCode()); order.setTotalAmount(BigDecimal.ZERO); order.setFreightAmount(BigDecimal.ZERO); order.setDiscountAmount(BigDecimal.ZERO); order.setPayAmount(BigDecimal.ZERO); order.setPayMethod(3); order.setPayTime(now); order.setRemark("积分兑换，商家包邮");
         try { order.setAddressSnapshot(objectMapper.writeValueAsString(new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail()))); } catch (Exception e) { throw new IllegalStateException("地址快照失败", e); }
         OrderDomainModel.refreshOrderSnapshot(order); orderMapper.insert(order); orderStateMachine.recordCreated(order, "POINTS_REDEEM_ORDER_CREATED"); OrderItem item = new OrderItem(); item.setOrderId(order.getId()); item.setOrderNo(orderNo); item.setProductId(goods.getId()); item.setSkuId(sku.getId()); item.setProductName(goods.getName()); item.setMainImage(goods.getMainImage()); item.setSpecText(sku.getSpecText()); item.setUnitPrice(BigDecimal.ZERO); item.setQuantity(quantity); item.setSubtotal(BigDecimal.ZERO); OrderDomainModel.refreshItemSnapshot(item, order); orderItemMapper.insert(item);
-        record.setOrderNo(orderNo); redeemMapper.updateById(record); return redeemVO(record);
+        record.setOrderNo(orderNo); redeemMapper.updateById(record); if (resourceReservationService != null) { resourceReservationService.confirmOrder(orderNo); resourceReservationService.confirmOrder(redeemNo); } return redeemVO(record);
     }
 
     @Override public MemberDayActivityVO memberDay(Long userId, Long merchantId) { assertEnabled(merchantId); MemberDayActivity activity=latestActivity(merchantId); boolean active=currentActivity(merchantId)!=null; MemberDayActivityVO vo=activityVO(activity,active); if(vo!=null&&active&&activity.getCouponTemplateId()!=null){String businessNo="MEMBER_DAY_COUPON:"+activity.getId()+":"+LocalDate.now();vo.setCouponReceived(ledgerMapper.selectCount(new LambdaQueryWrapper<PointsLedger>().eq(PointsLedger::getUserId,userId).eq(PointsLedger::getMerchantId,merchantId).eq(PointsLedger::getSource,"MEMBER_DAY_COUPON").eq(PointsLedger::getBusinessNo,businessNo))>0);}return vo; }
@@ -205,6 +217,7 @@ public class PointsMemberServiceImpl implements PointsMemberService {
         } catch (Exception ignored) { return false; }
     }
     private int safe(Integer n) { return n == null ? 0 : n; }
+    private String normalizeRequestId(String value) { if (value == null || value.isBlank()) return null; String result = value.trim(); if (result.length() > 64) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "clientRequestId 长度不能超过 64"); return result; }
     private PointsLedgerVO ledgerVO(PointsLedger x){ PointsLedgerVO v=new PointsLedgerVO();v.setId(x.getId());v.setChangeValue(x.getChangeValue());v.setBalanceAfter(x.getBalanceAfter());v.setSource(x.getSource());v.setDescription(x.getDescription());v.setBusinessNo(x.getBusinessNo());v.setCreatedAt(x.getCreatedAt());return v; }
     private PointsRedeemRecordVO redeemRecordVO(PointsRedeemRecord record, PointsProduct product, Order order, PointsLedger ledger) {
         PointsRedeemRecordVO vo = new PointsRedeemRecordVO();

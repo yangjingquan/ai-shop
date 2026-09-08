@@ -23,6 +23,7 @@ import com.shop.referral.service.ReferralService;
 import com.shop.points.service.PointsMemberService;
 import com.shop.coupon.service.CouponIssueService;
 import com.shop.marketing.service.PromotionService;
+import com.shop.inventory.service.ResourceReservationService;
 import com.shop.presale.service.PresaleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +66,8 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     private PresaleService presaleService;
     @Autowired(required = false)
     private OrderStateMachine orderStateMachine;
+    @Autowired(required = false)
+    private ResourceReservationService resourceReservationService;
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaidCallback(String orderNo, String transactionId, String rawPayload) {
@@ -122,6 +125,7 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
             }
         }
         if (promotionService != null) promotionService.markPaid(orderNo);
+        if (resourceReservationService != null) resourceReservationService.confirmOrder(orderNo);
 
         List<OrderItem> items = orderItemMapper.selectList(
                 new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, order.getId()));

@@ -19,6 +19,9 @@ public class Order extends BaseEntity {
 
     private Long ruleVersion;
 
+    /** Client-generated idempotency key for a create-order request. */
+    private String clientRequestId;
+
     private Long userId;
 
     private Long merchantId;

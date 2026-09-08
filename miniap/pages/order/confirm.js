@@ -4,6 +4,7 @@ const groupBuyApi = require('../../api/group-buy')
 const seckillApi = require('../../api/seckill')
 const pointsApi = require('../../api/points')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
+const clientRequestId = require('../../utils/client-request-id')
 
 Page({
   data: {
@@ -228,6 +229,8 @@ Page({
     }
     if (this.data.submitting) return;
     this.setData({ submitting: true });
+    const requestScope = `${this.data.mode}:${this.data.cartItemIds.join(',')}:${this.data.productId}:${this.data.skuId}:${this.data.groupId}:${this.data.seckillSkuId}`
+    const requestId = clientRequestId.create(requestScope)
 
     if (this.data.mode === 'groupBuy') {
       const payload = {
@@ -237,12 +240,14 @@ Page({
         addressId: this.data.addressId,
         quoteId: this.data.preview && this.data.preview.quoteId,
         ruleVersion: this.data.preview && this.data.preview.ruleVersion,
+        clientRequestId: requestId,
       };
       const request = this.data.groupId
         ? groupBuyApi.join(this.data.groupId, payload)
         : groupBuyApi.open(payload);
       request.then((res) => {
         if (res.code === 0) {
+          clientRequestId.clear(requestScope)
           return this.payOrder(res.data).then(() => {
             wx.showToast({ title: '下单成功', icon: 'success' });
             setTimeout(() => wx.redirectTo({
@@ -276,6 +281,7 @@ Page({
         quantity: this.data.quantity,
         quoteId: this.data.preview && this.data.preview.quoteId,
         ruleVersion: this.data.preview && this.data.preview.ruleVersion,
+        clientRequestId: requestId,
       }).then((res) => {
         if (res.code !== 0) {
           if (this.refreshWhenQuoteExpired(res)) return
@@ -283,6 +289,7 @@ Page({
           this.setData({ submitting: false })
           return
         }
+        clientRequestId.clear(requestScope)
         return this.payOrder(res.data).then(() => {
           wx.showToast({ title: '抢购成功，状态同步中', icon: 'success' })
           setTimeout(() => wx.redirectTo({ url: `/pages/order/success?orderNo=${res.data.orderNo || ''}` }), 1000)
@@ -315,9 +322,11 @@ Page({
         bundleGroupId: this.data.bundleGroupId || null,
         quoteId: this.data.preview && this.data.preview.quoteId,
         ruleVersion: this.data.preview && this.data.preview.ruleVersion,
+        clientRequestId: requestId,
       }
     }).then(res => {
       if (res.code === 0) {
+        clientRequestId.clear(requestScope)
         const orders = res.data || [];
         this.payCreatedOrders(orders);
       } else {

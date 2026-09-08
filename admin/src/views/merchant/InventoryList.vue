@@ -164,6 +164,9 @@ onMounted(load)
         <el-table-column label="库存" width="130"><template #default="{ row }">{{ row.stockBefore }} → {{ row.stockAfter }}</template></el-table-column>
         <el-table-column prop="reason" label="原因" min-width="220" />
         <el-table-column prop="operationType" label="操作类型" width="140" />
+        <el-table-column prop="referenceNo" label="关联订单/单据" min-width="180">
+          <template #default="{ row }">{{ row.referenceNo || '-' }}</template>
+        </el-table-column>
       </el-table>
       <div class="pagination"><el-pagination v-model:current-page="historyPage" :page-size="10" :total="historyTotal" background layout="total, prev, pager, next" @current-change="loadHistory" /></div>
     </el-dialog>

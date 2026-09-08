@@ -12,5 +12,6 @@ public class GroupBuyCreateRequest {
     @NotNull private Long addressId;
     @NotNull private String quoteId;
     @NotNull private Long ruleVersion;
+    private String clientRequestId;
     private String remark;
 }

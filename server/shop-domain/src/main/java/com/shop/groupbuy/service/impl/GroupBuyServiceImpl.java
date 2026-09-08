@@ -37,6 +37,7 @@ import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.WxPayService;
 import com.shop.order.service.OrderDomainModel;
 import com.shop.order.service.OrderStateMachine;
+import com.shop.inventory.service.ResourceReservationService;
 import com.shop.pricing.dto.QuoteRequest;
 import com.shop.pricing.dto.QuoteResult;
 import com.shop.pricing.service.QuoteService;
@@ -95,6 +96,8 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     private final ObjectMapper objectMapper;
     private final QuoteService quoteService;
     private final OrderStateMachine orderStateMachine;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ResourceReservationService resourceReservationService;
 
     @Override
     public PageResult<ProductListVO> productPage(int page, int size, Long merchantId, Long categoryId, String keyword) {
@@ -415,6 +418,10 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     }
 
     private void releaseOrderStock(Order order) {
+        if (resourceReservationService != null) {
+            resourceReservationService.releaseOrder(order.getOrderNo(), "拼团超时未支付或成团失败");
+            return;
+        }
         List<OrderItem> items = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
                 .eq(OrderItem::getOrderId, order.getId()));
         for (OrderItem item : items) {
@@ -501,17 +508,13 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             }
         }
 
-        int affected = skuMapper.deductStock(sku.getId(), req.getQuantity());
-        if (affected == 0) {
-            throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
-        }
-
         String orderNo = generateOrderNo(userId);
         BigDecimal total = product.getGroupBuyPrice().multiply(BigDecimal.valueOf(req.getQuantity()));
 
         Order order = new Order();
         order.setOrderNo(orderNo);
         order.setQuoteId(quote.getQuoteId()); order.setRuleVersion(quote.getRuleVersion()); order.setPricingSnapshotJson(quote.getPricingSnapshotJson());
+        order.setClientRequestId(normalizeRequestId(req.getClientRequestId()));
         order.setUserId(userId);
         order.setMerchantId(product.getMerchantId());
         order.setStatus(OrderStatus.WAIT_PAY.getCode());
@@ -526,6 +529,12 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         OrderDomainModel.refreshOrderSnapshot(order);
         orderMapper.insert(order);
         orderStateMachine.recordCreated(order, "GROUP_BUY_ORDER_CREATED");
+        if (resourceReservationService != null) {
+            resourceReservationService.reserveSku(orderNo, product.getMerchantId(), product.getId(), sku.getId(),
+                    req.getQuantity(), "拼团待支付订单");
+        } else if (skuMapper.deductStock(sku.getId(), req.getQuantity()) == 0) {
+            throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
+        }
 
         OrderItem item = new OrderItem();
         item.setOrderId(order.getId());
@@ -572,6 +581,8 @@ public class GroupBuyServiceImpl implements GroupBuyService {
 
     private GroupBuyCreateVO createGroupOrderWithPayment(Long userId, Long merchantId, Long groupId,
                                                          GroupBuyCreateRequest req, boolean openNewGroup) {
+        GroupBuyCreateVO existing = existingOrder(userId, req.getClientRequestId());
+        if (existing != null) return existing;
         GroupBuyCreateVO vo = new TransactionTemplate(transactionManager)
                 .execute(status -> createGroupOrder(userId, merchantId, groupId, req, openNewGroup));
         if (vo == null) {
@@ -592,6 +603,27 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             log.warn("拼团订单已创建但微信预下单失败，可稍后重新支付, orderNo={}", vo.getOrderNo(), e);
         }
         return vo;
+    }
+
+    private GroupBuyCreateVO existingOrder(Long userId, String clientRequestId) {
+        String requestId = normalizeRequestId(clientRequestId);
+        if (requestId == null) return null;
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                .eq(Order::getUserId, userId).eq(Order::getClientRequestId, requestId));
+        if (order == null) return null;
+        GroupBuyCreateVO vo = new GroupBuyCreateVO();
+        vo.setOrderNo(order.getOrderNo()); vo.setGroupId(order.getGroupBuyGroupId()); vo.setPayAmount(order.getPayAmount());
+        if (order.getStatus() == OrderStatus.WAIT_PAY.getCode()) {
+            try { vo.setPayParams(wxPayService.createJsapiPayParams(order)); } catch (RuntimeException ignored) { }
+        }
+        return vo;
+    }
+
+    private String normalizeRequestId(String value) {
+        if (value == null || value.isBlank()) return null;
+        String result = value.trim();
+        if (result.length() > 64) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "clientRequestId 长度不能超过 64");
+        return result;
     }
 
     private void validateGroupBuyConfig(BigDecimal groupBuyPrice, Integer requiredCount) {

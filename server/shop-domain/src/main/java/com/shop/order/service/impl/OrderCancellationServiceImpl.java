@@ -18,6 +18,7 @@ import com.shop.order.service.OrderStateMachine;
 import com.shop.product.service.ProductService;
 import com.shop.seckill.service.SeckillService;
 import com.shop.marketing.service.PromotionService;
+import com.shop.inventory.service.ResourceReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -45,6 +46,8 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
     private SeckillService seckillService;
     @Autowired(required = false)
     private PromotionService promotionService;
+    @Autowired(required = false)
+    private ResourceReservationService resourceReservationService;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -93,12 +96,16 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
     private void cancelLocked(Order order, String reason) {
         List<OrderItem> items = orderItemMapper.selectList(
                 new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, order.getId()));
-        for (OrderItem item : items) {
-            orderMapper.releaseStock(item.getSkuId(), item.getQuantity());
-        }
-        Set<Long> productIds = items.stream().map(OrderItem::getProductId).collect(Collectors.toSet());
-        for (Long productId : productIds) {
-            productService.recalcProduct(productId);
+        if (resourceReservationService != null) {
+            resourceReservationService.releaseOrder(order.getOrderNo(), reason);
+        } else {
+            for (OrderItem item : items) {
+                orderMapper.releaseStock(item.getSkuId(), item.getQuantity());
+            }
+            Set<Long> productIds = items.stream().map(OrderItem::getProductId).collect(Collectors.toSet());
+            for (Long productId : productIds) {
+                productService.recalcProduct(productId);
+            }
         }
 
         order.setCancelTime(LocalDateTime.now());

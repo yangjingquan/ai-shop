@@ -18,5 +18,6 @@ public class SeckillOrderCreateRequest {
     private String quoteId;
     @NotNull
     private Long ruleVersion;
+    private String clientRequestId;
     private String remark;
 }

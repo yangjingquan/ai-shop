@@ -9,6 +9,7 @@ import com.shop.marketing.mapper.*;
 import com.shop.marketing.service.MarketingFeatureService;
 import com.shop.marketing.service.PromotionService;
 import com.shop.marketing.enums.MarketingActivityCode;
+import com.shop.inventory.service.ResourceReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,8 @@ public class PromotionServiceImpl implements PromotionService {
     private final PromotionScopeMapper scopeMapper;
     private final PromotionOrderReservationMapper reservationMapper;
     private final MarketingFeatureService marketingFeatureService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ResourceReservationService resourceReservationService;
 
     @Override public List<PromotionActivityVO> list(Long merchantId) {
         return activityMapper.selectList(new LambdaQueryWrapper<PromotionActivity>().eq(PromotionActivity::getMerchantId, merchantId)
@@ -99,6 +102,11 @@ public class PromotionServiceImpl implements PromotionService {
         reservation.setQualifiedAmount(result.getQualifiedAmount()); reservation.setDiscountAmount(result.getDiscountAmount()); reservation.setStatus(0);
         reservation.setSnapshotJson("{\"name\":\"" + json(result.getActivityName()) + "\",\"type\":\"" + json(result.getActivityType()) + "\",\"threshold\":\"" + result.getThresholdAmount() + "\",\"qualified\":\"" + result.getQualifiedAmount() + "\",\"discount\":\"" + result.getDiscountAmount() + "\"}");
         reservationMapper.insert(reservation);
+        if (resourceReservationService != null) {
+            PromotionActivity activity = activityMapper.selectById(result.getActivityId());
+            resourceReservationService.reserveMarker(orderNo, activity == null ? 0L : activity.getMerchantId(), "PROMOTION", String.valueOf(result.getActivityId()),
+                    1, "营销预算与名额预占");
+        }
     }
     @Override @Transactional public void markPaid(String orderNo) { transition(orderNo, 1); }
     @Override @Transactional public void release(String orderNo) { transition(orderNo, 2); }
