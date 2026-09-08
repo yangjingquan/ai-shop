@@ -13,9 +13,19 @@ public class OrderDetailVO {
 
     private Integer status;
 
+    private Integer state;
+
     private String statusText;
 
+    private String stateText;
+
     private Integer orderType;
+
+    private String orderTypeText;
+
+    private Integer fulfillmentMethod;
+
+    private String fulfillmentMethodText;
 
     private Long bundleActivityId;
 

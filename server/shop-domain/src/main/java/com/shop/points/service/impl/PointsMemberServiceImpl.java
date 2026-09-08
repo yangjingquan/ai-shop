@@ -18,8 +18,12 @@ import com.shop.order.dto.AddressSnapshot;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.enums.OrderType;
+import com.shop.order.enums.FulfillmentMethod;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
+import com.shop.order.service.OrderDomainModel;
+import com.shop.order.service.OrderStateMachine;
 import com.shop.points.dto.*;
 import com.shop.points.entity.*;
 import com.shop.points.mapper.*;
@@ -53,6 +57,7 @@ public class PointsMemberServiceImpl implements PointsMemberService {
     private final ProductSkuMapper skuMapper; private final UserAddressMapper addressMapper;
     private final OrderMapper orderMapper; private final OrderItemMapper orderItemMapper;
     private final CouponService couponService; private final CouponTemplateMapper couponTemplateMapper; private final ObjectMapper objectMapper;
+    private final OrderStateMachine orderStateMachine;
 
     @Override @Transactional
     public void registerMember(Long userId, Long merchantId) {
@@ -150,9 +155,9 @@ public class PointsMemberServiceImpl implements PointsMemberService {
         if (goods == null || sku == null || address == null || !merchantId.equals(goods.getMerchantId()) || !Integer.valueOf(1).equals(goods.getStatus()) || !Integer.valueOf(1).equals(sku.getActive())) throw new BusinessException(ErrorCode.POINTS_PRODUCT_NOT_FOUND);
         if (skuMapper.deductStock(sku.getId(), quantity) == 0) throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
         redeemMapper.insert(record); String orderNo = "PO" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        Order order = new Order(); order.setOrderNo(orderNo); order.setUserId(userId); order.setMerchantId(merchantId); order.setOrderType(3); order.setPointsRedeemId(record.getId()); order.setStatus(OrderStatus.WAIT_SHIP.getCode()); order.setTotalAmount(BigDecimal.ZERO); order.setFreightAmount(BigDecimal.ZERO); order.setDiscountAmount(BigDecimal.ZERO); order.setPayAmount(BigDecimal.ZERO); order.setPayMethod(3); order.setPayTime(now); order.setRemark("积分兑换，商家包邮");
+        Order order = new Order(); order.setOrderNo(orderNo); order.setUserId(userId); order.setMerchantId(merchantId); OrderDomainModel.initialize(order, OrderType.POINTS_REDEEM, FulfillmentMethod.EXPRESS); order.setPointsRedeemId(record.getId()); order.setStatus(OrderStatus.WAIT_SHIP.getCode()); order.setTotalAmount(BigDecimal.ZERO); order.setFreightAmount(BigDecimal.ZERO); order.setDiscountAmount(BigDecimal.ZERO); order.setPayAmount(BigDecimal.ZERO); order.setPayMethod(3); order.setPayTime(now); order.setRemark("积分兑换，商家包邮");
         try { order.setAddressSnapshot(objectMapper.writeValueAsString(new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail()))); } catch (Exception e) { throw new IllegalStateException("地址快照失败", e); }
-        orderMapper.insert(order); OrderItem item = new OrderItem(); item.setOrderId(order.getId()); item.setOrderNo(orderNo); item.setProductId(goods.getId()); item.setSkuId(sku.getId()); item.setProductName(goods.getName()); item.setMainImage(goods.getMainImage()); item.setSpecText(sku.getSpecText()); item.setUnitPrice(BigDecimal.ZERO); item.setQuantity(quantity); item.setSubtotal(BigDecimal.ZERO); orderItemMapper.insert(item);
+        OrderDomainModel.refreshOrderSnapshot(order); orderMapper.insert(order); orderStateMachine.recordCreated(order, "POINTS_REDEEM_ORDER_CREATED"); OrderItem item = new OrderItem(); item.setOrderId(order.getId()); item.setOrderNo(orderNo); item.setProductId(goods.getId()); item.setSkuId(sku.getId()); item.setProductName(goods.getName()); item.setMainImage(goods.getMainImage()); item.setSpecText(sku.getSpecText()); item.setUnitPrice(BigDecimal.ZERO); item.setQuantity(quantity); item.setSubtotal(BigDecimal.ZERO); OrderDomainModel.refreshItemSnapshot(item, order); orderItemMapper.insert(item);
         record.setOrderNo(orderNo); redeemMapper.updateById(record); return redeemVO(record);
     }
 

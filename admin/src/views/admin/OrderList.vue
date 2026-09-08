@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { adminOrderApi, type AdminOrderDetail, type AdminOrderRow } from '@/api/order'
+import { adminOrderApi, type AdminOrderDetail, type AdminOrderRow, type OrderDictionaryItem } from '@/api/order'
 import type { PageResult } from '@/api/merchant'
 
 const loading = ref(false)
@@ -12,10 +12,7 @@ const detailVisible = ref(false)
 const detailLoading = ref(false)
 const detail = ref<AdminOrderDetail | null>(null)
 
-const statusText: Record<number, string> = {
-  0: '待支付', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消',
-  5: '待成团', 6: '已成团', 7: '待退款',
-}
+const stateOptions = ref<OrderDictionaryItem[]>([])
 
 async function fetchList() {
   loading.value = true
@@ -78,7 +75,10 @@ function money(value?: number) {
   return `¥${Number(value || 0).toFixed(2)}`
 }
 
-onMounted(fetchList)
+onMounted(async () => {
+  stateOptions.value = (await adminOrderApi.dictionary()).states || []
+  await fetchList()
+})
 </script>
 
 <template>
@@ -91,15 +91,15 @@ onMounted(fetchList)
         <el-input v-model="query.orderNo" placeholder="订单号" clearable style="width: 220px" @keyup.enter="search" />
         <el-input-number v-model="query.merchantId" :min="1" :controls="false" placeholder="商家 ID" style="width: 140px" />
         <el-select v-model="query.status" placeholder="全部状态" clearable style="width: 150px" @change="search">
-          <el-option v-for="(label, value) in statusText" :key="value" :label="label" :value="Number(value)" />
+          <el-option v-for="state in stateOptions" :key="state.code" :label="state.text" :value="state.code" />
         </el-select>
         <el-button type="primary" @click="search">查询</el-button>
       </div>
       <el-table v-loading="loading" :data="list" stripe>
         <el-table-column prop="orderNo" label="订单号" min-width="190" />
         <el-table-column prop="merchantName" label="商家" width="140" />
-        <el-table-column label="类型" width="90"><template #default="{ row }">{{ row.orderType === 1 ? '拼团' : row.orderType === 2 ? '秒杀' : row.orderType === 3 ? '积分兑换' : row.orderType === 4 ? '搭配购' : row.orderType === 5 ? '抽奖实物' : '普通' }}</template></el-table-column>
-        <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag>{{ statusText[row.status] || row.statusText }}</el-tag></template></el-table-column>
+        <el-table-column prop="orderTypeText" label="类型" width="120" />
+        <el-table-column label="状态" width="110"><template #default="{ row }"><el-tag>{{ row.stateText || row.statusText }}</el-tag></template></el-table-column>
         <el-table-column label="实付金额" width="120"><template #default="{ row }">{{ money(row.payAmount) }}</template></el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180" />
         <el-table-column label="操作" width="90"><template #default="{ row }"><el-button link type="primary" @click="openDetail(row.orderNo)">详情</el-button></template></el-table-column>
@@ -113,6 +113,8 @@ onMounted(fetchList)
           <el-descriptions-item label="订单号">{{ detail.orderNo }}</el-descriptions-item>
           <el-descriptions-item label="商家">{{ detail.merchantName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="状态">{{ detail.statusText }}</el-descriptions-item>
+          <el-descriptions-item label="订单类型">{{ detail.orderTypeText || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="履约方式">{{ detail.fulfillmentMethodText || '-' }}</el-descriptions-item>
           <el-descriptions-item label="商品金额">{{ money(detail.totalAmount) }}</el-descriptions-item>
           <el-descriptions-item label="实付金额">{{ money(detail.payAmount) }}</el-descriptions-item>
           <el-descriptions-item label="支付时间">{{ detail.payTime || '-' }}</el-descriptions-item>

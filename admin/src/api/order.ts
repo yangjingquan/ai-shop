@@ -5,12 +5,20 @@ export interface AdminOrderRow {
   orderNo: string
   status: number
   statusText: string
+  state?: number
+  stateText?: string
   orderType?: number
+  orderTypeText?: string
+  fulfillmentMethod?: number
+  fulfillmentMethodText?: string
   payAmount?: number
   merchantId?: number
   merchantName?: string
   createdAt?: string
 }
+
+export interface OrderDictionaryItem { code: number; text: string }
+export interface OrderDictionary { orderTypes: OrderDictionaryItem[]; states: OrderDictionaryItem[]; fulfillmentMethods: OrderDictionaryItem[] }
 
 export interface AdminOrderItem {
   productName: string
@@ -122,6 +130,7 @@ export interface AdminPaymentRow {
 }
 
 export const adminOrderApi = {
+  dictionary: () => request.get<unknown, OrderDictionary>('/api/admin/orders/dictionary'),
   page: (params: Record<string, unknown>) =>
     request.get<unknown, PageResult<AdminOrderRow>>('/api/admin/orders/page', { params }),
   detail: (orderNo: string) =>

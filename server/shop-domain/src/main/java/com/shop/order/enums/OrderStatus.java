@@ -27,6 +27,15 @@ public enum OrderStatus {
         return "未知";
     }
 
+    public static OrderStatus fromCode(Integer code) {
+        if (code != null) {
+            for (OrderStatus value : values()) {
+                if (value.code == code) return value;
+            }
+        }
+        throw new IllegalArgumentException("未知订单状态: " + code);
+    }
+
     public static boolean canCancel(int code) {
         return code == WAIT_PAY.code;
     }

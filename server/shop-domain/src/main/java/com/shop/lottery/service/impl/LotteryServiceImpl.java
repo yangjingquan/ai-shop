@@ -19,8 +19,12 @@ import com.shop.order.dto.AddressSnapshot;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.enums.OrderType;
+import com.shop.order.enums.FulfillmentMethod;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
+import com.shop.order.service.OrderDomainModel;
+import com.shop.order.service.OrderStateMachine;
 import com.shop.points.entity.MemberProfile;
 import com.shop.points.entity.PointsAccount;
 import com.shop.points.mapper.MemberProfileMapper;
@@ -66,6 +70,7 @@ public class LotteryServiceImpl implements LotteryService {
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
     private final ObjectMapper objectMapper;
+    private final OrderStateMachine orderStateMachine;
 
     @Override
     public LotteryActivityVO current(Long merchantId, Long userId) {
@@ -162,11 +167,11 @@ public class LotteryServiceImpl implements LotteryService {
         if (product == null || sku == null || !Integer.valueOf(1).equals(product.getStatus()) || !Integer.valueOf(1).equals(product.getAuditStatus())) throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         if (skuMapper.deductStock(sku.getId(), 1) == 0) throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
         Order order = new Order(); String orderNo = "LR" + LocalDateTime.now().format(DRAW_NO_TIME) + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-        order.setOrderNo(orderNo); order.setUserId(userId); order.setMerchantId(merchantId); order.setStatus(OrderStatus.WAIT_SHIP.getCode()); order.setOrderType(5); order.setLotteryRewardId(reward.getId());
+        order.setOrderNo(orderNo); order.setUserId(userId); order.setMerchantId(merchantId); order.setStatus(OrderStatus.WAIT_SHIP.getCode()); OrderDomainModel.initialize(order, OrderType.LOTTERY_PHYSICAL, FulfillmentMethod.EXPRESS); order.setLotteryRewardId(reward.getId());
         order.setTotalAmount(BigDecimal.ZERO); order.setFreightAmount(BigDecimal.ZERO); order.setDiscountAmount(BigDecimal.ZERO); order.setPayAmount(BigDecimal.ZERO); order.setPayMethod(3); order.setPayTime(LocalDateTime.now()); order.setRemark("抽奖实物奖品，商家包邮");
         try { order.setAddressSnapshot(objectMapper.writeValueAsString(new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail()))); } catch (Exception ex) { throw new IllegalStateException("地址快照失败", ex); }
-        orderMapper.insert(order);
-        OrderItem item = new OrderItem(); item.setOrderId(order.getId()); item.setOrderNo(orderNo); item.setProductId(product.getId()); item.setSkuId(sku.getId()); item.setProductName(product.getName()); item.setMainImage(product.getMainImage()); item.setSpecText(sku.getSpecText()); item.setUnitPrice(BigDecimal.ZERO); item.setQuantity(1); item.setSubtotal(BigDecimal.ZERO); orderItemMapper.insert(item);
+        OrderDomainModel.refreshOrderSnapshot(order); orderMapper.insert(order); orderStateMachine.recordCreated(order, "LOTTERY_PHYSICAL_ORDER_CREATED");
+        OrderItem item = new OrderItem(); item.setOrderId(order.getId()); item.setOrderNo(orderNo); item.setProductId(product.getId()); item.setSkuId(sku.getId()); item.setProductName(product.getName()); item.setMainImage(product.getMainImage()); item.setSpecText(sku.getSpecText()); item.setUnitPrice(BigDecimal.ZERO); item.setQuantity(1); item.setSubtotal(BigDecimal.ZERO); OrderDomainModel.refreshItemSnapshot(item, order); orderItemMapper.insert(item);
         reward.setOrderNo(orderNo); reward.setAddressSnapshot(order.getAddressSnapshot()); reward.setStatus(3); reward.setClaimedAt(LocalDateTime.now()); rewardMapper.updateById(reward);
     }
 

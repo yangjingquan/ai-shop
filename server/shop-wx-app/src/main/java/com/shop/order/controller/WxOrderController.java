@@ -29,6 +29,11 @@ public class WxOrderController {
     private final com.shop.order.service.LogisticsService logisticsService;
     private final WxMerchantResolver wxMerchantResolver;
 
+    @GetMapping("/dictionary")
+    public ApiResult<OrderDictionaryVO> dictionary() {
+        return ApiResult.success(com.shop.order.service.OrderDomainModel.dictionary());
+    }
+
     @PostMapping("/preview")
     public ApiResult<OrderPreviewVO> preview(@RequestBody @Valid OrderPreviewRequest req, HttpServletRequest request) {
         Long userId = CurrentUserHolder.get().getUserId();

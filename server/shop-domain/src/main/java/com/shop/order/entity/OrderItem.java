@@ -37,6 +37,8 @@ public class OrderItem {
 
     private String pricingSnapshotJson;
 
+    private String itemSnapshotJson;
+
     private String bundleGroupId;
 
     private LocalDateTime createdAt;

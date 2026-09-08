@@ -19,9 +19,13 @@ import com.shop.order.dto.*;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.enums.OrderType;
+import com.shop.order.enums.FulfillmentMethod;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.service.WxPayService;
+import com.shop.order.service.OrderDomainModel;
+import com.shop.order.service.OrderStateMachine;
 import com.shop.pricing.dto.QuoteRequest;
 import com.shop.pricing.dto.QuoteResult;
 import com.shop.pricing.service.QuoteService;
@@ -65,6 +69,7 @@ public class BundleServiceImpl implements BundleService {
     private final WxPayService wxPayService;
     private final PlatformTransactionManager transactionManager;
     private final QuoteService quoteService;
+    private final OrderStateMachine orderStateMachine;
 
     @Override
     public List<BundleActivityVO> merchantList(Long merchantId) {
@@ -306,7 +311,7 @@ public class BundleServiceImpl implements BundleService {
             order.setUserId(userId);
             order.setMerchantId(merchantId);
             order.setStatus(OrderStatus.WAIT_PAY.getCode());
-            order.setOrderType(4);
+            OrderDomainModel.initialize(order, OrderType.BUNDLE, FulfillmentMethod.EXPRESS);
             order.setBundleActivityId(bundle.getBundleId());
             order.setTotalAmount(bundle.getOriginalAmount());
             order.setFreightAmount(BigDecimal.ZERO);
@@ -316,7 +321,9 @@ public class BundleServiceImpl implements BundleService {
             order.setPayAmount(quote.getPayableAmount());
             order.setAddressSnapshot(toJson(new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail())));
             order.setRemark(request.getRemark() == null ? "" : request.getRemark());
+            OrderDomainModel.refreshOrderSnapshot(order);
             orderMapper.insert(order);
+            orderStateMachine.recordCreated(order, "BUNDLE_ORDER_CREATED");
             for (CartItem cartItem : context.cartItems) {
                 Product product = productMapper.selectById(cartItem.getProductId());
                 ProductSku sku = skuMapper.selectById(cartItem.getSkuId());
@@ -328,6 +335,7 @@ public class BundleServiceImpl implements BundleService {
                 item.setSpecText(sku.getSpecText()); item.setUnitPrice(sku.getPrice());
                 item.setQuantity(1); item.setSubtotal(sku.getPrice()); item.setBundleGroupId(context.groupId);
                 item.setPricingSnapshotJson(quote.getPricingSnapshotJson());
+                OrderDomainModel.refreshItemSnapshot(item, order);
                 orderItemMapper.insert(item);
                 productService.recalcProduct(product.getId());
             }

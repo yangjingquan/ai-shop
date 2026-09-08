@@ -13,6 +13,7 @@ import com.shop.order.enums.OrderStatus;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.service.RefundCompletionService;
+import com.shop.order.service.OrderStateMachine;
 import com.shop.referral.service.ReferralService;
 import com.shop.product.service.ProductService;
 import com.shop.points.service.PointsMemberService;
@@ -41,6 +42,8 @@ public class RefundCompletionServiceImpl implements RefundCompletionService {
     private PointsMemberService pointsMemberService;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private CouponIssueService couponIssueService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private OrderStateMachine orderStateMachine;
 
     @Override
     @Transactional
@@ -61,11 +64,19 @@ public class RefundCompletionServiceImpl implements RefundCompletionService {
                 releaseOrderStock(order);
             }
 
-            order.setStatus(OrderStatus.CANCELLED.getCode());
             order.setCancelReason("REFUNDED");
             order.setCancelTime(completedAt);
             order.setUpdatedAt(completedAt);
-            orderMapper.updateById(order);
+            if (orderStateMachine != null && order.getStatus() == OrderStatus.WAIT_SHIP.getCode()) {
+                orderStateMachine.transition(order, OrderStatus.CANCELLED, "FULL_REFUND", "REFUNDED");
+            } else {
+                Integer fromState = order.getStatus();
+                order.setStatus(OrderStatus.CANCELLED.getCode());
+                orderMapper.updateById(order);
+                if (orderStateMachine != null) {
+                    orderStateMachine.recordLegacyTransition(order, fromState, OrderStatus.CANCELLED.getCode(), "FULL_REFUND", "REFUNDED");
+                }
+            }
         }
 
         // 仅微信全额退款成功后回收未使用券；已使用券保持既有权益，避免逆向影响下一笔订单。

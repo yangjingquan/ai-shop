@@ -15,9 +15,13 @@ import com.shop.order.dto.OrderCreateVO;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.enums.OrderType;
+import com.shop.order.enums.FulfillmentMethod;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.service.WxPayService;
+import com.shop.order.service.OrderDomainModel;
+import com.shop.order.service.OrderStateMachine;
 import com.shop.pricing.dto.QuoteRequest;
 import com.shop.pricing.dto.QuoteResult;
 import com.shop.pricing.service.QuoteService;
@@ -77,6 +81,7 @@ public class SeckillServiceImpl implements SeckillService {
     private final PlatformTransactionManager transactionManager;
     private final ObjectMapper objectMapper;
     private final QuoteService quoteService;
+    private final OrderStateMachine orderStateMachine;
 
     @Override
     public List<SeckillSessionVO> sessions(Long merchantId) {
@@ -231,7 +236,7 @@ public class SeckillServiceImpl implements SeckillService {
                 created.setUserId(userId);
                 created.setMerchantId(merchantId);
                 created.setStatus(OrderStatus.WAIT_PAY.getCode());
-                created.setOrderType(2);
+                OrderDomainModel.initialize(created, OrderType.SECKILL, FulfillmentMethod.EXPRESS);
                 created.setSeckillSessionId(context.session.getId());
                 created.setSeckillSkuId(lockedSku.getId());
                 BigDecimal subtotal = lockedSku.getActivityPrice().multiply(BigDecimal.valueOf(quantity));
@@ -241,7 +246,9 @@ public class SeckillServiceImpl implements SeckillService {
                 created.setPayAmount(quote.getPayableAmount());
                 created.setAddressSnapshot(toJson(new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail())));
                 created.setRemark(request.getRemark() == null ? "" : request.getRemark().trim());
+                OrderDomainModel.refreshOrderSnapshot(created);
                 orderMapper.insert(created);
+                orderStateMachine.recordCreated(created, "SECKILL_ORDER_CREATED");
 
                 OrderItem item = new OrderItem();
                 item.setOrderId(created.getId());
@@ -256,6 +263,7 @@ public class SeckillServiceImpl implements SeckillService {
                 item.setQuantity(quantity);
                 item.setSubtotal(subtotal);
                 item.setPricingSnapshotJson(quote.getPricingSnapshotJson());
+                OrderDomainModel.refreshItemSnapshot(item, created);
                 orderItemMapper.insert(item);
 
                 SeckillOrder seckillOrder = new SeckillOrder();

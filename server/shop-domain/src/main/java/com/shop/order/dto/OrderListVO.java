@@ -13,9 +13,20 @@ public class OrderListVO {
 
     private Integer status;
 
+    /** canonical state; status is retained for existing clients. */
+    private Integer state;
+
     private String statusText;
 
+    private String stateText;
+
     private Integer orderType;
+
+    private String orderTypeText;
+
+    private Integer fulfillmentMethod;
+
+    private String fulfillmentMethodText;
 
     /** 预售中心阶段，预售订单使用；普通订单为空。 */
     private Integer presaleStage;

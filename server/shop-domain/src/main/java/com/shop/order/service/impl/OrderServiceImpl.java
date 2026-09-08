@@ -32,6 +32,8 @@ import com.shop.order.entity.OrderItem;
 import com.shop.order.entity.PaymentLog;
 import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.enums.FulfillmentMethod;
+import com.shop.order.enums.OrderType;
 import com.shop.order.enums.RefundStatus;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
@@ -43,6 +45,8 @@ import com.shop.order.service.OrderCancellationService;
 import com.shop.order.service.RefundCompletionService;
 import com.shop.order.service.WxPayService;
 import com.shop.order.service.WechatPayOrderNotFoundException;
+import com.shop.order.service.OrderDomainModel;
+import com.shop.order.service.OrderStateMachine;
 import com.shop.product.entity.Product;
 import com.shop.product.entity.ProductSku;
 import com.shop.product.mapper.ProductMapper;
@@ -95,6 +99,7 @@ public class OrderServiceImpl implements OrderService {
     private final CouponService couponService;
     private final PromotionService promotionService;
     private final QuoteService quoteService;
+    private final OrderStateMachine orderStateMachine;
 
     private final PresaleOrderMapper presaleOrderMapper;
 
@@ -406,6 +411,7 @@ public class OrderServiceImpl implements OrderService {
                 order.setUserId(userId);
                 order.setMerchantId(mid);
                 order.setStatus(OrderStatus.WAIT_PAY.getCode());
+                OrderDomainModel.initialize(order, OrderType.NORMAL, FulfillmentMethod.EXPRESS);
                 order.setTotalAmount(BigDecimal.ZERO);
                 order.setFreightAmount(BigDecimal.ZERO);
                 order.setDiscountAmount(couponDiscount.add(promotion.getDiscountAmount()));
@@ -426,7 +432,9 @@ public class OrderServiceImpl implements OrderService {
                 order.setPayAmount(BigDecimal.ZERO);
                 order.setAddressSnapshot(addrJson);
                 order.setRemark(req.getRemark() != null ? req.getRemark() : "");
+                OrderDomainModel.refreshOrderSnapshot(order);
                 orderMapper.insert(order);
+                orderStateMachine.recordCreated(order, "ORDER_CREATED");
                 promotionService.reserve(orderNo, promotion);
 
                 BigDecimal totalAmount = BigDecimal.ZERO;
@@ -458,12 +466,14 @@ public class OrderServiceImpl implements OrderService {
                     oi.setQuantity(ci.getQuantity());
                     oi.setSubtotal(subtotal);
                     oi.setPricingSnapshotJson(quote.getPricingSnapshotJson());
+                    OrderDomainModel.refreshItemSnapshot(oi, order);
                     orderItemMapper.insert(oi);
                 }
 
                 // 更新订单金额
                 order.setTotalAmount(totalAmount);
                 order.setPayAmount(quote.getPayableAmount());
+                OrderDomainModel.refreshOrderSnapshot(order);
                 orderMapper.updateById(order);
 
                 // recalc 每个 product
@@ -760,14 +770,20 @@ public class OrderServiceImpl implements OrderService {
             vo.setOrderNo(o.getOrderNo());
             vo.setStatus(o.getStatus());
             vo.setStatusText(OrderStatus.statusText(o.getStatus()));
+            vo.setState(o.getStatus());
+            vo.setStateText(OrderStatus.statusText(o.getStatus()));
             vo.setPayAmount(o.getPayAmount());
             vo.setOrderType(o.getOrderType());
+            vo.setOrderTypeText(OrderDomainModel.orderTypeText(o.getOrderType()));
+            vo.setFulfillmentMethod(o.getFulfillmentMethod());
+            vo.setFulfillmentMethodText(OrderDomainModel.fulfillmentMethodText(o.getFulfillmentMethod()));
             if (Integer.valueOf(6).equals(o.getOrderType())) {
                 PresaleOrder presale = presaleMap.get(o.getPresaleOrderId());
                 if (presale != null) {
                     vo.setPresaleStage(presale.getStage());
                     vo.setPresaleStageText(presaleStageText(presale.getStage()));
                     vo.setPresaleBalancePaid(presale.getBalancePaidAt() != null);
+                    applyPresaleCanonicalState(vo, presale);
                 }
             }
             vo.setBundleActivityId(o.getBundleActivityId());
@@ -880,6 +896,8 @@ public class OrderServiceImpl implements OrderService {
         vo.setOrderNo(order.getOrderNo());
         vo.setStatus(order.getStatus());
         vo.setStatusText(OrderStatus.statusText(order.getStatus()));
+        vo.setState(order.getStatus());
+        vo.setStateText(OrderStatus.statusText(order.getStatus()));
         vo.setTotalAmount(order.getTotalAmount());
         vo.setFreightAmount(order.getFreightAmount());
         vo.setDiscountAmount(order.getDiscountAmount());
@@ -892,6 +910,16 @@ public class OrderServiceImpl implements OrderService {
         vo.setPromotionDiscountAmount(order.getPromotionDiscountAmount());
         vo.setPayAmount(order.getPayAmount());
         vo.setOrderType(order.getOrderType());
+        vo.setOrderTypeText(OrderDomainModel.orderTypeText(order.getOrderType()));
+        vo.setFulfillmentMethod(order.getFulfillmentMethod());
+        vo.setFulfillmentMethodText(OrderDomainModel.fulfillmentMethodText(order.getFulfillmentMethod()));
+        if (Integer.valueOf(OrderType.PRESALE.getCode()).equals(order.getOrderType()) && order.getPresaleOrderId() != null) {
+            PresaleOrder presale = presaleOrderMapper.selectById(order.getPresaleOrderId());
+            if (presale != null) {
+                vo.setState(presaleCanonicalState(presale.getStage()));
+                vo.setStateText(presaleStageText(presale.getStage()));
+            }
+        }
         vo.setBundleActivityId(order.getBundleActivityId());
         vo.setBundleName(readCouponName(order.getBundleSnapshotJson()));
         vo.setBundleDiscountAmount(order.getBundleDiscountAmount());
@@ -975,6 +1003,23 @@ public class OrderServiceImpl implements OrderService {
         return "团购状态未知";
     }
 
+    private void applyPresaleCanonicalState(OrderListVO vo, PresaleOrder presale) {
+        vo.setState(presaleCanonicalState(presale.getStage()));
+        vo.setStateText(presaleStageText(presale.getStage()));
+    }
+
+    private int presaleCanonicalState(Integer stage) {
+        return switch (stage == null ? -1 : stage) {
+            case 0 -> OrderStatus.WAIT_PAY.getCode();
+            case 1, 2 -> OrderStatus.PRESALE_WAIT_BALANCE.getCode();
+            case 3 -> OrderStatus.WAIT_SHIP.getCode();
+            case 4 -> OrderStatus.FINISHED.getCode();
+            case 5, 6 -> OrderStatus.PRESALE_OVERDUE.getCode();
+            case 7 -> OrderStatus.CANCELLED.getCode();
+            default -> OrderStatus.WAIT_PAY.getCode();
+        };
+    }
+
     private String presaleStageText(Integer stage) {
         if (stage == null) return "预售订单";
         return switch (stage) {
@@ -1035,8 +1080,12 @@ public class OrderServiceImpl implements OrderService {
             }
             throw new BusinessException(ErrorCode.ORDER_NOT_WAIT_SHIP);
         }
+        Order shipped = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo));
+        if (shipped != null) {
+            orderStateMachine.recordLegacyTransition(shipped, OrderStatus.WAIT_SHIP.getCode(),
+                    OrderStatus.WAIT_RECEIVE.getCode(), "ORDER_SHIPPED", "商家发货");
+        }
         if (presaleService != null) {
-            Order shipped = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo));
             if (shipped != null && Integer.valueOf(6).equals(shipped.getOrderType())) {
                 presaleService.syncShipping(merchantId, orderNo);
             }
@@ -1056,8 +1105,12 @@ public class OrderServiceImpl implements OrderService {
             }
             throw new BusinessException(ErrorCode.ORDER_NOT_WAIT_RECEIVE);
         }
+        Order received = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo));
+        if (received != null) {
+            orderStateMachine.recordLegacyTransition(received, OrderStatus.WAIT_RECEIVE.getCode(),
+                    OrderStatus.FINISHED.getCode(), "ORDER_RECEIVED", "用户确认收货");
+        }
         if (presaleService != null) {
-            Order received = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo));
             if (received != null && Integer.valueOf(6).equals(received.getOrderType())) {
                 presaleService.syncFinished(userId, orderNo);
             }

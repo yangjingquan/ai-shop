@@ -6,17 +6,7 @@ const SWIPE_DELETE_WIDTH = 140
 
 Page({
   data: {
-    tabs: [
-      { label: '全部', value: null, key: 'all' },
-      { label: '待支付', value: 0, key: '0' },
-      { label: '待发货', value: 1, key: '1' },
-      { label: '待成团', value: 5, key: '5', groupOnly: true },
-      { label: '已成团', value: 6, key: '6', groupOnly: true },
-      { label: '待收货', value: 2, key: '2' },
-      { label: '已完成', value: 3, key: '3' },
-      { label: '已取消', value: 4, key: '4' },
-      { label: '待退款', value: 7, key: '7', groupOnly: true },
-    ],
+    tabs: [{ label: '全部', value: null, key: 'all' }],
     orders: [],
     currentStatus: null,
     currentStatusKey: 'all',
@@ -28,10 +18,15 @@ Page({
   },
 
   onShow() {
-    marketingCapabilities.load(false).then(() => {
+    Promise.all([marketingCapabilities.load(false), orderApi.dictionary()]).then(([, dictionary]) => {
       const groupBuyEnabled = marketingCapabilities.isEnabled('GROUP_BUY')
       const seckillEnabled = marketingCapabilities.isEnabled('SECKILL')
-      const nextData = { groupBuyEnabled, seckillEnabled }
+      const states = (dictionary.data && dictionary.data.states) || []
+      const visibleStates = [0, 1, 5, 6, 2, 3, 4, 7, 8, 9]
+      const tabs = [{ label: '全部', value: null, key: 'all' }].concat(states
+        .filter((state) => visibleStates.includes(Number(state.code)))
+        .map((state) => ({ label: state.text, value: state.code, key: String(state.code), groupOnly: [5, 6, 7].includes(Number(state.code)) })))
+      const nextData = { groupBuyEnabled, seckillEnabled, tabs }
       if (!groupBuyEnabled && [5, 6, 7].includes(this.data.currentStatus)) {
         nextData.currentStatus = null
         nextData.currentStatusKey = 'all'
@@ -66,12 +61,12 @@ Page({
       .then((res) => {
         const list = ((res.data && res.data.list) || []).map((item) => ({
           ...item,
-          statusText: this.displayStatusText(item),
-          displayStatusCode: this.displayStatusCode(item),
-          seckillLabel: this.data.seckillEnabled && item.orderType === 2 ? '秒杀订单' : '',
-          bundleLabel: Number(item.orderType) === 4 ? (item.bundleName || '搭配购套餐') : '',
-          lotteryLabel: Number(item.orderType) === 5 ? '抽奖实物奖品' : '',
-          presaleLabel: Number(item.orderType) === 6 ? '预售订单' : '',
+          statusText: item.stateText || item.statusText,
+          displayStatusCode: item.state === undefined ? item.status : item.state,
+          seckillLabel: this.data.seckillEnabled && item.orderType === 2 ? item.orderTypeText : '',
+          bundleLabel: Number(item.orderType) === 4 ? item.orderTypeText : '',
+          lotteryLabel: Number(item.orderType) === 5 ? item.orderTypeText : '',
+          presaleLabel: Number(item.orderType) === 6 ? item.orderTypeText : '',
           isPresale: Number(item.orderType) === 6,
           firstItemImage: resolveImageUrl(item.firstItemImage || ''),
           canDelete: item.status === 3 || item.status === 4,
@@ -104,43 +99,6 @@ Page({
     return Number(value || 0).toFixed(2)
   },
 
-  displayStatusText(item) {
-    if (Number(item.orderType) === 6 && item.presaleStage !== undefined && item.presaleStage !== null) {
-      return item.presaleStageText || this.presaleStageText(item.presaleStage)
-    }
-    if (this.data.groupBuyEnabled || item.orderType !== 1) return item.statusText
-    if (item.status === 5) return '订单处理中'
-    if (item.status === 6) return '待发货'
-    if (item.status === 7) return item.refundStatusText || '退款处理中'
-    return item.statusText
-  },
-
-  displayStatusCode(item) {
-    if (Number(item.orderType) !== 6 || item.presaleStage === undefined || item.presaleStage === null) {
-      return item.status
-    }
-    const stage = Number(item.presaleStage)
-    if (stage === 0) return 0
-    if (stage === 1 || stage === 2) return 8
-    if (stage === 3) return 1
-    if (stage === 4) return 3
-    if (stage === 5 || stage === 6) return 9
-    if (stage === 7) return 4
-    return item.status
-  },
-
-  presaleStageText(stage) {
-    return ({
-      0: '待支付定金',
-      1: '待付尾款',
-      2: '尾款待支付',
-      3: '待发货',
-      4: '已完成',
-      5: '退款处理中',
-      6: '尾款逾期待处理',
-      7: '已取消',
-    })[Number(stage)] || '预售订单'
-  },
 
   totalLabel(item) {
     if (Number(item.orderType) === 6 && item.presaleBalancePaid) return '已付尾款'

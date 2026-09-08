@@ -51,7 +51,6 @@ Page({
       const seckillEnabled = marketingCapabilities.isEnabled('SECKILL')
       const repurchaseEnabled = marketingCapabilities.isEnabled('REPURCHASE_COUPON')
       const nextData = { groupBuyEnabled, seckillEnabled, repurchaseEnabled }
-      if (this.data.order) nextData['order.statusText'] = this.displayStatusText(this.data.order, groupBuyEnabled)
       this.setData(nextData)
       return nextData
     })
@@ -119,7 +118,7 @@ Page({
         const raw = res.data || {}
         const order = {
           ...raw,
-          sourceStatusText: raw.statusText,
+          sourceStatusText: raw.stateText || raw.statusText,
           logistics: null,
           totalAmountText: this.fmtPrice(raw.totalAmount),
           freightAmountText: this.fmtPrice(raw.freightAmount),
@@ -127,12 +126,12 @@ Page({
           couponDiscountAmountText: this.fmtPrice(raw.couponDiscountAmount),
           promotionDiscountAmountText: this.fmtPrice(raw.promotionDiscountAmount),
           bundleDiscountAmountText: this.fmtPrice(raw.bundleDiscountAmount),
-          bundleLabel: Number(raw.orderType) === 4 ? (raw.bundleName || '搭配购套餐') : '',
-          lotteryLabel: Number(raw.orderType) === 5 ? '抽奖实物奖品' : '',
+          bundleLabel: Number(raw.orderType) === 4 ? raw.orderTypeText : '',
+          lotteryLabel: Number(raw.orderType) === 5 ? raw.orderTypeText : '',
           payAmountText: this.fmtPrice(raw.payAmount),
           groupBuyProgress: raw.groupBuyRequiredCount ? `${raw.groupBuyPaidCount || 0}/${raw.groupBuyRequiredCount} 人` : '',
           groupBuyExpireText: raw.groupBuyExpireAt ? this.formatTime(raw.groupBuyExpireAt) : '',
-          statusText: this.displayStatusText(raw),
+          statusText: raw.stateText || raw.statusText,
           groupBuyStatusText: raw.groupBuyStatusText || '',
           refundStatusText: raw.refundStatus === 0 ? '退款申请处理中' : raw.refundStatus === 1 ? '退款处理中' : raw.refundStatus === 2 ? '退款申请已拒绝' : raw.refundStatus === 3 ? '退款成功' : raw.refundStatus === 4 ? '退款失败，可重新申请' : raw.refundStatus === 5 ? '请填写退货物流' : raw.refundStatus === 6 ? '商家正在验货' : '',
           canRefund: raw.orderType !== 5 && ![0, 1, 5, 6].includes(raw.refundStatus)
@@ -199,15 +198,6 @@ Page({
     if (!Number.isFinite(d.getTime())) return ''
     const pad = (n) => String(n).padStart(2, '0')
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-  },
-
-  displayStatusText(raw, enabled = this.data.groupBuyEnabled) {
-    const sourceStatusText = raw.sourceStatusText || raw.statusText
-    if (enabled || raw.orderType !== 1) return sourceStatusText
-    if (raw.status === 5) return '订单处理中'
-    if (raw.status === 6) return '待发货'
-    if (raw.status === 7) return raw.refundStatusText || '退款处理中'
-    return sourceStatusText
   },
 
   reloadDetail() {

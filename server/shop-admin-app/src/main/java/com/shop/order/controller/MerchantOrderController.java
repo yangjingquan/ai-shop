@@ -21,6 +21,7 @@ import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderService;
 import com.shop.order.service.LogisticsService;
+import com.shop.order.service.OrderDomainModel;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -41,6 +42,12 @@ public class MerchantOrderController {
     private final RefundApplicationMapper refundApplicationMapper;
     private final LogisticsService logisticsService;
     private final GroupRefundTaskMapper groupRefundTaskMapper;
+
+    @GetMapping("/order/dictionary")
+    @RequirePermission("merchant:order:view")
+    public ApiResult<OrderDictionaryVO> orderDictionary() {
+        return ApiResult.success(OrderDomainModel.dictionary());
+    }
 
     @Data
     public static class ShipRequest {
@@ -100,6 +107,12 @@ public class MerchantOrderController {
             vo.setOrderNo(o.getOrderNo());
             vo.setStatus(o.getStatus());
             vo.setStatusText(OrderStatus.statusText(o.getStatus()));
+            vo.setState(o.getStatus());
+            vo.setStateText(OrderStatus.statusText(o.getStatus()));
+            vo.setOrderType(o.getOrderType());
+            vo.setOrderTypeText(OrderDomainModel.orderTypeText(o.getOrderType()));
+            vo.setFulfillmentMethod(o.getFulfillmentMethod());
+            vo.setFulfillmentMethodText(OrderDomainModel.fulfillmentMethodText(o.getFulfillmentMethod()));
             vo.setPayAmount(o.getPayAmount());
             vo.setCreatedAt(o.getCreatedAt());
             list.add(vo);

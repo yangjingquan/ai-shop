@@ -10,9 +10,11 @@ import com.shop.groupbuy.mapper.GroupBuyMemberMapper;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.enums.OrderType;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.service.OrderCancellationService;
+import com.shop.order.service.OrderStateMachine;
 import com.shop.product.service.ProductService;
 import com.shop.seckill.service.SeckillService;
 import com.shop.marketing.service.PromotionService;
@@ -35,6 +37,8 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
     private final OrderItemMapper orderItemMapper;
     private final GroupBuyMemberMapper groupBuyMemberMapper;
     private final ProductService productService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private OrderStateMachine orderStateMachine;
     private final CouponService couponService;
     /** 可选注入，保持订单取消纯单测构造器兼容；正式容器会注入秒杀库存释放服务。 */
     @Autowired(required = false)
@@ -97,20 +101,24 @@ public class OrderCancellationServiceImpl implements OrderCancellationService {
             productService.recalcProduct(productId);
         }
 
-        order.setStatus(OrderStatus.CANCELLED.getCode());
         order.setCancelTime(LocalDateTime.now());
         order.setCancelReason(reason);
-        orderMapper.updateById(order);
+        if (orderStateMachine != null) {
+            orderStateMachine.transition(order, OrderStatus.CANCELLED, "ORDER_CANCELLED", reason);
+        } else {
+            order.setStatus(OrderStatus.CANCELLED.getCode());
+            orderMapper.updateById(order);
+        }
         couponService.releaseBeforePaymentCancel(order.getId(), order.getOrderNo());
         if (promotionService != null) promotionService.release(order.getOrderNo());
-        if (Integer.valueOf(2).equals(order.getOrderType()) && seckillService != null) {
+        if (OrderType.fromCode(order.getOrderType()) == OrderType.SECKILL && seckillService != null) {
             seckillService.releaseForOrder(order.getOrderNo(), reason);
         }
         markGroupBuyMemberCancelled(order);
     }
 
     private void markGroupBuyMemberCancelled(Order order) {
-        if (!Integer.valueOf(1).equals(order.getOrderType())) {
+        if (OrderType.fromCode(order.getOrderType()) != OrderType.GROUP_BUY) {
             return;
         }
         GroupBuyMember member = groupBuyMemberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>()

@@ -9,12 +9,14 @@ import com.shop.order.entity.OrderItem;
 import com.shop.order.entity.PaymentLog;
 import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.enums.OrderType;
 import com.shop.order.enums.RefundStatus;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.PaymentLogMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderPaymentService;
+import com.shop.order.service.OrderStateMachine;
 import com.shop.product.service.ProductService;
 import com.shop.seckill.service.SeckillService;
 import com.shop.referral.service.ReferralService;
@@ -61,6 +63,8 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     /** 可选注入，保持既有支付服务单测构造器兼容。 */
     @Autowired(required = false)
     private PresaleService presaleService;
+    @Autowired(required = false)
+    private OrderStateMachine orderStateMachine;
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaidCallback(String orderNo, String transactionId, String rawPayload) {
@@ -93,19 +97,17 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
         order.setPayTime(LocalDateTime.now());
         order.setPayTransactionId(transactionId);
         order.setPayMethod(1);
-        if (Integer.valueOf(6).equals(order.getOrderType()) && presaleService != null) {
+        if (OrderType.fromCode(order.getOrderType()) == OrderType.PRESALE && presaleService != null) {
             orderMapper.updateById(order);
             presaleService.handleOrderPaid(orderNo, transactionId, rawPayload);
             return;
         }
-        if (Integer.valueOf(1).equals(order.getOrderType())) {
-            order.setStatus(OrderStatus.WAIT_GROUP.getCode());
-            orderMapper.updateById(order);
+        if (OrderType.fromCode(order.getOrderType()) == OrderType.GROUP_BUY) {
+            transition(order, OrderStatus.WAIT_GROUP, "PAYMENT_SUCCEEDED", "微信支付成功");
             groupBuyService.handleOrderPaid(orderNo);
         } else {
-            order.setStatus(OrderStatus.WAIT_SHIP.getCode());
-            orderMapper.updateById(order);
-            if (Integer.valueOf(2).equals(order.getOrderType()) && seckillService != null) {
+            transition(order, OrderStatus.WAIT_SHIP, "PAYMENT_SUCCEEDED", "微信支付成功");
+            if (OrderType.fromCode(order.getOrderType()) == OrderType.SECKILL && seckillService != null) {
                 seckillService.handleOrderPaid(orderNo);
             }
         }
@@ -130,6 +132,15 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
             orderMapper.addTotalSales(e.getKey(), e.getValue());
             productService.recalcProduct(e.getKey());
         }
+    }
+
+    private void transition(Order order, OrderStatus target, String event, String reason) {
+        if (orderStateMachine != null) {
+            orderStateMachine.transition(order, target, event, reason);
+            return;
+        }
+        order.setStatus(target.getCode());
+        orderMapper.updateById(order);
     }
 
     private boolean recordPaymentLog(Order order, String transactionId, String rawPayload) {

@@ -26,7 +26,7 @@ SET @has_ship_company = (
 
 SET @add_ship_company = IF(
   @has_ship_company = 0,
-  'ALTER TABLE `order` ADD COLUMN ship_company VARCHAR(64) DEFAULT '' COMMENT ''物流公司'' AFTER ship_no',
+  'ALTER TABLE `order` ADD COLUMN ship_company VARCHAR(64) DEFAULT '''' COMMENT ''物流公司'' AFTER ship_no',
   'SELECT 1'
 );
 

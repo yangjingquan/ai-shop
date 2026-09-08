@@ -14,11 +14,15 @@ import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.enums.OrderType;
+import com.shop.order.enums.FulfillmentMethod;
 import com.shop.order.enums.RefundStatus;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.WxPayService;
+import com.shop.order.service.OrderDomainModel;
+import com.shop.order.service.OrderStateMachine;
 import com.shop.pricing.dto.QuoteRequest;
 import com.shop.pricing.dto.QuoteResult;
 import com.shop.pricing.service.QuoteService;
@@ -78,6 +82,7 @@ public class PresaleServiceImpl implements PresaleService {
     private final ProductService productService;
     private final WxPayService wxPayService;
     private final QuoteService quoteService;
+    private final OrderStateMachine orderStateMachine;
 
     @Override
     public List<PresaleActivityVO> active(Long merchantId) {
@@ -205,7 +210,9 @@ public class PresaleServiceImpl implements PresaleService {
         AddressSnapshot addressSnapshot = new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail());
         Order order = paymentOrder(presale, orderNo, 1, deposit, addressSnapshot);
         order.setQuoteId(quote.getQuoteId()); order.setRuleVersion(quote.getRuleVersion()); order.setPricingSnapshotJson(quote.getPricingSnapshotJson());
+        OrderDomainModel.refreshOrderSnapshot(order);
         orderMapper.insert(order);
+        orderStateMachine.recordCreated(order, "PRESALE_DEPOSIT_ORDER_CREATED");
         insertItem(order, product, productSku, config.getDepositAmount(), quantity, quote.getPricingSnapshotJson());
         return payVO(order);
     }
@@ -239,7 +246,9 @@ public class PresaleServiceImpl implements PresaleService {
         AddressSnapshot address = readAddress(depositOrder.getAddressSnapshot());
         Order order = paymentOrder(presale, balanceOrderNo, 2, presale.getBalanceAmount(), address);
         order.setUserDeleted(1);
+        OrderDomainModel.refreshOrderSnapshot(order);
         orderMapper.insert(order);
+        orderStateMachine.recordCreated(order, "PRESALE_BALANCE_ORDER_CREATED");
         Product product = productMapper.selectById(presale.getProductId());
         ProductSku productSku = productSkuMapper.selectById(presale.getSkuId());
         insertItem(order, product, productSku, presale.getBalanceAmount().divide(BigDecimal.valueOf(presale.getQuantity())), presale.getQuantity());
@@ -277,8 +286,7 @@ public class PresaleServiceImpl implements PresaleService {
             presale.setDepositPaidAt(now);
             PresaleActivity activity = activityMapper.selectById(presale.getActivityId());
             if (activity != null) presale.setBalanceDeadline(activity.getBalanceEndAt());
-            order.setStatus(OrderStatus.PRESALE_WAIT_BALANCE.getCode());
-            orderMapper.updateById(order);
+            orderStateMachine.transition(order, OrderStatus.PRESALE_WAIT_BALANCE, "PRESALE_DEPOSIT_PAID", "定金支付成功");
             presaleOrderMapper.updateById(presale);
             skuMapper.addDepositCount(presale.getPresaleSkuId(), presale.getQuantity());
             return;
@@ -286,24 +294,21 @@ public class PresaleServiceImpl implements PresaleService {
         if (paymentStage == 2 && presale.getStage() == BALANCE_WAIT_PAY) {
             int affected = productSkuMapper.deductStock(presale.getSkuId(), presale.getQuantity());
             if (affected == 0) {
-                order.setStatus(OrderStatus.CANCELLED.getCode());
                 order.setCancelReason("PRESALE_STOCK_REFUND");
-                orderMapper.updateById(order);
+                orderStateMachine.transition(order, OrderStatus.CANCELLED, "PRESALE_STOCK_REFUND", "尾款支付后库存不足");
                 presale.setStage(REFUNDING);
                 presaleOrderMapper.updateById(presale);
                 createAutoRefund(order, "尾款支付成功但库存不足，系统自动退款");
                 return;
             }
-            order.setStatus(OrderStatus.WAIT_SHIP.getCode());
-            orderMapper.updateById(order);
+            orderStateMachine.transition(order, OrderStatus.WAIT_SHIP, "PRESALE_BALANCE_PAID", "尾款支付成功");
             // 尾款单是商家实际发货单，原始定金单是用户可见订单；尾款支付成功后两者都进入待发货。
             // 发货时 syncShipping 会把原始定金单同步为待收货，保持用户侧订单生命周期连续。
             Order depositOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                     .eq(Order::getOrderNo, presale.getDepositOrderNo())
                     .last("FOR UPDATE"));
             if (depositOrder != null && depositOrder.getStatus() == OrderStatus.PRESALE_WAIT_BALANCE.getCode()) {
-                depositOrder.setStatus(OrderStatus.WAIT_SHIP.getCode());
-                orderMapper.updateById(depositOrder);
+                orderStateMachine.transition(depositOrder, OrderStatus.WAIT_SHIP, "PRESALE_BALANCE_PAID", "尾款支付成功");
             }
             presale.setStage(WAIT_SHIP);
             presale.setBalancePaidAt(now);
@@ -322,12 +327,11 @@ public class PresaleServiceImpl implements PresaleService {
         Order balanceOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, balanceOrderNo));
         Order depositOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, presale.getDepositOrderNo()));
         if (balanceOrder == null || depositOrder == null) return;
-        depositOrder.setStatus(OrderStatus.WAIT_RECEIVE.getCode());
         depositOrder.setShipCompany(balanceOrder.getShipCompany());
         depositOrder.setShipperCode(balanceOrder.getShipperCode());
         depositOrder.setShipNo(balanceOrder.getShipNo());
         depositOrder.setShipTime(balanceOrder.getShipTime());
-        orderMapper.updateById(depositOrder);
+        orderStateMachine.transition(depositOrder, OrderStatus.WAIT_RECEIVE, "ORDER_SHIPPED", "预售尾款单发货同步");
     }
 
     @Override
@@ -340,9 +344,8 @@ public class PresaleServiceImpl implements PresaleService {
         if (presale.getBalanceOrderNo() != null) {
             Order balanceOrder = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, presale.getBalanceOrderNo()));
             if (balanceOrder != null && balanceOrder.getStatus() == OrderStatus.WAIT_RECEIVE.getCode()) {
-                balanceOrder.setStatus(OrderStatus.FINISHED.getCode());
                 balanceOrder.setFinishTime(LocalDateTime.now());
-                orderMapper.updateById(balanceOrder);
+                orderStateMachine.transition(balanceOrder, OrderStatus.FINISHED, "ORDER_RECEIVED", "预售主订单确认收货同步");
             }
         }
     }
@@ -385,9 +388,8 @@ public class PresaleServiceImpl implements PresaleService {
         createAutoRefund(depositOrder, "用户申请退还预售定金");
         order.setStage(REFUNDING);
         presaleOrderMapper.updateById(order);
-        depositOrder.setStatus(OrderStatus.CANCELLED.getCode());
         depositOrder.setCancelReason("PRESALE_REFUND");
-        orderMapper.updateById(depositOrder);
+        orderStateMachine.transition(depositOrder, OrderStatus.CANCELLED, "PRESALE_DEPOSIT_REFUND", "PRESALE_REFUND");
     }
 
     @Override
@@ -397,9 +399,8 @@ public class PresaleServiceImpl implements PresaleService {
         if (order.getStage() == DEPOSIT_WAIT_PAY) {
             Order base = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, order.getDepositOrderNo()).last("FOR UPDATE"));
             if (base != null) {
-                base.setStatus(OrderStatus.CANCELLED.getCode());
                 base.setCancelReason("USER_CANCEL");
-                orderMapper.updateById(base);
+                orderStateMachine.transition(base, OrderStatus.CANCELLED, "PRESALE_DEPOSIT_CANCELLED", "USER_CANCEL");
             }
             order.setStage(CANCELLED);
             presaleOrderMapper.updateById(order);
@@ -428,10 +429,9 @@ public class PresaleServiceImpl implements PresaleService {
             if (order == null || order.getStage() != DEPOSIT_WAIT_PAY) continue;
             Order base = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, order.getDepositOrderNo()).last("FOR UPDATE"));
             if (base != null && base.getStatus() == OrderStatus.WAIT_PAY.getCode()) {
-                base.setStatus(OrderStatus.CANCELLED.getCode());
                 base.setCancelReason("TIMEOUT");
                 base.setCancelTime(LocalDateTime.now());
-                orderMapper.updateById(base);
+                orderStateMachine.transition(base, OrderStatus.CANCELLED, "PRESALE_DEPOSIT_TIMEOUT", "TIMEOUT");
             }
             order.setStage(CANCELLED);
             presaleOrderMapper.updateById(order);
@@ -597,11 +597,11 @@ public class PresaleServiceImpl implements PresaleService {
     private UserAddress mustAddress(Long userId, Long addressId) { UserAddress address = addressMapper.selectOne(new LambdaQueryWrapper<UserAddress>().eq(UserAddress::getId, addressId).eq(UserAddress::getUserId, userId)); if (address == null) throw new BusinessException(ErrorCode.ADDRESS_NOT_FOUND); return address; }
     private PresaleOrder ownedOrder(Long userId, Long merchantId, String orderNo) { PresaleOrder order = presaleOrderMapper.selectByAnyOrderNo(userId, orderNo); if (order == null || !merchantId.equals(order.getMerchantId())) throw new BusinessException(ErrorCode.ORDER_NOT_FOUND); return order; }
     private void updateAddressSnapshot(String orderNo, String json) { if (orderNo == null) return; Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo)); if (order != null) { order.setAddressSnapshot(json); orderMapper.updateById(order); } }
-    private void updateBaseStatus(String orderNo, int status, String reason) { Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo)); if (order != null) { order.setStatus(status); order.setCancelReason(reason); orderMapper.updateById(order); } }
+    private void updateBaseStatus(String orderNo, int status, String reason) { Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo)); if (order != null) { order.setCancelReason(reason); orderStateMachine.transition(order, OrderStatus.fromCode(status), "PRESALE_STATUS_CHANGED", reason); } }
     private QuoteResult depositQuote(Long userId, Long merchantId, PresaleActivity activity, PresaleSku config, Product product, ProductSku productSku, int quantity) { QuoteRequest request = new QuoteRequest(); request.setUserId(userId); request.setMerchantId(merchantId); request.setScene("PRESALE_DEPOSIT"); request.setOriginalAmount(config.getDepositAmount().multiply(BigDecimal.valueOf(quantity))); request.setActivityName(activity.getName()); QuoteRequest.QuoteItem item = new QuoteRequest.QuoteItem(); item.setProductId(product.getId()); item.setSkuId(productSku.getId()); item.setQuantity(quantity); item.setOriginalUnitPrice(config.getDepositAmount()); item.setActivityUnitPrice(config.getDepositAmount()); request.setItems(List.of(item)); return quoteService.quote(request); }
     private void insertItem(Order order, Product product, ProductSku sku, BigDecimal unitPrice, int quantity) { insertItem(order, product, sku, unitPrice, quantity, null); }
-    private void insertItem(Order order, Product product, ProductSku sku, BigDecimal unitPrice, int quantity, String pricingSnapshotJson) { OrderItem item = new OrderItem(); item.setOrderId(order.getId()); item.setOrderNo(order.getOrderNo()); item.setProductId(product.getId()); item.setSkuId(sku.getId()); item.setProductName(product.getName()); item.setMainImage(product.getMainImage()); item.setSpecText(sku.getSpecText()); item.setUnitPrice(unitPrice); item.setQuantity(quantity); item.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(quantity))); item.setPricingSnapshotJson(pricingSnapshotJson); orderItemMapper.insert(item); }
-    private Order paymentOrder(PresaleOrder presale, String orderNo, int stage, BigDecimal amount, AddressSnapshot address) { Order order = new Order(); order.setOrderNo(orderNo); order.setUserId(presale.getUserId()); order.setMerchantId(presale.getMerchantId()); order.setStatus(OrderStatus.WAIT_PAY.getCode()); order.setOrderType(6); order.setPresaleOrderId(presale.getId()); order.setPresaleStage(stage); order.setTotalAmount(amount); order.setFreightAmount(BigDecimal.ZERO); order.setDiscountAmount(BigDecimal.ZERO); order.setPayAmount(amount); order.setAddressSnapshot(toJson(address)); order.setRemark(""); order.setUserDeleted(0); return order; }
+    private void insertItem(Order order, Product product, ProductSku sku, BigDecimal unitPrice, int quantity, String pricingSnapshotJson) { OrderItem item = new OrderItem(); item.setOrderId(order.getId()); item.setOrderNo(order.getOrderNo()); item.setProductId(product.getId()); item.setSkuId(sku.getId()); item.setProductName(product.getName()); item.setMainImage(product.getMainImage()); item.setSpecText(sku.getSpecText()); item.setUnitPrice(unitPrice); item.setQuantity(quantity); item.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(quantity))); item.setPricingSnapshotJson(pricingSnapshotJson); OrderDomainModel.refreshItemSnapshot(item, order); orderItemMapper.insert(item); }
+    private Order paymentOrder(PresaleOrder presale, String orderNo, int stage, BigDecimal amount, AddressSnapshot address) { Order order = new Order(); order.setOrderNo(orderNo); order.setUserId(presale.getUserId()); order.setMerchantId(presale.getMerchantId()); order.setStatus(OrderStatus.WAIT_PAY.getCode()); OrderDomainModel.initialize(order, OrderType.PRESALE, FulfillmentMethod.EXPRESS); order.setPresaleOrderId(presale.getId()); order.setPresaleStage(stage); order.setTotalAmount(amount); order.setFreightAmount(BigDecimal.ZERO); order.setDiscountAmount(BigDecimal.ZERO); order.setPayAmount(amount); order.setAddressSnapshot(toJson(address)); order.setRemark(""); order.setUserDeleted(0); OrderDomainModel.refreshOrderSnapshot(order); return order; }
     private OrderCreateVO payVO(Order order) { OrderCreateVO vo = new OrderCreateVO(); vo.setOrderNo(order.getOrderNo()); vo.setPayAmount(order.getPayAmount()); try { vo.setPayParams(wxPayService.createJsapiPayParams(order)); } catch (RuntimeException ex) { log.warn("预售微信预下单失败，可稍后重新支付 orderNo={}", order.getOrderNo(), ex); } return vo; }
     private void createAutoRefund(Order order, String reason) { RefundApplication existing = refundMapper.selectOne(new LambdaQueryWrapper<RefundApplication>().eq(RefundApplication::getOrderNo, order.getOrderNo()).in(RefundApplication::getStatus, 0, 1, 3).orderByDesc(RefundApplication::getId).last("LIMIT 1")); if (existing != null) return; RefundApplication refund = new RefundApplication(); refund.setOrderNo(order.getOrderNo()); refund.setOutRefundNo("RF_PRESALE_" + order.getOrderNo()); refund.setUserId(order.getUserId()); refund.setMerchantId(order.getMerchantId()); refund.setReason(reason); refund.setStatus(RefundStatus.PENDING.getCode()); refund.setRefundAmount(order.getPayAmount()); refund.setAutoRefund(1); refund.setReturnRequired(0); refund.setEvidenceUrls(List.of()); refundMapper.insert(refund); }
     private String generateOrderNo() { return "PS" + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyMMddHHmmss")) + UUID.randomUUID().toString().replace("-", "").substring(0, 12); }

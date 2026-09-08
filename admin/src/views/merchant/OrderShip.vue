@@ -4,12 +4,16 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 import type { AdminLogisticsTracking } from '@/api/order'
+import type { OrderDictionaryItem } from '@/api/order'
 
 interface OrderRow {
   orderNo: string
   status: number
   statusText: string
+  stateText?: string
   orderType?: number
+  orderTypeText?: string
+  fulfillmentMethodText?: string
   payAmount: number | string
   createdAt: string
 }
@@ -43,6 +47,12 @@ interface OrderDetail {
   orderNo: string
   status: number
   statusText: string
+  state?: number
+  stateText?: string
+  orderType?: number
+  orderTypeText?: string
+  fulfillmentMethod?: number
+  fulfillmentMethodText?: string
   totalAmount: number | string
   freightAmount: number | string
   discountAmount: number | string
@@ -77,6 +87,7 @@ const total = ref(0)
 const detailVisible = ref(false)
 const detailLoading = ref(false)
 const orderDetail = ref<OrderDetail | null>(null)
+const stateOptions = ref<OrderDictionaryItem[]>([])
 const carriers = [
   { label: '顺丰', value: 'SF' },
   { label: '中通', value: 'ZTO' },
@@ -194,7 +205,11 @@ async function loadLogistics(forceRefresh = false) {
   }
 }
 
-onMounted(loadOrders)
+onMounted(async () => {
+  const data = await request.get<unknown, { states: OrderDictionaryItem[] }>('/api/merchant/order/dictionary')
+  stateOptions.value = data?.states || []
+  await loadOrders()
+})
 </script>
 
 <template>
@@ -217,14 +232,7 @@ onMounted(loadOrders)
           style="width: 160px"
           @change="onSearch"
         >
-          <el-option label="待支付" :value="0" />
-          <el-option label="待发货" :value="1" />
-          <el-option label="待收货" :value="2" />
-          <el-option label="已完成" :value="3" />
-          <el-option label="已取消" :value="4" />
-          <el-option label="待成团" :value="5" />
-          <el-option label="已成团" :value="6" />
-          <el-option label="拼团失败/待退款" :value="7" />
+          <el-option v-for="state in stateOptions" :key="state.code" :label="state.text" :value="state.code" />
         </el-select>
         <el-button type="primary" @click="onSearch">搜索</el-button>
       </div>
@@ -239,15 +247,12 @@ onMounted(loadOrders)
         </el-table-column>
         <el-table-column prop="statusText" label="状态" width="110">
           <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)">{{ row.statusText }}</el-tag>
+            <el-tag :type="statusTagType(row.status)">{{ row.stateText || row.statusText }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="类型" width="90">
           <template #default="{ row }">
-            <el-tag v-if="row.orderType === 1" type="warning" size="small">拼团</el-tag>
-            <el-tag v-else-if="row.orderType === 4" type="danger" size="small">搭配购</el-tag>
-            <el-tag v-else-if="row.orderType === 5" type="success" size="small">抽奖实物</el-tag>
-            <span v-else>普通</span>
+            <span>{{ row.orderTypeText || '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="payAmount" label="金额" width="120" />
@@ -299,8 +304,10 @@ onMounted(loadOrders)
             <el-descriptions :column="2" border>
               <el-descriptions-item label="订单号">{{ orderDetail.orderNo }}</el-descriptions-item>
               <el-descriptions-item label="状态">
-                <el-tag :type="statusTagType(orderDetail.status)">{{ orderDetail.statusText }}</el-tag>
+                <el-tag :type="statusTagType(orderDetail.status)">{{ orderDetail.stateText || orderDetail.statusText }}</el-tag>
               </el-descriptions-item>
+              <el-descriptions-item label="订单类型">{{ displayValue(orderDetail.orderTypeText) }}</el-descriptions-item>
+              <el-descriptions-item label="履约方式">{{ displayValue(orderDetail.fulfillmentMethodText) }}</el-descriptions-item>
               <el-descriptions-item label="创建时间">{{ displayValue(orderDetail.createdAt) }}</el-descriptions-item>
               <el-descriptions-item label="支付时间">{{ displayValue(orderDetail.payTime) }}</el-descriptions-item>
               <el-descriptions-item label="支付流水号" :span="2">

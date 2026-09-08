@@ -1,9 +1,9 @@
 package com.shop.order.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.shop.order.entity.Order;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.entity.Order;
 import com.shop.order.mapper.OrderMapper;
+import com.shop.order.service.OrderStateMachine;
 import com.shop.order.service.AutoReceiveService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,16 +17,15 @@ import java.time.LocalDateTime;
 public class AutoReceiveServiceImpl implements AutoReceiveService {
 
     private final OrderMapper orderMapper;
+    private final OrderStateMachine orderStateMachine;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean receiveIfWaiting(Long orderId) {
-        LocalDateTime now = LocalDateTime.now();
-        return orderMapper.update(null, new LambdaUpdateWrapper<Order>()
-                .eq(Order::getId, orderId)
-                .eq(Order::getStatus, OrderStatus.WAIT_RECEIVE.getCode())
-                .set(Order::getStatus, OrderStatus.FINISHED.getCode())
-                .set(Order::getFinishTime, now)
-                .set(Order::getUpdatedAt, now)) == 1;
+        Order order = orderMapper.selectById(orderId);
+        if (order == null || order.getStatus() != OrderStatus.WAIT_RECEIVE.getCode()) return false;
+        order.setFinishTime(LocalDateTime.now());
+        orderStateMachine.transition(order, OrderStatus.FINISHED, "AUTO_RECEIVED", "超时自动收货");
+        return true;
     }
 }

@@ -28,11 +28,15 @@ import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
+import com.shop.order.enums.OrderType;
+import com.shop.order.enums.FulfillmentMethod;
 import com.shop.order.enums.RefundStatus;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.WxPayService;
+import com.shop.order.service.OrderDomainModel;
+import com.shop.order.service.OrderStateMachine;
 import com.shop.pricing.dto.QuoteRequest;
 import com.shop.pricing.dto.QuoteResult;
 import com.shop.pricing.service.QuoteService;
@@ -90,6 +94,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
     private final GroupBuyMessageService groupBuyMessageService;
     private final ObjectMapper objectMapper;
     private final QuoteService quoteService;
+    private final OrderStateMachine orderStateMachine;
 
     @Override
     public PageResult<ProductListVO> productPage(int page, int size, Long merchantId, Long categoryId, String keyword) {
@@ -215,7 +220,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
             return;
         }
         Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderNo, orderNo));
-        if (order == null || !Integer.valueOf(1).equals(order.getOrderType())
+        if (order == null || OrderType.fromCode(order.getOrderType()) != OrderType.GROUP_BUY
                 || order.getStatus() != OrderStatus.WAIT_GROUP.getCode()
                 || order.getPayTime() == null
                 || order.getPayTransactionId() == null) {
@@ -229,8 +234,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         LocalDateTime now = LocalDateTime.now();
         if (group.getStatus() == GroupBuyGroupStatus.FORMED.getCode()) {
             markMemberPaid(member, now);
-            order.setStatus(OrderStatus.GROUP_SUCCESS.getCode());
-            orderMapper.updateById(order);
+            orderStateMachine.transition(order, OrderStatus.GROUP_SUCCESS, "GROUP_FORMED", "团已成团");
             refreshPaidCount(group);
             notificationService.notifyGroupFormed(group, List.of(member));
             groupBuyMessageService.notifyGroupFormed(group, List.of(member));
@@ -264,8 +268,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
                         .eq(Order::getOrderNo, paidMember.getOrderNo())
                         .eq(Order::getStatus, OrderStatus.WAIT_GROUP.getCode()));
                 if (paidOrder != null) {
-                    paidOrder.setStatus(OrderStatus.GROUP_SUCCESS.getCode());
-                    orderMapper.updateById(paidOrder);
+                    orderStateMachine.transition(paidOrder, OrderStatus.GROUP_SUCCESS, "GROUP_FORMED", "团已成团");
                 }
             }
             notificationService.notifyGroupFormed(group, paidMembers);
@@ -344,6 +347,10 @@ public class GroupBuyServiceImpl implements GroupBuyService {
                 .eq(Order::getStatus, OrderStatus.WAIT_GROUP.getCode())
                 .set(Order::getStatus, OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode()));
         if (affected > 0 || order.getStatus() == OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode()) {
+            if (affected > 0) {
+                orderStateMachine.recordLegacyTransition(order, OrderStatus.WAIT_GROUP.getCode(),
+                        OrderStatus.GROUP_FAILED_WAIT_REFUND.getCode(), "GROUP_FAILED", "拼团超时未成团");
+            }
             member.setStatus(GroupBuyMemberStatus.WAIT_REFUND.getCode());
             memberMapper.updateById(member);
             createRefundApplication(order);
@@ -393,6 +400,8 @@ public class GroupBuyServiceImpl implements GroupBuyService {
                 .set(Order::getCancelReason, "GROUP_TIMEOUT")
                 .set(Order::getCancelTime, now));
         if (affected > 0) {
+            orderStateMachine.recordLegacyTransition(order, OrderStatus.WAIT_PAY.getCode(),
+                    OrderStatus.CANCELLED.getCode(), "GROUP_TIMEOUT", "GROUP_TIMEOUT");
             member.setStatus(GroupBuyMemberStatus.CANCELLED.getCode());
             memberMapper.updateById(member);
             releaseOrderStock(order);
@@ -506,7 +515,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         order.setUserId(userId);
         order.setMerchantId(product.getMerchantId());
         order.setStatus(OrderStatus.WAIT_PAY.getCode());
-        order.setOrderType(1);
+        OrderDomainModel.initialize(order, OrderType.GROUP_BUY, FulfillmentMethod.EXPRESS);
         order.setGroupBuyGroupId(group.getId());
         order.setTotalAmount(original);
         order.setFreightAmount(BigDecimal.ZERO);
@@ -514,7 +523,9 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         order.setPayAmount(quote.getPayableAmount());
         order.setAddressSnapshot(toJson(new AddressSnapshot(address.getReceiver(), address.getPhone(), address.getRegion(), address.getDetail())));
         order.setRemark(req.getRemark() != null ? req.getRemark() : "");
+        OrderDomainModel.refreshOrderSnapshot(order);
         orderMapper.insert(order);
+        orderStateMachine.recordCreated(order, "GROUP_BUY_ORDER_CREATED");
 
         OrderItem item = new OrderItem();
         item.setOrderId(order.getId());
@@ -528,6 +539,7 @@ public class GroupBuyServiceImpl implements GroupBuyService {
         item.setQuantity(req.getQuantity());
         item.setSubtotal(total);
         item.setPricingSnapshotJson(quote.getPricingSnapshotJson());
+        OrderDomainModel.refreshItemSnapshot(item, order);
         orderItemMapper.insert(item);
 
         GroupBuyMember member = new GroupBuyMember();

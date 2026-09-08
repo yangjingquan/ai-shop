@@ -14,6 +14,7 @@ import com.shop.order.dto.AdminPaymentVO;
 import com.shop.order.dto.OrderDetailVO;
 import com.shop.order.dto.OrderListVO;
 import com.shop.order.dto.LogisticsTrackingVO;
+import com.shop.order.dto.OrderDictionaryVO;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
@@ -26,6 +27,7 @@ import com.shop.order.service.LogisticsService;
 import com.shop.order.service.PaymentReconciliationService;
 import com.shop.order.service.RefundReconciliationService;
 import com.shop.order.service.OrderCancellationService;
+import com.shop.order.service.OrderDomainModel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -55,6 +57,11 @@ public class AdminOrderController {
     private final RefundReconciliationService refundReconciliationService;
     private final LogisticsService logisticsService;
     private final OrderCancellationService orderCancellationService;
+
+    @GetMapping("/orders/dictionary")
+    public ApiResult<OrderDictionaryVO> orderDictionary() {
+        return ApiResult.success(OrderDomainModel.dictionary());
+    }
 
     @GetMapping("/payments/page")
     public ApiResult<PageResult<AdminPaymentVO>> payments(
@@ -109,7 +116,12 @@ public class AdminOrderController {
             vo.setOrderNo(o.getOrderNo());
             vo.setStatus(o.getStatus());
             vo.setStatusText(OrderStatus.statusText(o.getStatus()));
+            vo.setState(o.getStatus());
+            vo.setStateText(OrderStatus.statusText(o.getStatus()));
             vo.setOrderType(o.getOrderType());
+            vo.setOrderTypeText(OrderDomainModel.orderTypeText(o.getOrderType()));
+            vo.setFulfillmentMethod(o.getFulfillmentMethod());
+            vo.setFulfillmentMethodText(OrderDomainModel.fulfillmentMethodText(o.getFulfillmentMethod()));
             vo.setPayAmount(o.getPayAmount());
             vo.setMerchantId(o.getMerchantId());
             vo.setMerchantName(names.getOrDefault(o.getMerchantId(), ""));
