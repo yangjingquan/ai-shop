@@ -6,6 +6,7 @@ import com.shop.dashboard.dto.DashboardTrendVO;
 import com.shop.dashboard.dto.DailyAmountRow;
 import com.shop.dashboard.dto.MerchantWorkbenchTodoVO;
 import com.shop.dashboard.dto.MerchantWorkbenchVO;
+import com.shop.dashboard.dto.SettlementAnalysisVO;
 import com.shop.dashboard.service.DashboardService;
 import com.shop.inventory.dto.InventorySkuVO;
 import com.shop.merchant.entity.Merchant;
@@ -102,6 +103,36 @@ public class DashboardServiceImpl implements DashboardService {
             return new DashboardTrendVO(day.toString(), count, paidAmount, refundAmount,
                     paidAmount.subtract(refundAmount));
         }).toList();
+    }
+
+    @Override
+    public SettlementAnalysisVO settlementAnalysis(Long merchantId, LocalDateTime from, LocalDateTime to) {
+        LocalDateTime safeTo = to == null ? LocalDateTime.now() : to;
+        LocalDateTime safeFrom = from == null ? safeTo.toLocalDate().withDayOfMonth(1).atStartOfDay() : from;
+        if (!safeFrom.isBefore(safeTo)) throw new IllegalArgumentException("开始时间必须早于结束时间");
+        SettlementAnalysisVO vo = new SettlementAnalysisVO();
+        vo.setRangeStart(safeFrom); vo.setRangeEnd(safeTo); vo.setTimezone("Asia/Shanghai"); vo.setDataAsOf(LocalDateTime.now());
+        LambdaQueryWrapper<Order> orders = new LambdaQueryWrapper<Order>().ge(Order::getCreatedAt, safeFrom).lt(Order::getCreatedAt, safeTo);
+        scopeOrders(orders, merchantId);
+        List<Order> rows = orderMapper.selectList(orders);
+        vo.setCreatedOrderCount((long) rows.size());
+        vo.setCreatedGmv(rows.stream().map(Order::getTotalAmount).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add));
+        BigDecimal paid = paymentLogMapper.selectPaidAmount(safeFrom, safeTo, merchantId); vo.setPaidAmount(paid == null ? BigDecimal.ZERO : paid);
+        vo.setPaidOrderCount(nullToZero(paymentLogMapper.selectPaidCount(safeFrom, safeTo, merchantId)));
+        BigDecimal refunded = refundApplicationMapper.selectSuccessfulRefundAmount(safeFrom, safeTo, merchantId); vo.setSuccessfulRefundAmount(refunded == null ? BigDecimal.ZERO : refunded);
+        LambdaQueryWrapper<RefundApplication> processing = new LambdaQueryWrapper<RefundApplication>()
+                .in(RefundApplication::getStatus, 0, 1, 5, 6)
+                .ge(RefundApplication::getCreatedAt, safeFrom)
+                .lt(RefundApplication::getCreatedAt, safeTo);
+        scopeRefunds(processing, merchantId);
+        vo.setProcessingRefundAmount(refundApplicationMapper.selectList(processing).stream().map(RefundApplication::getRefundAmount).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add));
+        vo.setOperatingNetAmount(vo.getPaidAmount().subtract(vo.getSuccessfulRefundAmount()));
+        // Fee/subsidy contracts are not configured in the current domain; presenting zero as a withdrawable amount would be unsafe.
+        vo.setProvisionalSettlementAmount(BigDecimal.ZERO);
+        vo.setSettlementStatus("HOLD_FOR_RULES");
+        vo.setSettlementNotice("佣金、通道费、补贴、税费和账期规则尚未配置；经营净额不等于可结算金额，当前不生成打款指令。");
+        vo.setMetricDefinition("GMV 按订单创建时间；支付按支付流水入账时间；退款按退款成功时间；时区 Asia/Shanghai。数据截至时间见本页。 ");
+        return vo;
     }
 
     private DashboardOverviewVO overview(Long merchantId) {

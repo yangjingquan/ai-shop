@@ -28,6 +28,15 @@ import com.shop.order.service.PaymentReconciliationService;
 import com.shop.order.service.RefundReconciliationService;
 import com.shop.order.service.OrderCancellationService;
 import com.shop.order.service.OrderDomainModel;
+import com.shop.order.service.ReconciliationTaskService;
+import com.shop.order.entity.ReconciliationTask;
+import com.shop.order.entity.AfterSalesIntervention;
+import com.shop.order.mapper.AfterSalesInterventionMapper;
+import com.shop.order.dto.ReconciliationTaskVO;
+import com.shop.order.dto.InterventionRequest;
+import com.shop.order.dto.InterventionResolveRequest;
+import com.shop.common.security.CurrentUserHolder;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +45,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -57,6 +67,8 @@ public class AdminOrderController {
     private final RefundReconciliationService refundReconciliationService;
     private final LogisticsService logisticsService;
     private final OrderCancellationService orderCancellationService;
+    private final ReconciliationTaskService reconciliationTaskService;
+    private final AfterSalesInterventionMapper interventionMapper;
 
     @GetMapping("/orders/dictionary")
     public ApiResult<OrderDictionaryVO> orderDictionary() {
@@ -77,15 +89,36 @@ public class AdminOrderController {
         return ApiResult.success(PageResult.of(result.getRecords(), result.getTotal(), page, size));
     }
 
-    @PostMapping("/payments/reconcile")
-    public ApiResult<Map<String, Integer>> reconcilePayments() {
-        return ApiResult.success(Map.of("paidCount", paymentReconciliationService.reconcilePending(100)));
+    @GetMapping("/reconciliation/preview")
+    public ApiResult<ReconciliationTaskVO> previewReconciliation(@RequestParam String type,
+                                                                   @RequestParam(required = false) Long merchantId,
+                                                                   @RequestParam(required = false) LocalDateTime from,
+                                                                   @RequestParam(required = false) LocalDateTime to) {
+        return ApiResult.success(reconciliationTaskService.preview(type, merchantId, from, to));
     }
 
-    @PostMapping("/refunds/reconcile")
-    public ApiResult<Map<String, Integer>> reconcileRefunds() {
-        return ApiResult.success(Map.of("successCount", refundReconciliationService.reconcilePending(100)));
+    @OpLog(action = "RECONCILIATION_RUN", targetType = "RECONCILIATION", targetIdExpr = "#type")
+    @PostMapping("/reconciliation/tasks")
+    public ApiResult<ReconciliationTaskVO> createReconciliation(@RequestParam String type,
+                                                                  @RequestParam(required = false) Long merchantId,
+                                                                  @RequestParam(required = false) LocalDateTime from,
+                                                                  @RequestParam(required = false) LocalDateTime to) {
+        String requestedBy = CurrentUserHolder.get() == null ? "admin" : String.valueOf(CurrentUserHolder.get().getUserId());
+        return ApiResult.success(reconciliationTaskService.createAndRun(type, merchantId, from, to, requestedBy));
     }
+
+    @GetMapping("/reconciliation/tasks")
+    public ApiResult<List<ReconciliationTaskVO>> reconciliationTasks(@RequestParam(required = false) String type,
+                                                                        @RequestParam(defaultValue = "20") int limit) {
+        return ApiResult.success(reconciliationTaskService.recent(type, limit));
+    }
+
+    /** Compatibility endpoints now create traceable idempotent tasks instead of mutating state as a button side effect. */
+    @PostMapping("/payments/reconcile")
+    public ApiResult<ReconciliationTaskVO> reconcilePayments() { return createReconciliation("PAYMENT", null, null, null); }
+
+    @PostMapping("/refunds/reconcile")
+    public ApiResult<ReconciliationTaskVO> reconcileRefunds() { return createReconciliation("REFUND", null, null, null); }
 
     @GetMapping("/orders/page")
     public ApiResult<PageResult<OrderListVO>> orders(
@@ -203,6 +236,36 @@ public class AdminOrderController {
             return vo;
         }).collect(Collectors.toList());
         return ApiResult.success(PageResult.of(list, result.getTotal(), page, size));
+    }
+
+    @OpLog(action = "AFTER_SALES_INTERVENTION_OPEN", targetType = "REFUND", targetIdExpr = "#refundId")
+    @PostMapping("/refunds/{refundId}/interventions")
+    public ApiResult<AfterSalesIntervention> openIntervention(@PathVariable Long refundId, @RequestBody @Valid InterventionRequest req) {
+        RefundApplication refund = refundApplicationMapper.selectById(refundId);
+        if (refund == null) throw new com.shop.common.exception.BusinessException(com.shop.common.exception.ErrorCode.REFUND_NOT_FOUND);
+        AfterSalesIntervention item = new AfterSalesIntervention();
+        item.setRefundId(refundId); item.setOrderNo(refund.getOrderNo()); item.setMerchantId(refund.getMerchantId()); item.setStatus("OPEN");
+        item.setReason(req.getReason().trim()); item.setEvidenceNote(req.getEvidenceNote() == null ? "" : req.getEvidenceNote().trim());
+        item.setOpenedBy(CurrentUserHolder.get() == null ? "admin" : String.valueOf(CurrentUserHolder.get().getUserId()));
+        interventionMapper.insert(item);
+        return ApiResult.success(item);
+    }
+
+    @GetMapping("/refunds/{refundId}/interventions")
+    public ApiResult<List<AfterSalesIntervention>> interventions(@PathVariable Long refundId) {
+        return ApiResult.success(interventionMapper.selectList(new LambdaQueryWrapper<AfterSalesIntervention>()
+                .eq(AfterSalesIntervention::getRefundId, refundId).orderByDesc(AfterSalesIntervention::getId)));
+    }
+
+    @OpLog(action = "AFTER_SALES_INTERVENTION_RESOLVE", targetType = "INTERVENTION", targetIdExpr = "#id")
+    @PostMapping("/interventions/{id}/resolve")
+    public ApiResult<AfterSalesIntervention> resolveIntervention(@PathVariable Long id, @RequestBody @Valid InterventionResolveRequest req) {
+        AfterSalesIntervention item = interventionMapper.selectById(id);
+        if (item == null) throw new com.shop.common.exception.BusinessException(com.shop.common.exception.ErrorCode.PARAM_ERROR.getCode(), "介入工单不存在");
+        item.setStatus("RESOLVED"); item.setResolution(req.getResolution().trim()); item.setResolvedAt(LocalDateTime.now());
+        item.setResolvedBy(CurrentUserHolder.get() == null ? "admin" : String.valueOf(CurrentUserHolder.get().getUserId()));
+        interventionMapper.updateById(item);
+        return ApiResult.success(item);
     }
 
     private String refundStatusText(Integer status) {

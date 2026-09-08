@@ -51,6 +51,8 @@ Page({
   },
 
   onShow() {
+    // Entering checkout is a hard freshness boundary: cached price, coupon and inventory are display-only.
+    this.loadDefaultAddress()
     const selectedCouponId = wx.getStorageSync('order_selected_coupon_id');
     if (selectedCouponId) {
       wx.removeStorageSync('order_selected_coupon_id');

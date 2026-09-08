@@ -129,6 +129,29 @@ export interface AdminPaymentRow {
   payReconcileError?: string
 }
 
+export interface ReconciliationTask {
+  taskNo: string
+  taskType: string
+  merchantId?: number
+  rangeStart?: string
+  rangeEnd?: string
+  status: string
+  affectedCount: number
+  errorMessage?: string
+  startedAt?: string
+  finishedAt?: string
+}
+
+export interface AfterSalesIntervention {
+  id: number
+  refundId: number
+  status: string
+  reason: string
+  evidenceNote?: string
+  resolution?: string
+  createdAt?: string
+}
+
 export const adminOrderApi = {
   dictionary: () => request.get<unknown, OrderDictionary>('/api/admin/orders/dictionary'),
   page: (params: Record<string, unknown>) =>
@@ -147,8 +170,13 @@ export const adminOrderApi = {
     request.get<unknown, PageResult<GroupRefundTaskRow>>('/api/merchant/group-buy/refund-tasks', { params }),
   payments: (params: Record<string, unknown>) =>
     request.get<unknown, PageResult<AdminPaymentRow>>('/api/admin/payments/page', { params }),
-  reconcilePayments: () =>
-    request.post<unknown, { paidCount: number }>('/api/admin/payments/reconcile'),
-  reconcileRefunds: () =>
-    request.post<unknown, { successCount: number }>('/api/admin/refunds/reconcile'),
+  previewReconciliation: (type: 'PAYMENT' | 'REFUND') =>
+    request.get<unknown, ReconciliationTask>('/api/admin/reconciliation/preview', { params: { type } }),
+  createReconciliation: (type: 'PAYMENT' | 'REFUND') =>
+    request.post<unknown, ReconciliationTask>('/api/admin/reconciliation/tasks', null, { params: { type } }),
+  reconciliationTasks: (type?: 'PAYMENT' | 'REFUND') =>
+    request.get<unknown, ReconciliationTask[]>('/api/admin/reconciliation/tasks', { params: { type } }),
+  openIntervention: (refundId: number, data: { reason: string; evidenceNote?: string }) =>
+    request.post<unknown, AfterSalesIntervention>(`/api/admin/refunds/${refundId}/interventions`, data),
+  interventions: (refundId: number) => request.get<unknown, AfterSalesIntervention[]>(`/api/admin/refunds/${refundId}/interventions`),
 }

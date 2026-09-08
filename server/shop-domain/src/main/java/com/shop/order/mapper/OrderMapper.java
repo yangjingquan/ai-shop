@@ -23,6 +23,15 @@ public interface OrderMapper extends BaseMapper<Order> {
             "ORDER BY COALESCE(pay_reconcile_at, created_at) ASC, id ASC LIMIT #{limit}")
     List<Order> selectPendingPaymentReconciliation(@Param("limit") int limit);
 
+    @Select("<script>SELECT o.* FROM `order` o WHERE o.status = 0 AND o.deleted = 0 " +
+            "AND o.created_at &lt; DATE_SUB(NOW(), INTERVAL 1 MINUTE) AND o.created_at &gt;= DATE_SUB(NOW(), INTERVAL 35 MINUTE) " +
+            "AND (o.pay_reconcile_at IS NULL OR o.pay_reconcile_at &lt; DATE_SUB(NOW(), INTERVAL 1 MINUTE)) " +
+            "<if test='merchantId != null'>AND o.merchant_id = #{merchantId}</if> " +
+            "<if test='from != null'>AND o.created_at &gt;= #{from}</if><if test='to != null'>AND o.created_at &lt; #{to}</if> " +
+            "ORDER BY COALESCE(o.pay_reconcile_at, o.created_at) ASC, o.id ASC LIMIT #{limit}</script>")
+    List<Order> selectPendingPaymentReconciliationScoped(@Param("limit") int limit, @Param("merchantId") Long merchantId,
+                                                           @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
     @Update("UPDATE `order` SET pay_reconcile_at = #{now}, " +
             "pay_reconcile_attempts = pay_reconcile_attempts + 1, pay_reconcile_error = #{error}, updated_at = #{now} " +
             "WHERE id = #{id} AND deleted = 0")

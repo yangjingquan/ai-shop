@@ -57,6 +57,27 @@ export interface MerchantWorkbench {
   generatedAt?: string
 }
 
+export interface SettlementAnalysis {
+  rangeStart: string
+  rangeEnd: string
+  timezone: string
+  dataAsOf: string
+  createdGmv: number
+  createdOrderCount: number
+  paidAmount: number
+  paidOrderCount: number
+  successfulRefundAmount: number
+  processingRefundAmount: number
+  operatingNetAmount: number
+  platformCommission: number
+  channelFee: number
+  subsidyAdjustment: number
+  provisionalSettlementAmount: number
+  settlementStatus: string
+  settlementNotice: string
+  metricDefinition: string
+}
+
 export const dashboardApi = {
   adminOverview: () =>
     request.get<unknown, DashboardOverview>('/api/admin/dashboard/overview'),
@@ -66,4 +87,8 @@ export const dashboardApi = {
     request.get<unknown, DashboardOverview>('/api/merchant/dashboard/overview'),
   merchantWorkbench: () =>
     request.get<unknown, MerchantWorkbench>('/api/merchant/dashboard/workbench'),
+  adminSettlementAnalysis: (merchantId?: number) =>
+    request.get<unknown, SettlementAnalysis>('/api/admin/dashboard/settlement-analysis', { params: { merchantId } }),
+  merchantSettlementAnalysis: () =>
+    request.get<unknown, SettlementAnalysis>('/api/merchant/dashboard/settlement-analysis'),
 }

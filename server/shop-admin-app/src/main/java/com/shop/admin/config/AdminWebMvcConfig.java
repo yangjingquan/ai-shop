@@ -2,6 +2,7 @@ package com.shop.admin.config;
 
 import com.shop.common.security.AdminAuthInterceptor;
 import com.shop.common.security.MerchantAuthInterceptor;
+import com.shop.sync.web.DataSyncInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -14,6 +15,7 @@ public class AdminWebMvcConfig implements WebMvcConfigurer {
     private final AdminAuthInterceptor adminAuthInterceptor;
     private final MerchantAuthInterceptor merchantAuthInterceptor;
     private final MerchantPermissionInterceptor merchantPermissionInterceptor;
+    private final DataSyncInterceptor dataSyncInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -26,5 +28,7 @@ public class AdminWebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(merchantPermissionInterceptor)
                 .addPathPatterns("/api/merchant/**")
                 .excludePathPatterns("/api/merchant/auth/**");
+        registry.addInterceptor(dataSyncInterceptor)
+                .addPathPatterns("/api/admin/**", "/api/merchant/**");
     }
 }

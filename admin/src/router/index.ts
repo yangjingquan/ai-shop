@@ -214,6 +214,12 @@ const routes: RouteRecordRaw[] = [
         meta: { roles: ['merchant'], permission: 'merchant:refund:view' },
       },
       {
+        path: 'merchant/settlements',
+        name: 'SettlementCenter',
+        component: () => import('@/views/merchant/SettlementCenter.vue'),
+        meta: { roles: ['merchant'], permission: 'merchant:dashboard:view' },
+      },
+      {
         path: 'merchant/access-control',
         name: 'MerchantAccessControl',
         component: () => import('@/views/merchant/AccessControl.vue'),

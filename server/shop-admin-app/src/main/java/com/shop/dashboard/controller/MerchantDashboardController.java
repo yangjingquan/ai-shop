@@ -13,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.time.LocalDateTime;
+import com.shop.dashboard.dto.SettlementAnalysisVO;
 
 @RestController
 @RequestMapping("/api/merchant/dashboard")
@@ -39,5 +42,14 @@ public class MerchantDashboardController {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
         return ApiResult.success(dashboardService.merchantWorkbench(user.getMerchantId()));
+    }
+
+    @GetMapping("/settlement-analysis")
+    @RequirePermission("merchant:dashboard:view")
+    public ApiResult<SettlementAnalysisVO> settlementAnalysis(@RequestParam(required = false) LocalDateTime from,
+                                                               @RequestParam(required = false) LocalDateTime to) {
+        CurrentUser user = CurrentUserHolder.get();
+        if (user == null || user.getMerchantId() == null) throw new BusinessException(ErrorCode.FORBIDDEN);
+        return ApiResult.success(dashboardService.settlementAnalysis(user.getMerchantId(), from, to));
     }
 }

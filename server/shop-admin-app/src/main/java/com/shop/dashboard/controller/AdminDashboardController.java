@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.time.LocalDateTime;
+import com.shop.dashboard.dto.SettlementAnalysisVO;
 
 @RestController
 @RequestMapping("/api/admin/dashboard")
@@ -27,5 +29,12 @@ public class AdminDashboardController {
     @GetMapping("/trend")
     public ApiResult<List<DashboardTrendVO>> trend(@RequestParam(defaultValue = "30") int days) {
         return ApiResult.success(dashboardService.adminTrend(days));
+    }
+
+    @GetMapping("/settlement-analysis")
+    public ApiResult<SettlementAnalysisVO> settlementAnalysis(@RequestParam(required = false) Long merchantId,
+                                                               @RequestParam(required = false) LocalDateTime from,
+                                                               @RequestParam(required = false) LocalDateTime to) {
+        return ApiResult.success(dashboardService.settlementAnalysis(merchantId, from, to));
     }
 }

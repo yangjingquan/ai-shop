@@ -3,6 +3,7 @@ package com.shop.dashboard.service;
 import com.shop.dashboard.dto.DashboardOverviewVO;
 import com.shop.dashboard.dto.DashboardTrendVO;
 import com.shop.dashboard.dto.MerchantWorkbenchVO;
+import com.shop.dashboard.dto.SettlementAnalysisVO;
 
 import java.util.List;
 
@@ -15,4 +16,6 @@ public interface DashboardService {
     MerchantWorkbenchVO merchantWorkbench(Long merchantId);
 
     List<DashboardTrendVO> adminTrend(int days);
+
+    SettlementAnalysisVO settlementAnalysis(Long merchantId, java.time.LocalDateTime from, java.time.LocalDateTime to);
 }

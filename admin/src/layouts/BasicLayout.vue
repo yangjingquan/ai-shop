@@ -81,6 +81,7 @@ const merchantMenus: MenuItem[] = [
   },
   { index: 'merchant-order-ship', label: '订单发货', path: '/merchant/order-ship', desc: '履约处理', icon: '单', permission: 'merchant:order:view' },
   { index: 'merchant-refund-review', label: '退款审批', path: '/merchant/refund-review', desc: '售后审核', icon: '退', permission: 'merchant:refund:view' },
+  { index: 'merchant-settlements', label: '结算中心', path: '/merchant/settlements', desc: '账期与明细', icon: '结', permission: 'merchant:dashboard:view' },
   { index: 'merchant-access-control', label: '账号与权限', path: '/merchant/access-control', desc: '角色与成员', icon: '权', permission: 'merchant:rbac:manage' },
 ]
 

@@ -31,10 +31,17 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
 
     @Override
     public int reconcilePending(int batchLimit) {
+        return reconcilePending(batchLimit, null, null, null);
+    }
+
+    @Override
+    public int reconcilePending(int batchLimit, Long merchantId, LocalDateTime from, LocalDateTime to) {
         if (batchLimit <= 0) {
             return 0;
         }
-        List<Order> orders = orderMapper.selectPendingPaymentReconciliation(batchLimit);
+        List<Order> orders = merchantId == null && from == null && to == null
+                ? orderMapper.selectPendingPaymentReconciliation(batchLimit)
+                : orderMapper.selectPendingPaymentReconciliationScoped(batchLimit, merchantId, from, to);
         int paidCount = 0;
         for (Order order : orders) {
             String error = "";

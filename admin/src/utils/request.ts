@@ -52,11 +52,18 @@ request.interceptors.request.use((config) => {
   if (userStore.token) {
     config.headers.Authorization = `Bearer ${userStore.token}`
   }
+  config.headers['X-Shop-Data-Version'] = String(localStorage.getItem('shop_data_version') || '0')
   return config
 })
 
 request.interceptors.response.use(
   (resp: AxiosResponse) => {
+    const version = resp.headers['x-shop-data-version']
+    const serverTime = resp.headers['x-shop-server-time']
+    const scopes = resp.headers['x-shop-invalidated-scopes']
+    if (version) localStorage.setItem('shop_data_version', String(version))
+    if (serverTime) localStorage.setItem('shop_server_time', String(serverTime))
+    if (scopes) localStorage.setItem('shop_invalidated_scopes', String(scopes))
     const data = resp.data
     if (data && typeof data === 'object' && 'code' in data) {
       if (data.code === 0) {

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { adminOrderApi, type AdminRefundRow } from '@/api/order'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { adminOrderApi, type AdminRefundRow, type ReconciliationTask } from '@/api/order'
 
 const loading = ref(false)
 const reconciling = ref(false)
 const list = ref<AdminRefundRow[]>([])
 const total = ref(0)
+const tasks = ref<ReconciliationTask[]>([])
 const query = reactive({ page: 1, size: 10, status: undefined as number | undefined, merchantId: undefined as number | undefined })
 const statusText: Record<number, string> = { 0: '待处理', 1: '退款处理中', 2: '已拒绝', 3: '退款成功', 4: '退款失败', 5: '待填写退货物流', 6: '待商家验货' }
 
@@ -31,6 +32,7 @@ async function fetchList() {
     const data = await adminOrderApi.refunds({ page: query.page, size: query.size, status: query.status, merchantId: query.merchantId })
     list.value = data.list
     total.value = data.total
+    tasks.value = await adminOrderApi.reconciliationTasks('REFUND')
   } finally {
     loading.value = false
   }
@@ -40,9 +42,13 @@ function search() { query.page = 1; fetchList() }
 async function reconcile() {
   reconciling.value = true
   try {
-    const result = await adminOrderApi.reconcileRefunds()
-    ElMessage.success(result.successCount ? `确认 ${result.successCount} 笔退款成功` : '对账完成，暂无新增成功退款')
+    const preview = await adminOrderApi.previewReconciliation('REFUND')
+    await ElMessageBox.confirm(`本次将检查最多 ${preview.affectedCount} 笔处理中或自动退款记录，生成可审计任务；不会代替商家审批。`, '确认发起退款对账', { type: 'warning', confirmButtonText: '生成任务并执行' })
+    const result = await adminOrderApi.createReconciliation('REFUND')
+    ElMessage.success(`对账任务 ${result.taskNo} 已${result.status === 'SUCCESS' ? '完成' : '创建'}`)
     await fetchList()
+  } catch (error: any) {
+    if (error !== 'cancel' && error !== 'close') ElMessage.error(error?.message || '创建对账任务失败')
   } finally {
     reconciling.value = false
   }
@@ -52,8 +58,8 @@ onMounted(fetchList)
 
 <template>
   <div class="page">
-    <div class="page-header"><div><span class="page-kicker">REFUND MONITOR</span><h1 class="page-title">平台退款</h1><p class="page-desc">查看退款申请、微信资金状态与主动对账结果；审批仍由所属商家处理。</p></div><el-button type="primary" :loading="reconciling" @click="reconcile">立即对账</el-button></div>
-    <el-alert title="立即对账会查询处理中退款，并自动推进拼团失败退款；不会代替商家审批普通售后。" type="info" :closable="false" show-icon class="notice" />
+    <div class="page-header"><div><span class="page-kicker">REFUND MONITOR</span><h1 class="page-title">平台退款</h1><p class="page-desc">查看退款申请、微信资金状态与主动对账结果；审批仍由所属商家处理。</p></div><el-button type="primary" :loading="reconciling" @click="reconcile">预览并发起对账</el-button></div>
+    <el-alert title="对账先展示影响范围并生成幂等任务、执行日志和异常信息；不会代替商家审批普通售后。" type="info" :closable="false" show-icon class="notice" />
     <el-card>
       <div class="toolbar">
         <el-input-number v-model="query.merchantId" :min="1" :controls="false" placeholder="商家 ID" style="width: 150px" />
@@ -78,11 +84,13 @@ onMounted(fetchList)
       </el-table>
       <div class="pagination"><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" background layout="total, sizes, prev, pager, next" @current-change="fetchList" @size-change="fetchList" /></div>
     </el-card>
+    <el-card class="task-card"><template #header>最近退款对账任务</template><el-table :data="tasks" size="small"><el-table-column prop="taskNo" label="任务 ID" min-width="220"/><el-table-column prop="status" label="状态" width="110"/><el-table-column prop="affectedCount" label="处理笔数" width="110"/><el-table-column prop="startedAt" label="开始时间" min-width="170"/><el-table-column prop="errorMessage" label="异常" min-width="220" show-overflow-tooltip/></el-table></el-card>
   </div>
 </template>
 
 <style scoped>
 .notice { margin-bottom: 16px; }
+.task-card { margin-top: 16px; }
 .evidence-list { display: flex; gap: 6px; align-items: center; }
 .evidence-image { width: 42px; height: 42px; border-radius: 4px; }
 </style>

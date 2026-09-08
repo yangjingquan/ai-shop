@@ -43,10 +43,17 @@ public class RefundReconciliationServiceImpl implements RefundReconciliationServ
 
     @Override
     public int reconcilePending(int batchLimit) {
+        return reconcilePending(batchLimit, null, null, null);
+    }
+
+    @Override
+    public int reconcilePending(int batchLimit, Long merchantId, LocalDateTime from, LocalDateTime to) {
         if (batchLimit <= 0) {
             return 0;
         }
-        List<RefundApplication> refunds = refundMapper.selectPendingReconciliation(batchLimit);
+        List<RefundApplication> refunds = merchantId == null && from == null && to == null
+                ? refundMapper.selectPendingReconciliation(batchLimit)
+                : refundMapper.selectPendingReconciliationScoped(batchLimit, merchantId, from, to);
         int completed = 0;
         for (RefundApplication app : refunds) {
             String error = "";

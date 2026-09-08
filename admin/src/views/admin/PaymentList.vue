@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { adminOrderApi, type AdminPaymentRow } from '@/api/order'
 
 const loading = ref(false)
@@ -34,9 +34,13 @@ function search() {
 async function reconcile() {
   reconciling.value = true
   try {
-    const result = await adminOrderApi.reconcilePayments()
-    ElMessage.success(result.paidCount ? `补记 ${result.paidCount} 笔已支付订单` : '对账完成，暂无需补记订单')
+    const preview = await adminOrderApi.previewReconciliation('PAYMENT')
+    await ElMessageBox.confirm(`本次将检查最多 ${preview.affectedCount} 笔待支付订单，并生成可审计、可幂等追踪的任务。`, '确认发起支付对账', { type: 'warning', confirmButtonText: '生成任务并执行' })
+    const result = await adminOrderApi.createReconciliation('PAYMENT')
+    ElMessage.success(`对账任务 ${result.taskNo} 已${result.status === 'SUCCESS' ? '完成' : '创建'}`)
     await fetchList()
+  } catch (error: any) {
+    if (error !== 'cancel' && error !== 'close') ElMessage.error(error?.message || '创建对账任务失败')
   } finally {
     reconciling.value = false
   }
@@ -55,9 +59,9 @@ onMounted(fetchList)
       <div>
         <span class="page-kicker">PAYMENT LEDGER</span>
         <h1 class="page-title">支付管理</h1>
-        <p class="page-desc">查询微信支付流水，查看主动查单记录，并可立即执行一次待支付订单对账。</p>
+        <p class="page-desc">查询微信支付流水，查看主动查单记录；对账会先预览范围并生成可审计任务。</p>
       </div>
-      <el-button type="primary" :loading="reconciling" @click="reconcile">立即对账</el-button>
+      <el-button type="primary" :loading="reconciling" @click="reconcile">预览并发起对账</el-button>
     </div>
 
     <el-card>

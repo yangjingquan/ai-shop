@@ -15,9 +15,18 @@ function request(options, retryCount = 0) {
         'wx-token': token,
         'merchant-code': config.getMerchantCode(),
         'miniapp-appid': config.MINIAPP_APP_ID,
+        'x-shop-data-version': String(wx.getStorageSync('shop_data_version') || 0),
         ...options.header,
       },
       success(res) {
+        const headers = res.header || {}
+        const version = headers['X-Shop-Data-Version'] || headers['x-shop-data-version']
+        const invalidated = headers['X-Shop-Invalidated-Scopes'] || headers['x-shop-invalidated-scopes']
+        if (version && Number(version) >= Number(wx.getStorageSync('shop_data_version') || 0)) {
+          wx.setStorageSync('shop_data_version', Number(version))
+          wx.setStorageSync('shop_server_time', headers['X-Shop-Server-Time'] || headers['x-shop-server-time'] || '')
+        }
+        if (invalidated) wx.setStorageSync('shop_invalidated_scopes', invalidated.split(',').filter(Boolean))
         const data = res.data
         if (res.statusCode === 401 || (data && data.code === 401)) {
           if (retryCount >= 1) {

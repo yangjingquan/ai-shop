@@ -18,6 +18,15 @@ public interface RefundApplicationMapper extends BaseMapper<RefundApplication> {
             "ORDER BY COALESCE(refund_reconcile_at, created_at) ASC, id ASC LIMIT #{limit}")
     List<RefundApplication> selectPendingReconciliation(@Param("limit") int limit);
 
+    @Select("<script>SELECT * FROM refund_application WHERE out_refund_no &lt;&gt; '' " +
+            "AND (status = 1 OR (auto_refund = 1 AND status IN (0, 4) AND refund_reconcile_attempts &lt; 10)) " +
+            "AND (refund_reconcile_at IS NULL OR refund_reconcile_at &lt; DATE_SUB(NOW(), INTERVAL 1 MINUTE)) " +
+            "<if test='merchantId != null'>AND merchant_id = #{merchantId}</if> " +
+            "<if test='from != null'>AND created_at &gt;= #{from}</if><if test='to != null'>AND created_at &lt; #{to}</if> " +
+            "ORDER BY COALESCE(refund_reconcile_at, created_at) ASC, id ASC LIMIT #{limit}</script>")
+    List<RefundApplication> selectPendingReconciliationScoped(@Param("limit") int limit, @Param("merchantId") Long merchantId,
+                                                                @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
     @Update("UPDATE refund_application SET refund_reconcile_at = #{now}, " +
             "refund_reconcile_attempts = refund_reconcile_attempts + 1, " +
             "refund_reconcile_error = #{error}, updated_at = #{now} WHERE id = #{id}")
