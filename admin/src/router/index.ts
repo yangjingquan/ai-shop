@@ -142,6 +142,12 @@ const routes: RouteRecordRaw[] = [
         meta: { roles: ['merchant'], permission: 'merchant:banner:view' },
       },
       {
+        path: 'merchant/home-modules',
+        name: 'MerchantHomeModuleConfig',
+        component: () => import('@/views/merchant/HomeModuleConfig.vue'),
+        meta: { roles: ['merchant'], permission: 'merchant:home:config' },
+      },
+      {
         path: 'merchant/marketing',
         name: 'MerchantMarketingActivity',
         component: () => import('@/views/merchant/MerchantMarketingActivity.vue'),

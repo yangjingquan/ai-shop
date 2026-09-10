@@ -1,11 +1,11 @@
 page {
-  background: #f7f4ed;
+  background: #f8f5f0;
 }
 
 .home {
   min-height: 100vh;
   padding-bottom: calc(112rpx + env(safe-area-inset-bottom));
-  background: #f7f4ed;
+  background: #f8f5f0;
   color: #17191f;
   box-sizing: border-box;
 }
@@ -231,7 +231,9 @@ page {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 16rpx;
-  padding-bottom: 2rpx;
+  padding: 22rpx 14rpx 16rpx;
+  border-radius: 24rpx;
+  background: #fffaf4;
 }
 
 .cat {
@@ -295,6 +297,126 @@ page {
   font-weight: 760;
 }
 
+.section-subtitle {
+  margin-top: 10rpx;
+  color: #958a7f;
+  font-size: 21rpx;
+  line-height: 1;
+  font-weight: 650;
+}
+
+.section-note {
+  padding: 8rpx 12rpx;
+  border-radius: 999rpx;
+  color: #e75a26;
+  background: #ffe5d8;
+  font-size: 18rpx;
+  line-height: 1;
+  letter-spacing: .08em;
+  font-weight: 900;
+}
+
+.arrival-head {
+  margin-top: 36rpx;
+  margin-bottom: 16rpx;
+}
+
+.arrival-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  padding: 12rpx;
+  border-radius: 26rpx;
+  background: linear-gradient(135deg, #fff4d8, #fffaf3);
+}
+
+.arrival-card {
+  min-width: 0;
+  min-height: 246rpx;
+  padding: 20rpx;
+  position: relative;
+  overflow: hidden;
+  border: 1rpx solid #eee6dc;
+  border-radius: 22rpx;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.arrival-card:nth-child(1) { background: linear-gradient(145deg, #fff7ca, #fff 58%); }
+.arrival-card:nth-child(2) { background: linear-gradient(145deg, #e3f9ff, #fff 58%); }
+
+.arrival-badge {
+  width: max-content;
+  padding: 6rpx 10rpx;
+  position: relative;
+  z-index: 2;
+  border-radius: 8rpx;
+  color: #fff;
+  background: #201f1c;
+  font-size: 16rpx;
+  line-height: 1;
+  letter-spacing: .06em;
+  font-weight: 900;
+}
+
+.arrival-image,
+.arrival-visual {
+  width: 112rpx;
+  height: 112rpx;
+  position: absolute;
+  top: 24rpx;
+  right: 16rpx;
+}
+
+.arrival-visual { transform: rotate(-7deg); }
+
+.arrival-copy {
+  position: absolute;
+  right: 20rpx;
+  bottom: 20rpx;
+  left: 20rpx;
+}
+
+.arrival-name,
+.feed-name {
+  overflow: hidden;
+  color: #24262d;
+  font-weight: 900;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.arrival-name {
+  max-height: 54rpx;
+  padding-right: 108rpx;
+  box-sizing: border-box;
+  font-size: 23rpx;
+  line-height: 1.18;
+}
+
+.arrival-desc,
+.feed-desc {
+  overflow: hidden;
+  color: #958a7f;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arrival-desc {
+  margin-top: 6rpx;
+  font-size: 18rpx;
+  line-height: 1;
+}
+
+.arrival-price {
+  margin-top: 10rpx;
+  color: #ef5523;
+  font-size: 28rpx;
+  line-height: 1;
+  font-weight: 950;
+}
+
 .recommend {
   height: 252rpx;
   padding: 16rpx;
@@ -324,7 +446,7 @@ page {
   justify-items: center;
   position: relative;
   border-radius: 16rpx;
-  background: #f7f4ed;
+  background: #f8f5f0;
   box-sizing: border-box;
 }
 
@@ -390,10 +512,105 @@ page {
 }
 
 .price {
-  color: #ff4b43;
+  color: #ef5523;
   font-size: 24rpx;
   line-height: 1;
   font-weight: 950;
+}
+
+.feed-head {
+  margin-top: 38rpx;
+  margin-bottom: 18rpx;
+}
+
+.product-feed {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  padding: 12rpx;
+  border-radius: 26rpx;
+  background: linear-gradient(145deg, #f0f8f7, #fffaf4);
+}
+
+.feed-card {
+  min-width: 0;
+  min-height: 382rpx;
+  padding: 14rpx;
+  display: flex;
+  flex-direction: column;
+  border: 1rpx solid #eee6dc;
+  border-radius: 22rpx;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.feed-image-wrap {
+  height: 196rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 16rpx;
+}
+
+.feed-image,
+.feed-visual {
+  width: 148rpx;
+  height: 148rpx;
+}
+
+.feed-image-wrap .feed-visual {
+  width: 148rpx;
+  height: 148rpx;
+}
+
+.feed-visual { transform: rotate(-7deg); }
+
+.feed-name {
+  min-height: 52rpx;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  line-height: 1.1;
+}
+
+.feed-desc {
+  margin-top: 8rpx;
+  font-size: 19rpx;
+  line-height: 1;
+}
+
+.feed-price-row {
+  min-height: 30rpx;
+  margin-top: auto;
+  padding-top: 14rpx;
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.feed-price {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: #ef5523;
+  font-size: 28rpx;
+  line-height: 1;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-original {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: 8rpx;
+  overflow: hidden;
+  color: #aaa29a;
+  font-size: 18rpx;
+  line-height: 1;
+  text-decoration: line-through;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .deal-head {
@@ -634,3 +851,25 @@ page {
 .lottery-entry-title { margin-top: 8rpx; color: #fff; font-size: 34rpx; font-weight: 800; }
 .lottery-entry-desc { margin-top: 8rpx; color: #ffe3be; font-size: 22rpx; }
 .lottery-entry-arrow { position: relative; z-index: 1; margin-left: auto; padding-left: 12rpx; color: #fff; font-size: 23rpx; font-weight: 700; white-space: nowrap; }
+
+/* The home feed leads with discovery, then introduces campaigns as optional value. */
+.home { background: #f8f5f0; color: #201f1c; }
+.content { padding: 18rpx 24rpx 34rpx; }
+.nav { height: 92rpx; gap: 14rpx; }
+.brand { width: 88rpx; height: 88rpx; border-radius: 28rpx; background: #201f1c; box-shadow: none; }
+.search { height: 76rpx; padding: 0 22rpx; border-radius: 38rpx; border-color: #eee6dc; box-shadow: none; }
+.search-btn { width: 96rpx; height: 76rpx; border-radius: 38rpx; color: #fff; background: #201f1c; border: 0; box-shadow: none; font-size: 24rpx; }
+.banner { height: 340rpx; margin-top: 22rpx; border-radius: 28rpx; box-shadow: 0 16rpx 36rpx rgba(47, 31, 16, .12); }
+.categories { margin-top: 26rpx; gap: 10rpx; }
+.cat-icon { width: 90rpx; height: 90rpx; border-radius: 28rpx; box-shadow: none; }
+.cat-name { font-size: 21rpx; }
+.section-head { margin: 40rpx 2rpx 18rpx; }
+.section-title { font-size: 38rpx; letter-spacing: -.5rpx; }
+.recommend { height: 286rpx; padding: 14rpx; border-radius: 24rpx; background: #fff; box-shadow: 0 12rpx 30rpx rgba(47, 31, 16, .06); }
+.rec-card { width: 234rpx; height: 254rpx; grid-template-rows: 122rpx 66rpx 36rpx; border-radius: 18rpx; }
+.rec-image { width: 112rpx; height: 112rpx; }
+.deal-row { gap: 14rpx; }
+.group-card, .flash-card { height: 292rpx; border-radius: 24rpx; }
+.group-card { background: linear-gradient(145deg, #201f1c, #37302a); }
+.flash-card { background: linear-gradient(145deg, #ffead7, #ffb86e); box-shadow: none; }
+.presale-entry, .points-entry, .full-reduction-entry, .lottery-entry, .referral-entry { border-radius: 24rpx; }

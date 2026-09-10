@@ -69,7 +69,7 @@
   align-items: center;
   justify-content: center;
   line-height: normal;
-  background: #ff6600;
+  background: #ef5523;
   color: #fff;
   border-radius: 18rpx;
   font-size: 30rpx;

@@ -1,6 +1,5 @@
 <view class="group-list-page">
-  <view class="page-title">一起拼，更省钱</view>
-  <view class="page-subtitle">精选团购商品，邀请好友一起享优惠</view>
+  <view class="group-hero"><view class="hero-kicker">GROUP BUY · SAVE TOGETHER</view><view class="page-title">一起拼，更省钱</view><view class="page-subtitle">精选好物，邀请好友一起享拼团价</view><view class="hero-note">低价成团 · 成团后优先发货</view></view>
   <view class="search-row">
     <view class="search-box">
       <input value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" placeholder="搜索团购商品" />

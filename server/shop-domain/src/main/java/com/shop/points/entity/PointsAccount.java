@@ -4,4 +4,4 @@ import com.shop.common.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 @Data @EqualsAndHashCode(callSuper = true) @TableName("points_account")
-public class PointsAccount extends BaseEntity { private Long userId; private Long merchantId; private Integer balance; private Integer version; }
+public class PointsAccount extends BaseEntity { private Long userId; private Long merchantId; private Integer balance; private Integer totalPoints; private Integer version; }

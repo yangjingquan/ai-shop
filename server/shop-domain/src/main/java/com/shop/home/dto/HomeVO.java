@@ -15,4 +15,6 @@ public class HomeVO {
     private List<ProductListVO> recommends;
 
     private List<MarketingFeatureVO> marketingFeatures;
+
+    private List<HomeModuleVO> modules;
 }

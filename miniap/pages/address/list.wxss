@@ -33,7 +33,7 @@
 .tag-default {
   margin-left: auto;
   font-size: 22rpx;
-  color: #ff6600;
+  color: #ef5523;
   background: #fff7f0;
   padding: 4rpx 14rpx;
   border-radius: 20rpx;
@@ -62,7 +62,7 @@
   align-items: center;
   gap: 6rpx;
   font-size: 26rpx;
-  color: #ff6600;
+  color: #ef5523;
 }
 .action.danger {
   color: #ff4d4f;
@@ -81,7 +81,7 @@
   align-items: center;
   justify-content: center;
   gap: 10rpx;
-  background: #ff6600;
+  background: #ef5523;
   color: #fff;
   border-radius: 18rpx;
   font-size: 30rpx;

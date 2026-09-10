@@ -19,6 +19,11 @@ Page({
     keyword: '',
     topCategories: [],
     products: [],
+    productHighlights: [],
+    productFeed: [],
+    homeModules: [],
+    moduleEnabled: { BANNER: true, CATEGORY: true, NEW_ARRIVALS: true, POPULAR_PRODUCTS: true, PRODUCT_FEED: true, MARKETING_ZONE: true },
+    moduleTitles: {},
     loading: false,
     marketingEnabled: {},
     seckillSummary: null,
@@ -69,7 +74,8 @@ Page({
         tone: `tone-${(idx % 5) + 1}`,
       }))
       const list = this.normalizeProducts({ data: { list: productData } })
-      this.setData({ banners, topCategories: top, products: list, marketingEnabled })
+      const moduleState = this.buildModuleState(homeData.modules || [], list)
+      this.setData({ banners, topCategories: top, ...moduleState, marketingEnabled })
       this.loadSeckillSummary(marketingEnabled.SECKILL)
       this.loadNewUserCoupon(marketingEnabled)
       this.loadReferralCampaign(marketingEnabled.REFERRAL)
@@ -289,6 +295,42 @@ Page({
     }))
   },
 
+  productSections(products) {
+    return {
+      products,
+      productHighlights: products.slice(0, 2),
+      productFeed: products,
+    }
+  },
+
+  buildModuleState(modules, fallbackProducts) {
+    const defaults = this.data.moduleEnabled
+    const homeModules = Array.isArray(modules) ? modules.slice().sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0)) : []
+    const enabled = homeModules.reduce((result, module) => ({ ...result, [module.code]: Number(module.enabled) === 1 }), { ...defaults })
+    const moduleProducts = (code, fallback) => {
+      const module = homeModules.find((item) => item.code === code)
+      const products = module && Array.isArray(module.products) ? this.normalizeProducts({ data: { list: module.products } }) : fallback
+      return { module, products }
+    }
+    const newest = moduleProducts('NEW_ARRIVALS', fallbackProducts.slice(0, 2))
+    const popular = moduleProducts('POPULAR_PRODUCTS', fallbackProducts)
+    const feed = moduleProducts('PRODUCT_FEED', fallbackProducts)
+    return {
+      homeModules,
+      moduleEnabled: enabled,
+      products: popular.products,
+      productHighlights: newest.products,
+      productFeed: feed.products,
+      moduleTitles: {
+        NEW_ARRIVALS: newest.module && newest.module.title,
+        NEW_ARRIVALS_SUBTITLE: newest.module && newest.module.subtitle,
+        POPULAR_PRODUCTS: popular.module && popular.module.title,
+        PRODUCT_FEED: feed.module && feed.module.title,
+        PRODUCT_FEED_SUBTITLE: feed.module && feed.module.subtitle,
+      },
+    }
+  },
+
   categorySymbol(idx) {
     return ['◒', '◍', '◈', '◎', '✦'][idx % 5]
   },
@@ -327,9 +369,10 @@ Page({
     this.setData({ loading: true })
     try {
       const pageRes = await this.fetchProducts(keyword)
+      const products = this.normalizeProducts(pageRes)
       this.setData({
         keyword: (keyword || '').trim(),
-        products: this.normalizeProducts(pageRes),
+        ...this.productSections(products),
       })
     } finally {
       this.setData({ loading: false })
@@ -390,6 +433,10 @@ Page({
 
   onMoreRecommend() {
     wx.navigateTo({ url: '/pages/recommend/index' })
+  },
+
+  onBrowseAll() {
+    wx.switchTab({ url: '/pages/category/index' })
   },
 
   onGroupBuy() {

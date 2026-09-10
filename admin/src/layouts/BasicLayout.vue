@@ -61,6 +61,7 @@ const merchantMenus: MenuItem[] = [
     ],
   },
   { index: 'merchant-banners', label: 'Banner 配置', path: '/merchant/banners', desc: '首页轮播', icon: '图', permission: 'merchant:banner:view' },
+  { index: 'merchant-home-modules', label: '首页装修', path: '/merchant/home-modules', desc: '模块与商品展示', icon: '装', permission: 'merchant:home:config' },
   { index: 'merchant-marketing', label: '营销活动', path: '/merchant/marketing', desc: '活动开关', icon: '营', permission: 'merchant:marketing:view' },
   {
     index: 'merchant-activity-configuration',

@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PointsMemberServiceImpl implements PointsMemberService {
     private final MarketingFeatureService featureService;
-    private final MemberProfileMapper profileMapper; private final PointsAccountMapper accountMapper;
+    private final MemberProfileMapper profileMapper; private final PointsAccountMapper accountMapper; private final MemberLevelMapper levelMapper;
     private final PointsLedgerMapper ledgerMapper; private final PointsRuleMapper ruleMapper;
     private final PointsProductMapper productMapper; private final PointsRedeemRecordMapper redeemMapper;
     private final MemberDayActivityMapper memberDayMapper; private final ProductMapper goodsMapper;
@@ -71,7 +71,18 @@ public class PointsMemberServiceImpl implements PointsMemberService {
     public PointsProfileVO profile(Long userId, Long merchantId) {
         assertEnabled(merchantId); MemberProfile profile = ensureMember(userId, merchantId);
         PointsAccount account = ensureAccount(userId, merchantId);
-        PointsProfileVO vo = new PointsProfileVO(); vo.setBalance(account.getBalance()); vo.setJoinedAt(profile.getJoinedAt());
+        List<MemberLevel> levels = levelsForMerchant(merchantId);
+        MemberLevel currentLevel = resolveLevel(levels, safe(account.getTotalPoints()));
+        int levelNo = currentLevel == null ? 1 : currentLevel.getLevelNo();
+        if (!Objects.equals(profile.getLevel(), levelNo)) { profile.setLevel(levelNo); profileMapper.updateById(profile); }
+        PointsProfileVO vo = new PointsProfileVO();
+        vo.setBalance(safe(account.getBalance()));
+        vo.setRemainingPoints(safe(account.getBalance()));
+        vo.setTotalPoints(safe(account.getTotalPoints()));
+        vo.setLevel(levelNo);
+        vo.setLevelName(currentLevel == null ? "普通会员" : currentLevel.getName());
+        vo.setNextLevelPoints(nextLevelPoints(levels, levelNo));
+        vo.setJoinedAt(profile.getJoinedAt());
         vo.setRedeemableCouponCount(productMapper.selectCount(new LambdaQueryWrapper<PointsProduct>()
                 .eq(PointsProduct::getMerchantId, merchantId).isNotNull(PointsProduct::getCouponTemplateId).eq(PointsProduct::getStatus, 1)).intValue());
         MemberDayActivity activity = currentActivity(merchantId); PointsRule rule=activeRuleOrNull(merchantId); vo.setMemberDayActive(activity != null); vo.setMemberDay(activity == null ? null : activity.getDayOfMonth()); vo.setPayAmountYuan(rule==null?0:Math.max(1,safe(rule.getPayAmountYuan()))); vo.setPointsPerYuan(rule==null?0:safe(rule.getPointsPerYuan())); return vo;
@@ -185,6 +196,30 @@ public class PointsMemberServiceImpl implements PointsMemberService {
     }
     @Override public PointsRuleRequest rule(Long merchantId) { PointsRule rule = ruleMapper.selectOne(new LambdaQueryWrapper<PointsRule>().eq(PointsRule::getMerchantId, merchantId)); return rule == null ? new PointsRuleRequest() : ruleVO(rule); }
     @Override @Transactional public void saveRule(Long merchantId, PointsRuleRequest req) { PointsRule rule = ruleMapper.selectOne(new LambdaQueryWrapper<PointsRule>().eq(PointsRule::getMerchantId, merchantId)); if (rule == null) { rule = new PointsRule(); rule.setMerchantId(merchantId); } rule.setRegisterPoints(safe(req.getRegisterPoints())); rule.setPayAmountYuan(req.getPayAmountYuan()); rule.setPointsPerYuan(safe(req.getPointsPerYuan())); rule.setSignInPoints(safe(req.getSignInPoints())); rule.setValidDays(safe(req.getValidDays())); rule.setDeductionPerYuan(req.getDeductionPerYuan()); rule.setDeductionMaxPoints(safe(req.getDeductionMaxPoints())); rule.setStatus(req.getStatus()); if (rule.getId() == null) ruleMapper.insert(rule); else ruleMapper.updateById(rule); }
+    @Override public List<MemberLevelVO> memberLevels(Long merchantId) { return levelVOs(levelsForMerchant(merchantId)); }
+    @Override @Transactional public void saveMemberLevels(Long merchantId, List<MemberLevelRequest> req) {
+        validateLevels(req);
+        List<MemberLevel> existing = levelsForMerchant(merchantId);
+        // Move current keys out of the configured range before replacing them. This keeps the
+        // merchant-level uniqueness constraints valid while thresholds and order are edited.
+        for (MemberLevel level : existing) {
+            int temporary = Math.toIntExact(-level.getId());
+            level.setLevelNo(temporary);
+            level.setMinTotalPoints(temporary);
+            levelMapper.updateById(level);
+        }
+        for (int index = 0; index < req.size(); index++) {
+            MemberLevelRequest item = req.get(index);
+            MemberLevel level = index < existing.size() ? existing.get(index) : new MemberLevel();
+            if (level.getId() == null) level.setMerchantId(merchantId);
+            level.setLevelNo(index + 1);
+            level.setName(item.getName().trim());
+            level.setMinTotalPoints(item.getMinTotalPoints());
+            if (level.getId() == null) levelMapper.insert(level); else levelMapper.updateById(level);
+        }
+        for (int index = req.size(); index < existing.size(); index++) levelMapper.deleteById(existing.get(index).getId());
+        recalculateMerchantLevels(merchantId, levelsForMerchant(merchantId));
+    }
     @Override public List<PointsProductVO> merchantProducts(Long merchantId) { return productMapper.selectList(new LambdaQueryWrapper<PointsProduct>().eq(PointsProduct::getMerchantId, merchantId).orderByDesc(PointsProduct::getId)).stream().map(p -> productVO(p, null, merchantId)).toList(); }
     @Override @Transactional public Long saveProduct(Long merchantId, Long id, PointsProductRequest req) { PointsProduct product = id == null ? new PointsProduct() : productMapper.selectById(id); if (product == null || (product.getId() != null && !merchantId.equals(product.getMerchantId()))) throw new BusinessException(ErrorCode.POINTS_PRODUCT_NOT_FOUND); if ((req.getCouponTemplateId() == null) == (req.getProductId() == null || req.getSkuId() == null)) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "兑换项必须是优惠券或完整的实物SKU"); assertNewUserCouponTemplate(merchantId, req.getCouponTemplateId()); if (id == null) product.setMerchantId(merchantId); product.setProductId(req.getProductId()); product.setSkuId(req.getSkuId()); product.setCouponTemplateId(req.getCouponTemplateId()); product.setTitle(req.getTitle()); product.setImage(resolveExchangeImage(req)); product.setPointsPrice(req.getPointsPrice()); product.setStock(req.getStock()); product.setPerUserLimit(safe(req.getPerUserLimit())); product.setValidFrom(req.getValidFrom()); product.setValidTo(req.getValidTo()); product.setStatus(req.getStatus()); if (id == null) { productMapper.insert(product); return product.getId(); } productMapper.updateById(product); return product.getId(); }
     @Override @Transactional public void deleteProduct(Long merchantId, Long id) { PointsProduct product=productMapper.selectById(id); if(product==null||!merchantId.equals(product.getMerchantId()))throw new BusinessException(ErrorCode.POINTS_PRODUCT_NOT_FOUND); if(Integer.valueOf(1).equals(product.getStatus()))throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(),"请先下架兑换项后再删除"); productMapper.deleteById(id); }
@@ -198,9 +233,45 @@ public class PointsMemberServiceImpl implements PointsMemberService {
     private void assertEnabled(Long merchantId) { featureService.assertEnabled(merchantId, MarketingActivityCode.POINTS_MEMBER_DAY); }
     private void assertNewUserCouponTemplate(Long merchantId, Long templateId) { if (templateId == null) return; CouponTemplate template = couponTemplateMapper.selectOne(new LambdaQueryWrapper<CouponTemplate>().eq(CouponTemplate::getId, templateId).eq(CouponTemplate::getMerchantId, merchantId)); if (template == null || !CouponIssueScene.NEW_USER.equals(template.getIssueScene())) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "请选择新人券配置中的优惠券模板"); }
     private MemberProfile ensureMember(Long userId, Long merchantId) { MemberProfile p = profileMapper.selectOne(new LambdaQueryWrapper<MemberProfile>().eq(MemberProfile::getUserId, userId).eq(MemberProfile::getMerchantId, merchantId)); if (p != null) return p; p = new MemberProfile(); p.setUserId(userId); p.setMerchantId(merchantId); p.setStatus(1); p.setJoinedAt(LocalDateTime.now()); profileMapper.insert(p); PointsRule rule = activeRuleOrNull(merchantId); if (rule != null && safe(rule.getRegisterPoints()) > 0) appendLedger(userId, merchantId, rule.getRegisterPoints(), "REGISTER", "MEMBER:" + userId, null, "注册会员赠分", rule.getValidDays()); return p; }
-    private PointsAccount ensureAccount(Long userId, Long merchantId) { PointsAccount a = accountMapper.selectOne(new LambdaQueryWrapper<PointsAccount>().eq(PointsAccount::getUserId, userId).eq(PointsAccount::getMerchantId, merchantId)); if (a != null) return a; a = new PointsAccount(); a.setUserId(userId); a.setMerchantId(merchantId); a.setBalance(0); a.setVersion(0); accountMapper.insert(a); return a; }
-    private PointsLedger appendLedger(Long userId, Long merchantId, int delta, String source, String businessNo, Long relatedId, String description, Integer validDays) { PointsLedger existing = ledgerMapper.selectOne(new LambdaQueryWrapper<PointsLedger>().eq(PointsLedger::getUserId, userId).eq(PointsLedger::getMerchantId, merchantId).eq(PointsLedger::getSource, source).eq(PointsLedger::getBusinessNo, businessNo)); if (existing != null) return existing; ensureMemberWithoutReward(userId, merchantId); PointsAccount account = accountMapper.selectOne(new LambdaQueryWrapper<PointsAccount>().eq(PointsAccount::getUserId, userId).eq(PointsAccount::getMerchantId, merchantId).last("FOR UPDATE")); if (account == null) { ensureAccount(userId, merchantId); account = accountMapper.selectOne(new LambdaQueryWrapper<PointsAccount>().eq(PointsAccount::getUserId, userId).eq(PointsAccount::getMerchantId, merchantId).last("FOR UPDATE")); } int after = safe(account.getBalance()) + delta; if (after < 0) throw new BusinessException(ErrorCode.POINTS_NOT_ENOUGH); account.setBalance(after); account.setVersion(safe(account.getVersion()) + 1); accountMapper.updateById(account); PointsLedger ledger = new PointsLedger(); ledger.setUserId(userId); ledger.setMerchantId(merchantId); ledger.setChangeValue(delta); ledger.setBalanceAfter(after); ledger.setSource(source); ledger.setBusinessNo(businessNo); ledger.setRelatedLedgerId(relatedId); ledger.setDescription(description); ledger.setExpireAt(validDays != null && validDays > 0 && delta > 0 ? LocalDateTime.now().plusDays(validDays) : null); ledgerMapper.insert(ledger); return ledger; }
+    private PointsAccount ensureAccount(Long userId, Long merchantId) { PointsAccount a = accountMapper.selectOne(new LambdaQueryWrapper<PointsAccount>().eq(PointsAccount::getUserId, userId).eq(PointsAccount::getMerchantId, merchantId)); if (a != null) return a; a = new PointsAccount(); a.setUserId(userId); a.setMerchantId(merchantId); a.setBalance(0); a.setTotalPoints(0); a.setVersion(0); accountMapper.insert(a); return a; }
+    private PointsLedger appendLedger(Long userId, Long merchantId, int delta, String source, String businessNo, Long relatedId, String description, Integer validDays) {
+        PointsLedger existing = ledgerMapper.selectOne(new LambdaQueryWrapper<PointsLedger>().eq(PointsLedger::getUserId, userId).eq(PointsLedger::getMerchantId, merchantId).eq(PointsLedger::getSource, source).eq(PointsLedger::getBusinessNo, businessNo));
+        if (existing != null) return existing;
+        ensureMemberWithoutReward(userId, merchantId);
+        PointsAccount account = accountMapper.selectOne(new LambdaQueryWrapper<PointsAccount>().eq(PointsAccount::getUserId, userId).eq(PointsAccount::getMerchantId, merchantId).last("FOR UPDATE"));
+        if (account == null) { ensureAccount(userId, merchantId); account = accountMapper.selectOne(new LambdaQueryWrapper<PointsAccount>().eq(PointsAccount::getUserId, userId).eq(PointsAccount::getMerchantId, merchantId).last("FOR UPDATE")); }
+        int balanceChange = balanceChange(account, delta, source);
+        int after = safe(account.getBalance()) + balanceChange;
+        if (after < 0) throw new BusinessException(ErrorCode.POINTS_NOT_ENOUGH);
+        int totalChange = totalChange(account, delta, source);
+        int totalAfter = safe(account.getTotalPoints()) + totalChange;
+        account.setBalance(after);
+        account.setTotalPoints(totalAfter);
+        account.setVersion(safe(account.getVersion()) + 1);
+        accountMapper.updateById(account);
+        updateMemberLevel(userId, merchantId, totalAfter);
+        PointsLedger ledger = new PointsLedger(); ledger.setUserId(userId); ledger.setMerchantId(merchantId); ledger.setChangeValue(balanceChange); ledger.setBalanceAfter(after); ledger.setTotalChange(totalChange); ledger.setTotalPointsAfter(totalAfter); ledger.setSource(source); ledger.setBusinessNo(businessNo); ledger.setRelatedLedgerId(relatedId); ledger.setDescription(description); ledger.setExpireAt(validDays != null && validDays > 0 && delta > 0 ? LocalDateTime.now().plusDays(validDays) : null); ledgerMapper.insert(ledger); return ledger;
+    }
     private void ensureMemberWithoutReward(Long userId, Long merchantId) { if (profileMapper.selectCount(new LambdaQueryWrapper<MemberProfile>().eq(MemberProfile::getUserId,userId).eq(MemberProfile::getMerchantId,merchantId)) == 0) { MemberProfile p=new MemberProfile();p.setUserId(userId);p.setMerchantId(merchantId);p.setStatus(1);p.setJoinedAt(LocalDateTime.now());profileMapper.insert(p); } }
+    private int balanceChange(PointsAccount account, int requestedChange, String source) {
+        if ("REFUND".equals(source)) return Math.max(-safe(account.getBalance()), requestedChange);
+        return requestedChange;
+    }
+    private int totalChange(PointsAccount account, int requestedChange, String source) {
+        int candidate = switch (source) {
+            case "REGISTER", "SIGN_IN", "ORDER_PAY", "LOTTERY_DRAW" -> Math.max(0, requestedChange);
+            case "REFUND" -> Math.min(0, requestedChange);
+            default -> 0;
+        };
+        return Math.max(-safe(account.getTotalPoints()), candidate);
+    }
+    private List<MemberLevel> levelsForMerchant(Long merchantId) { return levelMapper.selectList(new LambdaQueryWrapper<MemberLevel>().eq(MemberLevel::getMerchantId, merchantId).orderByAsc(MemberLevel::getLevelNo)); }
+    private MemberLevel resolveLevel(List<MemberLevel> levels, int totalPoints) { MemberLevel result = null; for (MemberLevel level : levels) { if (safe(level.getMinTotalPoints()) > totalPoints) break; result = level; } return result; }
+    private Integer nextLevelPoints(List<MemberLevel> levels, int currentLevelNo) { return levels.stream().filter(level -> level.getLevelNo() > currentLevelNo).map(MemberLevel::getMinTotalPoints).findFirst().orElse(null); }
+    private void updateMemberLevel(Long userId, Long merchantId, int totalPoints) { MemberProfile profile = profileMapper.selectOne(new LambdaQueryWrapper<MemberProfile>().eq(MemberProfile::getUserId, userId).eq(MemberProfile::getMerchantId, merchantId)); if (profile == null) return; MemberLevel level = resolveLevel(levelsForMerchant(merchantId), totalPoints); int target = level == null ? 1 : level.getLevelNo(); if (!Objects.equals(profile.getLevel(), target)) { profile.setLevel(target); profileMapper.updateById(profile); } }
+    private void recalculateMerchantLevels(Long merchantId, List<MemberLevel> levels) { for (MemberProfile profile : profileMapper.selectList(new LambdaQueryWrapper<MemberProfile>().eq(MemberProfile::getMerchantId, merchantId))) { PointsAccount account = accountMapper.selectOne(new LambdaQueryWrapper<PointsAccount>().eq(PointsAccount::getUserId, profile.getUserId()).eq(PointsAccount::getMerchantId, merchantId)); MemberLevel level = resolveLevel(levels, account == null ? 0 : safe(account.getTotalPoints())); int target = level == null ? 1 : level.getLevelNo(); if (!Objects.equals(profile.getLevel(), target)) { profile.setLevel(target); profileMapper.updateById(profile); } } }
+    private void validateLevels(List<MemberLevelRequest> levels) { if (levels == null || levels.isEmpty()) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "至少配置一个会员等级"); int previous = -1; for (int index = 0; index < levels.size(); index++) { MemberLevelRequest level = levels.get(index); if (level == null || level.getName() == null || level.getName().isBlank() || level.getMinTotalPoints() == null) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "请完整填写会员等级"); if (index == 0 && level.getMinTotalPoints() != 0) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "第一个会员等级必须从 0 积分开始"); if (level.getMinTotalPoints() <= previous) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "等级所需总积分必须递增"); previous = level.getMinTotalPoints(); } }
+    private List<MemberLevelVO> levelVOs(List<MemberLevel> levels) { List<MemberLevelVO> result = new ArrayList<>(); for (int index = 0; index < levels.size(); index++) { MemberLevel item = levels.get(index); MemberLevelVO vo = new MemberLevelVO(); vo.setId(item.getId()); vo.setLevel(item.getLevelNo()); vo.setName(item.getName()); vo.setMinTotalPoints(item.getMinTotalPoints()); vo.setMaxTotalPoints(index + 1 < levels.size() ? levels.get(index + 1).getMinTotalPoints() - 1 : null); result.add(vo); } return result; }
     private PointsRule activeRule(Long merchantId) { PointsRule r = activeRuleOrNull(merchantId); if (r == null) throw new BusinessException(ErrorCode.POINTS_RULE_UNPUBLISHED); return r; }
     private PointsRule activeRuleOrNull(Long merchantId) { return ruleMapper.selectOne(new LambdaQueryWrapper<PointsRule>().eq(PointsRule::getMerchantId, merchantId).eq(PointsRule::getStatus, 1)); }
     private MemberDayActivity latestActivity(Long merchantId) { return memberDayMapper.selectOne(new LambdaQueryWrapper<MemberDayActivity>().eq(MemberDayActivity::getMerchantId, merchantId).orderByDesc(MemberDayActivity::getId)); }

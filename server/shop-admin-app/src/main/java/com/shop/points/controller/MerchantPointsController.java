@@ -16,6 +16,8 @@ public class MerchantPointsController {
  private final PointsMemberService pointsService; private Long merchant(){CurrentUser u=CurrentUserHolder.get();return u==null?null:u.getMerchantId();}
  @GetMapping("/rule") @RequirePermission("merchant:points:view") public ApiResult<PointsRuleRequest> rule(){return ApiResult.success(pointsService.rule(merchant()));}
  @PutMapping("/rule") @RequirePermission("merchant:points:update") public ApiResult<Void> saveRule(@RequestBody @Valid PointsRuleRequest q){pointsService.saveRule(merchant(),q);return ApiResult.success();}
+ @GetMapping("/levels") @RequirePermission("merchant:points:view") public ApiResult<List<MemberLevelVO>> levels(){return ApiResult.success(pointsService.memberLevels(merchant()));}
+ @PutMapping("/levels") @RequirePermission("merchant:points:update") public ApiResult<Void> saveLevels(@RequestBody @Valid List<MemberLevelRequest> q){pointsService.saveMemberLevels(merchant(),q);return ApiResult.success();}
  @GetMapping("/products") @RequirePermission("merchant:points:view") public ApiResult<List<PointsProductVO>> products(){return ApiResult.success(pointsService.merchantProducts(merchant()));}
  @PostMapping("/products") @RequirePermission("merchant:points:update") public ApiResult<Long> create(@RequestBody @Valid PointsProductRequest q){return ApiResult.success(pointsService.saveProduct(merchant(),null,q));}
  @PutMapping("/products/{id}") @RequirePermission("merchant:points:update") public ApiResult<Long> update(@PathVariable Long id,@RequestBody @Valid PointsProductRequest q){return ApiResult.success(pointsService.saveProduct(merchant(),id,q));}

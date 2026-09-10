@@ -41,6 +41,7 @@
         <text>库存 {{ product.totalStock || 0 }}</text>
       </block>
     </view>
+    <view class="service-row"><text>正品保障</text><text>·</text><text>48 小时内发货</text><text>·</text><text>7 天无理由</text></view>
     <view wx:if="{{product.bundle}}" class="bundle-entry" bindtap="openBundle">
       <view class="bundle-entry-copy"><view class="bundle-entry-title">推荐搭配，一起买更省</view><view class="bundle-entry-desc">单买合计 ¥{{product.bundle.originalAmountText}}，套餐立减 ¥{{product.bundle.discountAmountText}}</view></view>
       <image class="icon icon-sm arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" />

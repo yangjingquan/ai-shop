@@ -17,7 +17,7 @@
       <view class="search-btn" bindtap="onSearch">搜索</view>
     </view>
 
-    <swiper class="banner" autoplay circular indicator-dots interval="3000" wx:if="{{banners.length}}">
+    <swiper class="banner" autoplay circular indicator-dots interval="3000" wx:if="{{moduleEnabled.BANNER && banners.length}}">
       <swiper-item wx:for="{{banners}}" wx:key="id">
         <image
           class="banner-img"
@@ -28,7 +28,7 @@
         />
       </swiper-item>
     </swiper>
-    <view class="banner banner-placeholder" wx:else>
+    <view wx:if="{{moduleEnabled.BANNER && !banners.length}}" class="banner banner-placeholder">
       <view class="banner-text">
         <view class="kicker">NEW DROP</view>
         <view class="banner-title">周末潮流<text>\n</text>上新季</view>
@@ -38,27 +38,27 @@
       <view class="shoe"><view class="shoe-line"></view></view>
     </view>
 
-    <view wx:if="{{presaleActivity}}" class="presale-entry" bindtap="onPresale">
+    <view wx:if="{{moduleEnabled.MARKETING_ZONE && presaleActivity}}" class="presale-entry" bindtap="onPresale">
       <view class="presale-entry-copy"><view class="presale-entry-kicker">NEW DROP · PRE-SALE</view><view class="presale-entry-title">{{presaleActivity.name}}</view><view class="presale-entry-desc">定金膨胀 · 尾款更省 · {{presaleActivity.phaseText}}</view></view>
       <view class="presale-entry-price"><text>¥</text>{{presaleActivity.skus[0].depositAmount}}<view>立即预订</view></view>
     </view>
 
-    <view wx:if="{{pointsEntry}}" class="points-entry" bindtap="goPointsMall">
+    <view wx:if="{{moduleEnabled.MARKETING_ZONE && pointsEntry}}" class="points-entry" bindtap="goPointsMall">
       <view class="points-entry-main"><view class="points-entry-kicker">MEMBER POINTS</view><view class="points-entry-value">{{pointsEntry.balance}}<text> 积分</text></view><view class="points-entry-desc">积分商城兑换精选好礼 ›</view></view>
       <view class="points-entry-day" catchtap="goMemberDay"><text>{{pointsEntry.active ? '今日会员日' : '积分会员日'}}</text><text>{{pointsEntry.active ? (pointsEntry.couponReceived ? '专享券已领取' : '去领专享券') : ('每月 ' + pointsEntry.dayOfMonth + ' 日') }} ›</text></view>
     </view>
 
-    <view wx:if="{{fullReductionActivity}}" class="full-reduction-entry" bindtap="onFullReduction">
+    <view wx:if="{{moduleEnabled.MARKETING_ZONE && fullReductionActivity}}" class="full-reduction-entry" bindtap="onFullReduction">
       <view><view class="full-reduction-kicker">BUY MORE, SAVE MORE</view><view class="full-reduction-title">{{fullReductionActivity.name}}</view><view class="full-reduction-rule">{{fullReductionActivity.rule}} · 下单自动优惠</view></view><view class="full-reduction-arrow">›</view>
     </view>
 
-    <view wx:if="{{lotteryActivity}}" class="lottery-entry" bindtap="onLottery">
+    <view wx:if="{{moduleEnabled.MARKETING_ZONE && lotteryActivity}}" class="lottery-entry" bindtap="onLottery">
       <image class="lottery-entry-image" src="{{lotteryActivity.entryImage || '/assets/lottery/blind-box-hero.png'}}" mode="aspectFill" />
       <view class="lottery-entry-copy"><view class="lottery-entry-kicker">DAILY SURPRISE</view><view class="lottery-entry-title">互动抽奖盲盒</view><view class="lottery-entry-desc">登录即可参与 · 每日 {{lotteryActivity.dailyChances || 1}} 次</view></view>
       <view class="lottery-entry-arrow">去抽奖 ›</view>
     </view>
 
-    <view class="categories" wx:if="{{ topCategories.length }}">
+    <view class="categories" wx:if="{{ moduleEnabled.CATEGORY && topCategories.length }}">
       <view
         class="cat"
         wx:for="{{ topCategories }}"
@@ -74,12 +74,38 @@
       </view>
     </view>
 
-    <view class="section-head">
-      <view class="section-title">{{ keyword ? '搜索结果' : '推荐商品' }}</view>
-      <view wx:if="{{ !keyword }}" class="more" bindtap="onMoreRecommend">更多 ›</view>
+    <view wx:if="{{ moduleEnabled.NEW_ARRIVALS && productHighlights.length && !keyword }}" class="section-head arrival-head">
+      <view>
+        <view class="section-title">{{ moduleTitles.NEW_ARRIVALS || '新品速览' }}</view>
+        <view class="section-subtitle">{{ moduleTitles.NEW_ARRIVALS_SUBTITLE || '每天都有新发现' }}</view>
+      </view>
+      <view class="section-note">NEW IN</view>
+    </view>
+    <view wx:if="{{ moduleEnabled.NEW_ARRIVALS && productHighlights.length && !keyword }}" class="arrival-grid">
+      <view
+        class="arrival-card"
+        wx:for="{{ productHighlights }}"
+        wx:key="id"
+        bindtap="onProduct"
+        data-id="{{ item.id }}"
+      >
+        <view class="arrival-badge">NEW</view>
+        <image wx:if="{{ item.mainImage }}" class="arrival-image" src="{{ item.mainImage }}" mode="aspectFit" />
+        <view wx:else class="arrival-visual rec-visual {{ item.visualType }}"></view>
+        <view class="arrival-copy">
+          <view class="arrival-name">{{ item.name }}</view>
+          <view class="arrival-desc">{{ item.subtitle }}</view>
+          <view class="arrival-price">¥{{ item.salePriceText || item.minPrice }}</view>
+        </view>
+      </view>
     </view>
 
-    <scroll-view class="recommend" scroll-x enhanced show-scrollbar="false" wx:if="{{ products.length }}">
+    <view wx:if="{{ moduleEnabled.POPULAR_PRODUCTS && !keyword }}" class="section-head">
+      <view class="section-title">{{ moduleTitles.POPULAR_PRODUCTS || '人气推荐' }}</view>
+      <view class="more" bindtap="onMoreRecommend">更多推荐 ›</view>
+    </view>
+
+    <scroll-view class="recommend" scroll-x enhanced show-scrollbar="false" wx:if="{{ moduleEnabled.POPULAR_PRODUCTS && products.length && !keyword }}">
       <view class="recommend-track">
         <view
           class="rec-card {{ item.cardTone }}"
@@ -95,16 +121,44 @@
         </view>
       </view>
     </scroll-view>
-    <view class="empty-state" wx:elif="{{ !loading }}">
+    <view class="empty-state" wx:elif="{{ !loading && !productFeed.length }}">
       <image class="empty-icon" src="/assets/icons/empty.png" mode="aspectFit" />
       <view class="empty-title">{{ keyword ? '暂无搜索结果' : '暂无推荐商品' }}</view>
     </view>
 
-    <view wx:if="{{ marketingEnabled.GROUP_BUY || (marketingEnabled.SECKILL && seckillSummary) }}" class="section-head deal-head">
+    <view wx:if="{{ (moduleEnabled.PRODUCT_FEED || keyword) && productFeed.length }}" class="section-head feed-head">
+      <view>
+        <view class="section-title">{{ keyword ? '搜索到的好物' : (moduleTitles.PRODUCT_FEED || '逛更多好物') }}</view>
+        <view wx:if="{{ !keyword }}" class="section-subtitle">{{ moduleTitles.PRODUCT_FEED_SUBTITLE || '新品与热销都在这里' }}</view>
+      </view>
+      <view wx:if="{{ !keyword }}" class="more" bindtap="onBrowseAll">全部商品 ›</view>
+    </view>
+    <view wx:if="{{ (moduleEnabled.PRODUCT_FEED || keyword) && productFeed.length }}" class="product-feed">
+      <view
+        class="feed-card"
+        wx:for="{{ productFeed }}"
+        wx:key="id"
+        bindtap="onProduct"
+        data-id="{{ item.id }}"
+      >
+        <view class="feed-image-wrap {{ item.cardTone }}">
+          <image wx:if="{{ item.mainImage }}" class="feed-image" src="{{ item.mainImage }}" mode="aspectFit" />
+          <view wx:else class="feed-visual rec-visual {{ item.visualType }}"></view>
+        </view>
+        <view class="feed-name">{{ item.name }}</view>
+        <view class="feed-desc">{{ item.subtitle }}</view>
+        <view class="feed-price-row">
+          <text class="feed-price">¥{{ item.salePriceText || item.minPrice }}</text>
+          <text wx:if="{{ item.hasOriginalPrice }}" class="feed-original">¥{{ item.originalPriceText }}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{ moduleEnabled.MARKETING_ZONE && (marketingEnabled.GROUP_BUY || (marketingEnabled.SECKILL && seckillSummary)) }}" class="section-head deal-head">
       <view class="section-title">限时会场</view>
       <view class="more">{{seckillSummary ? seckillSummary.sessionName : ''}}</view>
     </view>
-    <view wx:if="{{ marketingEnabled.GROUP_BUY || (marketingEnabled.SECKILL && seckillSummary) }}" class="deal-row {{ marketingEnabled.GROUP_BUY && marketingEnabled.SECKILL && seckillSummary ? 'two-deals' : 'single-deal' }}">
+    <view wx:if="{{ moduleEnabled.MARKETING_ZONE && (marketingEnabled.GROUP_BUY || (marketingEnabled.SECKILL && seckillSummary)) }}" class="deal-row {{ marketingEnabled.GROUP_BUY && marketingEnabled.SECKILL && seckillSummary ? 'two-deals' : 'single-deal' }}">
       <view wx:if="{{ marketingEnabled.GROUP_BUY }}" class="group-card" bindtap="onGroupBuy">
         <view class="deal-title">团购商品</view>
         <view class="deal-desc">N人成团·省更多</view>
@@ -124,7 +178,7 @@
       </view>
     </view>
 
-    <view wx:if="{{referralCampaign}}" class="referral-entry" bindtap="onReferral">
+    <view wx:if="{{moduleEnabled.MARKETING_ZONE && referralCampaign}}" class="referral-entry" bindtap="onReferral">
       <view class="referral-entry-copy"><view class="referral-entry-kicker">SHARE &amp; REWARD</view><view class="referral-entry-title">分享有礼·老带新返券</view><view class="referral-entry-desc">邀请好友首单成功，按阶梯领取店铺券</view></view>
       <view class="referral-entry-arrow">›</view>
     </view>

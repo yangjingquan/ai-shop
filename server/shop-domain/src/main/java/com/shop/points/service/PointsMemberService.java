@@ -15,6 +15,7 @@ public interface PointsMemberService {
  MemberDayActivityVO memberDay(Long userId, Long merchantId);
  Long receiveMemberDayCoupon(Long userId, Long merchantId);
  PointsRuleRequest rule(Long merchantId); void saveRule(Long merchantId, PointsRuleRequest request);
+ List<MemberLevelVO> memberLevels(Long merchantId); void saveMemberLevels(Long merchantId, List<MemberLevelRequest> request);
  List<PointsProductVO> merchantProducts(Long merchantId); Long saveProduct(Long merchantId, Long id, PointsProductRequest request); void deleteProduct(Long merchantId, Long id);
  MemberDayActivityVO merchantMemberDay(Long merchantId); void saveMemberDay(Long merchantId, MemberDayActivityRequest request);
  void rewardPaidOrder(Order order); void rewardLotteryPoints(Long userId, Long merchantId, int points, String businessNo, String description, int validDays); void reverseRefund(Long merchantId, Long userId, String refundNo, BigDecimal amount, String orderNo);

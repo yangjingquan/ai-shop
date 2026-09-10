@@ -1,6 +1,6 @@
 <view class="cart-page page-shell {{items.length === 0 ? 'is-empty' : ''}}">
   <view wx:if="{{items.length > 0}}" class="cart-topbar">
-    <text class="cart-count">共 <text class="cart-count-value">{{itemCount}}</text> 件商品</text>
+    <view><view class="cart-title">购物车</view><text class="cart-count">已选 <text class="cart-count-value">{{itemCount}}</text> 件心仪好物</text></view>
     <button size="mini" class="manage-btn" bindtap="toggleManageMode">{{manageMode ? '完成' : '管理'}}</button>
   </view>
 

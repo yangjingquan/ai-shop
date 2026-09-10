@@ -1,7 +1,7 @@
 .order-list-page {
   min-height: 100vh;
   padding: 22rpx 24rpx 140rpx;
-  background: #f7f4ed;
+  background: #f8f5f0;
   color: #17191f;
 }
 
@@ -65,7 +65,7 @@
   align-items: center;
   justify-content: center;
   color: #fff;
-  background: #ff4b43;
+  background: #ef5523;
   font-size: 24rpx;
   font-weight: 900;
 }
@@ -96,7 +96,7 @@
 .state-text {
   flex: 0 0 auto;
   margin-left: 16rpx;
-  color: #ff4b43;
+  color: #ef5523;
   font-size: 24rpx;
   font-weight: 900;
 }
@@ -104,7 +104,7 @@
 .s0,
 .s1,
 .s2 {
-  color: #ff4b43;
+  color: #ef5523;
 }
 
 .s3,
@@ -112,7 +112,7 @@
   color: #8b8e97;
 }
 
-.group-progress { margin-left: 12rpx; color: #ff6600; font-size: 24rpx; }
+.group-progress { margin-left: 12rpx; color: #ef5523; font-size: 24rpx; }
 .state-text.s5 { color: #f59e0b; }
 .state-text.s6 { color: #16a34a; }
 .state-text.s7 { color: #dc2626; }
@@ -214,7 +214,7 @@
 
 .amount {
   margin-left: 8rpx;
-  color: #ff4b43;
+  color: #ef5523;
   font-size: 30rpx;
   font-weight: 950;
 }
@@ -256,7 +256,7 @@
 
 .btn.primary {
   color: #fff;
-  background: #ff4b43;
+  background: #ef5523;
 }
 
 .btn.dark {
@@ -351,3 +351,16 @@
   color: #9aa0a6;
   font-size: 24rpx;
 }
+
+.order-list-page { padding: 0 20rpx 34rpx; background: #f8f5f0; }
+.order-page-head { padding: 22rpx 4rpx 14rpx; }
+.order-page-title { color: #201f1c; font-size: 40rpx; font-weight: 900; }
+.order-page-subtitle { margin-top: 7rpx; color: #8d8175; font-size: 22rpx; }
+.tabs-scroll { margin: 0 -20rpx; padding: 0 20rpx 14rpx; background: #f8f5f0; }
+.tab-chip { border-radius: 30rpx; border: 1rpx solid #e9e1d8; background: #fff; }
+.tab-chip.active { color: #fff; background: #201f1c; border-color: #201f1c; }
+.order-card { border-radius: 24rpx; box-shadow: none; border: 1rpx solid #eee6dc; }
+.state-text { color: #ef5523; }
+.actions .btn { border-radius: 28rpx; }
+.actions .btn.primary, .actions .btn.dark { background: #201f1c; }
+.empty-card { border-radius: 28rpx; }
