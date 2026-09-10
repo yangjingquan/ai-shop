@@ -2,48 +2,49 @@
   <view class="profile-card">
     <view class="profile-glow profile-glow-left"></view>
     <view class="profile-glow profile-glow-right"></view>
-    <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-      <image class="avatar" src="{{ avatarUrl || '/images/default-avatar.png' }}" mode="aspectFill" />
-      <view class="avatar-badge">
-        <image class="badge-icon" src="/assets/icons/edit-white.png" mode="aspectFit" />
-      </view>
-    </button>
-    <view class="profile-info">
-      <view class="profile-kicker">我的账户</view>
-      <input
-        class="nickname-input"
-        type="nickname"
-        value="{{ nickname }}"
-        placeholder="请输入昵称"
-        placeholder-class="placeholder"
-        bindinput="onNicknameInput"
-        bindblur="onNicknameBlur"
-      />
-      <view
-        wx:if="{{pointsEnabled}}"
-        class="member-tier"
-        hover-class="member-tier-hover"
-        bindtap="goPoints"
-      >
-        <view class="member-tier-mark">V</view>
-        <text class="member-tier-label">会员等级</text>
-        <text class="member-tier-name">{{pointsProfile.levelName || '普通会员'}}</text>
-        <text class="member-tier-level">Lv.{{pointsProfile.level || 1}}</text>
-        <text class="member-tier-arrow">›</text>
-      </view>
-      <view class="phone-state">
-        <view wx:if="{{ phone }}" class="phone-bound">
-          <view class="status-dot"></view>
-          <text>已绑定手机号</text>
+    <view class="profile-main">
+      <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+        <image class="avatar" src="{{ avatarUrl || '/images/default-avatar.png' }}" mode="aspectFill" />
+      </button>
+      <view class="profile-info">
+        <view class="profile-kicker">我的昵称</view>
+        <input
+          class="nickname-input"
+          type="nickname"
+          value="{{ nickname }}"
+          placeholder="请输入昵称"
+          placeholder-class="placeholder"
+          bindinput="onNicknameInput"
+          bindblur="onNicknameBlur"
+        />
+        <view
+          wx:if="{{pointsEnabled}}"
+          class="member-tier"
+          hover-class="member-tier-hover"
+          bindtap="goPoints"
+        >
+          <view class="member-tier-mark">V</view>
+          <text class="member-tier-label">会员等级</text>
+          <text class="member-tier-name">{{pointsProfile.levelName || '普通会员'}}</text>
+          <text class="member-tier-level">Lv.{{pointsProfile.level || 1}}</text>
+          <text class="member-tier-arrow">›</text>
         </view>
-        <button
-          wx:else
-          class="bind-btn"
-          size="mini"
-          open-type="getPhoneNumber"
-          bindgetphonenumber="onGetPhone"
-        >绑定手机号</button>
       </view>
+    </view>
+    <view class="profile-divider"></view>
+    <view class="profile-phone-row">
+      <view wx:if="{{ phone }}" class="phone-bound">
+        <view class="phone-status-icon"></view>
+        <text>已绑定手机号</text>
+      </view>
+      <button
+        wx:else
+        class="bind-btn"
+        size="mini"
+        open-type="getPhoneNumber"
+        bindgetphonenumber="onGetPhone"
+      >绑定手机号</button>
+      <view wx:if="{{ phone }}" class="phone-arrow">›</view>
     </view>
   </view>
 
