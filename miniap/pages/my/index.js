@@ -3,6 +3,7 @@ const notificationApi = require('../../api/notification')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
 const couponApi = require('../../api/coupon')
 const { resolveImageUrl } = require('../../utils/url')
+const { syncTabBar } = require('../../utils/tab-bar')
 
 Page({
   data: {
@@ -19,6 +20,7 @@ Page({
   },
 
   onShow() {
+    syncTabBar(this, 4)
     const phone = wx.getStorageSync('user_phone') || ''
     const nickname = wx.getStorageSync('user_nickname') || ''
     const avatar = wx.getStorageSync('user_avatar') || ''
@@ -33,7 +35,7 @@ Page({
     const featureMap = await marketingCapabilities.load(false).catch(() => ({}))
     const enabled = !!(featureMap.POINTS_MEMBER_DAY && (featureMap.POINTS_MEMBER_DAY.enabled === true || Number(featureMap.POINTS_MEMBER_DAY.enabled) === 1))
     if (!enabled) { this.setData({ pointsEnabled: false, pointsProfile: null }); return }
-    this.setData({ pointsEnabled: true })
+    this.setData({ pointsEnabled: true, pointsProfile: this.data.pointsProfile || {} })
     require('../../api/points').profile().then(res => this.setData({ pointsProfile: res.data || {} })).catch(() => {})
   },
 

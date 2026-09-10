@@ -2,6 +2,7 @@ const cartApi = require('../../api/cart')
 const productApi = require('../../api/product')
 const { resolveImageUrl } = require('../../utils/url')
 const promotionApi = require('../../api/promotion')
+const { syncTabBar } = require('../../utils/tab-bar')
 
 const DELETE_ACTION_WIDTH_RPX = 144
 const OPEN_THRESHOLD_RATIO = 0.5
@@ -38,6 +39,7 @@ Page({
   },
 
   onShow() {
+    syncTabBar(this, 2)
     this.promotionActivitiesPromise = null
     this.loadCart()
     if (!this.data.recommendList.length) {

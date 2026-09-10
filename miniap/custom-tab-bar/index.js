@@ -26,13 +26,17 @@ Component({
       const pages = getCurrentPages()
       const current = pages[pages.length - 1]
       const index = tabs.findIndex((item) => item.pagePath === current?.route)
-      if (index >= 0 && index !== this.data.selected) this.setData({ selected: index })
+      if (index >= 0) this.setSelected(index)
+    },
+    setSelected(index) {
+      if (!Number.isInteger(index) || index < 0 || index >= tabs.length || index === this.data.selected) return
+      this.setData({ selected: index })
     },
     switchTab(event) {
       const index = Number(event.currentTarget.dataset.index)
       const target = tabs[index]
       if (!target || index === this.data.selected) return
-      this.setData({ selected: index })
+      this.setSelected(index)
       wx.switchTab({ url: `/${target.pagePath}` })
     },
   },

@@ -48,6 +48,7 @@ const adminMenus: MenuItem[] = [
 
 const merchantMenus: MenuItem[] = [
   { index: 'merchant', label: '首页', path: '/merchant', desc: '店铺概览', icon: '店', permission: 'merchant:dashboard:view' },
+  { index: 'merchant-members', label: '会员中心', path: '/merchant/members', desc: '会员资料', icon: '会', permission: 'merchant:points:view' },
   { index: 'merchant-profile', label: '店铺信息', path: '/merchant/profile', desc: '资料维护', icon: '铺', permission: 'merchant:profile:view' },
   { index: 'merchant-categories', label: '分类管理', path: '/merchant/categories', desc: '店铺类目', icon: '类', permission: 'merchant:category:view' },
   {

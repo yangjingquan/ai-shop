@@ -12,6 +12,7 @@ const lotteryApi = require('../../api/lottery')
 const presaleApi = require('../../api/presale')
 const auth = require('../../utils/auth')
 const { resolveImageUrl } = require('../../utils/url')
+const { syncTabBar } = require('../../utils/tab-bar')
 
 Page({
   data: {
@@ -38,6 +39,10 @@ Page({
 
   onLoad() {
     this.loadAll()
+  },
+
+  onShow() {
+    syncTabBar(this, 0)
   },
 
   async loadAll() {

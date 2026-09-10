@@ -19,6 +19,18 @@
         bindinput="onNicknameInput"
         bindblur="onNicknameBlur"
       />
+      <view
+        wx:if="{{pointsEnabled}}"
+        class="member-tier"
+        hover-class="member-tier-hover"
+        bindtap="goPoints"
+      >
+        <view class="member-tier-mark">V</view>
+        <text class="member-tier-label">会员等级</text>
+        <text class="member-tier-name">{{pointsProfile.levelName || '普通会员'}}</text>
+        <text class="member-tier-level">Lv.{{pointsProfile.level || 1}}</text>
+        <text class="member-tier-arrow">›</text>
+      </view>
       <view class="phone-state">
         <view wx:if="{{ phone }}" class="phone-bound">
           <view class="status-dot"></view>

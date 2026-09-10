@@ -115,7 +115,7 @@ onMounted(fetchList)
 </script>
 
 <template>
-  <div class="wechat-settings">
+  <div class="page">
     <div class="page-header">
       <div>
         <span class="page-kicker">WECHAT SETTINGS</span>

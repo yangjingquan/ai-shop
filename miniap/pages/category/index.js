@@ -1,6 +1,7 @@
 const categoryApi = require('../../api/category')
 const productApi = require('../../api/product')
 const { resolveImageUrl } = require('../../utils/url')
+const { syncTabBar } = require('../../utils/tab-bar')
 
 Page({
   data: {
@@ -25,6 +26,7 @@ Page({
   },
 
   onShow() {
+    syncTabBar(this, 1)
     const jumpCategoryId = Number(wx.getStorageSync('home_jump_category_id') || 0)
     if (!jumpCategoryId) return
     wx.removeStorageSync('home_jump_category_id')

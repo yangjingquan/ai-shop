@@ -106,6 +106,12 @@ const routes: RouteRecordRaw[] = [
         meta: { roles: ['merchant'], permission: 'merchant:profile:view' },
       },
       {
+        path: 'merchant/members',
+        name: 'MerchantMemberCenter',
+        component: () => import('@/views/merchant/MemberCenter.vue'),
+        meta: { roles: ['merchant'], permission: 'merchant:points:view' },
+      },
+      {
         path: 'merchant/password',
         name: 'MerchantPassword',
         component: () => import('@/views/ChangePassword.vue'),

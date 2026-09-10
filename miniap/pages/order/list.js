@@ -1,6 +1,7 @@
 const orderApi = require('../../api/order')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
 const { resolveImageUrl } = require('../../utils/url')
+const { syncTabBar } = require('../../utils/tab-bar')
 
 const SWIPE_DELETE_WIDTH = 140
 
@@ -18,6 +19,7 @@ Page({
   },
 
   onShow() {
+    syncTabBar(this, 3)
     Promise.all([marketingCapabilities.load(false), orderApi.dictionary()]).then(([, dictionary]) => {
       const groupBuyEnabled = marketingCapabilities.isEnabled('GROUP_BUY')
       const seckillEnabled = marketingCapabilities.isEnabled('SECKILL')

@@ -24,15 +24,15 @@
 }
 
 .tab-icon {
-  width: 44rpx;
-  height: 44rpx;
+  width: 32rpx;
+  height: 32rpx;
   display: block;
 }
 
 .tab-label {
   margin-top: 2rpx;
   color: inherit;
-  font-size: 24rpx;
+  font-size: 22rpx;
   line-height: 30rpx;
   font-weight: 500;
 }
