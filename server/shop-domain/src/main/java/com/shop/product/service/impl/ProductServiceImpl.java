@@ -324,11 +324,7 @@ public class ProductServiceImpl implements ProductService {
                 }
             });
         }
-        if (Integer.valueOf(1).equals(isRecommend)) {
-            q.orderByAsc(Product::getSort).orderByDesc(Product::getId);
-        } else {
-            q.orderByDesc(Product::getSort).orderByDesc(Product::getId);
-        }
+        q.orderByAsc(Product::getSort).orderByAsc(Product::getId);
 
         IPage<Product> pageReq = new Page<>(page, size);
         IPage<Product> result = productMapper.selectPage(pageReq, q);
@@ -366,6 +362,7 @@ public class ProductServiceImpl implements ProductService {
             v.setIsGroupBuy(p.getIsGroupBuy());
             v.setGroupBuyPrice(p.getGroupBuyPrice());
             v.setGroupBuyRequiredCount(p.getGroupBuyRequiredCount());
+            v.setSort(p.getSort());
             v.setCategoryId(p.getCategoryId());
             v.setCategoryName(catNames.get(p.getCategoryId()));
             return v;
@@ -413,6 +410,7 @@ public class ProductServiceImpl implements ProductService {
             v.setAuditedAt(p.getAuditedAt());
             v.setCategoryId(p.getCategoryId());
             v.setCategoryName(catNames.get(p.getCategoryId()));
+            v.setSort(p.getSort());
             return v;
         }).collect(Collectors.toList());
         return PageResult.of(list, result.getTotal(), page, size);
@@ -474,6 +472,46 @@ public class ProductServiceImpl implements ProductService {
             deleteSpecsAndSkus(id);
         }
         productMapper.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public void reorder(List<Long> productIds, Long merchantId) {
+        if (merchantId == null || productIds == null || productIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "商品排序不能为空");
+        }
+
+        Set<Long> requestedIdSet = new HashSet<>(productIds);
+        if (requestedIdSet.size() != productIds.size()) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "商品排序中存在重复商品");
+        }
+
+        List<Product> products = productMapper.selectList(new LambdaQueryWrapper<Product>()
+                .eq(Product::getMerchantId, merchantId)
+                .orderByAsc(Product::getSort)
+                .orderByAsc(Product::getId));
+        Set<Long> merchantProductIds = products.stream().map(Product::getId).collect(Collectors.toSet());
+        if (!merchantProductIds.containsAll(requestedIdSet)) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        // 只替换请求中商品所占的位置，未展示在当前页的商品保持原有相对位置。
+        int requestedIndex = 0;
+        List<Long> reorderedIds = new ArrayList<>(products.size());
+        for (Product product : products) {
+            if (requestedIdSet.contains(product.getId())) {
+                reorderedIds.add(productIds.get(requestedIndex++));
+            } else {
+                reorderedIds.add(product.getId());
+            }
+        }
+
+        for (int i = 0; i < reorderedIds.size(); i++) {
+            productMapper.update(null, new LambdaUpdateWrapper<Product>()
+                    .eq(Product::getId, reorderedIds.get(i))
+                    .eq(Product::getMerchantId, merchantId)
+                    .set(Product::getSort, i * 10));
+        }
     }
 
     // ============== private ==============

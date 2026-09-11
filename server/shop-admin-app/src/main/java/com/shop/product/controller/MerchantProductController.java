@@ -9,6 +9,7 @@ import com.shop.common.security.RequirePermission;
 import com.shop.product.dto.ProductDetailVO;
 import com.shop.product.dto.ProductListVO;
 import com.shop.product.dto.ProductSaveRequest;
+import com.shop.product.dto.ProductSortRequest;
 import com.shop.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,13 @@ public class MerchantProductController {
     @RequirePermission("merchant:product:update")
     public ApiResult<Void> update(@PathVariable Long id, @Valid @RequestBody ProductSaveRequest req) {
         productService.update(id, req, currentMerchantId());
+        return ApiResult.success();
+    }
+
+    @PutMapping("/sort")
+    @RequirePermission("merchant:product:update")
+    public ApiResult<Void> reorder(@Valid @RequestBody ProductSortRequest req) {
+        productService.reorder(req.getProductIds(), currentMerchantId());
         return ApiResult.success();
     }
 

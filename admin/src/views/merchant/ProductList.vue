@@ -12,6 +12,9 @@ const loading = ref(false)
 const list = ref<ProductListVO[]>([])
 const selectedRows = ref<ProductListVO[]>([])
 const total = ref(0)
+const draggingId = ref<number | null>(null)
+const dragOverId = ref<number | null>(null)
+const reorderSaving = ref(false)
 const query = reactive<{
   page: number
   size: number
@@ -82,6 +85,51 @@ function onEdit(row: ProductListVO) {
 
 function onSelectionChange(rows: ProductListVO[]) {
   selectedRows.value = rows
+}
+
+function onDragStart(event: DragEvent, row: ProductListVO) {
+  draggingId.value = row.id
+  dragOverId.value = row.id
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', String(row.id))
+  }
+}
+
+function onDragOver(row: ProductListVO) {
+  if (draggingId.value !== row.id) dragOverId.value = row.id
+}
+
+async function onDrop(row: ProductListVO) {
+  const fromId = draggingId.value
+  const toId = row.id
+  dragOverId.value = null
+  draggingId.value = null
+  if (fromId == null || fromId === toId) return
+
+  const previous = [...list.value]
+  const next = [...list.value]
+  const fromIndex = next.findIndex((item) => item.id === fromId)
+  const toIndex = next.findIndex((item) => item.id === toId)
+  if (fromIndex < 0 || toIndex < 0) return
+  const [moved] = next.splice(fromIndex, 1)
+  next.splice(toIndex, 0, moved)
+  list.value = next
+  reorderSaving.value = true
+  try {
+    await productApi.reorder(next.map((item) => item.id))
+    ElMessage.success('商品排序已保存')
+  } catch {
+    list.value = previous
+    ElMessage.error('商品排序保存失败，请刷新后重试')
+  } finally {
+    reorderSaving.value = false
+  }
+}
+
+function onDragEnd() {
+  draggingId.value = null
+  dragOverId.value = null
 }
 
 async function onBatchSetStatus(status: number) {
@@ -266,8 +314,25 @@ onMounted(async () => {
         <span v-if="selectedCount" class="selection-tip">已选 {{ selectedCount }} 个</span>
       </div>
 
-      <el-table v-loading="loading" :data="list" stripe @selection-change="onSelectionChange">
+      <el-table v-loading="loading || reorderSaving" :data="list" stripe @selection-change="onSelectionChange">
         <el-table-column type="selection" width="48" />
+        <el-table-column label="排序" width="76" align="center">
+          <template #default="{ row }">
+            <span
+              v-permission="'merchant:product:update'"
+              class="drag-handle"
+              :class="{ 'is-drag-over': dragOverId === (row as ProductListVO).id }"
+              draggable="true"
+              title="拖动调整排序"
+              @dragstart="onDragStart($event, row as ProductListVO)"
+              @dragover.prevent="onDragOver(row as ProductListVO)"
+              @drop.prevent="onDrop(row as ProductListVO)"
+              @dragend="onDragEnd"
+            >
+              ⋮⋮
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column label="主图" width="80">
           <template #default="{ row }">
@@ -382,6 +447,25 @@ onMounted(async () => {
 .selection-tip {
   color: var(--shop-text-2);
   font-size: 13px;
+}
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  color: var(--shop-text-2);
+  cursor: grab;
+  user-select: none;
+  border-radius: 6px;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+.drag-handle:hover,
+.drag-handle.is-drag-over {
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
 }
 .price-cell {
   line-height: 1.35;

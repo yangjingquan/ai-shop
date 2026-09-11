@@ -20,6 +20,7 @@ export interface ProductListVO {
   auditedAt?: string | null
   isRecommend?: number
   isGroupBuy?: number
+  sort?: number
   groupBuyPrice?: number | null
   groupBuyRequiredCount?: number | null
   categoryId: number
@@ -146,6 +147,8 @@ export const productApi = {
     }),
   remove: (id: number) =>
     request.delete<unknown, void>(`/api/merchant/products/${id}`),
+  reorder: (productIds: number[]) =>
+    request.put<unknown, void>('/api/merchant/products/sort', { productIds }),
 }
 
 export const adminProductApi = {

@@ -42,6 +42,8 @@ public class ProductListVO {
 
     private Integer isGroupBuy;
 
+    private Integer sort;
+
     private BigDecimal groupBuyPrice;
 
     private Integer groupBuyRequiredCount;

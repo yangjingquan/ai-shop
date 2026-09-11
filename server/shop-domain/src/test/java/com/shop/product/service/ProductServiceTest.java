@@ -242,6 +242,22 @@ class ProductServiceTest {
     }
 
     @Test
+    void reorderProductsUsesSortAscending() {
+        Long cid = createCategory();
+        Long firstId = productService.create(sample(cid, "M3T 排序一"), M_A);
+        Long secondId = productService.create(sample(cid, "M3T 排序二"), M_A);
+        Long thirdId = productService.create(sample(cid, "M3T 排序三"), M_A);
+
+        productService.reorder(List.of(thirdId, firstId, secondId), M_A);
+
+        PageResult<ProductListVO> result = productService.page(1, 20, M_A, cid, null, null, null, null, null);
+        assertEquals(List.of(thirdId, firstId, secondId), result.getList().stream()
+                .map(ProductListVO::getId)
+                .toList());
+        assertEquals(0, result.getList().get(0).getSort());
+    }
+
+    @Test
     void crossMerchantBlocked() {
         Long cid = createCategory();
         Long pid = productService.create(sample(cid), M_A);

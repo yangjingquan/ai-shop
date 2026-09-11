@@ -20,7 +20,11 @@ const roleLabel = computed(() =>
   userStore.role === 'admin' ? '运营管理员' : userStore.merchantName || '商家账号',
 )
 
-const currentUserLabel = computed(() => userStore.username || roleLabel.value)
+const currentUserLabel = computed(() =>
+  userStore.role === 'merchant'
+    ? userStore.merchantName || '商家账号'
+    : userStore.username || roleLabel.value,
+)
 
 interface MenuItem {
   index: string

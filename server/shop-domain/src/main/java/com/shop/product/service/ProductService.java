@@ -5,6 +5,8 @@ import com.shop.product.dto.ProductDetailVO;
 import com.shop.product.dto.ProductListVO;
 import com.shop.product.dto.ProductSaveRequest;
 
+import java.util.List;
+
 public interface ProductService {
 
     Long create(ProductSaveRequest req, Long merchantId);
@@ -39,6 +41,9 @@ public interface ProductService {
     void setStatus(Long id, int status, Long merchantId);
 
     void delete(Long id, Long merchantId);
+
+    /** 按商户后台当前列表中的顺序重新排列商品。 */
+    void reorder(List<Long> productIds, Long merchantId);
 
     /**
      * 重算 product 的 min_price / max_price / total_stock。
