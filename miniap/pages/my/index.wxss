@@ -158,7 +158,7 @@
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   width: 100%;
   min-height: 82rpx;
   padding: 14rpx 24rpx 18rpx;
@@ -203,6 +203,7 @@
 }
 
 .phone-arrow {
+  margin-left: auto;
   color: #a6978b;
   font-size: 34rpx;
   font-weight: 400;
@@ -210,15 +211,25 @@
 }
 
 .bind-btn {
-  width: auto;
+  flex: 0 0 auto;
+  width: 196rpx;
   height: 48rpx;
   margin: 0;
-  padding: 0 18rpx;
-  border: 1rpx solid #f3b794;
+  padding: 0;
+  border: 2rpx solid #f3a57c;
   border-radius: 24rpx;
-  background: #fff8f3;
-  color: #d94c1e;
-  font-size: 22rpx;
+  background: rgba(255, 248, 243, 0.94);
+  color: #e25425;
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 44rpx;
+  text-align: center;
+}
+
+.bind-btn-hover {
+  background: #ffede3;
+  opacity: 0.88;
+  transform: scale(0.98);
 }
 
 .points-card {

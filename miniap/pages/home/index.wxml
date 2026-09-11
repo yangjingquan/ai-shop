@@ -53,7 +53,7 @@
     </view>
 
     <view wx:if="{{moduleEnabled.MARKETING_ZONE && lotteryActivity}}" class="lottery-entry" bindtap="onLottery">
-      <image class="lottery-entry-image" src="{{lotteryActivity.entryImage || '/assets/lottery/blind-box-hero.png'}}" mode="aspectFill" />
+      <image class="lottery-entry-image" src="{{lotteryActivity.entryImage || '/assets/lottery/blind-box-hero.jpg'}}" mode="aspectFill" />
       <view class="lottery-entry-copy"><view class="lottery-entry-kicker">DAILY SURPRISE</view><view class="lottery-entry-title">互动抽奖盲盒</view><view class="lottery-entry-desc">登录即可参与 · 每日 {{lotteryActivity.dailyChances || 1}} 次</view></view>
       <view class="lottery-entry-arrow">去抽奖 ›</view>
     </view>

@@ -18,6 +18,7 @@ import com.shop.user.service.WxApiClient;
 import com.shop.user.service.WxPhoneApiClient;
 import com.shop.points.service.PointsMemberService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     private static final Pattern PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
@@ -112,18 +114,24 @@ public class UserServiceImpl implements UserService {
     public String bindPhone(Long userId, Long merchantId, String code) {
         Merchant merchant = merchantMapper.selectById(merchantId);
         if (merchant == null) {
+            log.warn("bind phone failed: merchant not found, merchantId={}, userId={}", merchantId, userId);
             throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
         MerchantWechatConfig config = merchantWechatConfigService.getRequiredByMerchantId(merchantId);
         if (!hasText(config.getWxAppId()) || !hasText(config.getWxSecret())) {
+            log.warn("bind phone failed: wx config incomplete, merchantId={}, userId={}, appidConfigured={}, secretConfigured={}",
+                    merchantId, userId, hasText(config.getWxAppId()), hasText(config.getWxSecret()));
             throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
         String phone = wxPhoneApiClient.code2Phone(config.getWxAppId(), config.getWxSecret(), code);
         if (phone == null || !PHONE_PATTERN.matcher(phone).matches()) {
+            log.warn("bind phone failed: invalid phone returned by wx, merchantId={}, userId={}, phonePresent={}, phoneLength={}",
+                    merchantId, userId, hasText(phone), phone == null ? 0 : phone.length());
             throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
         User user = userMapper.selectById(userId);
         if (user == null) {
+            log.warn("bind phone failed: user not found, merchantId={}, userId={}", merchantId, userId);
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         // 已绑定时保持幂等，避免用户重复点击绑定失败。
@@ -135,6 +143,8 @@ public class UserServiceImpl implements UserService {
             new LambdaQueryWrapper<User>().eq(User::getPhone, phone)
         );
         if (existing != null && !existing.getId().equals(userId)) {
+            log.warn("bind phone failed: phone already belongs to another user, merchantId={}, userId={}, existingUserId={}",
+                    merchantId, userId, existing.getId());
             throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
         user.setPhone(phone);

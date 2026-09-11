@@ -40,7 +40,7 @@
       <button
         wx:else
         class="bind-btn"
-        size="mini"
+        hover-class="bind-btn-hover"
         open-type="getPhoneNumber"
         bindgetphonenumber="onGetPhone"
       >绑定手机号</button>

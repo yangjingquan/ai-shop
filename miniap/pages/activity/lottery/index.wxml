@@ -1,6 +1,6 @@
 <view class="lottery-page">
   <view wx:if="{{activity}}" class="lottery-hero">
-    <image class="hero-image" src="{{activity.themeImage || '/assets/lottery/blind-box-hero.png'}}" mode="aspectFill" />
+    <image class="hero-image" src="{{activity.themeImage || '/assets/lottery/blind-box-hero.jpg'}}" mode="aspectFill" />
     <view class="hero-shade"></view>
     <view class="hero-copy"><view class="hero-kicker">TRANSPARENT RULES · DAILY SURPRISE</view><view class="hero-title">{{activity.name || '互动抽奖盲盒'}}</view><view class="hero-subtitle">低成本参与，每日都有惊喜</view></view>
   </view>
@@ -12,5 +12,5 @@
     <view class="notice">中奖后可在“我的奖品”查看；实物奖品支持抽奖后或稍后填写地址</view>
   </view>
   <view wx:if="{{ruleVisible}}" class="mask" catchtap="hideRules"><view class="rule-dialog" catchtap="noop"><view class="dialog-title">活动规则</view><scroll-view scroll-y class="dialog-scroll"><text>{{activity.ruleText || '每位用户每日可参与抽奖，奖品概率以页面公示为准。活动结束后未使用的抽奖机会失效。'}}</text></scroll-view><button class="outline-btn" bindtap="hideRules">知道了</button></view></view>
-  <view wx:if="{{drawing}}" class="draw-overlay" catchtap="noop"><view class="draw-panel {{drawPhase}}"><view class="draw-orbit orbit-one"></view><view class="draw-orbit orbit-two"></view><image class="draw-box" src="{{activity.themeImage || '/assets/lottery/blind-box-hero.png'}}" mode="aspectFit"/><view class="draw-message">{{drawMessage}}</view><view class="draw-tip">好运正在靠近</view></view></view>
+  <view wx:if="{{drawing}}" class="draw-overlay" catchtap="noop"><view class="draw-panel {{drawPhase}}"><view class="draw-orbit orbit-one"></view><view class="draw-orbit orbit-two"></view><image class="draw-box" src="{{activity.themeImage || '/assets/lottery/blind-box-hero.jpg'}}" mode="aspectFit"/><view class="draw-message">{{drawMessage}}</view><view class="draw-tip">好运正在靠近</view></view></view>
 </view>

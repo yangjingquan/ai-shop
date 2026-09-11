@@ -38,6 +38,13 @@ Page({
   },
 
   onLoad() {
+    try {
+      const accountInfo = wx.getAccountInfoSync()
+      console.log('[home] wx.getAccountInfoSync().miniProgram.appId =',
+        accountInfo && accountInfo.miniProgram && accountInfo.miniProgram.appId || '')
+    } catch (err) {
+      console.warn('[home] failed to read miniProgram.appId:', err)
+    }
     this.loadAll()
   },
 

@@ -25,7 +25,7 @@
     <view class="points-action"><text>去兑换</text><text class="action-arrow">›</text></view>
   </view>
 
-  <view wx:if="{{lotteryActivity}}" class="lottery-entry card" bindtap="goLottery"><image class="lottery-entry-image" src="{{lotteryActivity.entryImage || '/assets/lottery/blind-box-hero.png'}}" mode="aspectFill" /><view class="lottery-entry-copy"><view class="lottery-entry-kicker">DAILY SURPRISE</view><view class="lottery-entry-title">抽一次互动盲盒</view><view class="lottery-entry-desc">今日还有 {{lotteryActivity.dailyChances || 1}} 次机会</view></view><view class="lottery-entry-arrow">去参与 ›</view></view>
+  <view wx:if="{{lotteryActivity}}" class="lottery-entry card" bindtap="goLottery"><image class="lottery-entry-image" src="{{lotteryActivity.entryImage || '/assets/lottery/blind-box-hero.jpg'}}" mode="aspectFill" /><view class="lottery-entry-copy"><view class="lottery-entry-kicker">DAILY SURPRISE</view><view class="lottery-entry-title">抽一次互动盲盒</view><view class="lottery-entry-desc">今日还有 {{lotteryActivity.dailyChances || 1}} 次机会</view></view><view class="lottery-entry-arrow">去参与 ›</view></view>
 
   <view wx:if="{{campaign}}" class="invite-card card">
     <view class="invite-heading">

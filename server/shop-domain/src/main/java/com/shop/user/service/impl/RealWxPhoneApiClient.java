@@ -50,13 +50,16 @@ public class RealWxPhoneApiClient implements WxPhoneApiClient {
             throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
         JSONObject phoneInfo = json.getJSONObject("phone_info");
-        String phone = phoneInfo == null ? null : phoneInfo.getStr("phoneNumber");
+        // phoneNumber 可能带国家/地区码，绑定国内手机号时优先使用不带区号的字段。
+        String phone = phoneInfo == null ? null : firstText(
+                phoneInfo.getStr("purePhoneNumber"),
+                phoneInfo.getStr("phoneNumber"));
         if (phone == null || phone.isBlank()) {
             log.warn("wx getuserphonenumber missing phoneNumber, appid={}, errcode={}, errmsg={}",
                     maskAppid(appid), json.getInt("errcode"), json.getStr("errmsg"));
             throw new BusinessException(ErrorCode.BIND_PHONE_FAILED);
         }
-        return phone;
+        return phone.trim();
     }
 
     private String getAccessToken(String appid, String secret) {
@@ -87,5 +90,12 @@ public class RealWxPhoneApiClient implements WxPhoneApiClient {
             return "****";
         }
         return appid.substring(0, 4) + "****" + appid.substring(appid.length() - 4);
+    }
+
+    private String firstText(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first;
+        }
+        return second;
     }
 }
