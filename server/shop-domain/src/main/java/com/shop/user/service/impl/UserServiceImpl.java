@@ -85,6 +85,7 @@ public class UserServiceImpl implements UserService {
         boolean isNewUser = (user == null);
         if (isNewUser) {
             user = new User();
+            user.setMerchantId(merchant.getId());
             user.setOpenid(openid);
             user.setLastLoginAt(LocalDateTime.now());
             userMapper.insert(user);

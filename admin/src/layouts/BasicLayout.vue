@@ -35,6 +35,7 @@ interface MenuItem {
 const adminMenus: MenuItem[] = [
   { index: 'admin', label: '首页', path: '/admin', desc: '经营概览', icon: '店' },
   { index: 'admin-merchants', label: '商家管理', path: '/admin/merchants', desc: '入驻与状态', icon: '商' },
+  { index: 'admin-users', label: '用户管理', path: '/admin/users', desc: '用户查询', icon: '用' },
   { index: 'admin-categories', label: '平台分类', path: '/admin/categories', desc: '类目层级', icon: '类' },
   { index: 'admin-orders', label: '平台订单', path: '/admin/orders', desc: '订单监控', icon: '单' },
   { index: 'admin-payments', label: '支付管理', path: '/admin/payments', desc: '流水与对账', icon: '支' },

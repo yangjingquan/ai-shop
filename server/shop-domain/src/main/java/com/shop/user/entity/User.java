@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("`user`")
 public class User extends BaseEntity {
+    private Long merchantId;
     private String openid;
     private String unionid;
     private String nickname;
