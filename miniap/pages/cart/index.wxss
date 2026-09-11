@@ -649,7 +649,7 @@ page {
   }
 }
 
-.cart-page { padding: 16rpx 20rpx 174rpx; background: #f8f5f0; }
+.cart-page { padding: 16rpx 20rpx calc(240rpx + env(safe-area-inset-bottom)); background: #f8f5f0; }
 .cart-topbar { height: 94rpx; padding: 0 6rpx; }
 .cart-title { color: #201f1c; font-size: 38rpx; line-height: 1.1; font-weight: 900; }
 .cart-count { display: block; margin-top: 7rpx; color: #8d8175; font-size: 21rpx; }
@@ -664,7 +664,7 @@ page {
 .promotion-section { border-radius: 24rpx; border: 1rpx solid #f5cfb7; box-shadow: none; }
 .guess-section { margin-top: 26rpx; }
 .guess-card { border-radius: 20rpx; box-shadow: none; border: 1rpx solid #eee6dc; }
-.bottom-bar { padding: 16rpx 20rpx calc(16rpx + env(safe-area-inset-bottom)); border-top-color: #eee6dc; }
+.bottom-bar { bottom: calc(112rpx + env(safe-area-inset-bottom)); padding: 16rpx 20rpx; border-top-color: #eee6dc; }
 .total-label { color: #8d8175; }
 .total { color: #ef5523; font-weight: 900; }
 .checkout-btn { border-radius: 40rpx !important; background: linear-gradient(100deg, #f4511e, #ff7a1a) !important; }

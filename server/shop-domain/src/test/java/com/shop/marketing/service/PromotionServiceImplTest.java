@@ -122,6 +122,18 @@ class PromotionServiceImplTest {
     }
 
     @Test
+    void disabledMarketingReturnsNormalOrderWithoutPromotion() {
+        when(marketingFeatureService.isEnabled(2L, MarketingActivityCode.FULL_REDUCTION)).thenReturn(false);
+
+        PromotionCheckoutResult result = service().calculate(2L, items("2.00"));
+
+        assertThat(result.getActivityId()).isNull();
+        assertThat(result.getDiscountAmount()).isEqualByComparingTo("0");
+        assertThat(result.getProgresses()).isEmpty();
+        verifyNoInteractions(activityMapper, thresholdMapper, scopeMapper);
+    }
+
+    @Test
     void recalculatingBelowThresholdForRefundKeepsDiscountAtZero() {
         when(activityMapper.selectById(2L)).thenReturn(activity(2L, "FULL_DISCOUNT", 10));
         stubPromotionDetails();

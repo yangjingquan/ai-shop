@@ -439,6 +439,8 @@ public class ReferralServiceImpl implements ReferralService {
         if (inviteeTemplate != null) {
             vo.setInviteeCouponName(inviteeTemplate.getName());
             vo.setInviteeCouponAmount(inviteeTemplate.getAmount() == null ? "0.00" : inviteeTemplate.getAmount().setScale(2).toPlainString());
+            vo.setInviteeCouponThresholdAmount(inviteeTemplate.getThresholdAmount() == null ? "0.00" : inviteeTemplate.getThresholdAmount().setScale(2).toPlainString());
+            vo.setInviteeCouponValidityDays(inviteeTemplate.getValidityDays());
         }
         List<ReferralTierRequest> tiers = tiers(campaign);
         Map<Integer, ReferralReward> rewarded = userId == null ? Map.of() : rewardMapper.selectList(new LambdaQueryWrapper<ReferralReward>()

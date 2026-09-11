@@ -18,6 +18,8 @@ public class ReferralCampaignVO {
     private Long inviteeCouponTemplateId;
     private String inviteeCouponName;
     private String inviteeCouponAmount;
+    private String inviteeCouponThresholdAmount;
+    private Integer inviteeCouponValidityDays;
     private List<ReferralTierVO> tiers;
     private LocalDateTime startAt;
     private LocalDateTime endAt;

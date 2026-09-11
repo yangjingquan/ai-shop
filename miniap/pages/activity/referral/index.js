@@ -65,7 +65,7 @@ Page({
     const token = campaign.shareToken || this.data.token || ''
     return {
       title: campaign.shareTitle || '邀请好友，双方都能得券',
-      path: `/pages/activity/referral/index?campaignId=${this.data.campaignId}&token=${token}`,
+      path: `/pages/home/index?campaignId=${this.data.campaignId}&token=${encodeURIComponent(token)}`,
     }
   },
 

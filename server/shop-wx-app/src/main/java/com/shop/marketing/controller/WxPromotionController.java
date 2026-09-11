@@ -52,7 +52,6 @@ public class WxPromotionController {
     public ApiResult<PromotionCheckoutResult> cartProgress(@RequestBody @Valid PromotionCartProgressRequest request,
                                                             HttpServletRequest servletRequest) {
         Long merchantId = wxMerchantResolver.requireActiveMerchant(servletRequest);
-        marketingFeatureService.assertEnabled(merchantId, MarketingActivityCode.FULL_REDUCTION);
         List<CartItem> cartItems = cartItemMapper.selectBatchIds(request.getCartItemIds());
         if (cartItems.size() != request.getCartItemIds().size() || cartItems.stream().anyMatch(item -> !CurrentUserHolder.get().getUserId().equals(item.getUserId()) || !merchantId.equals(item.getMerchantId()))) {
             throw new BusinessException(ErrorCode.CART_ITEM_NOT_OWNED);

@@ -37,7 +37,14 @@ Page({
     presaleActivity: null,
   },
 
-  onLoad() {
+  onLoad(options) {
+    const app = getApp()
+    const query = options || {}
+    const campaignId = Number(query.campaignId || 0)
+    const token = String(query.token || '').trim()
+    this.referralShareContext = campaignId > 0 && token
+      ? { campaignId, token }
+      : app.globalData.referralShareContext
     try {
       const accountInfo = wx.getAccountInfoSync()
       console.log('[home] wx.getAccountInfoSync().miniProgram.appId =',
@@ -50,6 +57,12 @@ Page({
 
   onShow() {
     syncTabBar(this, 0)
+    const app = getApp()
+    const context = this.referralShareContext || app.globalData.referralShareContext
+    if (context && this.data.marketingEnabled.REFERRAL && !this.data.loading) {
+      this.referralShareContext = context
+      this.loadReferralInviteeCoupon(true)
+    }
   },
 
   async loadAll() {
@@ -89,7 +102,8 @@ Page({
       const moduleState = this.buildModuleState(homeData.modules || [], list)
       this.setData({ banners, topCategories: top, ...moduleState, marketingEnabled })
       this.loadSeckillSummary(marketingEnabled.SECKILL)
-      this.loadNewUserCoupon(marketingEnabled)
+      const referralHandled = await this.loadReferralInviteeCoupon(marketingEnabled.REFERRAL)
+      if (!referralHandled) this.loadNewUserCoupon(marketingEnabled)
       this.loadReferralCampaign(marketingEnabled.REFERRAL)
       this.loadPointsEntry(marketingEnabled.POINTS_MEMBER_DAY)
       this.loadFullReduction(marketingEnabled.FULL_REDUCTION)
@@ -252,9 +266,51 @@ Page({
     }
   },
 
+  async loadReferralInviteeCoupon(enabled) {
+    const app = getApp()
+    const context = this.referralShareContext || app.globalData.referralShareContext
+    if (!enabled || !context || !context.campaignId || !context.token) return false
+    if (app.globalData.newUserCouponPopupShown) return true
+    if (this.data.newUserCoupon) return true
+    if (this.referralInviteeCouponPromise) return this.referralInviteeCouponPromise
+
+    this.referralInviteeCouponPromise = (async () => {
+      try {
+        await auth.silentLogin()
+        const res = await referralApi.campaign(context.campaignId, context.token)
+        let campaign = res && res.data
+        if (!campaign || !campaign.id || !campaign.invitee) return false
+        // 已领取、老用户或活动未配置新人券时，不再回退弹出通用新人券。
+        if (campaign.oldUser || campaign.inviteeCouponId || !campaign.inviteeCouponTemplateId) return true
+
+        const bindRes = await referralApi.bind(context.campaignId, context.token)
+        campaign = (bindRes && bindRes.data) || campaign
+        if (campaign.canClaimInviteeCoupon && campaign.inviteeCouponTemplateId && !campaign.inviteeCouponId) {
+          this.setData({ newUserCoupon: {
+            source: 'REFERRAL',
+            referralCampaignId: Number(campaign.id),
+            templateId: Number(campaign.inviteeCouponTemplateId),
+            amount: campaign.inviteeCouponAmount || '0.00',
+            name: campaign.inviteeCouponName || '新人专享券',
+            thresholdAmount: campaign.inviteeCouponThresholdAmount || '0.00',
+            validityDays: campaign.inviteeCouponValidityDays || 30,
+          } })
+        }
+        return true
+      } catch (_) {
+        return false
+      } finally {
+        this.referralInviteeCouponPromise = null
+      }
+    })()
+    return this.referralInviteeCouponPromise
+  },
+
   closeNewUserCoupon() {
     const app = getApp()
     app.globalData.newUserCouponPopupShown = true
+    app.globalData.referralShareContext = null
+    this.referralShareContext = null
     this.setData({ newUserCoupon: null })
   },
 
@@ -272,9 +328,14 @@ Page({
   claimNewUserCoupon() {
     const coupon = this.data.newUserCoupon
     if (!coupon || !coupon.templateId) return
-    couponApi.receive(coupon.templateId).then(() => {
+    const receiveRequest = coupon.source === 'REFERRAL'
+      ? referralApi.claim(coupon.referralCampaignId)
+      : couponApi.receive(coupon.templateId)
+    receiveRequest.then(() => {
       const app = getApp()
       app.globalData.newUserCouponPopupShown = true
+      app.globalData.referralShareContext = null
+      this.referralShareContext = null
       this.setData({ newUserCoupon: null })
       wx.showToast({ title: '新人券已领取', icon: 'success' })
       setTimeout(() => wx.navigateTo({ url: '/pages/coupon/list' }), 500)
