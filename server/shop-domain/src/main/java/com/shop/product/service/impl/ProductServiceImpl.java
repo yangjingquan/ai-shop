@@ -597,8 +597,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Set<String> resolveSelectedGroupBuySkuTexts(Product product, List<Long> selectedIds) {
-        if (!Integer.valueOf(1).equals(product.getIsGroupBuy())
-                || selectedIds == null || selectedIds.isEmpty()) {
+        // 适用 SKU 可以在“普通商品 -> 团购商品”的同一次编辑中首次配置。
+        // 这里不能依据数据库中的旧团购开关判断，否则旧商品还是普通商品时，
+        // 会丢掉本次提交的 SKU 选择，重建 SKU 后 refreshGroupBuySkuScope 找不到任何匹配项。
+        if (selectedIds == null || selectedIds.isEmpty()) {
             return Set.of();
         }
         List<ProductSku> activeSkus = skuMapper.selectList(new LambdaQueryWrapper<ProductSku>()

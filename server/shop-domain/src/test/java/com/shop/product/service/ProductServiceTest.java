@@ -196,6 +196,33 @@ class ProductServiceTest {
     }
 
     @Test
+    void enablingGroupBuyCanSelectSkuDuringSameUpdate() {
+        Long cid = createCategory();
+        Long pid = productService.create(sample(cid), M_A);
+        ProductDetailVO before = productService.get(pid, M_A);
+        Long selectedSkuId = before.getSkus().get(0).getId();
+        String selectedSpecText = before.getSkus().get(0).getSpecText();
+
+        ProductSaveRequest edit = sample(cid, "M3T 普通商品改团购");
+        edit.setIsGroupBuy(1);
+        edit.setGroupBuyPrice(new BigDecimal("6999.00"));
+        edit.setGroupBuyRequiredCount(2);
+        edit.setGroupBuySkuIds(List.of(selectedSkuId));
+
+        productService.update(pid, edit, M_A);
+
+        ProductDetailVO after = productService.get(pid, M_A);
+        assertEquals(1, after.getIsGroupBuy());
+        assertEquals(1, after.getGroupBuySkuIds().size());
+        assertEquals(selectedSpecText,
+                after.getSkus().stream()
+                        .filter(sku -> after.getGroupBuySkuIds().contains(sku.getId()))
+                        .findFirst()
+                        .orElseThrow()
+                        .getSpecText());
+    }
+
+    @Test
     void merchantAuditAllowsListingAndEditingKeepsProductOnSale() {
         Long cid = createCategory();
         Long pid = productService.create(sample(cid), M_A);
