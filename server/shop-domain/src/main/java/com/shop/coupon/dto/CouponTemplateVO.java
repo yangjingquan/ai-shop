@@ -25,6 +25,7 @@ public class CouponTemplateVO {
     private List<Long> scopeIds;
     private Integer newUserOnly;
     private String issueScene;
+    private List<String> purposeCodes;
     private Integer repurchaseTargetType;
     private List<Long> repurchaseTargetIds;
     private BigDecimal repurchaseMinOrderAmount;

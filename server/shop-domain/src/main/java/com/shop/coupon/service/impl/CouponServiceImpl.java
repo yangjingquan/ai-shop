@@ -11,6 +11,7 @@ import com.shop.coupon.entity.UserCoupon;
 import com.shop.coupon.enums.CouponTemplateStatus;
 import com.shop.coupon.enums.CouponTemplateType;
 import com.shop.coupon.enums.CouponIssueScene;
+import com.shop.coupon.enums.CouponPurpose;
 import com.shop.coupon.enums.UserCouponStatus;
 import com.shop.coupon.mapper.CouponTemplateMapper;
 import com.shop.coupon.mapper.UserCouponMapper;
@@ -56,6 +57,7 @@ public class CouponServiceImpl implements CouponService {
         request.setName("新人首单券"); request.setAmount(new BigDecimal("20.00"));
         request.setThresholdAmount(new BigDecimal("99.00")); request.setTotalStock(0);
         request.setPerUserLimit(1); request.setValidityDays(30); request.setScopeType(SCOPE_ALL);
+        request.setPurposeCodes(List.of(CouponPurpose.NEW_USER_FIRST_ORDER));
         request.setExcludeActivityGoods(1); request.setStackable(0); request.setStatus(CouponTemplateStatus.ACTIVE.getCode());
         createTemplate(merchantId, request);
     }
@@ -146,19 +148,31 @@ public class CouponServiceImpl implements CouponService {
         if (hasSuccessfulOrder(userId, merchantId)) {
             throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "当前用户不符合新人资格");
         }
-        return issueTemplateInternal(userId, merchantId, templateId, true, CouponIssueScene.NEW_USER, null).getCouponId();
+        return issueTemplateInternal(userId, merchantId, templateId, true, CouponIssueScene.NEW_USER, null,
+                false, CouponPurpose.NEW_USER_FIRST_ORDER).getCouponId();
     }
 
     @Override
     @Transactional
     public Long issueTemplate(Long userId, Long merchantId, Long templateId) {
-        return issueTemplateInternal(userId, merchantId, templateId, false, CouponIssueScene.NEW_USER, null).getCouponId();
+        return issueTemplateForPurpose(userId, merchantId, templateId, CouponPurpose.MARKETING_REWARD);
+    }
+
+    @Override
+    @Transactional
+    public Long issueTemplateForPurpose(Long userId, Long merchantId, Long templateId, String purpose) {
+        if (!CouponPurpose.isSupported(purpose)) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "优惠券用途不合法");
+        }
+        return issueTemplateInternal(userId, merchantId, templateId, false, CouponIssueScene.NEW_USER, null,
+                false, purpose).getCouponId();
     }
 
     @Override
     @Transactional
     public Long issueTemplateForPoints(Long userId, Long merchantId, Long templateId) {
-        return issueTemplateInternal(userId, merchantId, templateId, false, CouponIssueScene.NEW_USER, null, true).getCouponId();
+        return issueTemplateInternal(userId, merchantId, templateId, false, CouponIssueScene.NEW_USER, null,
+                true, CouponPurpose.MARKETING_REWARD).getCouponId();
     }
 
     @Override
@@ -193,11 +207,12 @@ public class CouponServiceImpl implements CouponService {
 
     private RepurchaseIssueResult issueTemplateInternal(Long userId, Long merchantId, Long templateId, boolean requireNewUser,
                                                         String expectedScene, String sourceOrderNo) {
-        return issueTemplateInternal(userId, merchantId, templateId, requireNewUser, expectedScene, sourceOrderNo, false);
+        return issueTemplateInternal(userId, merchantId, templateId, requireNewUser, expectedScene, sourceOrderNo, false, null);
     }
 
     private RepurchaseIssueResult issueTemplateInternal(Long userId, Long merchantId, Long templateId, boolean requireNewUser,
-                                                        String expectedScene, String sourceOrderNo, boolean rejectDuplicate) {
+                                                        String expectedScene, String sourceOrderNo, boolean rejectDuplicate,
+                                                        String requiredPurpose) {
         LocalDateTime now = LocalDateTime.now();
         CouponTemplate template = templateMapper.selectOne(new LambdaQueryWrapper<CouponTemplate>()
                 .eq(CouponTemplate::getId, templateId)
@@ -214,6 +229,9 @@ public class CouponServiceImpl implements CouponService {
         }
         if (expectedScene != null && !expectedScene.equals(template.getIssueScene())) {
             throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "当前优惠券不是购后复购券");
+        }
+        if (requiredPurpose != null && !purposeCodes(template).contains(requiredPurpose)) {
+            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "当前优惠券不属于该营销用途");
         }
         long existing = userCouponMapper.selectCount(new LambdaQueryWrapper<UserCoupon>()
                 .eq(UserCoupon::getUserId, userId)
@@ -370,7 +388,9 @@ public class CouponServiceImpl implements CouponService {
                         .eq(CouponTemplate::getNewUserOnly, 1)
                         .eq(CouponTemplate::getIssueScene, CouponIssueScene.NEW_USER)
                         .orderByDesc(CouponTemplate::getAmount))
-                .stream().filter(t -> isActive(t, now)).findFirst().orElse(null);
+                .stream().filter(t -> isActive(t, now))
+                .filter(t -> purposeCodes(t).contains(CouponPurpose.NEW_USER_FIRST_ORDER))
+                .findFirst().orElse(null);
     }
 
     private boolean isActive(CouponTemplate t, LocalDateTime now) {
@@ -447,7 +467,7 @@ public class CouponServiceImpl implements CouponService {
         vo.setPerUserLimit(t.getPerUserLimit()); vo.setValidityDays(t.getValidityDays());
         vo.setValidFrom(t.getValidFrom()); vo.setValidTo(t.getValidTo()); vo.setScopeType(t.getScopeType());
         vo.setScopeIds(new ArrayList<>(parseIds(t.getScopeIdsJson()))); vo.setNewUserOnly(t.getNewUserOnly());
-        vo.setIssueScene(t.getIssueScene()); vo.setRepurchaseTargetType(t.getRepurchaseTargetType());
+        vo.setIssueScene(t.getIssueScene()); vo.setPurposeCodes(new ArrayList<>(purposeCodes(t))); vo.setRepurchaseTargetType(t.getRepurchaseTargetType());
         vo.setRepurchaseTargetIds(new ArrayList<>(parseIds(t.getRepurchaseTargetIdsJson())));
         vo.setRepurchaseMinOrderAmount(t.getRepurchaseMinOrderAmount());
         vo.setRepurchaseFirstPurchaseOnly(t.getRepurchaseFirstPurchaseOnly());
@@ -485,6 +505,10 @@ public class CouponServiceImpl implements CouponService {
                 || (request.getRepurchaseFirstPurchaseOnly() != 0 && request.getRepurchaseFirstPurchaseOnly() != 1))) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "复购券目标订单配置不合法");
         }
+        if (!repurchase && (request.getPurposeCodes() == null || request.getPurposeCodes().isEmpty()
+                || request.getPurposeCodes().stream().anyMatch(value -> !CouponPurpose.isSupported(value)))) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "请至少选择一个有效的优惠券用途");
+        }
         if (request.getValidFrom() != null && request.getValidTo() != null && request.getValidFrom().isAfter(request.getValidTo())) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "有效期起止时间不合法");
         }
@@ -503,8 +527,11 @@ public class CouponServiceImpl implements CouponService {
         t.setValidFrom(request.getValidFrom()); t.setValidTo(request.getValidTo()); t.setScopeType(request.getScopeType());
         t.setScopeIdsJson(toJson(request.getScopeIds() == null ? List.of() : request.getScopeIds()));
         boolean repurchase = CouponIssueScene.REPURCHASE_AFTER_PAID.equals(request.getIssueScene());
-        t.setNewUserOnly(repurchase ? 0 : 1);
+        Set<String> purposes = repurchase ? Set.of() : new LinkedHashSet<>(request.getPurposeCodes());
+        t.setNewUserOnly(repurchase ? 0 : (purposes.contains(CouponPurpose.NEW_USER_FIRST_ORDER)
+                || purposes.contains(CouponPurpose.REFERRAL_INVITEE) ? 1 : 0));
         t.setIssueScene(repurchase ? CouponIssueScene.REPURCHASE_AFTER_PAID : CouponIssueScene.NEW_USER);
+        t.setPurposeCodes(repurchase ? "" : String.join(",", purposes));
         t.setRepurchaseTargetType(repurchase ? request.getRepurchaseTargetType() : SCOPE_ALL);
         t.setRepurchaseTargetIdsJson(toJson(repurchase && request.getRepurchaseTargetIds() != null ? request.getRepurchaseTargetIds() : List.of()));
         t.setRepurchaseMinOrderAmount(repurchase && request.getRepurchaseMinOrderAmount() != null
@@ -519,6 +546,12 @@ public class CouponServiceImpl implements CouponService {
         if (json == null || json.isBlank()) return Set.of();
         try { return new HashSet<>(objectMapper.readValue(json, new TypeReference<List<Long>>() {})); }
         catch (Exception ignored) { return Set.of(); }
+    }
+
+    private Set<String> purposeCodes(CouponTemplate template) {
+        if (template.getPurposeCodes() == null || template.getPurposeCodes().isBlank()) return Set.of();
+        return Arrays.stream(template.getPurposeCodes().split(","))
+                .map(String::trim).filter(value -> !value.isEmpty()).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private String toJson(Object value) {

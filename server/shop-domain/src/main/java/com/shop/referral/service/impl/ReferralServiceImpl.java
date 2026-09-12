@@ -8,6 +8,7 @@ import com.shop.common.exception.ErrorCode;
 import com.shop.coupon.entity.CouponTemplate;
 import com.shop.coupon.entity.UserCoupon;
 import com.shop.coupon.enums.CouponIssueScene;
+import com.shop.coupon.enums.CouponPurpose;
 import com.shop.coupon.mapper.CouponTemplateMapper;
 import com.shop.coupon.mapper.UserCouponMapper;
 import com.shop.coupon.service.CouponService;
@@ -182,7 +183,8 @@ public class ReferralServiceImpl implements ReferralService {
             throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "新人券已领取或当前奖励不可重复领取");
         }
         if (campaign.getInviteeCouponTemplateId() == null) throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "新人券尚未配置");
-        Long couponId = couponService.issueTemplate(userId, merchantId, campaign.getInviteeCouponTemplateId());
+        Long couponId = couponService.issueTemplateForPurpose(userId, merchantId, campaign.getInviteeCouponTemplateId(),
+                CouponPurpose.REFERRAL_INVITEE);
         ReferralReward reward = new ReferralReward();
         reward.setCampaignId(campaignId); reward.setMerchantId(merchantId); reward.setRelationId(relation.getId());
         reward.setUserId(userId); reward.setRole(ROLE_INVITEE); reward.setTier(TIER_INVITEE);
@@ -376,7 +378,8 @@ public class ReferralServiceImpl implements ReferralService {
         reward.setUserId(relation.getInviterUserId()); reward.setRole(ROLE_INVITER); reward.setTier(tier.getInviteCount());
         reward.setCouponTemplateId(tier.getInviterCouponTemplateId()); reward.setTriggerOrderNo(orderNo);
         try {
-            Long couponId = couponService.issueTemplate(relation.getInviterUserId(), campaign.getMerchantId(), tier.getInviterCouponTemplateId());
+            Long couponId = couponService.issueTemplateForPurpose(relation.getInviterUserId(), campaign.getMerchantId(),
+                    tier.getInviterCouponTemplateId(), CouponPurpose.REFERRAL_INVITER);
             reward.setCouponId(couponId); reward.setStatus(ReferralRewardStatus.ISSUED.getCode()); reward.setIssuedAt(LocalDateTime.now());
             CouponTemplate template = couponTemplateMapper.selectById(tier.getInviterCouponTemplateId());
             reward.setRewardAmount(template == null ? BigDecimal.ZERO : template.getAmount());
@@ -497,14 +500,16 @@ public class ReferralServiceImpl implements ReferralService {
         if (!new HashSet<>(counts).containsAll(List.of(1, 3, 5))) throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "邀请阶梯必须包含1、3、5人");
         CouponTemplate invitee = couponTemplateMapper.selectOne(new LambdaQueryWrapper<CouponTemplate>()
                 .eq(CouponTemplate::getId, request.getInviteeCouponTemplateId()).eq(CouponTemplate::getMerchantId, merchantId));
-        if (invitee == null || !CouponIssueScene.NEW_USER.equals(invitee.getIssueScene())) {
-            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "好友新人券必须选择新人券配置中的模板");
+        if (invitee == null || !CouponIssueScene.NEW_USER.equals(invitee.getIssueScene())
+                || !purposeCodes(invitee).contains(CouponPurpose.REFERRAL_INVITEE)) {
+            throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "好友新人券必须选择用途为“邀请好友新人券”的模板");
         }
         for (ReferralTierRequest tier : request.getTiers()) {
             CouponTemplate template = couponTemplateMapper.selectOne(new LambdaQueryWrapper<CouponTemplate>()
                     .eq(CouponTemplate::getId, tier.getInviterCouponTemplateId()).eq(CouponTemplate::getMerchantId, merchantId));
-            if (template == null || !CouponIssueScene.NEW_USER.equals(template.getIssueScene())) {
-                throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "邀请人奖励券必须选择新人券配置中的模板");
+            if (template == null || !CouponIssueScene.NEW_USER.equals(template.getIssueScene())
+                    || !purposeCodes(template).contains(CouponPurpose.REFERRAL_INVITER)) {
+                throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "邀请人奖励券必须选择用途为“邀请人阶梯奖励”的模板");
             }
         }
     }
@@ -519,6 +524,12 @@ public class ReferralServiceImpl implements ReferralService {
         campaign.setMaxDailyInvites(request.getMaxDailyInvites() == null ? 20 : Math.max(0, request.getMaxDailyInvites()));
         campaign.setMaxTotalInvites(request.getMaxTotalInvites() == null ? 0 : Math.max(0, request.getMaxTotalInvites()));
         campaign.setStatus(request.getStatus() == null ? ReferralCampaignStatus.DRAFT.getCode() : request.getStatus());
+    }
+
+    private Set<String> purposeCodes(CouponTemplate template) {
+        if (template.getPurposeCodes() == null || template.getPurposeCodes().isBlank()) return Set.of();
+        return Arrays.stream(template.getPurposeCodes().split(","))
+                .map(String::trim).filter(value -> !value.isEmpty()).collect(Collectors.toSet());
     }
 
     private boolean hasSuccessfulOrder(Long userId, Long merchantId) {

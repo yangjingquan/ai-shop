@@ -49,6 +49,7 @@ public class CouponTemplateSaveRequest {
     private List<Long> scopeIds;
     private Integer newUserOnly = 1;
     private String issueScene = "NEW_USER";
+    private List<String> purposeCodes;
     private Integer repurchaseTargetType = 0;
     private List<Long> repurchaseTargetIds;
     @DecimalMin("0.00")

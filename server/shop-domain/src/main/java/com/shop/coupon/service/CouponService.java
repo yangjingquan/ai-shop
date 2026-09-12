@@ -22,8 +22,11 @@ public interface CouponService {
 
     Long receiveNewUserCoupon(Long userId, Long merchantId, Long templateId);
 
-    /** 按模板向指定用户发券，供邀请奖励等服务端奖励使用。 */
+    /** 按通用营销奖励模板向指定用户发券，供积分、会员日、抽奖等服务端奖励使用。 */
     Long issueTemplate(Long userId, Long merchantId, Long templateId);
+
+    /** 按指定业务用途发券，防止不同营销活动误用同一模板。 */
+    Long issueTemplateForPurpose(Long userId, Long merchantId, Long templateId, String purpose);
 
     /** 积分兑换专用发券；达到模板每人领取上限时必须失败，避免扣积分但不发新券。 */
     Long issueTemplateForPoints(Long userId, Long merchantId, Long templateId);

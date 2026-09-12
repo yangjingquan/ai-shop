@@ -8,6 +8,7 @@ import com.shop.coupon.dto.CouponUseContext;
 import com.shop.coupon.entity.CouponTemplate;
 import com.shop.coupon.entity.UserCoupon;
 import com.shop.coupon.enums.CouponIssueScene;
+import com.shop.coupon.enums.CouponPurpose;
 import com.shop.coupon.mapper.CouponTemplateMapper;
 import com.shop.coupon.mapper.UserCouponMapper;
 import com.shop.coupon.enums.UserCouponStatus;
@@ -112,6 +113,7 @@ class CouponServiceImplTest {
         CouponTemplate template = new CouponTemplate();
         template.setId(102L); template.setMerchantId(9L); template.setName("积分兑换券");
         template.setIssueScene(CouponIssueScene.NEW_USER); template.setStatus(1);
+        template.setPurposeCodes(CouponPurpose.MARKETING_REWARD);
         template.setAmount(new BigDecimal("10")); template.setThresholdAmount(new BigDecimal("39"));
         template.setScopeType(0); template.setExcludeActivityGoods(1); template.setValidityDays(30);
         template.setPerUserLimit(1); template.setTotalStock(0); template.setReceivedCount(1); template.setUsedCount(0);
@@ -129,6 +131,7 @@ class CouponServiceImplTest {
         CouponTemplate template = new CouponTemplate();
         template.setId(103L); template.setMerchantId(9L); template.setName("可重复兑换券");
         template.setIssueScene(CouponIssueScene.NEW_USER); template.setStatus(1);
+        template.setPurposeCodes(CouponPurpose.MARKETING_REWARD);
         template.setAmount(new BigDecimal("10")); template.setThresholdAmount(new BigDecimal("39"));
         template.setScopeType(0); template.setExcludeActivityGoods(1); template.setValidityDays(30);
         template.setPerUserLimit(3); template.setTotalStock(0); template.setReceivedCount(1); template.setUsedCount(0);
@@ -184,6 +187,36 @@ class CouponServiceImplTest {
         verify(templateMapper, never()).updateById(any());
     }
 
+    @Test
+    void eligibilityIgnoresHigherValueReferralTierCoupon() {
+        CouponServiceImpl service = new CouponServiceImpl(templateMapper, userCouponMapper, orderMapper, marketingFeatureService);
+        CouponTemplate referralTier = template(101L, "邀请满5人券", "50", CouponPurpose.REFERRAL_INVITER);
+        CouponTemplate newUser = template(102L, "新人首单券", "20", CouponPurpose.NEW_USER_FIRST_ORDER);
+        when(marketingFeatureService.isEnabled(9L, com.shop.marketing.enums.MarketingActivityCode.NEW_USER_COUPON)).thenReturn(true);
+        when(userCouponMapper.selectOne(any())).thenReturn(null);
+        when(orderMapper.selectCount(any())).thenReturn(0L);
+        when(templateMapper.selectList(any())).thenReturn(List.of(referralTier, newUser));
+
+        var eligibility = service.eligibility(7L, 9L);
+
+        assertTrue(eligibility.getCanReceive());
+        assertEquals(102L, eligibility.getCoupon().getTemplateId());
+        assertEquals("新人首单券", eligibility.getCoupon().getName());
+    }
+
+    @Test
+    void rejectsReferralTierCouponFromNormalNewUserReceive() {
+        CouponServiceImpl service = new CouponServiceImpl(templateMapper, userCouponMapper, orderMapper, marketingFeatureService);
+        CouponTemplate referralTier = template(101L, "邀请满5人券", "50", CouponPurpose.REFERRAL_INVITER);
+        when(orderMapper.selectCount(any())).thenReturn(0L);
+        when(templateMapper.selectOne(any())).thenReturn(referralTier);
+
+        var error = assertThrows(RuntimeException.class, () -> service.receiveNewUserCoupon(7L, 9L, 101L));
+
+        assertTrue(error.getMessage().contains("不属于该营销用途"));
+        verify(userCouponMapper, never()).insert(any());
+    }
+
     private UserCoupon coupon(Long id, BigDecimal amount, BigDecimal threshold, int excludeActivityGoods) {
         UserCoupon coupon = new UserCoupon();
         coupon.setId(id); coupon.setTemplateId(id + 100); coupon.setMerchantId(9L);
@@ -199,7 +232,19 @@ class CouponServiceImplTest {
         request.setName("测试券"); request.setAmount(new BigDecimal("10")); request.setThresholdAmount(new BigDecimal("50"));
         request.setTotalStock(0); request.setPerUserLimit(1); request.setValidityDays(7); request.setScopeType(0);
         request.setNewUserOnly(0); request.setIssueScene(issueScene); request.setStatus(1);
+        request.setPurposeCodes(List.of(CouponPurpose.MARKETING_REWARD));
         request.setRepurchaseTargetType(0); request.setRepurchaseFirstPurchaseOnly(0);
         return request;
+    }
+
+    private CouponTemplate template(Long id, String name, String amount, String purpose) {
+        CouponTemplate template = new CouponTemplate();
+        template.setId(id); template.setMerchantId(9L); template.setName(name); template.setIssueScene(CouponIssueScene.NEW_USER);
+        template.setPurposeCodes(purpose); template.setNewUserOnly(1); template.setStatus(1);
+        template.setAmount(new BigDecimal(amount)); template.setThresholdAmount(new BigDecimal("99"));
+        template.setValidFrom(LocalDateTime.now().minusDays(1)); template.setValidTo(LocalDateTime.now().plusDays(1));
+        template.setScopeType(0); template.setExcludeActivityGoods(1); template.setValidityDays(30);
+        template.setPerUserLimit(1); template.setTotalStock(0); template.setReceivedCount(0); template.setUsedCount(0);
+        return template;
     }
 }

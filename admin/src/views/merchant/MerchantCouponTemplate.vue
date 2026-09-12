@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute } from 'vue-router'
-import { couponTemplateApi, type CouponIssueScene, type CouponTemplate, type CouponTemplatePayload } from '@/api/marketing'
+import { couponTemplateApi, type CouponIssueScene, type CouponPurpose, type CouponTemplate, type CouponTemplatePayload } from '@/api/marketing'
 import ImageUploader from '@/components/upload/ImageUploader.vue'
 import { merchantCategoryApi, type MerchantCategoryVO } from '@/api/category'
 import { productApi, type ProductListVO } from '@/api/product'
@@ -26,12 +26,20 @@ const categoryOptions = computed(() => {
   walk(categories.value)
   return result
 })
+const purposeOptions: Array<{ value: CouponPurpose; label: string }> = [
+  { value: 'NEW_USER_FIRST_ORDER', label: '新人首单券' },
+  { value: 'REFERRAL_INVITEE', label: '邀请好友新人券' },
+  { value: 'REFERRAL_INVITER', label: '邀请人阶梯奖励券' },
+  { value: 'MARKETING_REWARD', label: '其他营销奖励' },
+]
+const purposeLabel = (value: CouponPurpose) => purposeOptions.find((item) => item.value === value)?.label || value
 
 function emptyForm(scene = issueScene.value): CouponTemplatePayload {
   return {
     name: scene === 'REPURCHASE_AFTER_PAID' ? '购后复购券' : '通用优惠券', image: '', amount: 20, thresholdAmount: 99, totalStock: 0,
     perUserLimit: 1, validityDays: 30, validFrom: null, validTo: null,
     scopeType: 0, scopeIds: [], newUserOnly: scene === 'REPURCHASE_AFTER_PAID' ? 0 : 1, issueScene: scene,
+    purposeCodes: scene === 'REPURCHASE_AFTER_PAID' ? [] : ['NEW_USER_FIRST_ORDER'],
     repurchaseTargetType: 0, repurchaseTargetIds: [], repurchaseMinOrderAmount: 0,
     repurchaseFirstPurchaseOnly: 0, repurchasePriority: 0,
     excludeActivityGoods: 1, stackable: 0, status: 1,
@@ -58,12 +66,12 @@ function openCreate() {
 
 function openEdit(row: CouponTemplate) {
   editingId.value = row.id
-  Object.assign(form, { ...emptyForm(issueScene.value), ...row, issueScene: issueScene.value, scopeIds: row.scopeIds || [], repurchaseTargetIds: row.repurchaseTargetIds || [] })
+  Object.assign(form, { ...emptyForm(issueScene.value), ...row, issueScene: issueScene.value, purposeCodes: row.purposeCodes || [], scopeIds: row.scopeIds || [], repurchaseTargetIds: row.repurchaseTargetIds || [] })
   dialogVisible.value = true
 }
 
 async function save() {
-  if (!form.name.trim() || form.amount <= 0 || form.thresholdAmount < 0) {
+  if (!form.name.trim() || form.amount <= 0 || form.thresholdAmount < 0 || (!isRepurchase.value && !form.purposeCodes.length)) {
     ElMessage.warning('请完善券名称、面额和使用门槛')
     return
   }
@@ -97,7 +105,7 @@ watch(issueScene, load)
       <div>
         <span class="page-kicker">COUPON CAMPAIGNS</span>
         <h1 class="page-title">{{ sceneLabel }}配置</h1>
-        <p class="page-desc">{{ isRepurchase ? '支付成功后立即发放的复购券模板；停止活动或模板均不影响已发放券。' : '供新人首单、积分兑换、会员日和邀请奖励等活动发放使用。' }}</p>
+        <p class="page-desc">{{ isRepurchase ? '支付成功后立即发放的复购券模板；停止活动或模板均不影响已发放券。' : '为每张券明确用途，首页新人券、邀请奖励与其他营销奖励互不串用。' }}</p>
       </div>
       <div class="header-actions">
         <el-button @click="load">刷新</el-button>
@@ -105,10 +113,11 @@ watch(issueScene, load)
       </div>
     </div>
     <el-alert v-if="isRepurchase" title="复购券需要同时启用“营销活动 - 复购券”开关" description="第一版按支付成功立即发放；每个用户每个模板的领取上限按下方配置，支付成功后的全额退款会回收未使用券。" type="info" show-icon :closable="false" class="tip" />
-    <el-alert v-else title="通用券与复购券独立管理" description="此处模板可由新人首单、积分兑换、会员日及邀请奖励使用，并非仅限新人；支付成功后自动发放的券请在“购后复购券配置”中维护。" type="info" show-icon :closable="false" class="tip" />
+    <el-alert v-else title="请先标明券用途" description="首页只领取“新人首单券”；邀请好友和邀请阶梯只会使用各自用途的券。一个模板可用于多个明确用途。" type="info" show-icon :closable="false" class="tip" />
     <el-card>
       <el-table v-loading="loading" :data="list" stripe>
         <el-table-column prop="name" label="模板名称" min-width="150" />
+        <el-table-column label="用途" min-width="180"><template #default="{ row }"><el-tag v-for="purpose in row.purposeCodes || []" :key="purpose" class="purpose-tag">{{ purposeLabel(purpose) }}</el-tag></template></el-table-column>
         <el-table-column label="优惠" width="150"><template #default="{ row }">满{{ row.thresholdAmount }}减{{ row.amount }}</template></el-table-column>
         <el-table-column label="库存 / 已领" width="140"><template #default="{ row }">{{ row.totalStock === 0 ? '不限' : row.totalStock }} / {{ row.receivedCount }}</template></el-table-column>
         <el-table-column label="已使用" prop="usedCount" width="90" />
@@ -139,7 +148,10 @@ watch(issueScene, load)
           <el-form-item label="仅首笔购买"><el-switch v-model="form.repurchaseFirstPurchaseOnly" :active-value="1" :inactive-value="0" /></el-form-item>
           <el-form-item label="匹配优先级"><el-input-number v-model="form.repurchasePriority" :min="0" /><span class="hint">数值越大越优先；每笔订单最多发一张</span></el-form-item>
         </template>
-        <el-form-item v-else label="新人限定"><el-tag>仅首单用户（固定）</el-tag></el-form-item>
+        <template v-else>
+          <el-form-item label="券用途" required><el-checkbox-group v-model="form.purposeCodes"><el-checkbox v-for="item in purposeOptions" :key="item.value" :label="item.value">{{ item.label }}</el-checkbox></el-checkbox-group><span class="hint">用途可多选；首页新人券只匹配“新人首单券”。</span></el-form-item>
+          <el-form-item label="新人限定"><el-tag>{{ form.purposeCodes.includes('NEW_USER_FIRST_ORDER') || form.purposeCodes.includes('REFERRAL_INVITEE') ? '仅首单用户' : '不限制新人身份' }}</el-tag></el-form-item>
+        </template>
         <el-form-item label="排除活动商品"><el-switch v-model="form.excludeActivityGoods" :active-value="1" :inactive-value="0" /></el-form-item>
         <el-form-item label="保存后状态"><el-radio-group v-model="form.status"><el-radio :value="1">启用</el-radio><el-radio :value="0">草稿</el-radio></el-radio-group></el-form-item>
       </el-form>
@@ -152,4 +164,5 @@ watch(issueScene, load)
 .header-actions { display: flex; gap: 12px; }
 .tip { margin-bottom: 18px; }
 .hint { margin-left: 12px; color: var(--shop-muted); font-size: 12px; }
+.purpose-tag { margin: 2px 4px 2px 0; }
 </style>

@@ -140,6 +140,7 @@ export interface CouponTemplate {
   scopeIds?: number[]
   newUserOnly: number
   issueScene: 'NEW_USER' | 'REPURCHASE_AFTER_PAID'
+  purposeCodes: CouponPurpose[]
   repurchaseTargetType: number
   repurchaseTargetIds?: number[]
   repurchaseMinOrderAmount: number
@@ -165,6 +166,7 @@ export interface CouponTemplatePayload {
   scopeIds: number[]
   newUserOnly: number
   issueScene: 'NEW_USER' | 'REPURCHASE_AFTER_PAID'
+  purposeCodes: CouponPurpose[]
   repurchaseTargetType: number
   repurchaseTargetIds: number[]
   repurchaseMinOrderAmount: number
@@ -176,6 +178,7 @@ export interface CouponTemplatePayload {
 }
 
 export type CouponIssueScene = 'NEW_USER' | 'REPURCHASE_AFTER_PAID'
+export type CouponPurpose = 'NEW_USER_FIRST_ORDER' | 'REFERRAL_INVITEE' | 'REFERRAL_INVITER' | 'MARKETING_REWARD'
 
 export const couponTemplateApi = {
   list: (issueScene: CouponIssueScene = 'NEW_USER') =>
