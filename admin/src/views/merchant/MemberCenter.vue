@@ -7,7 +7,6 @@ import { pointsApi, type MemberLevel } from '@/api/marketing'
 const router = useRouter()
 const loading = ref(false)
 const keyword = ref('')
-const level = ref<number | undefined>()
 const levels = ref<MemberLevel[]>([])
 const members = ref<MemberProfileVO[]>([])
 const total = ref(0)
@@ -25,7 +24,6 @@ async function load(resetPage = false) {
       page: page.value,
       size: size.value,
       keyword: keyword.value || undefined,
-      level: level.value,
     })
     members.value = result.list || []
     total.value = result.total || 0
@@ -57,21 +55,21 @@ onMounted(async () => {
       <div>
         <span class="page-kicker">MEMBER CENTER</span>
         <h1 class="page-title">会员中心</h1>
-        <p class="page-desc">查看店铺会员的基本资料、会员等级和积分情况。</p>
+        <p class="page-desc">查看本商户全部注册用户的基本资料、会员等级和积分情况。</p>
       </div>
       <el-button type="primary" @click="goMemberSettings">会员规则配置</el-button>
     </div>
 
     <div class="overview-grid">
       <el-card class="metric-card" shadow="never">
-        <span>会员总数</span>
+        <span>用户总数</span>
         <strong>{{ memberCount }}</strong>
-        <p>已加入店铺会员体系</p>
+        <p>已注册至本商户的用户</p>
       </el-card>
       <el-card class="metric-card" shadow="never">
-        <span>本页有积分会员</span>
+        <span>本页有积分用户</span>
         <strong>{{ pointsMemberCount }}</strong>
-        <p>积分余额大于 0 的会员</p>
+        <p>积分余额大于 0 的用户</p>
       </el-card>
       <el-card class="member-level-card" shadow="never">
         <span>已配置等级</span>
@@ -84,8 +82,8 @@ onMounted(async () => {
       <template #header>
         <div class="card-header">
           <div>
-            <span>会员列表</span>
-            <small>会员在小程序注册后自动进入店铺会员体系</small>
+            <span>用户列表</span>
+            <small>展示归属到本商户的全部已注册用户</small>
           </div>
           <el-button @click="() => load()">刷新</el-button>
         </div>
@@ -93,21 +91,18 @@ onMounted(async () => {
 
       <div class="toolbar member-toolbar">
         <el-input v-model="keyword" clearable placeholder="搜索昵称或手机号" @keyup.enter="load(true)" />
-        <el-select v-model="level" clearable placeholder="全部等级" @change="load(true)">
-          <el-option v-for="item in levels" :key="item.level" :label="item.name" :value="item.level ?? 1" />
-        </el-select>
         <el-button type="primary" @click="load(true)">查询</el-button>
-        <el-button @click="keyword = ''; level = undefined; load(true)">重置</el-button>
+        <el-button @click="keyword = ''; load(true)">重置</el-button>
       </div>
 
-      <el-table :data="members" empty-text="暂无会员数据">
-        <el-table-column label="会员" min-width="220">
+      <el-table :data="members" empty-text="暂无用户数据">
+        <el-table-column label="用户" min-width="220">
           <template #default="{ row }">
             <div class="member-cell">
-              <el-avatar :size="38" :src="row.avatar">{{ (row.nickname || `会`).slice(0, 1) }}</el-avatar>
+              <el-avatar :size="38" :src="row.avatar">{{ (row.nickname || `用`).slice(0, 1) }}</el-avatar>
               <div>
-                <strong>{{ row.nickname || `会员 #${row.userId}` }}</strong>
-                <span>会员 ID：{{ row.userId }}</span>
+                <strong>{{ row.nickname || `用户 #${row.userId}` }}</strong>
+                <span>用户 ID：{{ row.userId }}</span>
               </div>
             </div>
           </template>
@@ -117,18 +112,21 @@ onMounted(async () => {
         </el-table-column>
         <el-table-column label="会员等级" min-width="130">
           <template #default="{ row }">
-            <el-tag effect="plain">{{ row.levelName || `Lv.${row.level || 1}` }}</el-tag>
+            <el-tag effect="plain">{{ row.levelName || (row.level ? `Lv.${row.level}` : '-') }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="pointsBalance" label="可用积分" min-width="110" align="right" />
         <el-table-column prop="totalPoints" label="累计积分" min-width="110" align="right" />
-        <el-table-column label="加入时间" min-width="160">
+        <el-table-column label="注册时间" min-width="160">
           <template #default="{ row }">{{ formatTime(row.joinedAt) }}</template>
+        </el-table-column>
+        <el-table-column label="最近登录" min-width="160">
+          <template #default="{ row }">{{ formatTime(row.lastLoginAt) }}</template>
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">
-              {{ row.status === 1 ? '正常' : '停用' }}
+            <el-tag :type="row.status === 0 ? 'info' : 'success'" size="small">
+              {{ row.status === 0 ? '停用' : '正常' }}
             </el-tag>
           </template>
         </el-table-column>

@@ -12,6 +12,7 @@ export interface MemberProfileVO {
   pointsBalance: number
   totalPoints: number
   joinedAt?: string
+  lastLoginAt?: string
 }
 
 export interface PageResult<T> {
@@ -22,6 +23,6 @@ export interface PageResult<T> {
 }
 
 export const memberApi = {
-  page: (params: { page: number; size: number; keyword?: string; level?: number }) =>
+  page: (params: { page: number; size: number; keyword?: string }) =>
     request.get<unknown, PageResult<MemberProfileVO>>('/api/merchant/points/members', { params }),
 }

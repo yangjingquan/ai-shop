@@ -8,8 +8,8 @@ import com.shop.common.security.RequirePermission;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shop.points.dto.*;
-import com.shop.points.mapper.MemberProfileMapper;
 import com.shop.points.service.PointsMemberService;
+import com.shop.user.mapper.UserMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +18,7 @@ import java.util.List;
 @RestController @RequestMapping("/api/merchant/points") @RequiredArgsConstructor
 public class MerchantPointsController {
  private final PointsMemberService pointsService;
- private final MemberProfileMapper memberProfileMapper;
+ private final UserMapper userMapper;
 
  private Long merchant(){CurrentUser u=CurrentUserHolder.get();return u==null?null:u.getMerchantId();}
 
@@ -27,10 +27,9 @@ public class MerchantPointsController {
  public ApiResult<PageResult<MemberCenterMemberVO>> members(
          @RequestParam(defaultValue="1") int page,
          @RequestParam(defaultValue="10") int size,
-         @RequestParam(required=false) String keyword,
-         @RequestParam(required=false) Integer level) {
-     IPage<MemberCenterMemberVO> result = memberProfileMapper.selectMerchantMemberPage(
-             new Page<>(page, size), merchant(), keyword, level);
+         @RequestParam(required=false) String keyword) {
+     IPage<MemberCenterMemberVO> result = userMapper.selectMerchantUserPage(
+             new Page<>(page, size), merchant(), keyword);
      return ApiResult.success(PageResult.of(result.getRecords(), result.getTotal(), page, size));
  }
  @GetMapping("/rule") @RequirePermission("merchant:points:view") public ApiResult<PointsRuleRequest> rule(){return ApiResult.success(pointsService.rule(merchant()));}

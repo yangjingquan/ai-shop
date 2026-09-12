@@ -17,4 +17,5 @@ public class MemberCenterMemberVO {
     private Integer pointsBalance;
     private Integer totalPoints;
     private LocalDateTime joinedAt;
+    private LocalDateTime lastLoginAt;
 }
