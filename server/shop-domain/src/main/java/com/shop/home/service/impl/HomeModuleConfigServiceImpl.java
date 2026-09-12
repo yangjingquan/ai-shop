@@ -3,6 +3,7 @@ package com.shop.home.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
+import com.shop.common.cache.PublicApiCacheService;
 import com.shop.home.dto.HomeModuleUpdateRequest;
 import com.shop.home.dto.HomeModuleVO;
 import com.shop.home.entity.HomeModuleConfig;
@@ -10,6 +11,7 @@ import com.shop.home.mapper.HomeModuleConfigMapper;
 import com.shop.home.service.HomeModuleConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
@@ -34,6 +36,9 @@ public class HomeModuleConfigServiceImpl implements HomeModuleConfigService {
     private static final List<String> PRODUCT_SOURCES = List.of("RECENT", "TOP_SALES", "RECOMMEND");
 
     private final HomeModuleConfigMapper mapper;
+
+    @Autowired(required = false)
+    private PublicApiCacheService publicApiCacheService;
 
     @Override
     public List<HomeModuleVO> list(Long merchantId) {
@@ -77,6 +82,9 @@ public class HomeModuleConfigServiceImpl implements HomeModuleConfigService {
                 apply(entity, definition, item);
                 mapper.updateById(entity);
             }
+        }
+        if (publicApiCacheService != null) {
+            publicApiCacheService.evictHome(merchantId);
         }
     }
 

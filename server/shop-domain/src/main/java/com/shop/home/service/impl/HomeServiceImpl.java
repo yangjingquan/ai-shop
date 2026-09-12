@@ -1,6 +1,7 @@
 package com.shop.home.service.impl;
 
 import com.shop.banner.service.BannerService;
+import com.shop.common.cache.PublicApiCacheService;
 import com.shop.home.dto.HomeVO;
 import com.shop.home.service.HomeService;
 import com.shop.home.service.HomeModuleConfigService;
@@ -25,6 +26,9 @@ public class HomeServiceImpl implements HomeService {
     private final MarketingFeatureService marketingFeatureService;
     private final HomeModuleConfigService homeModuleConfigService;
 
+    @Autowired(required = false)
+    private PublicApiCacheService publicApiCacheService;
+
     @Autowired
     public HomeServiceImpl(BannerService bannerService, ProductService productService,
                            MarketingFeatureService marketingFeatureService,
@@ -42,6 +46,13 @@ public class HomeServiceImpl implements HomeService {
 
     @Override
     public HomeVO getHome(Long merchantId) {
+        if (publicApiCacheService != null) {
+            return publicApiCacheService.home(merchantId, () -> loadHome(merchantId));
+        }
+        return loadHome(merchantId);
+    }
+
+    private HomeVO loadHome(Long merchantId) {
         HomeVO vo = new HomeVO();
         vo.setBanners(bannerService.listActive(merchantId));
         vo.setMarketingFeatures(marketingFeatureService == null ? List.of() : marketingFeatureService.listEnabled(merchantId));

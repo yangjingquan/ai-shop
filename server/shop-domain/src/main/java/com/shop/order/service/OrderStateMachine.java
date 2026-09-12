@@ -1,6 +1,7 @@
 package com.shop.order.service;
 
 import com.shop.common.exception.BusinessException;
+import com.shop.common.cache.PublicApiCacheService;
 import com.shop.common.exception.ErrorCode;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderStateTransition;
@@ -9,6 +10,7 @@ import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.OrderStateTransitionMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 import java.util.EnumSet;
@@ -36,8 +38,12 @@ public class OrderStateMachine {
     private final OrderMapper orderMapper;
     private final OrderStateTransitionMapper transitionMapper;
 
+    @Autowired(required = false)
+    private PublicApiCacheService publicApiCacheService;
+
     public void recordCreated(Order order, String event) {
         record(order, null, order.getStatus(), event, null);
+        evictOrderPages(order);
     }
 
     public void transition(Order order, OrderStatus target, String event, String reason) {
@@ -50,10 +56,12 @@ public class OrderStateMachine {
         order.setStatus(target.getCode());
         orderMapper.updateById(order);
         record(order, source.getCode(), target.getCode(), event, reason);
+        evictOrderPages(order);
     }
 
     public void recordLegacyTransition(Order order, Integer from, Integer to, String event, String reason) {
         record(order, from, to, event, reason);
+        evictOrderPages(order);
     }
 
     private void record(Order order, Integer from, Integer to, String event, String reason) {
@@ -66,5 +74,11 @@ public class OrderStateMachine {
         transition.setReason(reason == null ? "" : reason);
         transition.setCreatedAt(LocalDateTime.now());
         transitionMapper.insert(transition);
+    }
+
+    private void evictOrderPages(Order order) {
+        if (publicApiCacheService != null) {
+            publicApiCacheService.evictOrderPages(order.getUserId(), order.getMerchantId());
+        }
     }
 }

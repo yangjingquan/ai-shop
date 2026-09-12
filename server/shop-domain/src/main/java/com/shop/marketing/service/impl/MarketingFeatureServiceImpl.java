@@ -3,6 +3,7 @@ package com.shop.marketing.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
+import com.shop.common.cache.PublicApiCacheService;
 import com.shop.marketing.dto.MarketingFeatureVO;
 import com.shop.marketing.entity.MerchantMarketingFeature;
 import com.shop.marketing.enums.MarketingActivityCode;
@@ -11,6 +12,7 @@ import com.shop.marketing.service.MarketingFeatureService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,9 @@ public class MarketingFeatureServiceImpl implements MarketingFeatureService {
 
     private final MerchantMarketingFeatureMapper featureMapper;
     private final StringRedisTemplate stringRedisTemplate;
+
+    @Autowired(required = false)
+    private PublicApiCacheService publicApiCacheService;
 
     @Override
     public List<MarketingFeatureVO> list(Long merchantId) {
@@ -88,6 +93,7 @@ public class MarketingFeatureServiceImpl implements MarketingFeatureService {
             featureMapper.insert(feature);
         }
         evict(merchantId);
+        evictHome(merchantId);
     }
 
     @Override
@@ -123,6 +129,7 @@ public class MarketingFeatureServiceImpl implements MarketingFeatureService {
             featureMapper.updateById(feature);
         }
         evict(merchantId);
+        evictHome(merchantId);
     }
 
     private Map<String, MerchantMarketingFeature> featureMap(Long merchantId) {
@@ -172,6 +179,12 @@ public class MarketingFeatureServiceImpl implements MarketingFeatureService {
             stringRedisTemplate.delete(CACHE_PREFIX + merchantId);
         } catch (RuntimeException ex) {
             log.warn("清理商家营销能力缓存失败 merchantId={}", merchantId, ex);
+        }
+    }
+
+    private void evictHome(Long merchantId) {
+        if (publicApiCacheService != null) {
+            publicApiCacheService.evictHome(merchantId);
         }
     }
 

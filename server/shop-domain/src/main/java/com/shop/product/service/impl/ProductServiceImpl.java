@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shop.common.config.XssSanitizer;
+import com.shop.common.cache.PublicApiCacheService;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
 import com.shop.common.response.PageResult;
@@ -24,6 +25,7 @@ import com.shop.product.service.MerchantCategoryService;
 import com.shop.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -51,6 +53,9 @@ public class ProductServiceImpl implements ProductService {
     private final MerchantCategoryService merchantCategoryService;
     private final OrderItemMapper orderItemMapper;
     private final ObjectMapper objectMapper;
+
+    @Autowired(required = false)
+    private PublicApiCacheService publicApiCacheService;
 
     @Override
     @Transactional
@@ -91,6 +96,7 @@ public class ProductServiceImpl implements ProductService {
 
         persistSpecsAndSkus(p.getId(), req);
         recalcProduct(p.getId());
+        evictPublicContent(merchantId);
         return p.getId();
     }
 
@@ -127,6 +133,7 @@ public class ProductServiceImpl implements ProductService {
         persistSpecsAndSkus(id, req);
         refreshGroupBuySkuScope(p, selectedGroupBuySkuTexts, req.getGroupBuySkuIds());
         recalcProduct(id);
+        evictPublicContent(merchantId);
     }
 
     @Override
@@ -259,6 +266,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public PageResult<ProductListVO> publicPage(int page, int size, Long merchantId, Long categoryId,
                                                 String keyword, Integer isRecommend, Integer isGroupBuy) {
+        if (publicApiCacheService != null) {
+            return publicApiCacheService.productPage(merchantId, page, size, categoryId, keyword, isRecommend,
+                    isGroupBuy, () -> page(page, size, merchantId, categoryId, keyword, 1, isRecommend, isGroupBuy));
+        }
         return page(page, size, merchantId, categoryId, keyword, 1, isRecommend, isGroupBuy);
     }
 
@@ -426,6 +437,7 @@ public class ProductServiceImpl implements ProductService {
         p.setAuditOperatorType(2);
         p.setAuditedAt(java.time.LocalDateTime.now());
         productMapper.updateById(p);
+        evictPublicContent(merchantId);
     }
 
     @Override
@@ -446,6 +458,7 @@ public class ProductServiceImpl implements ProductService {
         p.setAuditOperatorType(1);
         p.setAuditedAt(java.time.LocalDateTime.now());
         productMapper.updateById(p);
+        evictPublicContent(p.getMerchantId());
     }
 
     @Override
@@ -460,6 +473,7 @@ public class ProductServiceImpl implements ProductService {
         }
         p.setStatus(status == 1 ? 1 : 0);
         productMapper.updateById(p);
+        evictPublicContent(merchantId);
     }
 
     @Override
@@ -472,6 +486,7 @@ public class ProductServiceImpl implements ProductService {
             deleteSpecsAndSkus(id);
         }
         productMapper.deleteById(id);
+        evictPublicContent(merchantId);
     }
 
     @Override
@@ -512,6 +527,7 @@ public class ProductServiceImpl implements ProductService {
                     .eq(Product::getMerchantId, merchantId)
                     .set(Product::getSort, i * 10));
         }
+        evictPublicContent(merchantId);
     }
 
     // ============== private ==============
@@ -802,5 +818,15 @@ public class ProductServiceImpl implements ProductService {
                 .set(Product::getMinOriginalPrice, minOriginal)
                 .set(Product::getMaxOriginalPrice, maxOriginal)
                 .set(Product::getTotalStock, total));
+        Product product = productMapper.selectById(productId);
+        if (product != null) {
+            evictPublicContent(product.getMerchantId());
+        }
+    }
+
+    private void evictPublicContent(Long merchantId) {
+        if (publicApiCacheService != null) {
+            publicApiCacheService.evictProductsAndHome(merchantId);
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shop.common.aop.OpLog;
 import com.shop.common.aop.RateLimit;
+import com.shop.common.cache.PublicApiCacheService;
 import com.shop.common.response.ApiResult;
 import com.shop.common.response.PageResult;
 import com.shop.common.security.CurrentUserHolder;
@@ -38,6 +39,7 @@ import java.util.List;
 public class MerchantOrderController {
 
     private final OrderService orderService;
+    private final PublicApiCacheService publicApiCacheService;
     private final OrderMapper orderMapper;
     private final RefundApplicationMapper refundApplicationMapper;
     private final LogisticsService logisticsService;
@@ -92,6 +94,11 @@ public class MerchantOrderController {
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) String scope) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
+        return ApiResult.success(publicApiCacheService.merchantOrderPage(merchantId, page, size, status, scope,
+                () -> loadPage(merchantId, page, size, status, scope)));
+    }
+
+    private PageResult<OrderListVO> loadPage(Long merchantId, int page, int size, Integer status, String scope) {
         LambdaQueryWrapper<Order> q = new LambdaQueryWrapper<Order>()
                 .eq(Order::getMerchantId, merchantId)
                 .orderByDesc(Order::getId);
@@ -117,7 +124,7 @@ public class MerchantOrderController {
             vo.setCreatedAt(o.getCreatedAt());
             list.add(vo);
         }
-        return ApiResult.success(PageResult.of(list, result.getTotal(), page, size));
+        return PageResult.of(list, result.getTotal(), page, size);
     }
 
     @GetMapping("/order/{orderNo}")

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shop.common.response.ApiResult;
 import com.shop.common.response.PageResult;
 import com.shop.common.aop.RateLimit;
+import com.shop.common.cache.PublicApiCacheService;
 import com.shop.common.aop.OpLog;
 import com.shop.merchant.entity.Merchant;
 import com.shop.merchant.mapper.MerchantMapper;
@@ -62,6 +63,7 @@ public class AdminOrderController {
     private final RefundApplicationMapper refundApplicationMapper;
     private final MerchantMapper merchantMapper;
     private final OrderService orderService;
+    private final PublicApiCacheService publicApiCacheService;
     private final PaymentLogMapper paymentLogMapper;
     private final PaymentReconciliationService paymentReconciliationService;
     private final RefundReconciliationService refundReconciliationService;
@@ -129,6 +131,12 @@ public class AdminOrderController {
             @RequestParam(required = false) String orderNo,
             @RequestParam(required = false) LocalDateTime createdFrom,
             @RequestParam(required = false) LocalDateTime createdTo) {
+        return ApiResult.success(publicApiCacheService.adminOrderPage(page, size, status, merchantId, orderNo,
+                createdFrom, createdTo, () -> loadOrders(page, size, status, merchantId, orderNo, createdFrom, createdTo)));
+    }
+
+    private PageResult<OrderListVO> loadOrders(int page, int size, Integer status, Long merchantId,
+                                               String orderNo, LocalDateTime createdFrom, LocalDateTime createdTo) {
         LambdaQueryWrapper<Order> q = new LambdaQueryWrapper<Order>()
                 .orderByDesc(Order::getId);
         if (status != null) q.eq(Order::getStatus, status);
@@ -161,7 +169,7 @@ public class AdminOrderController {
             vo.setCreatedAt(o.getCreatedAt());
             return vo;
         }).collect(Collectors.toList());
-        return ApiResult.success(PageResult.of(list, result.getTotal(), page, size));
+        return PageResult.of(list, result.getTotal(), page, size);
     }
 
     @GetMapping("/orders/{orderNo}")

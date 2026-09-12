@@ -10,6 +10,7 @@ import com.shop.banner.mapper.BannerMapper;
 import com.shop.banner.service.BannerService;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
+import com.shop.common.cache.PublicApiCacheService;
 import com.shop.common.response.PageResult;
 import com.shop.product.entity.MerchantCategory;
 import com.shop.product.entity.Product;
@@ -17,6 +18,7 @@ import com.shop.product.mapper.MerchantCategoryMapper;
 import com.shop.product.mapper.ProductMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -33,6 +35,9 @@ public class BannerServiceImpl implements BannerService {
     private final ProductMapper productMapper;
     private final MerchantCategoryMapper merchantCategoryMapper;
 
+    @Autowired(required = false)
+    private PublicApiCacheService publicApiCacheService;
+
     @Override
     @Transactional
     public Long create(Long merchantId, BannerSaveRequest req) {
@@ -45,6 +50,8 @@ public class BannerServiceImpl implements BannerService {
         b.setSort(req.getSort() != null ? req.getSort() : 0);
         b.setStatus(req.getStatus() != null ? req.getStatus() : 1);
         bannerMapper.insert(b);
+        evictHome(merchantId);
+        evictBanners(merchantId);
         return b.getId();
     }
 
@@ -60,6 +67,8 @@ public class BannerServiceImpl implements BannerService {
         b.setSort(req.getSort() != null ? req.getSort() : 0);
         b.setStatus(req.getStatus() != null ? req.getStatus() : 1);
         bannerMapper.updateById(b);
+        evictHome(merchantId);
+        evictBanners(merchantId);
     }
 
     @Override
@@ -68,6 +77,8 @@ public class BannerServiceImpl implements BannerService {
         Banner b = findOwned(id, merchantId);
         if (b == null) throw new BusinessException(ErrorCode.BANNER_NOT_FOUND);
         bannerMapper.deleteById(id);
+        evictHome(merchantId);
+        evictBanners(merchantId);
     }
 
     @Override
@@ -85,6 +96,13 @@ public class BannerServiceImpl implements BannerService {
 
     @Override
     public List<BannerVO> listActive(Long merchantId) {
+        if (publicApiCacheService != null) {
+            return publicApiCacheService.banners(merchantId, () -> loadActive(merchantId));
+        }
+        return loadActive(merchantId);
+    }
+
+    private List<BannerVO> loadActive(Long merchantId) {
         LambdaQueryWrapper<Banner> query = new LambdaQueryWrapper<>();
         if (merchantId == null) {
             query.isNull(Banner::getMerchantId);
@@ -113,6 +131,24 @@ public class BannerServiceImpl implements BannerService {
         vo.setStatus(b.getStatus());
         vo.setCreatedAt(b.getCreatedAt());
         return vo;
+    }
+
+    private void evictHome(Long merchantId) {
+        if (publicApiCacheService == null) return;
+        if (merchantId == null) {
+            publicApiCacheService.evictAllHomes();
+        } else {
+            publicApiCacheService.evictHome(merchantId);
+        }
+    }
+
+    private void evictBanners(Long merchantId) {
+        if (publicApiCacheService == null) return;
+        if (merchantId == null) {
+            publicApiCacheService.evictAllBanners();
+        } else {
+            publicApiCacheService.evictBanners(merchantId);
+        }
     }
 
     private LambdaQueryWrapper<Banner> scopeQuery(Long merchantId) {

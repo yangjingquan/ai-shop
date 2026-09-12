@@ -105,6 +105,9 @@ public class OrderServiceImpl implements OrderService {
     private final PresaleOrderMapper presaleOrderMapper;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.shop.common.cache.PublicApiCacheService publicApiCacheService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
     private PresaleService presaleService;
 
     /** I0-03 is optional here only to keep legacy isolated unit tests constructible. */
@@ -675,6 +678,9 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setUserDeleted(1);
         orderMapper.updateById(order);
+        if (publicApiCacheService != null) {
+            publicApiCacheService.evictOrderPages(userId);
+        }
     }
 
     @Override
@@ -731,6 +737,14 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public PageResult<OrderListVO> page(Long userId, int page, int size, Integer status) {
+        if (publicApiCacheService != null) {
+            return publicApiCacheService.orderPage(userId, page, size, status,
+                    () -> loadPage(userId, page, size, status));
+        }
+        return loadPage(userId, page, size, status);
+    }
+
+    private PageResult<OrderListVO> loadPage(Long userId, int page, int size, Integer status) {
         LambdaQueryWrapper<Order> q = new LambdaQueryWrapper<Order>()
                 .eq(Order::getUserId, userId)
                 .eq(Order::getUserDeleted, 0)
@@ -1262,6 +1276,7 @@ public class OrderServiceImpl implements OrderService {
         app.setReturnShipNo("");
         app.setReturnReceiveNote("");
         refundApplicationMapper.insert(app);
+        evictOrderPages(userId);
     }
 
     private BigDecimal calculateRefundAmount(Order order, RefundApplyRequest req) {
@@ -1347,6 +1362,7 @@ public class OrderServiceImpl implements OrderService {
         app.setReturnShipTime(LocalDateTime.now());
         app.setStatus(RefundStatus.WAIT_RETURN_RECEIVE.getCode());
         refundApplicationMapper.updateById(app);
+        evictOrderPages(userId);
     }
 
     @Override
@@ -1375,6 +1391,7 @@ public class OrderServiceImpl implements OrderService {
             app.setRejectReason(rejectReason != null ? rejectReason : "");
             app.setUpdatedAt(now);
             refundApplicationMapper.updateById(app);
+            evictOrderPages(app.getUserId(), app.getMerchantId());
             return;
         }
 
@@ -1383,6 +1400,7 @@ public class OrderServiceImpl implements OrderService {
             app.setStatus(RefundStatus.WAIT_RETURN_SHIP.getCode());
             app.setUpdatedAt(now);
             refundApplicationMapper.updateById(app);
+            evictOrderPages(app.getUserId(), app.getMerchantId());
             return;
         }
 
@@ -1413,6 +1431,7 @@ public class OrderServiceImpl implements OrderService {
         app.setRefundFailReason("");
         app.setUpdatedAt(now);
         refundApplicationMapper.updateById(app);
+        evictOrderPages(app.getUserId(), app.getMerchantId());
 
         // 微信退款请求使用固定 out_refund_no，可安全重试；只有微信受理后才推进订单状态。
         Refund refund = wxPayService.createRefund(order, outRefundNo, app.getReason(), app.getRefundAmount());
@@ -1463,6 +1482,18 @@ public class OrderServiceImpl implements OrderService {
                 .eq(RefundApplication::getOrderNo, orderNo)
                 .orderByDesc(RefundApplication::getId)
                 .last("LIMIT 1"));
+    }
+
+    private void evictOrderPages(Long userId) {
+        if (publicApiCacheService != null) {
+            publicApiCacheService.evictOrderPages(userId);
+        }
+    }
+
+    private void evictOrderPages(Long userId, Long merchantId) {
+        if (publicApiCacheService != null) {
+            publicApiCacheService.evictOrderPages(userId, merchantId);
+        }
     }
 
     // ==================== repay ====================

@@ -3,6 +3,7 @@ package com.shop.product.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shop.common.exception.BusinessException;
 import com.shop.common.exception.ErrorCode;
+import com.shop.common.cache.PublicApiCacheService;
 import com.shop.product.dto.CategoryVO;
 import com.shop.product.dto.MerchantCategoryImportRequest;
 import com.shop.product.dto.MerchantCategoryRequest;
@@ -17,6 +18,7 @@ import com.shop.product.service.CategoryService;
 import com.shop.product.service.MerchantCategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -39,8 +41,18 @@ public class MerchantCategoryServiceImpl implements MerchantCategoryService {
     private final ProductMapper productMapper;
     private final CategoryService categoryService;
 
+    @Autowired(required = false)
+    private PublicApiCacheService publicApiCacheService;
+
     @Override
     public List<MerchantCategoryVO> tree(Long merchantId, boolean enabledOnly) {
+        if (enabledOnly && publicApiCacheService != null) {
+            return publicApiCacheService.categoryTree(merchantId, () -> loadTree(merchantId, true));
+        }
+        return loadTree(merchantId, enabledOnly);
+    }
+
+    private List<MerchantCategoryVO> loadTree(Long merchantId, boolean enabledOnly) {
         LambdaQueryWrapper<MerchantCategory> q = new LambdaQueryWrapper<MerchantCategory>()
                 .eq(MerchantCategory::getMerchantId, merchantId)
                 .orderByAsc(MerchantCategory::getSort)
@@ -79,6 +91,7 @@ public class MerchantCategoryServiceImpl implements MerchantCategoryService {
             c.setLevel(2);
         }
         merchantCategoryMapper.insert(c);
+        evictPublicContent(merchantId);
         return c.getId();
     }
 
@@ -114,6 +127,7 @@ public class MerchantCategoryServiceImpl implements MerchantCategoryService {
                 importOne(merchantId, source, merchantParent.getId());
             }
         }
+        evictPublicContent(merchantId);
     }
 
     @Override
@@ -126,6 +140,7 @@ public class MerchantCategoryServiceImpl implements MerchantCategoryService {
             exist.setSort(req.getSort());
         }
         merchantCategoryMapper.updateById(exist);
+        evictPublicContent(merchantId);
     }
 
     @Override
@@ -134,6 +149,7 @@ public class MerchantCategoryServiceImpl implements MerchantCategoryService {
         MerchantCategory exist = mustOwn(id, merchantId);
         exist.setStatus(status == 1 ? 1 : 0);
         merchantCategoryMapper.updateById(exist);
+        evictPublicContent(merchantId);
     }
 
     @Override
@@ -157,6 +173,7 @@ public class MerchantCategoryServiceImpl implements MerchantCategoryService {
             throw new BusinessException(ErrorCode.CATEGORY_HAS_CHILDREN);
         }
         merchantCategoryMapper.deleteById(id);
+        evictPublicContent(merchantId);
     }
 
     @Override
@@ -252,6 +269,12 @@ public class MerchantCategoryServiceImpl implements MerchantCategoryService {
         Map<Long, String> result = new HashMap<>();
         merchantCategoryMapper.selectList(q).forEach(c -> result.put(c.getId(), c.getName()));
         return result;
+    }
+
+    private void evictPublicContent(Long merchantId) {
+        if (publicApiCacheService != null) {
+            publicApiCacheService.evictCategoriesAndProducts(merchantId);
+        }
     }
 
     private MerchantCategory importOne(Long merchantId, Category source, Long parentId) {
