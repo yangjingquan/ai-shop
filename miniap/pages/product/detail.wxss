@@ -173,7 +173,7 @@
   box-sizing: border-box;
 }
 .bottom-bar.has-group-buy {
-  grid-template-columns: 124rpx minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: 124rpx minmax(0, 1fr) minmax(0, 1fr);
 }
 .bottom-bar.has-seckill { grid-template-columns: 124rpx minmax(0, 1fr); }
 .bottom-bar button {
@@ -345,6 +345,11 @@
   color: #ef5523;
   border-color: #ef5523;
   font-weight: 600;
+}
+.val.disabled {
+  background: #f3eee8;
+  color: #b7b0aa;
+  opacity: .62;
 }
 
 .qty-row {

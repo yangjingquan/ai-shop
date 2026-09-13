@@ -7,18 +7,22 @@ page { background: #f8f5f0; }
 .page-title { position: relative; z-index: 1; margin-top: 14rpx; color: #fff; font-size: 48rpx; line-height: 1.05; font-weight: 950; }
 .page-subtitle { position: relative; z-index: 1; margin: 12rpx 0 0; color: rgba(255,255,255,.78); font-size: 24rpx; }
 .hero-note { display: inline-flex; margin-top: 24rpx; padding: 9rpx 14rpx; border-radius: 999rpx; color: #fff; letter-spacing: 0; background: rgba(255,255,255,.15); font-size: 20rpx; }
-.search-row { display: flex; gap: 10rpx; margin: 18rpx 0 24rpx; }
-.search-box { height: 76rpx; padding: 0 20rpx; border: 1rpx solid #eee6dc; border-radius: 38rpx; background: #fff; box-sizing: border-box; }
-.search-box input { height: 74rpx; font-size: 25rpx; }
-.search-btn { width: 108rpx; height: 76rpx; border-radius: 38rpx; background: #201f1c; color: #fff; font-size: 24rpx; font-weight: 800; }
-.product-list { display: flex; flex-direction: column; gap: 14rpx; }
-.product-card { display: flex; gap: 16rpx; padding: 14rpx; border: 1rpx solid #eee6dc; border-radius: 24rpx; background: #fff; box-shadow: none; }
-.thumb { width: 190rpx; height: 190rpx; border-radius: 18rpx; background: #f6f1eb; }
-.info { padding: 6rpx 4rpx 4rpx 0; }
-.name { color: #201f1c; font-size: 29rpx; font-weight: 800; line-height: 1.35; }
-.meta { color: #82776f; font-size: 22rpx; }
-.group-tag { padding: 5rpx 11rpx; border-radius: 999rpx; color: #e94d1b; background: #fff0e7; font-size: 19rpx; }
-.price-row { gap: 10rpx; }
-.price { color: #ef5523; font-size: 38rpx; font-weight: 950; }
-.ordinary { color: #a09790; font-size: 20rpx; }
+.search-row { display: flex; align-items: center; gap: 12rpx; margin: 18rpx 0 24rpx; }
+.search-box { height: 76rpx; flex: 1; min-width: 0; display: flex; align-items: center; padding: 0 20rpx; border: 1rpx solid #eee6dc; border-radius: 38rpx; background: #fff; box-sizing: border-box; }
+.search-box input { width: auto; flex: 1; min-width: 0; height: 74rpx; line-height: 74rpx; font-size: 25rpx; }
+.search-clear { width: 44rpx; height: 44rpx; flex: 0 0 44rpx; display: flex; align-items: center; justify-content: center; margin-left: 8rpx; border-radius: 50%; color: #82776f; background: #f6f1eb; font-size: 24rpx; line-height: 1; z-index: 1; }
+.search-clear:active { color: #fff; background: #201f1c; }
+.search-btn { width: 112rpx; height: 76rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 38rpx; background: #201f1c; color: #fff; font-size: 25rpx; line-height: 1; font-weight: 800; box-shadow: 0 8rpx 16rpx rgba(32,31,28,.14); box-sizing: border-box; }
+.search-btn:active { transform: scale(.96); opacity: .88; }
+.product-list { display: flex; flex-direction: column; gap: 16rpx; }
+.product-card { display: flex; align-items: center; gap: 18rpx; min-height: 190rpx; padding: 14rpx 16rpx; border: 1rpx solid #eee6dc; border-radius: 22rpx; background: #fff; box-shadow: 0 8rpx 20rpx rgba(66, 45, 28, .045); box-sizing: border-box; }
+.product-card:active { background: #fffaf6; transform: translateY(1rpx); }
+.thumb { width: 190rpx; height: 190rpx; flex: 0 0 190rpx; display: block; border-radius: 16rpx; background: #f6f1eb; }
+.info { min-width: 0; flex: 1; align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding: 4rpx 2rpx 2rpx 0; box-sizing: border-box; }
+.name { overflow: hidden; color: #201f1c; font-size: 30rpx; font-weight: 800; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.meta { display: flex; align-items: center; gap: 8rpx; margin-top: 8rpx; color: #82776f; font-size: 22rpx; line-height: 1.2; }
+.group-tag { display: inline-flex; padding: 5rpx 10rpx; border-radius: 999rpx; color: #e94d1b; background: #fff0e7; font-size: 19rpx; line-height: 1.2; }
+.price-row { display: flex; align-items: baseline; gap: 8rpx; min-width: 0; margin-top: 8rpx; }
+.price { color: #ef5523; font-size: 38rpx; line-height: 1; font-weight: 950; letter-spacing: -.02em; }
+.ordinary { overflow: hidden; color: #a09790; font-size: 20rpx; text-overflow: ellipsis; white-space: nowrap; }
 .empty-card, .loading-text, .end-text { padding: 56rpx 0; color: #93877d; text-align: center; font-size: 24rpx; }

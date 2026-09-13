@@ -3,6 +3,7 @@ package com.shop.common.exception;
 import com.shop.common.response.ApiResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,5 +29,16 @@ class GlobalExceptionHandlerTest {
         assertNotNull(r);
         assertEquals(500, r.getCode());
         assertEquals("系统错误", r.getMsg());
+    }
+
+    @Test
+    void handleUnreadableMessage() {
+        ResponseEntity<ApiResult<Void>> response = handler.handleMessageNotReadable(
+                new HttpMessageNotReadableException("invalid json"));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResult<Void> r = response.getBody();
+        assertNotNull(r);
+        assertEquals(100, r.getCode());
+        assertEquals("请求参数格式错误", r.getMsg());
     }
 }

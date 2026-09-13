@@ -35,7 +35,15 @@ function move(index: number, direction: -1 | 1) {
 async function save() {
   saving.value = true
   try {
-    await homeModuleApi.update(orderedModules.value.map((item, index) => ({ ...item, sortOrder: (index + 1) * 10 })))
+    await homeModuleApi.update(orderedModules.value.map((item, index) => ({
+      code: item.code,
+      title: item.title,
+      subtitle: item.subtitle,
+      enabled: item.enabled,
+      sortOrder: (index + 1) * 10,
+      productSource: item.productSource,
+      productLimit: item.productLimit,
+    })))
     ElMessage.success('首页模块已保存')
     await load()
   } finally {

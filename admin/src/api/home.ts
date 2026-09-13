@@ -14,7 +14,12 @@ export interface HomeModule {
   productLimit?: number | null
 }
 
+export type HomeModuleUpdate = Pick<
+  HomeModule,
+  'code' | 'title' | 'subtitle' | 'enabled' | 'sortOrder' | 'productSource' | 'productLimit'
+>
+
 export const homeModuleApi = {
   list: () => request.get<unknown, HomeModule[]>('/api/merchant/home/modules'),
-  update: (modules: HomeModule[]) => request.put<unknown, void>('/api/merchant/home/modules', { modules }),
+  update: (modules: HomeModuleUpdate[]) => request.put<unknown, void>('/api/merchant/home/modules', { modules }),
 }

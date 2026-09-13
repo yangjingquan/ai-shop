@@ -12,6 +12,7 @@ Page({
     product: null,
     banners: [],
     skuOpen: false,
+    visibleSpecs: [],
     selectedValueIds: [],
     selectedSku: null,
     selectedSkuText: '',
@@ -169,6 +170,7 @@ Page({
       this.setData({
         product,
         banners,
+        visibleSpecs: displaySpecs,
         groupBuyGroups: groups,
         seckillHasSkuSelector: this.data.seckillMode && product.skus.length > 1,
         initialSkuId: this.data.seckillMode
@@ -261,6 +263,59 @@ Page({
     }
   },
 
+  isGroupBuyAction(action = this.data.skuAction) {
+    return action === 'group-open' || action === 'group-join'
+  },
+
+  getActionSkus(action = this.data.skuAction) {
+    const product = this.data.product
+    const skus = (product && product.skus) || []
+    if (!product || !this.isGroupBuyAction(action) || Number(product.isGroupBuy) !== 1) return skus
+
+    const ids = Array.isArray(product.groupBuySkuIds)
+      ? product.groupBuySkuIds.map(Number).filter((id) => Number.isFinite(id) && id > 0)
+      : []
+    if (!ids.length) return skus
+    const idSet = new Set(ids)
+    return skus.filter((sku) => idSet.has(Number(sku.id)))
+  },
+
+  buildVisibleSpecs(action = this.data.skuAction, selectedValueIds = this.data.selectedValueIds) {
+    const product = this.data.product
+    const specs = (product && product.specs) || []
+    const actionSkus = this.getActionSkus(action)
+    const groupBuyAction = this.isGroupBuyAction(action)
+    return specs.map((spec, specIndex) => ({
+      ...spec,
+      values: (spec.values || [])
+        .filter((value) => actionSkus.some((sku) => Number((sku.specValueIds || [])[specIndex]) === Number(value.id)))
+        .map((value) => ({
+          ...value,
+          disabled: groupBuyAction && !actionSkus.some((sku) => {
+            const ids = sku.specValueIds || []
+            if (Number(ids[specIndex]) !== Number(value.id)) return false
+            return selectedValueIds.every((selected, index) => (
+              index === specIndex || selected == null || Number(ids[index]) === Number(selected)
+            ))
+          }),
+        })),
+    }))
+  },
+
+  openSkuForAction(action, groupId = 0) {
+    if (!this.data.product) return
+    const selectedValueIds = new Array((this.data.product.specs || []).length).fill(null)
+    this.setData({
+      skuOpen: true,
+      skuAction: action,
+      selectedGroupId: groupId,
+      selectedValueIds,
+      selectedSku: null,
+      selectedSkuText: '',
+      visibleSpecs: this.buildVisibleSpecs(action, selectedValueIds),
+    })
+  },
+
   openSku(e) {
     if (!this.data.product) return
     if (this.data.seckillMode && !this.data.seckillHasSkuSelector) {
@@ -269,7 +324,7 @@ Page({
     }
     const rawAction = e && e.currentTarget && e.currentTarget.dataset.action
     const action = rawAction === 'cart' ? 'cart' : 'buy'
-    this.setData({ skuOpen: true, skuAction: action })
+    this.openSkuForAction(action)
   },
 
   buySingleSeckill() {
@@ -290,12 +345,12 @@ Page({
   },
 
   openGroupBuySku() {
-    this.setData({ skuOpen: true, skuAction: 'group-open', selectedGroupId: 0 })
+    this.openSkuForAction('group-open')
   },
 
   joinGroup(e) {
     const groupId = Number(e.currentTarget.dataset.groupid || 0)
-    this.setData({ skuOpen: true, skuAction: 'group-join', selectedGroupId: groupId })
+    this.openSkuForAction('group-join', groupId)
   },
 
   closeSku() {
@@ -325,6 +380,7 @@ Page({
   onSelectVal(e) {
     const specIndex = Number(e.currentTarget.dataset.specIndex)
     const valId = Number(e.currentTarget.dataset.valId)
+    if (e.currentTarget.dataset.disabled === true || e.currentTarget.dataset.disabled === 'true') return
     const selected = this.data.selectedValueIds.slice()
     selected[specIndex] = selected[specIndex] === valId ? null : valId
     this.matchSku(selected)
@@ -336,10 +392,10 @@ Page({
     let selectedSkuText = ''
     const product = this.data.product
     if (allSelected && product) {
-      selectedSku = (product.skus || []).find((sku) => {
+      selectedSku = this.getActionSkus().find((sku) => {
         const ids = sku.specValueIds || []
         if (ids.length !== selectedValueIds.length) return false
-        return ids.every((id, i) => id === selectedValueIds[i])
+        return ids.every((id, i) => Number(id) === Number(selectedValueIds[i]))
       }) || null
       if (selectedSku) {
         const parts = []
@@ -360,7 +416,12 @@ Page({
       })
       selectedSkuText = parts.length ? `已选 ${parts.join(' / ')}` : ''
     }
-    const nextData = { selectedValueIds, selectedSku, selectedSkuText }
+    const nextData = {
+      selectedValueIds,
+      selectedSku,
+      selectedSkuText,
+      visibleSpecs: this.buildVisibleSpecs(this.data.skuAction, selectedValueIds),
+    }
     if (this.data.seckillMode && selectedSku) {
       nextData.seckillSkuId = Number(selectedSku.seckillSkuId || this.data.seckillSkuId)
       nextData.seckillPriceText = selectedSku.priceText
