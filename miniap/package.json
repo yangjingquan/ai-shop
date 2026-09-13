@@ -1,0 +1,12 @@
+{
+  "name": "shop-miniap",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test:e2e": "node tests/e2e/smoke.js",
+    "test:e2e:smoke": "node tests/e2e/smoke.js"
+  },
+  "devDependencies": {
+    "miniprogram-automator": "0.12.1"
+  }
+}

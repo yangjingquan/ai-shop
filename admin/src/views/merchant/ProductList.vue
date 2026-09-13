@@ -9,6 +9,7 @@ const router = useRouter()
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081').replace(/\/$/, '')
 
 const loading = ref(false)
+const hasLoaded = ref(false)
 const list = ref<ProductListVO[]>([])
 const selectedRows = ref<ProductListVO[]>([])
 const total = ref(0)
@@ -67,6 +68,7 @@ async function fetchList() {
     total.value = data.total
   } finally {
     loading.value = false
+    hasLoaded.value = true
   }
 }
 
@@ -314,7 +316,13 @@ onMounted(async () => {
         <span v-if="selectedCount" class="selection-tip">已选 {{ selectedCount }} 个</span>
       </div>
 
-      <el-table v-loading="loading || reorderSaving" :data="list" stripe @selection-change="onSelectionChange">
+      <el-table
+        v-loading="loading || reorderSaving"
+        :data="list"
+        :empty-text="loading || !hasLoaded ? '商品加载中…' : '暂无商品'"
+        stripe
+        @selection-change="onSelectionChange"
+      >
         <el-table-column type="selection" width="48" />
         <el-table-column label="排序" width="76" align="center">
           <template #default="{ row }">

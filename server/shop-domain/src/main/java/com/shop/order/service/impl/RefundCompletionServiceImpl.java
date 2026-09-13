@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -100,13 +101,26 @@ public class RefundCompletionServiceImpl implements RefundCompletionService {
             memberMapper.updateById(member);
         }
 
-        Long waitingCount = memberMapper.selectCount(new LambdaQueryWrapper<GroupBuyMember>()
-                .eq(GroupBuyMember::getGroupId, member.getGroupId())
-                .eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.WAIT_REFUND.getCode()));
-        if (waitingCount != null && waitingCount == 0) {
-            GroupBuyGroup group = groupMapper.selectById(member.getGroupId());
-            if (group != null && group.getStatus() == GroupBuyGroupStatus.FAILED_WAIT_REFUND.getCode()) {
+        GroupBuyGroup group = groupMapper.selectById(member.getGroupId());
+        if (group != null) {
+            Long paidCount = memberMapper.selectCount(new LambdaQueryWrapper<GroupBuyMember>()
+                    .eq(GroupBuyMember::getGroupId, member.getGroupId())
+                    .eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.PAID.getCode()));
+            boolean groupChanged = false;
+            if (!Objects.equals(group.getPaidCount(), paidCount == null ? 0 : paidCount.intValue())) {
+                group.setPaidCount(paidCount == null ? 0 : paidCount.intValue());
+                groupChanged = true;
+            }
+
+            Long waitingCount = memberMapper.selectCount(new LambdaQueryWrapper<GroupBuyMember>()
+                    .eq(GroupBuyMember::getGroupId, member.getGroupId())
+                    .eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.WAIT_REFUND.getCode()));
+            if (waitingCount != null && waitingCount == 0
+                    && group.getStatus() == GroupBuyGroupStatus.FAILED_WAIT_REFUND.getCode()) {
                 group.setStatus(GroupBuyGroupStatus.FAILED_REFUNDED.getCode());
+                groupChanged = true;
+            }
+            if (groupChanged) {
                 groupMapper.updateById(group);
             }
         }

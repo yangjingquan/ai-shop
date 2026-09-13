@@ -5,7 +5,7 @@
       <view class="search">
         <text class="search-mark">⌕</text>
         <input
-          placeholder="搜索卫衣、耳机、香氛"
+          placeholder="搜索钢笔、打印纸、订书机"
           placeholder-class="input-placeholder"
           value="{{ keyword }}"
           bindinput="onSearchInput"
@@ -30,16 +30,16 @@
     </swiper>
     <view wx:if="{{moduleEnabled.BANNER && !banners.length}}" class="banner banner-placeholder">
       <view class="banner-text">
-        <view class="kicker">NEW DROP</view>
-        <view class="banner-title">周末潮流<text>\n</text>上新季</view>
-        <view class="banner-desc">精选好物低至 5 折</view>
+        <view class="kicker">文具上新</view>
+        <view class="banner-title">周末文具<text>\n</text>上新季</view>
+        <view class="banner-desc">精选办公与学生文具</view>
         <view class="cta">立即逛逛</view>
       </view>
       <view class="shoe"><view class="shoe-line"></view></view>
     </view>
 
     <view wx:if="{{moduleEnabled.MARKETING_ZONE && presaleActivity}}" class="presale-entry" bindtap="onPresale">
-      <view class="presale-entry-copy"><view class="presale-entry-kicker">NEW DROP · PRE-SALE</view><view class="presale-entry-title">{{presaleActivity.name}}</view><view class="presale-entry-desc">定金膨胀 · 尾款更省 · {{presaleActivity.phaseText}}</view></view>
+      <view class="presale-entry-copy"><view class="presale-entry-kicker">新品 · 预售</view><view class="presale-entry-title">{{presaleActivity.name}}</view><view class="presale-entry-desc">定金膨胀 · 尾款更省 · {{presaleActivity.phaseText}}</view></view>
       <view class="presale-entry-price"><text>¥</text>{{presaleActivity.skus[0].depositAmount}}<view>立即预订</view></view>
     </view>
 

@@ -99,7 +99,10 @@ Page({
         tone: `tone-${(idx % 5) + 1}`,
       }))
       const list = this.normalizeProducts({ data: { list: productData } })
-      const moduleState = this.buildModuleState(homeData.modules || [], list)
+      const moduleState = this.buildModuleState(
+        Array.isArray(homeData.modules) ? homeData.modules : null,
+        list,
+      )
       this.setData({ banners, topCategories: top, ...moduleState, marketingEnabled })
       this.loadSeckillSummary(marketingEnabled.SECKILL)
       const referralHandled = await this.loadReferralInviteeCoupon(marketingEnabled.REFERRAL)
@@ -378,11 +381,19 @@ Page({
 
   buildModuleState(modules, fallbackProducts) {
     const defaults = this.data.moduleEnabled
-    const homeModules = Array.isArray(modules) ? modules.slice().sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0)) : []
-    const enabled = homeModules.reduce((result, module) => ({ ...result, [module.code]: Number(module.enabled) === 1 }), { ...defaults })
+    const hasModuleConfig = Array.isArray(modules)
+    const homeModules = hasModuleConfig
+      ? modules.slice().sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+      : []
+    const enabled = homeModules.reduce(
+      (result, module) => ({ ...result, [module.code]: Number(module.enabled) === 1 }),
+      hasModuleConfig ? {} : { ...defaults },
+    )
     const moduleProducts = (code, fallback) => {
       const module = homeModules.find((item) => item.code === code)
-      const products = module && Array.isArray(module.products) ? this.normalizeProducts({ data: { list: module.products } }) : fallback
+      const products = module && Array.isArray(module.products)
+        ? this.normalizeProducts({ data: { list: module.products } })
+        : (hasModuleConfig ? [] : fallback)
       return { module, products }
     }
     const newest = moduleProducts('NEW_ARRIVALS', fallbackProducts.slice(0, 2))

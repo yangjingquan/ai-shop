@@ -2,6 +2,10 @@ package com.shop.order.service.impl;
 
 import com.shop.groupbuy.mapper.GroupBuyGroupMapper;
 import com.shop.groupbuy.mapper.GroupBuyMemberMapper;
+import com.shop.groupbuy.entity.GroupBuyGroup;
+import com.shop.groupbuy.entity.GroupBuyMember;
+import com.shop.groupbuy.enums.GroupBuyGroupStatus;
+import com.shop.groupbuy.enums.GroupBuyMemberStatus;
 import com.shop.order.entity.Order;
 import com.shop.order.entity.OrderItem;
 import com.shop.order.entity.RefundApplication;
@@ -62,5 +66,36 @@ class RefundCompletionServiceImplTest {
         verify(orderMapper).releaseStock(3L, 2);
         verify(productService).recalcProduct(4L);
         verify(orderMapper).updateById(order);
+    }
+
+    @Test
+    void refreshesGroupPaidCountWhenAGroupMemberIsRefunded() {
+        Order order = new Order();
+        order.setId(1L);
+        order.setOrderNo("26083000000000010002");
+        order.setStatus(OrderStatus.CANCELLED.getCode());
+        order.setPayAmount(new BigDecimal("12.34"));
+        RefundApplication refund = new RefundApplication();
+        refund.setRefundAmount(new BigDecimal("12.34"));
+        GroupBuyMember member = new GroupBuyMember();
+        member.setGroupId(8L);
+        member.setStatus(GroupBuyMemberStatus.PAID.getCode());
+        GroupBuyGroup group = new GroupBuyGroup();
+        group.setId(8L);
+        group.setStatus(GroupBuyGroupStatus.FAILED_WAIT_REFUND.getCode());
+        group.setPaidCount(1);
+        when(memberMapper.selectOne(any())).thenReturn(member);
+        when(memberMapper.selectCount(any())).thenReturn(0L, 0L);
+        when(groupMapper.selectById(8L)).thenReturn(group);
+
+        RefundCompletionServiceImpl service = new RefundCompletionServiceImpl(
+                orderMapper, orderItemMapper, productService, memberMapper, groupMapper);
+        service.completeIfFullRefund(refund, order, LocalDateTime.of(2026, 8, 30, 20, 0));
+
+        assertEquals(GroupBuyMemberStatus.REFUNDED.getCode(), member.getStatus());
+        assertEquals(0, group.getPaidCount());
+        assertEquals(GroupBuyGroupStatus.FAILED_REFUNDED.getCode(), group.getStatus());
+        verify(memberMapper).updateById(member);
+        verify(groupMapper).updateById(group);
     }
 }
