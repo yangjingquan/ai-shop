@@ -31,11 +31,14 @@ public class WxMerchantResolver {
             return requireActiveMerchant(current.getMerchantId());
         }
 
+        String miniAppId = requestMiniAppId(request);
         String token = request.getHeader("wx-token");
         if (StringUtils.hasText(token) && jwtUtil.isValid(token)) {
             Claims claims = jwtUtil.parseToken(token);
             String userType = claims.get("userType", String.class);
-            if (UserType.WX.name().equals(userType)) {
+            String tokenAppId = claims.get("appid", String.class);
+            if (UserType.WX.name().equals(userType)
+                    && (!StringUtils.hasText(miniAppId) || miniAppId.equals(tokenAppId))) {
                 Long merchantId = claims.get("merchantId", Long.class);
                 if (merchantId != null) {
                     return requireActiveMerchant(merchantId);
@@ -48,10 +51,6 @@ public class WxMerchantResolver {
             merchantCode = request.getParameter("merchantCode");
         }
         if (!StringUtils.hasText(merchantCode)) {
-            String miniAppId = request.getHeader("miniapp-appid");
-            if (!StringUtils.hasText(miniAppId)) {
-                miniAppId = request.getParameter("miniAppId");
-            }
             if (!StringUtils.hasText(miniAppId)) {
                 throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "缺少商家编码或小程序 AppID");
             }
@@ -68,6 +67,14 @@ public class WxMerchantResolver {
             throw new BusinessException(ErrorCode.MERCHANT_NOT_FOUND);
         }
         return merchant.getId();
+    }
+
+    private String requestMiniAppId(HttpServletRequest request) {
+        String miniAppId = request.getHeader("miniapp-appid");
+        if (!StringUtils.hasText(miniAppId)) {
+            miniAppId = request.getParameter("miniAppId");
+        }
+        return miniAppId;
     }
 
     /** 受保护的 C 端写操作必须重新读取商家状态，不能只信任 JWT 中的 merchantId。 */

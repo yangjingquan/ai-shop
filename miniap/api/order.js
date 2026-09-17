@@ -8,7 +8,7 @@ function uploadRefundEvidence(filePath) {
       filePath,
       name: 'file',
       header: {
-        'wx-token': wx.getStorageSync('wx_token') || '',
+        'wx-token': config.getStorage('wx_token', '') || '',
         'merchant-code': config.getMerchantCode(),
         'miniapp-appid': config.MINIAPP_APP_ID,
       },

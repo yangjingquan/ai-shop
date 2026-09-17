@@ -29,16 +29,40 @@ const extConfig = readExtConfig()
 const storageEnv = typeof wx !== 'undefined' ? wx.getStorageSync('shop_api_env') : ''
 const ENV = String(extConfig.env || storageEnv || 'prod').trim()
 const selected = CONFIGS[ENV] || CONFIGS.prod
+const MINIAPP_APP_ID = readMiniAppId()
+
+function storageKey(name) {
+  const scope = MINIAPP_APP_ID || 'unknown-app'
+  return `shop_${name}_${scope}`
+}
+
+function getStorage(name, fallback) {
+  if (typeof wx === 'undefined') return fallback
+  const value = wx.getStorageSync(storageKey(name))
+  return value === '' || value === undefined || value === null ? fallback : value
+}
+
+function setStorage(name, value) {
+  if (typeof wx !== 'undefined') wx.setStorageSync(storageKey(name), value)
+}
+
+function removeStorage(name) {
+  if (typeof wx !== 'undefined') wx.removeStorageSync(storageKey(name))
+}
 
 function getMerchantCode() {
-  const stored = typeof wx !== 'undefined' ? wx.getStorageSync('merchant_code') : ''
+  const stored = getStorage('merchant_code', '')
   return String(extConfig.merchantCode || stored || '').trim()
 }
 
 module.exports = {
   BASE_URL: String(extConfig.baseUrl || selected.BASE_URL).replace(/\/$/, ''),
   ENV,
-  MINIAPP_APP_ID: readMiniAppId(),
+  MINIAPP_APP_ID,
+  storageKey,
+  getStorage,
+  setStorage,
+  removeStorage,
   getMerchantCode,
   REQUEST_TIMEOUT: 10000,
 }

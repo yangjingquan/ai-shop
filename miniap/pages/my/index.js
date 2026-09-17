@@ -1,4 +1,5 @@
 const userApi = require('../../api/user')
+const config = require('../../utils/config')
 const notificationApi = require('../../api/notification')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
 const couponApi = require('../../api/coupon')
@@ -21,8 +22,8 @@ Page({
 
   onShow() {
     syncTabBar(this, 4)
-    const phone = wx.getStorageSync('user_phone') || ''
-    const nickname = wx.getStorageSync('user_nickname') || ''
+    const phone = config.getStorage('user_phone', '') || ''
+    const nickname = config.getStorage('user_nickname', '') || ''
     const avatar = wx.getStorageSync('user_avatar') || ''
     this.setData({ phone, nickname, avatar, avatarUrl: resolveImageUrl(avatar) })
     this.loadProfile()
@@ -74,12 +75,12 @@ Page({
       const data = {}
       if (profile.phone) {
         data.phone = profile.phone
-        wx.setStorageSync('user_phone', profile.phone)
-        wx.setStorageSync('has_phone', true)
+        config.setStorage('user_phone', profile.phone)
+        config.setStorage('has_phone', true)
       }
       if (profile.nickname) {
         data.nickname = profile.nickname
-        wx.setStorageSync('user_nickname', profile.nickname)
+        config.setStorage('user_nickname', profile.nickname)
       }
       if (profile.avatar) {
         data.avatar = profile.avatar
@@ -147,8 +148,8 @@ Page({
       .bindPhone(e.detail.code)
       .then((res) => {
         const phone = (res && res.data) || '已绑定'
-        wx.setStorageSync('user_phone', phone)
-        wx.setStorageSync('has_phone', true)
+        config.setStorage('user_phone', phone)
+        config.setStorage('has_phone', true)
         this.setData({ phone })
         wx.showToast({ title: '绑定成功' })
       })

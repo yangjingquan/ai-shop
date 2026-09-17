@@ -15,11 +15,13 @@ App({
     cartCount: 0,
     newUserCouponPopupShown: false,
     referralShareContext: null,
+    authReady: null,
   },
   onLaunch(options) {
     const context = referralShareContext(options)
     if (context) this.globalData.referralShareContext = context
-    auth.silentLogin().then((res) => {
+    this.globalData.authReady = auth.silentLogin()
+    this.globalData.authReady.then((res) => {
       if (res) {
         console.log('[app] silentLogin ok, hasPhone=', res.hasPhone)
       }

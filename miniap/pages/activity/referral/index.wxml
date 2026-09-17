@@ -28,7 +28,7 @@
     <view class="progress-head"><view><text class="progress-number">{{campaign.completedInviteCount || 0}}</text><text> 位好友已完成首单</text></view><text class="muted">{{campaign.pendingInviteCount || 0}} 人待完成</text></view>
     <view class="tier-list"><view wx:for="{{campaign.tiers}}" wx:key="inviteCount" class="tier-row {{item.reached ? 'reached' : ''}}"><view class="tier-dot">{{item.reached ? '✓' : item.inviteCount}}</view><view class="tier-copy"><text>邀请满{{item.inviteCount}}人</text><text>{{item.couponName || '奖励券' }} ¥{{item.couponAmountText}}</text></view><text class="tier-status">{{item.rewarded ? '已发券' : item.reached ? '待发券' : '未达成'}}</text></view></view>
     <view wx:if="{{campaign.remainingToNextTier}}" class="next-tip">再邀请 {{campaign.remainingToNextTier}} 人，可获得下一档优惠券</view>
-    <button class="primary-btn share-btn" open-type="share" bindtap="recordShare">邀请好友</button>
+    <button class="primary-btn share-btn" open-type="share" disabled="{{!campaign.shareToken}}">{{campaign.shareToken ? '邀请好友' : '分享链接准备中'}}</button>
     <view class="secondary-link" bindtap="goRewards">查看我的奖励 ›</view>
   </view>
 

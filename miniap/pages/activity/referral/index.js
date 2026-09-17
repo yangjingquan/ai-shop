@@ -17,9 +17,11 @@ Page({
 
   onLoad(options) {
     this.setData({ campaignId: Number(options.campaignId || 0), token: options.token || '' })
-    marketingCapabilities.ensure('REFERRAL').then((enabled) => {
+    const app = getApp()
+    const authReady = app.globalData.authReady || auth.silentLogin()
+    authReady.then(() => marketingCapabilities.ensure('REFERRAL')).then((enabled) => {
       if (!enabled) return wx.switchTab({ url: '/pages/home/index' })
-      return auth.silentLogin().then(() => this.load())
+      return this.load()
     }).catch(() => this.setData({ loading: false }))
   },
 
@@ -29,13 +31,17 @@ Page({
       : referralApi.current(this.data.token)
     return request.then((res) => {
       const campaign = this.normalize(res && res.data)
-      this.setData({ campaign, campaignId: campaign.id || this.data.campaignId, isInvitee: !!campaign.invitee, oldUser: !!campaign.oldUser, loading: false })
-      if (this.data.token && campaign.invitee && !campaign.oldUser && !campaign.inviteeCouponId) return this.bindInvitee()
+      this.setData({ campaign, campaignId: campaign.id || this.data.campaignId, isInvitee: !!campaign.invitee, oldUser: !!campaign.oldUser, loading: true })
+      if (this.data.token && campaign.invitee && !campaign.oldUser && !campaign.inviteeCouponId) {
+        return this.bindInvitee().finally(() => this.setData({ loading: false }))
+      }
       if (!this.data.token && !campaign.invitee && !campaign.shareToken && campaign.id) {
         return referralApi.share(campaign.id).then((shareRes) => {
-          if (shareRes && shareRes.data && shareRes.data.token) this.setData({ 'campaign.shareToken': shareRes.data.token })
-        }).catch(() => {})
+          const token = shareRes && shareRes.data && shareRes.data.token
+          if (token) this.setData({ 'campaign.shareToken': token })
+        }).catch(() => {}).finally(() => this.setData({ loading: false }))
       }
+      this.setData({ loading: false })
       return null
     }).catch(() => this.setData({ loading: false, campaign: null }))
   },
@@ -52,12 +58,6 @@ Page({
   normalize(campaign) {
     if (!campaign) return null
     return { ...campaign, landingProductImage: resolveImageUrl(campaign.landingProductImage || ''), tiers: (campaign.tiers || []).map((item) => ({ ...item, couponAmountText: Number(item.couponAmount || 0).toFixed(2) })) }
-  },
-
-  recordShare() {
-    if (this.data.campaignId) referralApi.share(this.data.campaignId).then((res) => {
-      if (res && res.data && res.data.token) this.setData({ 'campaign.shareToken': res.data.token })
-    }).catch(() => {})
   },
 
   onShareAppMessage() {

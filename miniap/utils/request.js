@@ -2,7 +2,7 @@ const config = require('./config')
 
 function request(options, retryCount = 0) {
   return new Promise((resolve, reject) => {
-    const token = wx.getStorageSync('wx_token') || ''
+    const token = config.getStorage('wx_token', '') || ''
     const method = options.method || 'GET'
     const url = config.BASE_URL + options.url
     wx.request({
@@ -30,14 +30,14 @@ function request(options, retryCount = 0) {
         const data = res.data
         if (res.statusCode === 401 || (data && data.code === 401)) {
           if (retryCount >= 1) {
-            wx.removeStorageSync('wx_token')
+            config.removeStorage('wx_token')
             const exhausted = { code: 401, msg: '登录已过期，请重新进入小程序', retryExhausted: true }
             wx.showToast({ title: exhausted.msg, icon: 'none' })
             reject(exhausted)
             return
           }
           const auth = require('./auth')
-          wx.removeStorageSync('wx_token')
+          config.removeStorage('wx_token')
           auth.silentLogin().then((loginData) => {
             if (!loginData || !loginData.token) {
               const failed = { code: 401, msg: '登录失败，请重试', retryExhausted: true }

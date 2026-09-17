@@ -30,6 +30,12 @@ public class WxAuthInterceptor implements HandlerInterceptor {
         if (!UserType.WX.name().equals(userType)) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
+        String requestAppId = request.getHeader("miniapp-appid");
+        String tokenAppId = claims.get("appid", String.class);
+        if (requestAppId != null && !requestAppId.isBlank()
+                && !requestAppId.equals(tokenAppId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         Long userId = claims.get("userId", Long.class);
         Number tokenVersion = claims.get("tokenVersion", Number.class);
         if (tokenVersion == null || !tokenVersionService.isCurrent(UserType.WX, userId, tokenVersion.intValue())) {

@@ -68,6 +68,8 @@ Page({
   async loadAll() {
     this.setData({ loading: true })
     try {
+      const app = getApp()
+      await (app.globalData.authReady || auth.silentLogin()).catch(() => null)
       const [homeRes, treeRes] = await Promise.all([
         homeApi.get().catch(() => null),
         categoryApi.tree().catch(() => ({ data: [] })),

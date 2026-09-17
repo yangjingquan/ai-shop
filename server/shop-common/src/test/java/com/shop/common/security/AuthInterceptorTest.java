@@ -91,4 +91,18 @@ class AuthInterceptorTest {
         when(request.getHeader("wx-token")).thenReturn(null);
         assertThrows(BusinessException.class, () -> wxInterceptor.preHandle(request, response, new Object()));
     }
+
+    @Test
+    void wxInterceptorRejectsTokenFromDifferentMiniApp() {
+        String token = jwtUtil.generateToken(UserType.WX, Map.of(
+                "userId", 3L,
+                "openid", "ox123",
+                "merchantId", 10L,
+                "appid", "wx-source-app",
+                "tokenVersion", 0));
+        when(request.getHeader("wx-token")).thenReturn(token);
+        when(request.getHeader("miniapp-appid")).thenReturn("wx-target-app");
+
+        assertThrows(BusinessException.class, () -> wxInterceptor.preHandle(request, response, new Object()));
+    }
 }

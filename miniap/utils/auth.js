@@ -33,17 +33,19 @@ function silentLogin() {
           success(res) {
             const data = res.data
             if (data && data.code === 0 && data.data && data.data.token) {
-              wx.setStorageSync('wx_token', data.data.token)
-              wx.setStorageSync('wx_openid', data.data.openid || '')
-              wx.setStorageSync('has_phone', data.data.hasPhone)
-              if (data.data.merchantCode) wx.setStorageSync('merchant_code', data.data.merchantCode)
+              config.setStorage('wx_token', data.data.token)
+              config.setStorage('wx_openid', data.data.openid || '')
+              config.setStorage('has_phone', data.data.hasPhone)
+              if (data.data.merchantCode) config.setStorage('merchant_code', data.data.merchantCode)
               resolve(data.data)
             } else {
+              config.removeStorage('wx_token')
               console.warn('silentLogin failed:', data)
               resolve(null)
             }
           },
           fail(err) {
+            config.removeStorage('wx_token')
             console.warn('silentLogin network error:', err)
             resolve(null)
           },
