@@ -24,7 +24,7 @@ Page({
     syncTabBar(this, 4)
     const phone = config.getStorage('user_phone', '') || ''
     const nickname = config.getStorage('user_nickname', '') || ''
-    const avatar = wx.getStorageSync('user_avatar') || ''
+    const avatar = config.getStorage('user_avatar', '') || ''
     this.setData({ phone, nickname, avatar, avatarUrl: resolveImageUrl(avatar) })
     this.loadProfile()
     this.loadUnreadCount()
@@ -85,7 +85,7 @@ Page({
       if (profile.avatar) {
         data.avatar = profile.avatar
         data.avatarUrl = resolveImageUrl(profile.avatar)
-        wx.setStorageSync('user_avatar', profile.avatar)
+        config.setStorage('user_avatar', profile.avatar)
       }
       this.setData(data)
     }).catch(() => {
@@ -96,14 +96,14 @@ Page({
   onChooseAvatar(e) {
     const tempPath = e.detail.avatarUrl || ''
     if (!tempPath) return
-    this.setData({ avatarUrl: tempPath })
     const previousAvatar = this.data.avatarUrl
+    this.setData({ avatarUrl: tempPath })
     userApi.uploadAvatar(tempPath).then((avatar) => {
       this.setData({ avatar, avatarUrl: resolveImageUrl(avatar) })
       this.saveProfile({ fields: ['avatar'] })
-    }).catch(() => {
+    }).catch((err) => {
       this.setData({ avatarUrl: previousAvatar })
-      wx.showToast({ title: '头像上传失败，请重试', icon: 'none' })
+      wx.showToast({ title: (err && err.msg) || '头像上传失败，请重试', icon: 'none' })
     })
   },
 
@@ -127,8 +127,8 @@ Page({
     if (!Object.keys(payload).length) return Promise.resolve()
 
     return userApi.updateProfile(payload).then(() => {
-      if (payload.nickname) wx.setStorageSync('user_nickname', payload.nickname)
-      if (payload.avatar) wx.setStorageSync('user_avatar', payload.avatar)
+      if (payload.nickname) config.setStorage('user_nickname', payload.nickname)
+      if (payload.avatar) config.setStorage('user_avatar', payload.avatar)
       this.setData({ nickname, avatar, avatarUrl: resolveImageUrl(avatar) })
       if (!options.silent) {
         wx.showToast({ title: '已保存' })
