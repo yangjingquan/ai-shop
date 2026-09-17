@@ -40,3 +40,4 @@ server/uploads/*
 docs
 
 deploy
+tmp
