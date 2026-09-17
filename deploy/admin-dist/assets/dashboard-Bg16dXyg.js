@@ -1,1 +1,0 @@
-import{a as e}from"./index-CN7_gcQA.js";var t={adminOverview:()=>e.get(`/api/admin/dashboard/overview`),merchantOverview:()=>e.get(`/api/merchant/dashboard/overview`)};export{t};

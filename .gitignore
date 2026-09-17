@@ -38,3 +38,5 @@ logs/
 server/uploads/*
 
 docs
+
+deploy

@@ -1,1 +1,0 @@
-import{a as e}from"./index-BZLg4TE_.js";var t={get:()=>e.get(`/api/merchant/profile`),update:t=>e.put(`/api/merchant/profile`,t)};export{t};
