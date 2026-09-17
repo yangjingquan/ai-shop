@@ -67,6 +67,23 @@ pipeline {
         """
       }
     }
+    stage('Restore Deployment Config') {
+      steps {
+        sh """
+          set -eux
+          test -f /opt/shop/docker-compose.yml
+          test -d /opt/shop/nginx
+          test -d /opt/shop/init
+          mkdir -p deploy
+          rm -rf deploy/nginx deploy/init
+          cp -a /opt/shop/nginx deploy/nginx
+          cp -a /opt/shop/init deploy/init
+          cp /opt/shop/docker-compose.yml deploy/docker-compose.yml
+          if [ -f /opt/shop/README.md ]; then cp /opt/shop/README.md deploy/README.md; fi
+          if [ -f /opt/shop/.env.template ]; then cp /opt/shop/.env.template deploy/.env.template; fi
+        """
+      }
+    }
     stage('Build Admin Frontend') {
       steps {
         sh """
