@@ -74,11 +74,16 @@ pipeline {
           test -f /opt/shop/docker-compose.yml
           test -d /opt/shop/nginx
           test -d /opt/shop/init
+          test -f /opt/shop/admin-app/Dockerfile
+          test -f /opt/shop/wx-app/Dockerfile
           mkdir -p deploy
           rm -rf deploy/nginx deploy/init
           cp -a /opt/shop/nginx deploy/nginx
           cp -a /opt/shop/init deploy/init
           cp /opt/shop/docker-compose.yml deploy/docker-compose.yml
+          mkdir -p deploy/admin-app deploy/wx-app
+          cp /opt/shop/admin-app/Dockerfile deploy/admin-app/Dockerfile
+          cp /opt/shop/wx-app/Dockerfile deploy/wx-app/Dockerfile
           if [ -f /opt/shop/README.md ]; then cp /opt/shop/README.md deploy/README.md; fi
           if [ -f /opt/shop/.env.template ]; then cp /opt/shop/.env.template deploy/.env.template; fi
         """
