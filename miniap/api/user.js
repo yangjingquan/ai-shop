@@ -67,6 +67,31 @@ function uploadFile(filePath) {
   })
 }
 
+// chooseAvatar 在开发者工具通常返回 http://tmp/...，真机通常返回
+// wxfile://tmp_...。先保存为本地缓存文件，避免上传组件在不同运行时对临时
+// 路径协议的处理不一致，也避免等待登录时临时文件被回收。
+function stabilizeFilePath(filePath) {
+  return new Promise((resolve) => {
+    if (!filePath || typeof wx === 'undefined' || !wx.getFileSystemManager) {
+      resolve(filePath)
+      return
+    }
+    const fs = wx.getFileSystemManager()
+    fs.saveFile({
+      tempFilePath: filePath,
+      success(res) {
+        resolve(res && res.savedFilePath ? res.savedFilePath : filePath)
+      },
+      fail(err) {
+        // 某些基础库已经把路径视为稳定路径；保存失败时继续使用原路径，
+        // 不因为兼容处理反而阻断正常上传。
+        console.warn('avatar temp file save skipped:', err)
+        resolve(filePath)
+      },
+    })
+  })
+}
+
 function uploadFailureMessage(statusCode) {
   if (statusCode === 413) return '头像图片过大，请换一张小于 10MB 的图片'
   if (statusCode === 401) return '登录已过期，请重试'
@@ -75,8 +100,12 @@ function uploadFailureMessage(statusCode) {
 }
 
 function uploadAvatar(filePath, retryCount = 0) {
-  return waitForAuth()
-    .then(() => uploadFile(filePath))
+  let stablePath = filePath
+  return stabilizeFilePath(filePath)
+    .then((path) => {
+      stablePath = path || filePath
+      return waitForAuth().then(() => uploadFile(stablePath))
+    })
     .catch((err) => {
       const unauthorized = err && (err.code === 401 || err.statusCode === 401)
       if (!unauthorized || retryCount >= 1) throw err
@@ -85,7 +114,7 @@ function uploadAvatar(filePath, retryCount = 0) {
         if (!loginData || !loginData.token) {
           throw { code: 401, msg: '登录失败，请重试' }
         }
-        return uploadAvatar(filePath, retryCount + 1)
+        return uploadFile(stablePath)
       })
     })
 }
