@@ -32,7 +32,12 @@ function uploadFile(filePath) {
         try {
           data = JSON.parse(res.data || '{}')
         } catch (err) {
-          reject({ code: res.statusCode || 500, msg: '头像上传失败', cause: err })
+          const message = uploadFailureMessage(res.statusCode)
+          console.warn('avatar upload returned a non-JSON response:', {
+            statusCode: res.statusCode,
+            response: String(res.data || '').slice(0, 300),
+          })
+          reject({ code: res.statusCode || 500, msg: message, cause: err })
           return
         }
         if (res.statusCode === 401 || (data && data.code === 401)) {
@@ -55,10 +60,18 @@ function uploadFile(filePath) {
         resolve(url)
       },
       fail(err) {
-        reject({ code: err && err.errCode, msg: '头像上传失败', cause: err })
+        console.warn('avatar upload request failed:', err)
+        reject({ code: err && err.errCode, msg: '头像上传请求失败，请检查网络后重试', cause: err })
       },
     })
   })
+}
+
+function uploadFailureMessage(statusCode) {
+  if (statusCode === 413) return '头像图片过大，请换一张小于 10MB 的图片'
+  if (statusCode === 401) return '登录已过期，请重试'
+  if (statusCode >= 500) return '上传服务暂时不可用，请稍后重试'
+  return '头像上传失败，请重试'
 }
 
 function uploadAvatar(filePath, retryCount = 0) {

@@ -62,9 +62,18 @@ public class LocalFileStorageService {
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new IllegalArgumentException("图片大小不能超过 10MB");
         }
-        String extension = getExtension(file.getOriginalFilename());
-        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+        String fileNameExtension = getExtension(file.getOriginalFilename());
+        String extension = detectImageExtension(file);
+        if (extension == null) {
             throw new IllegalArgumentException("仅支持 jpg、jpeg、png、gif、webp 图片");
+        }
+        // wx.uploadFile 不保证 multipart 的原始文件名带扩展名（chooseAvatar 生成的
+        // wxfile:// 临时文件尤其如此），因此不能只根据文件名拒绝一个合法头像。
+        // 有扩展名时仍要与文件签名核对，避免伪造图片类型。
+        if (StringUtils.hasText(fileNameExtension)
+                && ALLOWED_EXTENSIONS.contains(fileNameExtension)
+                && !isSameImageType(fileNameExtension, extension)) {
+            throw new IllegalArgumentException("文件内容与扩展名不匹配");
         }
         validateImageContent(file, extension);
 
@@ -153,6 +162,25 @@ public class LocalFileStorageService {
                 throw new IllegalArgumentException("图片尺寸过大");
             }
         }
+    }
+
+    private String detectImageExtension(MultipartFile file) throws IOException {
+        byte[] header = new byte[12];
+        int read;
+        try (InputStream input = file.getInputStream()) {
+            read = input.read(header);
+        }
+        if (matchesSignature(header, read, "jpg")) return "jpg";
+        if (matchesSignature(header, read, "png")) return "png";
+        if (matchesSignature(header, read, "gif")) return "gif";
+        if (matchesSignature(header, read, "webp")) return "webp";
+        return null;
+    }
+
+    private boolean isSameImageType(String fileNameExtension, String detectedExtension) {
+        return fileNameExtension.equals(detectedExtension)
+                || (("jpg".equals(fileNameExtension) || "jpeg".equals(fileNameExtension))
+                && ("jpg".equals(detectedExtension) || "jpeg".equals(detectedExtension)));
     }
 
     private boolean matchesSignature(byte[] header, int length, String extension) {
