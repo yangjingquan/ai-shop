@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 import { adminOrderApi, type AdminRefundRow, type GroupRefundTaskRow } from '@/api/order'
 
@@ -79,8 +79,28 @@ function resolveImageUrl(url?: string) {
 }
 
 async function doApprove(id: number) {
+  const row = refunds.value.find((item) => item.id === id)
+  if (!row) return
+  const requiresReturn = row.returnRequired === 1
+  try {
+    await ElMessageBox.confirm(
+      requiresReturn
+        ? '该订单已发货，同意后将等待用户填写退货物流；商家验货通过后才会发起微信退款。确认继续吗？'
+        : '同意后将立即发起微信退款，退款结果由微信异步处理。确认继续吗？',
+      '确认退款审批',
+      {
+        type: 'warning',
+        confirmButtonText: requiresReturn ? '同意并等待退货' : '同意并发起退款',
+        cancelButtonText: '取消',
+        distinguishCancelAndClose: true,
+      },
+    )
+  } catch {
+    return
+  }
   await request.post<unknown, void>(`/api/merchant/refund/${id}/approve`, { approved: true })
-  ElMessage.success('已发起退款，等待微信处理结果')
+  ElMessage.success(row?.returnRequired === 1 ? '已同意退款申请，请等待用户退货' : '已发起退款，等待微信处理结果')
+  window.dispatchEvent(new CustomEvent('refund-pending-count-refresh'))
   await loadRefunds()
 }
 
@@ -90,6 +110,7 @@ async function doReject(id: number) {
     rejectReason: rejectReasons.value[id] || '',
   })
   ElMessage.success('已拒绝退款')
+  window.dispatchEvent(new CustomEvent('refund-pending-count-refresh'))
   await loadRefunds()
 }
 

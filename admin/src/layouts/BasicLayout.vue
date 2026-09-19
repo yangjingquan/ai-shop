@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { profileApi } from '@/api/profile'
+import request from '@/utils/request'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const pendingRefundCount = ref(0)
+const pendingShipCount = ref(0)
+let refundBadgeTimer: ReturnType<typeof window.setInterval> | undefined
+let orderShipBadgeTimer: ReturnType<typeof window.setInterval> | undefined
 
 const title = computed(() =>
   userStore.role === 'admin' ? '商城运营后台' : '商家管理后台',
@@ -150,7 +155,69 @@ function handleUserCommand(command: 'profile' | 'logout') {
   }
   handleLogout()
 }
-onMounted(loadMerchantName)
+
+function menuBadge(item: MenuItem) {
+  if (userStore.role !== 'merchant') return 0
+  if (item.index === 'merchant-refund-review') return pendingRefundCount.value
+  if (item.index === 'merchant-order-ship') return pendingShipCount.value
+  return 0
+}
+
+function menuBadgeText(item: MenuItem) {
+  const count = menuBadge(item)
+  return count > 99 ? '99+' : String(count)
+}
+
+async function loadPendingRefundCount() {
+  if (userStore.role !== 'merchant' || !userStore.hasPermission('merchant:refund:view')) {
+    pendingRefundCount.value = 0
+    return
+  }
+  try {
+    const data = await request.get<unknown, { total?: number }>('/api/merchant/refund/list', {
+      params: { status: 0, page: 1, size: 1 },
+    })
+    pendingRefundCount.value = Math.max(0, Number(data?.total || 0))
+  } catch {
+    // The navigation remains usable when the badge request is unavailable.
+  }
+}
+
+const refreshRefundBadge = () => { void loadPendingRefundCount() }
+
+async function loadPendingShipCount() {
+  if (userStore.role !== 'merchant' || !userStore.hasPermission('merchant:order:view')) {
+    pendingShipCount.value = 0
+    return
+  }
+  try {
+    const data = await request.get<unknown, { total?: number }>('/api/merchant/order/page', {
+      params: { scope: 'shipable', page: 1, size: 1 },
+    })
+    pendingShipCount.value = Math.max(0, Number(data?.total || 0))
+  } catch {
+    // The navigation remains usable when the badge request is unavailable.
+  }
+}
+
+const refreshOrderShipBadge = () => { void loadPendingShipCount() }
+
+onMounted(() => {
+  loadMerchantName()
+  refreshRefundBadge()
+  refreshOrderShipBadge()
+  window.addEventListener('refund-pending-count-refresh', refreshRefundBadge)
+  window.addEventListener('order-pending-count-refresh', refreshOrderShipBadge)
+  refundBadgeTimer = window.setInterval(refreshRefundBadge, 60000)
+  orderShipBadgeTimer = window.setInterval(refreshOrderShipBadge, 60000)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('refund-pending-count-refresh', refreshRefundBadge)
+  window.removeEventListener('order-pending-count-refresh', refreshOrderShipBadge)
+  if (refundBadgeTimer) window.clearInterval(refundBadgeTimer)
+  if (orderShipBadgeTimer) window.clearInterval(orderShipBadgeTimer)
+})
 </script>
 
 <template>
@@ -175,7 +242,10 @@ onMounted(loadMerchantName)
             <template #title>
               <span class="menu-icon">{{ m.icon }}</span>
               <span class="menu-copy">
-                <span class="menu-label">{{ m.label }}</span>
+                <span class="menu-label-row">
+                  <span class="menu-label">{{ m.label }}</span>
+                  <span v-if="menuBadge(m)" class="menu-badge">{{ menuBadgeText(m) }}</span>
+                </span>
                 <span class="menu-desc">{{ m.desc }}</span>
               </span>
             </template>
@@ -190,7 +260,10 @@ onMounted(loadMerchantName)
           <el-menu-item v-else :index="m.index">
             <span class="menu-icon">{{ m.icon }}</span>
             <span class="menu-copy">
-              <span class="menu-label">{{ m.label }}</span>
+              <span class="menu-label-row">
+                <span class="menu-label">{{ m.label }}</span>
+                <span v-if="menuBadge(m)" class="menu-badge">{{ menuBadgeText(m) }}</span>
+              </span>
               <span class="menu-desc">{{ m.desc }}</span>
             </span>
           </el-menu-item>
@@ -365,11 +438,49 @@ onMounted(loadMerchantName)
   display: flex;
   flex-direction: column;
   gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+
+.menu-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .menu-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 14px;
   font-weight: 800;
+}
+
+.menu-badge {
+  min-width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 6px;
+  border: 2px solid rgba(58, 33, 16, .78);
+  border-radius: 999px;
+  color: #fff;
+  background: #e35c35;
+  box-shadow: 0 6px 14px rgba(227, 92, 53, .3);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 16px;
+}
+
+.side-menu :deep(.el-menu-item.is-active) .menu-badge {
+  border-color: rgba(255, 247, 234, .88);
+  color: #7a2c12;
+  background: #ffd58f;
+  box-shadow: none;
 }
 
 .menu-desc {

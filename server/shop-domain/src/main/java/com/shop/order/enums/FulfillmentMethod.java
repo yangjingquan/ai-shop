@@ -8,7 +8,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum FulfillmentMethod {
     NONE(0, "无需履约"),
-    EXPRESS(1, "快递发货");
+    EXPRESS(1, "快递发货"),
+    PICKUP(2, "顾客自取");
 
     private final int code;
     private final String text;

@@ -1,5 +1,10 @@
 <view class="home">
-  <view class="content">
+  <view wx:if="{{loading}}" class="home-loading">
+    <view class="loading-spinner"></view>
+    <text class="loading-label">正在加载首页</text>
+  </view>
+
+  <view wx:else class="content">
     <view class="nav">
       <view class="brand">潮</view>
       <view class="search">

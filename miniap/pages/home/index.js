@@ -25,7 +25,8 @@ Page({
     homeModules: [],
     moduleEnabled: { BANNER: true, CATEGORY: true, NEW_ARRIVALS: true, POPULAR_PRODUCTS: true, PRODUCT_FEED: true, MARKETING_ZONE: true },
     moduleTitles: {},
-    loading: false,
+    // Keep the data surface hidden until the first home request is complete.
+    loading: true,
     marketingEnabled: {},
     seckillSummary: null,
     now: Date.now(),

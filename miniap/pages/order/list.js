@@ -16,6 +16,12 @@ Page({
     page: 1,
     hasMore: true,
     loading: false,
+    refundReasonVisible: false,
+    refundReasons: ['不想要了', '拍错/多拍了', '商品质量问题', '商品与描述不符', '其它'],
+    refundOrderNo: '',
+    selectedRefundReason: '',
+    customRefundReason: '',
+    refundSubmitting: false,
   },
 
   onShow() {
@@ -61,31 +67,42 @@ Page({
     return orderApi
       .page(params)
       .then((res) => {
-        const list = ((res.data && res.data.list) || []).map((item) => ({
-          ...item,
-          statusText: item.stateText || item.statusText,
-          displayStatusCode: item.state === undefined ? item.status : item.state,
-          seckillLabel: this.data.seckillEnabled && item.orderType === 2 ? item.orderTypeText : '',
-          bundleLabel: Number(item.orderType) === 4 ? item.orderTypeText : '',
-          lotteryLabel: Number(item.orderType) === 5 ? item.orderTypeText : '',
-          presaleLabel: Number(item.orderType) === 6 ? item.orderTypeText : '',
-          isPresale: Number(item.orderType) === 6,
-          firstItemImage: resolveImageUrl(item.firstItemImage || ''),
-          canDelete: item.status === 3 || item.status === 4,
-          swipeOffset: 0,
-          swipeStyle: 'transform: translate3d(0, 0, 0);',
-          groupBuyProgress: this.data.groupBuyEnabled && item.orderType === 1 && item.groupBuyRequiredCount
-            ? `${item.groupBuyPaidCount || 0}/${item.groupBuyRequiredCount} 人`
-            : '',
-          refundStatusText: item.refundStatus === 0 ? '退款申请处理中' : item.refundStatus === 1 ? '退款处理中' : item.refundStatus === 2 ? '退款申请已拒绝' : item.refundStatus === 3 ? '退款成功' : item.refundStatus === 4 ? '退款失败，可重新申请' : item.refundStatus === 5 ? '请填写退货物流' : item.refundStatus === 6 ? '商家正在验货' : '',
-          totalLabel: this.totalLabel(item),
-          items: (item.items || []).map((goods) => ({
-            ...goods,
-            mainImage: resolveImageUrl(goods.mainImage || ''),
-            unitPriceText: this.fmtPrice(goods.unitPrice),
-            subtotalText: this.fmtPrice(goods.subtotal),
-          })),
-        }))
+        const list = ((res.data && res.data.list) || []).map((item) => {
+          const refundStatus = item.refundStatus === null || item.refundStatus === undefined || item.refundStatus === ''
+            ? null
+            : Number(item.refundStatus)
+          const orderStatus = Number(item.status)
+          const canRefund = Number(item.orderType) !== 5
+            && ![0, 1, 5, 6].includes(refundStatus)
+            && [1, 2, 3, 6, 7].includes(orderStatus)
+          return {
+            ...item,
+            statusText: item.stateText || item.statusText,
+            displayStatusCode: item.state === undefined ? item.status : item.state,
+            seckillLabel: this.data.seckillEnabled && item.orderType === 2 ? item.orderTypeText : '',
+            bundleLabel: Number(item.orderType) === 4 ? item.orderTypeText : '',
+            lotteryLabel: Number(item.orderType) === 5 ? item.orderTypeText : '',
+            presaleLabel: Number(item.orderType) === 6 ? item.orderTypeText : '',
+            isPresale: Number(item.orderType) === 6,
+            firstItemImage: resolveImageUrl(item.firstItemImage || ''),
+            canDelete: item.status === 3 || item.status === 4,
+            canRefund,
+            refundStatus,
+            swipeOffset: 0,
+            swipeStyle: 'transform: translate3d(0, 0, 0);',
+            groupBuyProgress: this.data.groupBuyEnabled && item.orderType === 1 && item.groupBuyRequiredCount
+              ? `${item.groupBuyPaidCount || 0}/${item.groupBuyRequiredCount} 人`
+              : '',
+            refundStatusText: refundStatus === 0 ? '退款申请处理中' : refundStatus === 1 ? '退款处理中' : refundStatus === 2 ? '退款申请已拒绝' : refundStatus === 3 ? '退款成功' : refundStatus === 4 ? '退款失败，可重新申请' : refundStatus === 5 ? '请填写退货物流' : refundStatus === 6 ? '商家正在验货' : '',
+            totalLabel: this.totalLabel(item),
+            items: (item.items || []).map((goods) => ({
+              ...goods,
+              mainImage: resolveImageUrl(goods.mainImage || ''),
+              unitPriceText: this.fmtPrice(goods.unitPrice),
+              subtotalText: this.fmtPrice(goods.subtotal),
+            })),
+          }
+        })
         const newOrders = this.data.page === 1 ? list : this.data.orders.concat(list)
         this.setData({
           orders: newOrders,
@@ -304,7 +321,70 @@ Page({
   },
 
   refundApply(e) {
-    this.goDetail(e)
+    const orderNo = e.currentTarget.dataset.orderno
+    if (!orderNo || this.data.refundSubmitting) return
+    const order = (this.data.orders || []).find((item) => item.orderNo === orderNo)
+    if (!order) {
+      wx.showToast({ title: '订单信息已更新，请刷新后重试', icon: 'none' })
+      return
+    }
+    if (!order.canRefund) {
+      wx.showToast({ title: (order && order.refundStatusText) || '退款申请处理中', icon: 'none' })
+      return
+    }
+    this.closeSwipeRows()
+    this.setData({
+      refundReasonVisible: true,
+      refundOrderNo: orderNo,
+      selectedRefundReason: '',
+      customRefundReason: '',
+    })
+  },
+
+  noop() {},
+
+  closeRefundReasonModal() {
+    if (this.data.refundSubmitting) return
+    this.setData({ refundReasonVisible: false, refundOrderNo: '' })
+  },
+
+  selectRefundReason(e) {
+    const reason = e.currentTarget.dataset.reason || ''
+    this.setData({ selectedRefundReason: reason })
+  },
+
+  onRefundReasonInput(e) {
+    this.setData({ customRefundReason: e.detail.value || '' })
+  },
+
+  confirmRefundReason() {
+    if (this.data.refundSubmitting) return
+    const selected = String(this.data.selectedRefundReason || '').trim()
+    const reason = selected === '其它'
+      ? String(this.data.customRefundReason || '').trim()
+      : selected
+    if (!selected) {
+      wx.showToast({ title: '请选择退款理由', icon: 'none' })
+      return
+    }
+    if (selected === '其它' && !reason) {
+      wx.showToast({ title: '请填写退款理由', icon: 'none' })
+      return
+    }
+    const orderNo = this.data.refundOrderNo
+    if (!orderNo) return
+    this.setData({ refundReasonVisible: false, refundSubmitting: true })
+    wx.showLoading({ title: '提交申请中', mask: true })
+    orderApi.refund(orderNo, { reason })
+      .then(() => {
+        wx.showToast({ title: '退款申请已提交', icon: 'success' })
+        return this.refreshList()
+      })
+      .catch(() => this.refreshList())
+      .finally(() => {
+        wx.hideLoading()
+        this.setData({ refundSubmitting: false, refundOrderNo: '' })
+      })
   },
 
   viewLogistics(e) {

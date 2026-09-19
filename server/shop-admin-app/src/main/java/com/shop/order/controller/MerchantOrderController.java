@@ -18,14 +18,13 @@ import com.shop.order.entity.Order;
 import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
 import com.shop.order.enums.RefundStatus;
+import com.shop.order.enums.FulfillmentMethod;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import com.shop.order.service.OrderService;
 import com.shop.order.service.LogisticsService;
 import com.shop.order.service.OrderDomainModel;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -53,12 +52,12 @@ public class MerchantOrderController {
 
     @Data
     public static class ShipRequest {
+        private Integer fulfillmentMethod = FulfillmentMethod.EXPRESS.getCode();
+
         private String shipCompany;
 
         private String shipperCode;
 
-        @NotBlank
-        @Pattern(regexp = "^[A-Za-z0-9]{5,30}$")
         private String shipNo;
     }
 
@@ -67,7 +66,8 @@ public class MerchantOrderController {
     @RequirePermission("merchant:order:ship")
     public ApiResult<Void> ship(@RequestParam String orderNo, @RequestBody @Valid ShipRequest req) {
         Long merchantId = CurrentUserHolder.get().getMerchantId();
-        orderService.ship(merchantId, orderNo, req.getShipCompany(), req.getShipperCode(), req.getShipNo());
+        orderService.ship(merchantId, orderNo, req.getFulfillmentMethod(), req.getShipCompany(),
+                req.getShipperCode(), req.getShipNo());
         return ApiResult.success(null);
     }
 

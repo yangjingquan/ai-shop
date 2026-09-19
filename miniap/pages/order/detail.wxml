@@ -226,3 +226,42 @@
 </view>
 
 <view class="loading-text" wx:else>加载中...</view>
+
+<view wx:if="{{refundReasonVisible}}" class="refund-reason-mask" catchtap="closeRefundReasonModal">
+  <view class="refund-reason-modal" catchtap="noop">
+    <view class="refund-reason-head">
+      <view>
+        <view class="refund-reason-title">申请退款</view>
+        <view class="refund-reason-subtitle">请选择本次退款的理由</view>
+      </view>
+      <view class="refund-reason-close" bindtap="closeRefundReasonModal">×</view>
+    </view>
+
+    <view class="refund-reason-list">
+      <view
+        wx:for="{{refundReasons}}"
+        wx:key="*this"
+        class="refund-reason-option {{selectedRefundReason === item ? 'selected' : ''}}"
+        data-reason="{{item}}"
+        bindtap="selectRefundReason"
+      >
+        <text>{{item}}</text>
+        <text class="refund-reason-check">{{selectedRefundReason === item ? '✓' : ''}}</text>
+      </view>
+    </view>
+
+    <textarea
+      wx:if="{{selectedRefundReason === '其它'}}"
+      class="refund-reason-input"
+      maxlength="200"
+      placeholder="请填写退款理由"
+      value="{{customRefundReason}}"
+      bindinput="onRefundReasonInput"
+    />
+    <view class="refund-reason-tip">提交后将由商家审核，审核通过后原路退回款项</view>
+    <view class="refund-reason-actions">
+      <view class="refund-reason-cancel" bindtap="closeRefundReasonModal">取消</view>
+      <view class="refund-reason-confirm {{refundSubmitting ? 'disabled' : ''}}" bindtap="confirmRefundReason">确认申请退款</view>
+    </view>
+  </view>
+</view>

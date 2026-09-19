@@ -13,6 +13,7 @@ interface OrderRow {
   stateText?: string
   orderType?: number
   orderTypeText?: string
+  fulfillmentMethod?: number
   fulfillmentMethodText?: string
   payAmount: number | string
   createdAt: string
@@ -81,6 +82,7 @@ const route = useRoute()
 const orders = ref<OrderRow[]>([])
 const shipNos = ref<Record<string, string>>({})
 const shipperCodes = ref<Record<string, string>>({})
+const fulfillmentMethods = ref<Record<string, number>>({})
 const logisticsLoading = ref(false)
 const loading = ref(false)
 const total = ref(0)
@@ -125,6 +127,11 @@ async function loadOrders() {
       },
     })
     orders.value = data?.list || []
+    orders.value.forEach((order) => {
+      if (fulfillmentMethods.value[order.orderNo] === undefined) {
+        fulfillmentMethods.value[order.orderNo] = order.fulfillmentMethod || 1
+      }
+    })
     total.value = data?.total || 0
   } finally {
     loading.value = false
@@ -147,6 +154,14 @@ function statusTagType(status: number): 'primary' | 'success' | 'warning' | 'inf
 
 function canShip(row: OrderRow) {
   return row.status === 1 || row.status === 6
+}
+
+function fulfillmentMethod(row: OrderRow) {
+  return fulfillmentMethods.value[row.orderNo] ?? row.fulfillmentMethod ?? 1
+}
+
+function isPickup(row: OrderRow) {
+  return fulfillmentMethod(row) === 2
 }
 
 function displayValue(value?: string | number | null) {
@@ -177,19 +192,23 @@ async function openOrderDetail(orderNo: string) {
 }
 
 async function doShip(orderNo: string) {
+  const row = orders.value.find((item) => item.orderNo === orderNo)
+  const pickup = row ? isPickup(row) : false
   const sn = shipNos.value[orderNo]
-  if (!sn || !/^[A-Za-z0-9]{5,30}$/.test(sn)) {
+  if (!pickup && (!sn || !/^[A-Za-z0-9]{5,30}$/.test(sn))) {
     ElMessage.error('物流单号格式不合法（5-30位字母数字）')
     return
   }
   const carrier = carriers.find((item) => item.value === shipperCodes.value[orderNo])
   await request.post<unknown, void>('/api/merchant/order/ship', {
-    shipCompany: carrier?.label || '',
-    shipperCode: carrier?.value || '',
-    shipNo: sn,
+    fulfillmentMethod: pickup ? 2 : 1,
+    shipCompany: pickup ? '' : carrier?.label || '',
+    shipperCode: pickup ? '' : carrier?.value || '',
+    shipNo: pickup ? '' : sn,
   }, { params: { orderNo } })
-  ElMessage.success('发货成功')
+  ElMessage.success(pickup ? '已确认顾客自取' : '发货成功')
   await loadOrders()
+  window.dispatchEvent(new Event('order-pending-count-refresh'))
 }
 
 async function loadLogistics(forceRefresh = false) {
@@ -218,7 +237,7 @@ onMounted(async () => {
       <div>
         <span class="page-kicker">FULFILLMENT</span>
         <h1 class="page-title">订单发货</h1>
-        <p class="page-desc">查看当前商户全部订单，可按订单状态筛选，并对待发货订单录入物流单号完成发货。</p>
+        <p class="page-desc">查看当前商户全部订单，可按状态筛选；快递订单录入物流单号，顾客自取订单无需填写快递信息。</p>
       </div>
       <el-button @click="loadOrders">刷新列表</el-button>
     </div>
@@ -255,26 +274,48 @@ onMounted(async () => {
             <span>{{ row.orderTypeText || '-' }}</span>
           </template>
         </el-table-column>
+        <el-table-column label="履约" width="110">
+          <template #default="{ row }">
+            <el-tag :type="row.fulfillmentMethod === 2 ? 'success' : 'info'" effect="plain">
+              {{ row.fulfillmentMethodText || (row.fulfillmentMethod === 2 ? '顾客自取' : '快递发货') }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="payAmount" label="金额" width="120" />
         <el-table-column prop="createdAt" label="创建时间" width="180" />
-        <el-table-column label="发货操作" min-width="320" fixed="right">
+        <el-table-column label="发货操作" min-width="360" fixed="right">
           <template #default="{ row }">
             <div v-if="canShip(row as OrderRow)" class="ship-action">
               <el-select
-                v-model="shipperCodes[row.orderNo]"
-                placeholder="物流公司"
+                v-model="fulfillmentMethods[row.orderNo]"
+                placeholder="履约方式"
                 size="small"
-                clearable
+                class="fulfillment-select"
               >
-                <el-option v-for="carrier in carriers" :key="carrier.value" :label="carrier.label" :value="carrier.value" />
+                <el-option label="快递发货" :value="1" />
+                <el-option label="顾客自取" :value="2" />
               </el-select>
-              <el-input
-                v-model="shipNos[row.orderNo]"
-                placeholder="输入物流单号"
-                size="small"
-              />
-              <el-button v-permission="'merchant:order:ship'" type="primary" size="small" @click="doShip(row.orderNo)">
-                发货
+              <span v-if="isPickup(row as OrderRow)" class="pickup-hint">无需快递信息</span>
+              <template v-else>
+                <el-select
+                  v-model="shipperCodes[row.orderNo]"
+                  placeholder="物流公司"
+                  size="small"
+                  clearable
+                >
+                  <el-option v-for="carrier in carriers" :key="carrier.value" :label="carrier.label" :value="carrier.value" />
+                </el-select>
+                <el-input
+                  v-model="shipNos[row.orderNo]"
+                  placeholder="输入物流单号"
+                  size="small"
+                />
+                <el-button v-permission="'merchant:order:ship'" type="primary" size="small" @click="doShip(row.orderNo)">
+                  发货
+                </el-button>
+              </template>
+              <el-button v-if="isPickup(row as OrderRow)" v-permission="'merchant:order:ship'" type="primary" size="small" @click="doShip(row.orderNo)">
+                确认自取
               </el-button>
             </div>
             <span v-else class="text-muted">无需发货</span>
@@ -368,8 +409,8 @@ onMounted(async () => {
           <div class="detail-section">
             <div class="section-title">履约信息</div>
             <el-descriptions :column="2" border>
-              <el-descriptions-item label="物流公司">{{ displayValue(orderDetail.shipCompany) }}</el-descriptions-item>
-              <el-descriptions-item label="物流单号">{{ displayValue(orderDetail.shipNo) }}</el-descriptions-item>
+              <el-descriptions-item label="物流公司">{{ orderDetail.fulfillmentMethod === 2 ? '无需物流' : displayValue(orderDetail.shipCompany) }}</el-descriptions-item>
+              <el-descriptions-item label="物流单号">{{ orderDetail.fulfillmentMethod === 2 ? '顾客自取' : displayValue(orderDetail.shipNo) }}</el-descriptions-item>
               <el-descriptions-item label="发货时间">{{ displayValue(orderDetail.shipTime) }}</el-descriptions-item>
               <el-descriptions-item label="完成时间">{{ displayValue(orderDetail.finishTime) }}</el-descriptions-item>
               <el-descriptions-item label="取消时间">{{ displayValue(orderDetail.cancelTime) }}</el-descriptions-item>
@@ -405,9 +446,17 @@ onMounted(async () => {
 <style scoped>
 .ship-action {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(140px, 1fr) auto;
+  grid-template-columns: minmax(100px, 1fr) minmax(120px, 1fr) minmax(130px, 1fr) auto;
   gap: 10px;
   align-items: center;
+}
+.fulfillment-select {
+  min-width: 110px;
+}
+.pickup-hint {
+  color: var(--el-color-success);
+  font-size: 12px;
+  white-space: nowrap;
 }
 .text-muted {
   color: var(--el-text-color-secondary);

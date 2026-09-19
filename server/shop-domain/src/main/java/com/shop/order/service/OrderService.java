@@ -47,6 +47,10 @@ public interface OrderService {
     /** 商家发货（带快递鸟承运商编码）。 */
     void ship(Long merchantId, String orderNo, String shipCompany, String shipperCode, String shipNo);
 
+    /** 商家确认履约，可选择快递发货或顾客自取。 */
+    void ship(Long merchantId, String orderNo, Integer fulfillmentMethod,
+              String shipCompany, String shipperCode, String shipNo);
+
     /** 用户确认收货 */
     void confirmReceive(Long userId, String orderNo);
 

@@ -71,7 +71,7 @@
             </block>
             <block wx:elif="{{item.status === 1}}">
               <view class="btn dark" catchtap="remindShip" data-orderno="{{item.orderNo}}">提醒发货</view>
-              <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
+              <view wx:if="{{item.canRefund}}" class="btn" catchtap="refundApply" data-orderno="{{item.orderNo}}">申请退款</view>
             </block>
             <block wx:elif="{{item.status === 5 && groupBuyEnabled}}">
               <view class="btn dark" catchtap="goGroup" data-groupid="{{item.groupBuyGroupId}}">查看拼团</view>
@@ -79,21 +79,21 @@
             <block wx:elif="{{item.status === 6}}">
               <view wx:if="{{groupBuyEnabled && item.orderType === 1}}" class="btn" catchtap="goGroup" data-groupid="{{item.groupBuyGroupId}}">查看拼团</view>
               <view class="btn dark" catchtap="remindShip" data-orderno="{{item.orderNo}}">提醒发货</view>
-              <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
+              <view wx:if="{{item.canRefund}}" class="btn" catchtap="refundApply" data-orderno="{{item.orderNo}}">申请退款</view>
             </block>
             <block wx:elif="{{item.status === 7}}">
               <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">{{item.refundStatusText || '退款处理中'}}</view>
-              <view wx:if="{{item.refundStatus === 2 || item.refundStatus === 4}}" class="btn primary" catchtap="goDetail" data-orderno="{{item.orderNo}}">重新申请退款</view>
+              <view wx:if="{{item.refundStatus === 2 || item.refundStatus === 4}}" class="btn primary" catchtap="refundApply" data-orderno="{{item.orderNo}}">重新申请退款</view>
               <view wx:if="{{item.refundStatus === 5}}" class="btn primary" catchtap="goDetail" data-orderno="{{item.orderNo}}">填写退货物流</view>
             </block>
             <block wx:elif="{{item.status === 2}}">
               <view class="btn" catchtap="viewLogistics" data-orderno="{{item.orderNo}}">查看物流</view>
               <view class="btn primary" catchtap="confirmReceive" data-orderno="{{item.orderNo}}">确认收货</view>
-              <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
+              <view wx:if="{{item.canRefund}}" class="btn" catchtap="refundApply" data-orderno="{{item.orderNo}}">申请退款</view>
             </block>
             <block wx:elif="{{item.status === 3}}">
               <view class="btn" catchtap="viewLogistics" data-orderno="{{item.orderNo}}">查看物流</view>
-              <view class="btn" catchtap="goDetail" data-orderno="{{item.orderNo}}">申请退款</view>
+              <view wx:if="{{item.canRefund}}" class="btn" catchtap="refundApply" data-orderno="{{item.orderNo}}">申请退款</view>
               <view
                 class="btn dark"
                 wx:if="{{item.items && item.items.length}}"
@@ -122,4 +122,43 @@
 
   <view wx:if="{{loading && orders.length === 0}}" class="loading-text">加载中...</view>
   <view wx:if="{{orders.length > 0 && !hasMore}}" class="end-text">没有更多订单了</view>
+</view>
+
+<view wx:if="{{refundReasonVisible}}" class="refund-reason-mask" catchtap="closeRefundReasonModal">
+  <view class="refund-reason-modal" catchtap="noop">
+    <view class="refund-reason-head">
+      <view>
+        <view class="refund-reason-title">申请退款</view>
+        <view class="refund-reason-subtitle">请选择本次退款的理由</view>
+      </view>
+      <view class="refund-reason-close" bindtap="closeRefundReasonModal">×</view>
+    </view>
+
+    <view class="refund-reason-list">
+      <view
+        wx:for="{{refundReasons}}"
+        wx:key="*this"
+        class="refund-reason-option {{selectedRefundReason === item ? 'selected' : ''}}"
+        data-reason="{{item}}"
+        bindtap="selectRefundReason"
+      >
+        <text>{{item}}</text>
+        <text class="refund-reason-check">{{selectedRefundReason === item ? '✓' : ''}}</text>
+      </view>
+    </view>
+
+    <textarea
+      wx:if="{{selectedRefundReason === '其它'}}"
+      class="refund-reason-input"
+      maxlength="200"
+      placeholder="请填写退款理由"
+      value="{{customRefundReason}}"
+      bindinput="onRefundReasonInput"
+    />
+    <view class="refund-reason-tip">提交后将由商家审核，审核通过后原路退回款项</view>
+    <view class="refund-reason-actions">
+      <view class="refund-reason-cancel" bindtap="closeRefundReasonModal">取消</view>
+      <view class="refund-reason-confirm {{refundSubmitting ? 'disabled' : ''}}" bindtap="confirmRefundReason">确认申请退款</view>
+    </view>
+  </view>
 </view>

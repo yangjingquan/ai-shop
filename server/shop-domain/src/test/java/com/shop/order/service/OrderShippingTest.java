@@ -7,6 +7,7 @@ import com.shop.order.entity.Order;
 import com.shop.order.entity.RefundApplication;
 import com.shop.order.enums.OrderStatus;
 import com.shop.order.enums.RefundStatus;
+import com.shop.order.enums.FulfillmentMethod;
 import com.shop.order.mapper.OrderMapper;
 import com.shop.order.mapper.RefundApplicationMapper;
 import org.junit.jupiter.api.Test;
@@ -56,6 +57,19 @@ class OrderShippingTest {
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> orderService.ship(MERCHANT, "FAKE_NO_XXXX", "ab"));
         assertEquals(ErrorCode.SHIP_NO_INVALID.getCode(), ex.getCode());
+    }
+
+    @Test
+    void pickupDoesNotRequireShippingDetails() {
+        Order order = createWaitShipOrder();
+
+        orderService.ship(MERCHANT, order.getOrderNo(), FulfillmentMethod.PICKUP.getCode(), "", "", "");
+
+        Order after = orderMapper.selectById(order.getId());
+        assertEquals(OrderStatus.WAIT_RECEIVE.getCode(), after.getStatus());
+        assertEquals(FulfillmentMethod.PICKUP.getCode(), after.getFulfillmentMethod());
+        assertEquals("", after.getShipNo());
+        assertNotNull(after.getShipTime());
     }
 
     @Test

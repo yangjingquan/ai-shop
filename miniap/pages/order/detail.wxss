@@ -329,3 +329,21 @@
 .detail-page .actions { margin-left: 0; margin-right: 0; }
 .detail-page .btn { border-radius: 32rpx; }
 .detail-page .btn.primary, .detail-page .btn.dark { background: #201f1c; }
+
+.refund-reason-mask { position: fixed; z-index: 1100; inset: 0; display: flex; align-items: flex-end; justify-content: center; background: rgba(23, 25, 31, .48); }
+.refund-reason-modal { width: 100%; padding: 34rpx 28rpx calc(28rpx + env(safe-area-inset-bottom)); border-radius: 30rpx 30rpx 0 0; background: #fffaf6; box-sizing: border-box; box-shadow: 0 -12rpx 40rpx rgba(50, 44, 36, .18); }
+.refund-reason-head { display: flex; align-items: flex-start; justify-content: space-between; }
+.refund-reason-title { color: #201f1c; font-size: 34rpx; font-weight: 950; }
+.refund-reason-subtitle { margin-top: 8rpx; color: #9b806a; font-size: 22rpx; }
+.refund-reason-close { width: 48rpx; height: 48rpx; color: #8b8e97; font-size: 42rpx; line-height: 42rpx; text-align: center; }
+.refund-reason-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16rpx; margin-top: 26rpx; }
+.refund-reason-option { display: flex; align-items: center; justify-content: space-between; min-height: 76rpx; padding: 0 20rpx; border: 1rpx solid #eee6dc; border-radius: 16rpx; color: #49413b; background: #fff; font-size: 24rpx; box-sizing: border-box; }
+.refund-reason-option.selected { border-color: #ef5523; color: #ef5523; background: #fff0e8; font-weight: 800; }
+.refund-reason-check { width: 28rpx; color: #ef5523; font-size: 28rpx; font-weight: 950; text-align: right; }
+.refund-reason-input { width: 100%; min-height: 136rpx; margin-top: 18rpx; padding: 18rpx; border: 1rpx solid #eee6dc; border-radius: 16rpx; color: #201f1c; background: #fff; font-size: 24rpx; line-height: 34rpx; box-sizing: border-box; }
+.refund-reason-tip { margin-top: 18rpx; color: #a07860; font-size: 21rpx; line-height: 30rpx; }
+.refund-reason-actions { display: flex; gap: 16rpx; margin-top: 24rpx; }
+.refund-reason-cancel, .refund-reason-confirm { height: 76rpx; display: flex; align-items: center; justify-content: center; border-radius: 18rpx; font-size: 26rpx; font-weight: 900; }
+.refund-reason-cancel { flex: 0 0 220rpx; color: #5e554e; background: #eee9e1; }
+.refund-reason-confirm { flex: 1; color: #fff; background: #ef5523; }
+.refund-reason-confirm.disabled { opacity: .55; }

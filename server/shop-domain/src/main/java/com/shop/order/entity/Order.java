@@ -31,7 +31,7 @@ public class Order extends BaseEntity {
     /** 0 普通订单 / 1 团购订单 / 2 秒杀订单 / 3 积分兑换订单 / 4 搭配购订单 / 6 预售支付订单 */
     private Integer orderType;
 
-    /** 0=无需履约，1=快递发货。 */
+    /** 0=无需履约，1=快递发货，2=顾客自取。 */
     private Integer fulfillmentMethod;
 
     /** 下单时冻结的订单领域快照，避免后续活动/商品编辑改变历史订单语义。 */

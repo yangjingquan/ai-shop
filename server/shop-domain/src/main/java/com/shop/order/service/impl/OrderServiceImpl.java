@@ -1108,24 +1108,40 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void ship(Long merchantId, String orderNo, String shipNo) {
-        ship(merchantId, orderNo, "", "", shipNo);
+        ship(merchantId, orderNo, FulfillmentMethod.EXPRESS.getCode(), "", "", shipNo);
     }
 
     @Override
     @Transactional
     public void ship(Long merchantId, String orderNo, String shipCompany, String shipNo) {
-        ship(merchantId, orderNo, shipCompany, "", shipNo);
+        ship(merchantId, orderNo, FulfillmentMethod.EXPRESS.getCode(), shipCompany, "", shipNo);
     }
 
     @Override
     @Transactional
     public void ship(Long merchantId, String orderNo, String shipCompany, String shipperCode, String shipNo) {
-        if (shipNo == null || !SHIP_NO_PATTERN.matcher(shipNo).matches()) {
+        ship(merchantId, orderNo, FulfillmentMethod.EXPRESS.getCode(), shipCompany, shipperCode, shipNo);
+    }
+
+    @Override
+    @Transactional
+    public void ship(Long merchantId, String orderNo, Integer fulfillmentMethod,
+                     String shipCompany, String shipperCode, String shipNo) {
+        int requestedMethod = fulfillmentMethod == null
+                ? FulfillmentMethod.EXPRESS.getCode() : fulfillmentMethod;
+        boolean pickup = FulfillmentMethod.PICKUP.getCode() == requestedMethod;
+        if (requestedMethod != FulfillmentMethod.EXPRESS.getCode() && !pickup) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "履约方式不合法");
+        }
+        if (!pickup && (shipNo == null || !SHIP_NO_PATTERN.matcher(shipNo).matches())) {
             throw new BusinessException(ErrorCode.SHIP_NO_INVALID);
         }
+        Integer method = pickup ? FulfillmentMethod.PICKUP.getCode() : FulfillmentMethod.EXPRESS.getCode();
         LocalDateTime now = LocalDateTime.now();
-        int affected = orderMapper.ship(merchantId, orderNo, shipCompany == null ? "" : shipCompany.trim(),
-                shipperCode == null ? "" : shipperCode.trim().toUpperCase(), shipNo, now);
+        int affected = orderMapper.ship(merchantId, orderNo, method,
+                pickup || shipCompany == null ? "" : shipCompany.trim(),
+                pickup || shipperCode == null ? "" : shipperCode.trim().toUpperCase(),
+                pickup ? "" : shipNo.trim(), now);
         if (affected == 0) {
             Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
                     .eq(Order::getOrderNo, orderNo));
@@ -1256,13 +1272,18 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.PAY_FAILED.getCode(), "退款金额超过剩余可退金额");
         }
 
+        String reason = req == null || req.getReason() == null ? "" : req.getReason().trim();
+        if (reason.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "退款理由不能为空");
+        }
+
         RefundApplication app = new RefundApplication();
         app.setOrderNo(orderNo);
         app.setOutRefundNo("RF_" + orderNo + "_"
                 + UUID.randomUUID().toString().replace("-", ""));
         app.setUserId(userId);
         app.setMerchantId(order.getMerchantId());
-        app.setReason(req == null || req.getReason() == null ? "" : req.getReason().trim());
+        app.setReason(reason);
         app.setEvidenceUrls(req == null || req.getEvidenceUrls() == null ? List.of()
                 : req.getEvidenceUrls().stream().filter(Objects::nonNull).map(String::trim)
                 .filter(value -> !value.isEmpty()).distinct().toList());
