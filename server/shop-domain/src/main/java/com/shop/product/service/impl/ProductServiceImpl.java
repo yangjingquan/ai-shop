@@ -23,6 +23,7 @@ import com.shop.product.mapper.ProductSpecValueMapper;
 import com.shop.order.mapper.OrderItemMapper;
 import com.shop.product.service.MerchantCategoryService;
 import com.shop.product.service.ProductService;
+import com.shop.freight.service.FreightTemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,7 @@ public class ProductServiceImpl implements ProductService {
     private final MerchantCategoryService merchantCategoryService;
     private final OrderItemMapper orderItemMapper;
     private final ObjectMapper objectMapper;
+    private final FreightTemplateService freightTemplateService;
 
     @Autowired(required = false)
     private PublicApiCacheService publicApiCacheService;
@@ -68,6 +70,8 @@ public class ProductServiceImpl implements ProductService {
         Product p = new Product();
         p.setMerchantId(merchantId);
         p.setCategoryId(req.getCategoryId());
+        validateFreightTemplate(merchantId, req.getFreightTemplateId());
+        p.setFreightTemplateId(req.getFreightTemplateId());
         p.setName(req.getName());
         p.setSubtitle(req.getSubtitle());
         p.setMainImage(req.getMainImage());
@@ -111,6 +115,8 @@ public class ProductServiceImpl implements ProductService {
         validateGroupBuy(req);
 
         p.setCategoryId(req.getCategoryId());
+        validateFreightTemplate(merchantId, req.getFreightTemplateId());
+        p.setFreightTemplateId(req.getFreightTemplateId());
         p.setName(req.getName());
         p.setSubtitle(req.getSubtitle());
         p.setMainImage(req.getMainImage());
@@ -153,6 +159,7 @@ public class ProductServiceImpl implements ProductService {
         vo.setId(p.getId());
         vo.setMerchantId(p.getMerchantId());
         vo.setCategoryId(p.getCategoryId());
+        vo.setFreightTemplateId(p.getFreightTemplateId());
         vo.setCategoryName(merchantCategoryService.getCategoryName(p.getMerchantId(), p.getCategoryId()));
         vo.setName(p.getName());
         vo.setSubtitle(p.getSubtitle());
@@ -246,6 +253,7 @@ public class ProductServiceImpl implements ProductService {
                 }
             }
             svo.setStock(sk.getStock());
+            svo.setWeightGram(sk.getWeightGram());
             svo.setImage(sk.getImage());
             vo.getSkus().add(svo);
         }
@@ -650,6 +658,11 @@ public class ProductServiceImpl implements ProductService {
         return p;
     }
 
+    private void validateFreightTemplate(Long merchantId, Long templateId) {
+        // 保留历史接口的兼容性：旧商品和自动化创建数据可暂不传模板；真实结算会显式拒绝无模板商品。
+        if (templateId != null) freightTemplateService.get(merchantId, templateId);
+    }
+
     private void validateSpecs(List<ProductSaveRequest.SpecInput> specs) {
         if (specs == null || specs.isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_SPEC);
@@ -683,7 +696,7 @@ public class ProductServiceImpl implements ProductService {
         Set<String> combinations = new HashSet<>();
         for (ProductSaveRequest.SkuInput sku : skus) {
             if (sku.getPrice() == null || sku.getPrice().compareTo(BigDecimal.ZERO) < 0
-                    || sku.getStock() == null || sku.getStock() < 0) {
+                    || sku.getStock() == null || sku.getStock() < 0 || sku.getWeightGram() == null || sku.getWeightGram() < 1) {
                 throw new BusinessException(ErrorCode.INVALID_SPEC);
             }
             if (sku.getOriginalPrice() != null && sku.getPrice() != null
@@ -754,6 +767,7 @@ public class ProductServiceImpl implements ProductService {
             entity.setPrice(sku.getPrice());
             entity.setOriginalPrice(sku.getOriginalPrice());
             entity.setStock(sku.getStock());
+            entity.setWeightGram(sku.getWeightGram());
             entity.setImage(sku.getImage() == null ? "" : sku.getImage());
             entity.setActive(1);
             skuMapper.insert(entity);

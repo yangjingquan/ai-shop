@@ -10,6 +10,8 @@ import {
 } from '@/api/product'
 import { merchantCategoryApi, type MerchantCategoryVO } from '@/api/category'
 import ImageUploader from '@/components/upload/ImageUploader.vue'
+import RichTextEditor from '@/components/RichTextEditor.vue'
+import request from '@/utils/request'
 
 interface SpecForm {
   name: string
@@ -23,6 +25,7 @@ interface SkuRow {
   originalPrice: number | null
   price: number
   stock: number
+  weightGram: number
   skuCode: string
   image: string
 }
@@ -46,6 +49,7 @@ const form = reactive({
   name: '',
   subtitle: '',
   categoryId: undefined as number | undefined,
+  freightTemplateId: undefined as number | undefined,
   mainImage: '',
   images: [] as string[],
   description: '',
@@ -58,6 +62,28 @@ const form = reactive({
   groupBuyShowActive: 1,
   groupBuySkuIds: [] as number[],
 })
+const freightTemplates = ref<Array<{ id: number; name: string; enabled: number }>>([])
+
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081').replace(/\/$/, '')
+
+function serializeDescription(html: string) {
+  if (!html.trim()) return undefined
+  const document = new DOMParser().parseFromString(html, 'text/html')
+  const apiOrigin = new URL(apiBaseUrl).origin
+  document.querySelectorAll('img[src]').forEach((image) => {
+    const source = image.getAttribute('src')
+    if (!source) return
+    try {
+      const url = new URL(source, apiBaseUrl)
+      if (url.origin === apiOrigin) image.setAttribute('src', `${url.pathname}${url.search}${url.hash}`)
+    } catch {
+      // Keep an unparseable source for the server-side sanitizer to remove.
+    }
+  })
+  const hasText = Boolean(document.body.textContent?.replace(/\u00a0/g, ' ').trim())
+  if (!hasText && !document.querySelector('img[src]')) return undefined
+  return document.body.innerHTML
+}
 
 const rules: FormRules = {
   name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
@@ -156,6 +182,7 @@ function rebuildSkuRows() {
       originalPrice: old?.originalPrice ?? null,
       price: old?.price ?? 0,
       stock: old?.stock ?? 0,
+      weightGram: old?.weightGram ?? 1,
       skuCode: old?.skuCode ?? '',
       image: old?.image ?? '',
     }
@@ -236,7 +263,8 @@ async function loadDetail(id: number) {
         specText,
         originalPrice: sku.originalPrice == null ? null : Number(sku.originalPrice),
         price: Number(sku.price ?? 0),
-        stock: sku.stock ?? 0,
+      stock: sku.stock ?? 0,
+      weightGram: sku.weightGram ?? 1,
         skuCode: sku.skuCode ?? '',
         image: sku.image ?? '',
       }
@@ -334,9 +362,10 @@ async function handleSubmit() {
       name: form.name.trim(),
       subtitle: form.subtitle?.trim() || undefined,
       categoryId: form.categoryId!,
+      freightTemplateId: form.freightTemplateId!,
       mainImage: form.mainImage?.trim() || undefined,
       images: form.images.length ? [...form.images] : undefined,
-      description: form.description?.trim() || undefined,
+      description: serializeDescription(form.description),
       isRecommend: form.isRecommend === 1 ? 1 : 0,
       isGroupBuy: form.isGroupBuy === 1 ? 1 : 0,
       groupBuyPrice: form.isGroupBuy === 1 ? Number(form.groupBuyPrice) : undefined,
@@ -354,6 +383,7 @@ async function handleSubmit() {
         price: Number(r.price),
         originalPrice: r.originalPrice == null ? undefined : Number(r.originalPrice) || undefined,
         stock: Number(r.stock),
+        weightGram: Number(r.weightGram),
         skuCode: r.skuCode || undefined,
         image: r.image || undefined,
       })),
@@ -382,6 +412,7 @@ function handleCancel() {
 }
 
 onMounted(async () => {
+  freightTemplates.value = await request.get<unknown, Array<{ id: number; name: string; enabled: number }>>('/api/merchant/freight-templates').catch(() => [])
   await loadCategories()
   if (isEdit.value && editId.value !== undefined) {
     await loadDetail(editId.value)
@@ -425,6 +456,12 @@ onMounted(async () => {
             clearable
             style="width: 320px"
           />
+        </el-form-item>
+        <el-form-item label="运费模板" required>
+          <el-select v-model="form.freightTemplateId" placeholder="选择运费模板" style="width:320px">
+            <el-option v-for="item in freightTemplates.filter((x) => x.enabled === 1)" :key="item.id" :label="item.name" :value="item.id" />
+          </el-select>
+          <span class="field-hint">按 SKU 重量和收货地区计算运费</span>
         </el-form-item>
         <el-form-item label="是否推荐商品">
           <el-radio-group v-model="form.isRecommend">
@@ -483,7 +520,7 @@ onMounted(async () => {
           <ImageUploader v-model="form.images" scope="merchant" multiple :limit="9" label="批量上传" />
         </el-form-item>
         <el-form-item label="商品详情">
-          <el-input v-model="form.description" type="textarea" :rows="6" />
+          <RichTextEditor v-model="form.description" />
         </el-form-item>
       </el-form>
 
@@ -565,6 +602,9 @@ onMounted(async () => {
               style="width: 110px"
             />
           </template>
+        </el-table-column>
+        <el-table-column label="重量（克）" width="150">
+          <template #default="{ row }"><el-input-number v-model="(row as SkuRow).weightGram" :min="1" :step="10" :controls="false" style="width:120px" /></template>
         </el-table-column>
         <el-table-column label="SKU 编码" width="180">
           <template #default="{ row }">

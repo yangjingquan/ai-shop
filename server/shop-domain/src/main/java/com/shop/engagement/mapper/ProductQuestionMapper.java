@@ -1,0 +1,1 @@
+package com.shop.engagement.mapper; import com.baomidou.mybatisplus.core.mapper.BaseMapper; import com.shop.engagement.entity.ProductQuestion; import org.apache.ibatis.annotations.Mapper; @Mapper public interface ProductQuestionMapper extends BaseMapper<ProductQuestion>{}

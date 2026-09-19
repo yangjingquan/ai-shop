@@ -1,0 +1,1 @@
+const api=require('../../../api/engagement'); Page({data:{productId:0,items:[]},onLoad(o){const id=Number(o.productId||0);this.setData({productId:id});if(id)api.detail(id).then(r=>this.setData({items:(r.data||{}).reviews||[]}))}})

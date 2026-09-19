@@ -1,0 +1,1 @@
+package com.shop.engagement.mapper; import com.baomidou.mybatisplus.core.mapper.BaseMapper; import com.shop.engagement.entity.UserProductHistory; import org.apache.ibatis.annotations.Mapper; @Mapper public interface UserProductHistoryMapper extends BaseMapper<UserProductHistory>{}

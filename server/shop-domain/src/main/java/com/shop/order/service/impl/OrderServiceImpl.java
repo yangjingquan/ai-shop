@@ -47,6 +47,8 @@ import com.shop.order.service.WxPayService;
 import com.shop.order.service.WechatPayOrderNotFoundException;
 import com.shop.order.service.OrderDomainModel;
 import com.shop.order.service.OrderStateMachine;
+import com.shop.freight.dto.FreightQuote;
+import com.shop.freight.service.FreightTemplateService;
 import com.shop.product.entity.Product;
 import com.shop.product.entity.ProductSku;
 import com.shop.product.mapper.ProductMapper;
@@ -101,6 +103,7 @@ public class OrderServiceImpl implements OrderService {
     private final PromotionService promotionService;
     private final QuoteService quoteService;
     private final OrderStateMachine orderStateMachine;
+    private final FreightTemplateService freightTemplateService;
 
     private final PresaleOrderMapper presaleOrderMapper;
 
@@ -262,8 +265,11 @@ public class OrderServiceImpl implements OrderService {
             group.setPayAmount(group.getTotalAmount().subtract(couponDiscount).subtract(promotion.getDiscountAmount()).max(BigDecimal.ZERO));
         }
 
+        FreightQuote freight = freightTemplateService.quote(promotionMerchantId, address.getRegion(),
+                freightLines(cartItems, productMap, skuMap), promotion.getDiscountAmount());
+        if (!groups.isEmpty()) groups.get(0).setFreightAmount(freight.getAmount());
         QuoteResult quote = quoteService.quote(quoteRequest(userId, promotionMerchantId, "NORMAL", grandTotal,
-                promotion.getDiscountAmount(), couponDiscount, BigDecimal.ZERO, couponResult.getSelectedCouponId(),
+                promotion.getDiscountAmount(), couponDiscount, freight.getAmount(), couponResult.getSelectedCouponId(),
                 promotion.getActivityName(), cartItems, productMap, skuMap));
         OrderPreviewVO vo = new OrderPreviewVO();
         vo.setGroups(groups);
@@ -401,8 +407,10 @@ public class OrderServiceImpl implements OrderService {
                     couponPreview = couponService.calculate(userId,
                             new CouponUseContext(mid, expectedTotal.subtract(promotion.getDiscountAmount()), couponItems), req.getCouponId(), false, null);
                 }
+                FreightQuote freight = freightTemplateService.quote(mid, address.getRegion(),
+                        freightLines(groupItems, productMap, skuMap), promotion.getDiscountAmount());
                 QuoteResult quote = quoteService.requireValid(userId, mid, req.getQuoteId(), req.getRuleVersion(), "NORMAL");
-                assertQuoteMatches(quote, expectedTotal, promotion.getDiscountAmount(), couponPreview.getDiscountAmount());
+                assertQuoteMatches(quote, expectedTotal, promotion.getDiscountAmount(), couponPreview.getDiscountAmount(), freight.getAmount());
                 CouponCheckoutResult couponResult;
                 if (promotion.getActivityId() != null && !promotion.isCouponStackable()) {
                     couponResult = couponPreview;
@@ -411,7 +419,7 @@ public class OrderServiceImpl implements OrderService {
                             new CouponUseContext(mid, expectedTotal.subtract(promotion.getDiscountAmount()), couponItems), req.getCouponId(), true, orderNo);
                 }
                 BigDecimal couponDiscount = couponResult.getDiscountAmount();
-                assertQuoteMatches(quote, expectedTotal, promotion.getDiscountAmount(), couponDiscount);
+                assertQuoteMatches(quote, expectedTotal, promotion.getDiscountAmount(), couponDiscount, freight.getAmount());
 
                 // 先插入 order
                 Order order = new Order();
@@ -424,7 +432,7 @@ public class OrderServiceImpl implements OrderService {
                 order.setStatus(OrderStatus.WAIT_PAY.getCode());
                 OrderDomainModel.initialize(order, OrderType.NORMAL, FulfillmentMethod.EXPRESS);
                 order.setTotalAmount(BigDecimal.ZERO);
-                order.setFreightAmount(BigDecimal.ZERO);
+                order.setFreightAmount(freight.getAmount());
                 order.setDiscountAmount(couponDiscount.add(promotion.getDiscountAmount()));
                 order.setCouponId(couponResult.getSelectedCouponId());
                 order.setCouponTemplateId(couponResult.getSelectedCouponTemplateId());
@@ -600,12 +608,17 @@ public class OrderServiceImpl implements OrderService {
         return request;
     }
 
-    private void assertQuoteMatches(QuoteResult quote, BigDecimal original, BigDecimal activityDiscount, BigDecimal couponDiscount) {
-        BigDecimal payable = original.subtract(activityDiscount).subtract(couponDiscount).max(BigDecimal.ZERO);
+    private void assertQuoteMatches(QuoteResult quote, BigDecimal original, BigDecimal activityDiscount, BigDecimal couponDiscount, BigDecimal freight) {
+        BigDecimal payable = original.add(freight).subtract(activityDiscount).subtract(couponDiscount).max(BigDecimal.ZERO);
         if (quote.getOriginalAmount().compareTo(original) != 0 || quote.getActivityDiscountAmount().compareTo(activityDiscount) != 0
-                || quote.getCouponDiscountAmount().compareTo(couponDiscount) != 0 || quote.getPayableAmount().compareTo(payable) != 0) {
+                || quote.getCouponDiscountAmount().compareTo(couponDiscount) != 0 || quote.getFreightAmount().compareTo(freight) != 0 || quote.getPayableAmount().compareTo(payable) != 0) {
             throw new BusinessException(ErrorCode.QUOTE_EXPIRED);
         }
+    }
+
+    private List<FreightTemplateService.Line> freightLines(List<CartItem> items, Map<Long, Product> products, Map<Long, ProductSku> skus) {
+        return items.stream().map(item -> new FreightTemplateService.Line(products.get(item.getProductId()),
+                skus.get(item.getSkuId()), item.getQuantity(), skus.get(item.getSkuId()).getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))).toList();
     }
 
     private void validateSingleMerchantCheckout(List<CartItem> cartItems) {

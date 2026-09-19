@@ -1,0 +1,13 @@
+<view class="record-page">
+  <view class="record-head"><view class="record-title">我的收藏</view><view class="record-count">共 {{total}} 件商品</view></view>
+  <view wx:if="{{items.length}}" class="goods-list">
+    <view wx:for="{{items}}" wx:key="productId" class="goods-row {{item.available ? '' : 'goods-row-disabled'}}" data-id="{{item.productId}}" data-available="{{item.available}}" bindtap="openProduct">
+      <image wx:if="{{item.mainImage}}" class="goods-image" src="{{item.mainImage}}" mode="aspectFill" />
+      <view wx:else class="goods-image goods-image-fallback">{{item.initial}}</view>
+      <view class="goods-main"><view class="goods-name">{{item.name}}</view><view wx:if="{{item.available}}" class="goods-price">¥{{item.priceText}}</view><view wx:else class="goods-status">已下架</view><view wx:if="{{item.savedAtText}}" class="goods-meta">收藏于 {{item.savedAtText}}</view></view>
+      <button class="remove-btn" catchtap="removeFavorite" data-id="{{item.productId}}">取消收藏</button>
+    </view>
+  </view>
+  <view wx:elif="{{!loading}}" class="empty-state"><view class="empty-mark">藏</view><view class="empty-title">还没有收藏商品</view><view class="empty-desc">遇到心仪商品，点击收藏后会展示在这里</view><button class="go-shopping" bindtap="goShopping">去逛逛</button></view>
+  <view wx:if="{{loadingMore}}" class="load-state">加载中…</view><view wx:elif="{{items.length && !hasMore}}" class="load-state">没有更多收藏了</view>
+</view>

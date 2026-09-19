@@ -85,6 +85,7 @@
 .order-head {
   min-height: 36rpx;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   margin-bottom: 14rpx;
@@ -95,10 +96,32 @@
 
 .state-text {
   flex: 0 0 auto;
-  margin-left: 16rpx;
+  margin-left: 0;
   color: #ef5523;
   font-size: 24rpx;
   font-weight: 900;
+}
+
+.refund-status {
+  flex: 0 1 auto;
+  max-width: 100%;
+  margin-left: 12rpx;
+  padding: 5rpx 12rpx;
+  border: 1rpx solid #f6d8c9;
+  border-radius: 12rpx;
+  color: #b94a25;
+  background: #fff2eb;
+  box-sizing: border-box;
+  font-size: 21rpx;
+  line-height: 30rpx;
+  font-weight: 800;
+  text-align: center;
+}
+
+.refund-status-3 {
+  border-color: #d5ead9;
+  color: #277342;
+  background: #eff8f0;
 }
 
 .s0,

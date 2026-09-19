@@ -141,6 +141,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/merchant/InventoryList.vue'),
         meta: { roles: ['merchant'], permission: 'merchant:inventory:view' },
       },
+      { path: 'merchant/freight-templates', name: 'MerchantFreightTemplates', component: () => import('@/views/merchant/FreightTemplateList.vue'), meta: { roles: ['merchant'], permission: 'merchant:freight:view' } },
       {
         path: 'merchant/products/edit/:id?',
         name: 'MerchantProductEdit',

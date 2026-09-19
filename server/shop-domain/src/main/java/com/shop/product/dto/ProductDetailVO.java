@@ -13,6 +13,7 @@ public class ProductDetailVO {
     private Long id;
     private Long merchantId;
     private Long categoryId;
+    private Long freightTemplateId;
     private String categoryName;
     private String name;
     private String subtitle;
@@ -70,6 +71,7 @@ public class ProductDetailVO {
         private BigDecimal price;
         private BigDecimal originalPrice;
         private Integer stock;
+        private Integer weightGram;
         private String image;
     }
 }

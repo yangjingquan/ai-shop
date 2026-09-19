@@ -69,6 +69,7 @@ const merchantMenus: MenuItem[] = [
     children: [
       { index: 'merchant-products', label: '商品设置', path: '/merchant/products', desc: '上新与库存', icon: '货', permission: 'merchant:product:view' },
       { index: 'merchant-inventory', label: '库存设置', path: '/merchant/inventory', desc: '调整与流水', icon: '库', permission: 'merchant:inventory:view' },
+      { index: 'merchant-freight-templates', label: '运费模板', path: '/merchant/freight-templates', desc: '地区与重量计费', icon: '运', permission: 'merchant:freight:view' },
     ],
   },
   { index: 'merchant-banners', label: 'Banner 配置', path: '/merchant/banners', desc: '首页轮播', icon: '图', permission: 'merchant:banner:view' },

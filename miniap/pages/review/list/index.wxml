@@ -1,0 +1,1 @@
+<view class="page-shell"><view wx:for="{{items}}" wx:key="id" class="card row"><view><text class="stars">{{item.rating}} ★</text><text class="user">{{item.userName}}</text></view><view>{{item.content}}</view><view wx:if="{{item.merchantReply}}" class="reply">商家回复：{{item.merchantReply}}</view></view><view wx:if="{{!items.length}}" class="empty-state">暂无评价</view></view>

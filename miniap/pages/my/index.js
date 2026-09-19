@@ -165,4 +165,12 @@ Page({
   goNotifications() {
     wx.navigateTo({ url: '/pages/notification/list' })
   },
+
+  goFavorites() {
+    wx.navigateTo({ url: '/pages/favorite/list/index' })
+  },
+
+  goHistory() {
+    wx.navigateTo({ url: '/pages/history/list/index' })
+  },
 })

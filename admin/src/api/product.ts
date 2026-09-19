@@ -48,6 +48,7 @@ export interface ProductSkuVO {
   price: number
   originalPrice?: number | null
   stock: number
+  weightGram?: number
   image?: string
 }
 
@@ -55,6 +56,7 @@ export interface ProductDetailVO {
   id: number
   merchantId: number
   categoryId: number
+  freightTemplateId?: number
   categoryName?: string
   name: string
   subtitle?: string
@@ -96,6 +98,7 @@ export interface ProductSkuInput {
   price: number
   originalPrice?: number | null
   stock: number
+  weightGram: number
   skuCode?: string
   image?: string
 }
@@ -104,6 +107,7 @@ export interface ProductSavePayload {
   name: string
   subtitle?: string
   categoryId: number
+  freightTemplateId: number
   mainImage?: string
   images?: string[]
   description?: string

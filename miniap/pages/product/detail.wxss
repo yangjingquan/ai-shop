@@ -140,9 +140,11 @@
   margin-bottom: 18rpx;
 }
 .desc-body {
+  overflow: hidden;
   font-size: 26rpx;
   color: #1f2329;
   line-height: 1.7;
+  overflow-wrap: anywhere;
 }
 .desc-empty {
   min-height: 220rpx;
@@ -155,6 +157,7 @@
   justify-content: center;
   gap: 12rpx;
 }
+.engagement-summary{display:flex;align-items:center;gap:24rpx;margin-top:24rpx;padding-top:20rpx;border-top:1rpx solid #f0ece7;color:#61656d;font-size:24rpx}.engagement-summary text{color:#f35422}.favorite-entry{margin-left:auto;padding-left:22rpx;border-left:1rpx solid #eee7e1;color:#f35422}.engagement-card{margin-top:20rpx}.section-more{float:right;color:#9aa0a6;font-size:24rpx;font-weight:400}.review-preview,.question-preview{padding:20rpx 0;border-bottom:1rpx solid #f4f1ed;font-size:26rpx;color:#34373d;line-height:1.6}.review-preview:last-child,.question-preview:last-child{border-bottom:0}.stars{color:#f35422;margin-right:16rpx}.review-user{color:#8d9299}.merchant-reply{margin-top:8rpx;padding:12rpx 14rpx;background:#faf7f3;color:#6e6256;font-size:24rpx;border-radius:10rpx}.purchased{margin-left:8rpx;color:#f35422;font-size:22rpx}
 
 .bottom-bar {
   position: fixed;

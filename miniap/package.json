@@ -6,7 +6,7 @@
     "test:e2e": "node tests/e2e/smoke.js",
     "test:e2e:smoke": "node tests/e2e/smoke.js"
   },
-  "devDependencies": {
-    "miniprogram-automator": "0.12.1"
+  "dependencies": {
+    "mp-html": "^2.5.2"
   }
 }

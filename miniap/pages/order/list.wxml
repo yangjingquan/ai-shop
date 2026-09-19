@@ -40,7 +40,7 @@
           <text wx:if="{{item.bundleLabel}}" class="seckill-order-tag">{{item.bundleLabel}}</text>
           <text wx:if="{{item.lotteryLabel}}" class="seckill-order-tag">{{item.lotteryLabel}}</text>
           <text wx:if="{{item.presaleLabel}}" class="presale-order-tag">{{item.presaleLabel}}</text>
-          <text wx:if="{{item.refundStatusText}}" class="refund-status">{{item.refundStatusText}}</text>
+          <text wx:if="{{item.refundStatusText}}" class="refund-status refund-status-{{item.refundStatus}}">{{item.refundStatusText}}</text>
         <text wx:if="{{groupBuyEnabled && item.orderType === 1 && item.groupBuyProgress}}" class="group-progress">{{item.groupBuyProgress}}</text>
         </view>
 

@@ -33,6 +33,11 @@
     "pages/webview/index",
     "pages/promotion/full-reduction",
     "pages/promotion/bundle"
+    ,"pages/review/edit/index"
+    ,"pages/review/list/index"
+    ,"pages/question/list/index"
+    ,"pages/favorite/list/index"
+    ,"pages/history/list/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#ffffff",

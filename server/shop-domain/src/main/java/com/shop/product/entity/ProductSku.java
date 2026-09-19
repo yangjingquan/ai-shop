@@ -30,6 +30,9 @@ public class ProductSku extends BaseEntity {
 
     private Integer stock;
 
+    /** 实物重量（克），用于按重量运费。 */
+    private Integer weightGram;
+
     private String image;
 
     /** 1=当前商品规格，0=历史规格。历史 SKU 保留给订单库存回滚使用。 */

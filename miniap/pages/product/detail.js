@@ -3,13 +3,16 @@ const cartApi = require('../../api/cart')
 const groupBuyApi = require('../../api/group-buy')
 const seckillApi = require('../../api/seckill')
 const { resolveImageUrl } = require('../../utils/url')
+const appConfig = require('../../utils/config')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
 const pointsApi = require('../../api/points')
+const engagementApi = require('../../api/engagement')
 
 Page({
   data: {
     productId: 0,
     product: null,
+    richTextDomain: appConfig.BASE_URL,
     banners: [],
     skuOpen: false,
     visibleSpecs: [],
@@ -34,6 +37,7 @@ Page({
     selectedGroupId: 0,
     memberDayActive: false,
     pointsEarnText: '',
+    engagement: null,
   },
 
   onLoad(opts) {
@@ -185,6 +189,8 @@ Page({
         seckillLimitText: `每人限购${product.userLimit || 1}件`,
       })
       this.applyInitialSku()
+      engagementApi.detail(this.data.productId).then((engagement) => this.setData({ engagement: engagement.data || null })).catch(() => {})
+      engagementApi.history(this.data.productId).catch(() => {})
       marketingCapabilities.load(false).then((map) => {
         const feature = map.POINTS_MEMBER_DAY
         if (feature && (feature.enabled === true || Number(feature.enabled) === 1)) {
@@ -203,6 +209,45 @@ Page({
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  toggleFavorite() {
+    const current = this.data.engagement || {}
+    const favorite = !current.favorite
+    engagementApi.favorite(this.data.productId, favorite).then(() => {
+      this.setData({ 'engagement.favorite': favorite })
+      wx.showToast({ title: favorite ? '已收藏' : '已取消收藏', icon: 'none' })
+    })
+  },
+
+  openQuestions() { wx.navigateTo({ url: `/pages/question/list?productId=${this.data.productId}` }) },
+  openReviews() { wx.navigateTo({ url: `/pages/review/list?productId=${this.data.productId}` }) },
+
+  onDescriptionLinkTap(event) {
+    const href = String((event && event.detail && event.detail.href) || '').trim()
+    if (!href) return
+
+    if (/^\/pages\/[\w/-]+(?:\?[^\s]*)?$/.test(href)) {
+      const tabPages = ['/pages/home/index', '/pages/category/index', '/pages/cart/index', '/pages/order/list', '/pages/my/index']
+      const targetPage = href.split('?')[0]
+      const options = {
+        url: tabPages.includes(targetPage) ? targetPage : href,
+        fail: () => wx.showToast({ title: '页面暂不可用', icon: 'none' }),
+      }
+      if (tabPages.includes(targetPage)) wx.switchTab(options)
+      else wx.navigateTo(options)
+      return
+    }
+
+    if (/^https:\/\/[^\s]+$/i.test(href)) {
+      wx.navigateTo({
+        url: `/pages/webview/index?url=${encodeURIComponent(href)}`,
+        fail: () => wx.showToast({ title: '暂时无法打开链接', icon: 'none' }),
+      })
+      return
+    }
+
+    wx.showToast({ title: '仅支持小程序页面或 HTTPS 网页链接', icon: 'none' })
   },
 
   memberDayApplies(day, product) {

@@ -1,0 +1,3 @@
+package com.shop.engagement.entity;
+import com.baomidou.mybatisplus.annotation.TableName; import com.shop.common.entity.BaseEntity; import lombok.Data; import lombok.EqualsAndHashCode; import java.time.LocalDateTime;
+@Data @EqualsAndHashCode(callSuper=true) @TableName("product_question") public class ProductQuestion extends BaseEntity {private Long merchantId;private Long productId;private Long userId;private String content;private Integer anonymous;private Integer purchased;private Integer status;private String hiddenReason;private String answer;private LocalDateTime answeredAt;private Long answeredBy;}

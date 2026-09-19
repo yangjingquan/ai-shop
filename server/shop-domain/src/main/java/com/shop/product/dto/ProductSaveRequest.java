@@ -18,6 +18,8 @@ public class ProductSaveRequest {
     @NotNull
     private Long categoryId;
 
+    private Long freightTemplateId;
+
     private String mainImage;
 
     private List<String> images;
@@ -79,6 +81,10 @@ public class ProductSaveRequest {
         @NotNull
         @Min(0)
         private Integer stock;
+
+        @NotNull
+        @Min(1)
+        private Integer weightGram;
 
         private String skuCode;
 

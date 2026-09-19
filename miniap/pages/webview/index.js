@@ -4,8 +4,13 @@ Page({
   },
 
   onLoad(options) {
-    const url = decodeURIComponent(options.url || '')
-    if (!url) {
+    let url = ''
+    try {
+      url = decodeURIComponent(options.url || '')
+    } catch (error) {
+      url = ''
+    }
+    if (!/^https:\/\/[^\s]+$/i.test(url)) {
       wx.showToast({ title: '链接无效', icon: 'none' })
       return
     }

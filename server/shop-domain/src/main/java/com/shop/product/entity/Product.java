@@ -19,6 +19,9 @@ public class Product extends BaseEntity {
 
     private Long categoryId;
 
+    /** 商户运费模板；普通商品下单时必填。 */
+    private Long freightTemplateId;
+
     private String name;
 
     private String subtitle;

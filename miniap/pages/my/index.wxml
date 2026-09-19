@@ -91,4 +91,23 @@
       </view>
     </view>
   </view>
+
+  <view class="asset-section">
+    <view class="section-heading">
+      <view class="section-title">商品服务</view>
+      <view class="section-caption">收藏与浏览足迹</view>
+    </view>
+    <view class="asset-grid">
+      <view class="asset-item" hover-class="asset-item-hover" bindtap="goFavorites">
+        <view class="asset-icon asset-icon-favorite"><view></view></view>
+        <view><view class="asset-title">我的收藏</view><view class="asset-desc">收藏的心仪商品</view></view>
+        <view class="asset-arrow">›</view>
+      </view>
+      <view class="asset-item" hover-class="asset-item-hover" bindtap="goHistory">
+        <view class="asset-icon asset-icon-history"><view></view></view>
+        <view><view class="asset-title">浏览记录</view><view class="asset-desc">最近看过的商品</view></view>
+        <view class="asset-arrow">›</view>
+      </view>
+    </view>
+  </view>
 </view>

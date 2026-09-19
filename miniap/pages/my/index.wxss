@@ -424,3 +424,15 @@
   border-radius: 2rpx;
   background: #e65a2b;
 }
+
+.asset-section { margin-top: 32rpx; }
+.asset-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14rpx; }
+.asset-item { display: flex; align-items: center; min-height: 118rpx; padding: 18rpx; border-radius: 22rpx; background: #fff; box-shadow: 0 8rpx 22rpx rgba(75, 47, 26, 0.04); color: #49382d; box-sizing: border-box; }
+.asset-item-hover { background: #fff6ef; transform: scale(0.985); }
+.asset-icon { position: relative; flex: 0 0 auto; width: 52rpx; height: 52rpx; margin-right: 14rpx; border-radius: 16rpx; background: #fff1e7; }
+.asset-icon::before, .asset-icon::after, .asset-icon view::before, .asset-icon view::after { position: absolute; box-sizing: border-box; content: ''; }
+.asset-icon-favorite::before { top: 15rpx; left: 13rpx; width: 24rpx; height: 22rpx; border: 3rpx solid #e65a2b; border-top: 0; border-left: 0; border-radius: 0 4rpx 10rpx 4rpx; transform: rotate(45deg); }
+.asset-icon-favorite::after { top: 13rpx; left: 14rpx; width: 14rpx; height: 14rpx; border: 3rpx solid #e65a2b; border-right: 0; border-bottom: 0; border-radius: 10rpx 10rpx 0 0; transform: rotate(45deg); }
+.asset-icon-history::before { top: 11rpx; left: 11rpx; width: 28rpx; height: 28rpx; border: 3rpx solid #e65a2b; border-radius: 50%; }
+.asset-icon-history::after { top: 18rpx; left: 25rpx; width: 10rpx; height: 12rpx; border-top: 3rpx solid #e65a2b; border-left: 3rpx solid #e65a2b; }
+.asset-title { color: #49382d; font-size: 26rpx; font-weight: 700; line-height: 1.35; }.asset-desc { margin-top: 5rpx; color: #a6978b; font-size: 20rpx; line-height: 1.35; }.asset-arrow { margin-left: auto; color: #baaa9e; font-size: 32rpx; line-height: 1; }
