@@ -1,0 +1,1 @@
+package com.shop.journey.mapper; import com.baomidou.mybatisplus.core.mapper.BaseMapper; import com.shop.journey.entity.MarketingJourney; import org.apache.ibatis.annotations.Mapper; @Mapper public interface MarketingJourneyMapper extends BaseMapper<MarketingJourney> {}

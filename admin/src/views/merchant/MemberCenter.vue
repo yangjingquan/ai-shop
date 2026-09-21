@@ -44,6 +44,10 @@ function goMemberSettings() {
   router.push('/merchant/points')
 }
 
+function goCustomerDetail(userId: number) {
+  router.push(`/merchant/customers/${userId}`)
+}
+
 onMounted(async () => {
   await Promise.all([loadLevels(), load()])
 })
@@ -129,6 +133,9 @@ onMounted(async () => {
               {{ row.status === 0 ? '停用' : '正常' }}
             </el-tag>
           </template>
+        </el-table-column>
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }"><el-button link type="primary" @click="goCustomerDetail(row.userId)">运营详情</el-button></template>
         </el-table-column>
       </el-table>
 

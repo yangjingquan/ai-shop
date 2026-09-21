@@ -58,7 +58,18 @@ const adminMenus: MenuItem[] = [
 
 const merchantMenus: MenuItem[] = [
   { index: 'merchant', label: '首页', path: '/merchant', desc: '店铺概览', icon: '店', permission: 'merchant:dashboard:view' },
-  { index: 'merchant-members', label: '会员中心', path: '/merchant/members', desc: '会员资料', icon: '会', permission: 'merchant:points:view' },
+  {
+    index: 'merchant-customer-operations',
+    label: '用户运营',
+    desc: '标签与分群',
+    icon: '会',
+    children: [
+      { index: 'merchant-members', label: '会员中心', path: '/merchant/members', desc: '用户资料与指标', icon: '会', permission: 'merchant:customer:view' },
+      { index: 'merchant-customer-tags', label: '用户标签', path: '/merchant/customer-tags', desc: '系统与手工标签', icon: '签', permission: 'merchant:customer:view' },
+      { index: 'merchant-customer-segments', label: '用户分群', path: '/merchant/customer-segments', desc: '动态与静态人群', icon: '群', permission: 'merchant:customer:view' },
+      { index: 'merchant-marketing-journeys', label: '自动营销', path: '/merchant/marketing-journeys', desc: '行为触发与触达', icon: '营', permission: 'merchant:journey:view' },
+    ],
+  },
   { index: 'merchant-profile', label: '店铺信息', path: '/merchant/profile', desc: '资料维护', icon: '铺', permission: 'merchant:profile:view' },
   { index: 'merchant-categories', label: '分类管理', path: '/merchant/categories', desc: '店铺类目', icon: '类', permission: 'merchant:category:view' },
   {

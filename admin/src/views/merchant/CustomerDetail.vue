@@ -1,0 +1,25 @@
+<script setup lang="ts">
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
+import { customerOperationsApi, type CustomerTag, type CustomerUser } from '@/api/customerOperations'
+
+const route = useRoute(), router = useRouter(), loading = ref(false), customer = ref<(CustomerUser & { systemTagNames: string[]; recentOrderAt?: string; recentFavoriteAt?: string }) | null>(null), tags = ref<CustomerTag[]>([])
+const selectedTagId = ref<number | undefined>(), binding = reactive({ status: 1 })
+const userId = computed(() => Number(route.params.userId || 0))
+function formatTime(value?: string) { return value ? value.replace('T', ' ').slice(0, 16) : '-' }
+async function load() { if (!userId.value) return; loading.value = true; try { const [detail, tagList] = await Promise.all([customerOperationsApi.user(userId.value), customerOperationsApi.tags()]); customer.value = detail; tags.value = tagList.filter((tag) => tag.tagType === 'MANUAL' && tag.status === 1) } finally { loading.value = false } }
+async function saveBinding() { if (!selectedTagId.value || !customer.value) return ElMessage.warning('请选择手工标签'); await customerOperationsApi.bindTag(selectedTagId.value, { userIds: [customer.value.userId], status: binding.status }); ElMessage.success(binding.status === 1 ? '已添加手工标签' : '已移除手工标签'); selectedTagId.value = undefined; await load() }
+onMounted(load)
+</script>
+
+<template>
+  <div class="detail-page" v-loading="loading"><el-button link type="primary" @click="router.back()">返回会员中心</el-button><template v-if="customer"><section class="profile"><el-avatar :size="72" :src="customer.avatar">{{ (customer.nickname || '用').slice(0, 1) }}</el-avatar><div><h1>{{ customer.nickname || `用户 #${customer.userId}` }}</h1><p>{{ customer.phone || '未绑定手机号' }} · 注册于 {{ formatTime(customer.joinedAt) }}</p><div class="tags"><el-tag v-for="tag in customer.tags" :key="tag.id" :color="tag.color" effect="plain">{{ tag.name }}</el-tag><span v-if="!customer.tags.length" class="muted">暂无标签</span></div></div></section>
+    <section class="metric-grid"><div><span>累计实付</span><strong>¥{{ Number(customer.metric?.totalPaidAmount || 0).toFixed(2) }}</strong></div><div><span>已支付订单</span><strong>{{ customer.metric?.paidOrderCount || 0 }}</strong></div><div><span>会员等级</span><strong>Lv.{{ customer.metric?.memberLevel || 1 }}</strong></div><div><span>可用积分</span><strong>{{ customer.metric?.pointsBalance || 0 }}</strong></div></section>
+    <section class="content-grid"><el-card shadow="never"><template #header>行为与消费</template><el-descriptions :column="1" border><el-descriptions-item label="最近支付">{{ formatTime(customer.metric?.lastPaidAt) }}</el-descriptions-item><el-descriptions-item label="最近浏览">{{ formatTime(customer.metric?.lastViewedAt) }}</el-descriptions-item><el-descriptions-item label="收藏商品">{{ customer.metric?.favoriteCount || 0 }} 件</el-descriptions-item><el-descriptions-item label="可用优惠券">{{ customer.metric?.unusedCouponCount || 0 }} 张<span v-if="customer.metric?.expiringCouponCount">，其中 {{ customer.metric.expiringCouponCount }} 张即将到期</span></el-descriptions-item><el-descriptions-item label="最近登录">{{ formatTime(customer.lastLoginAt) }}</el-descriptions-item></el-descriptions></el-card><el-card shadow="never"><template #header>手工标签</template><p class="muted">可为重点客群添加或移除手工标签，系统标签由指标自动维护。</p><el-select v-model="selectedTagId" placeholder="选择手工标签" class="tag-select"><el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" /></el-select><el-radio-group v-model="binding.status" class="binding-action"><el-radio :value="1">添加</el-radio><el-radio :value="0">移除</el-radio></el-radio-group><el-button type="primary" @click="saveBinding">确认操作</el-button></el-card></section>
+  </template></div>
+</template>
+
+<style scoped>
+.detail-page { width: min(1120px, calc(100% - 56px)); margin: 24px auto 36px; }.profile { display: flex; align-items: center; gap: 18px; margin: 18px 0 20px; padding: 26px; border-radius: 16px; background: #fff; box-shadow: 0 10px 28px rgba(75, 47, 26, .06); }.profile h1 { margin: 0; color: var(--shop-text); font-size: 28px; }.profile p { margin: 8px 0 12px; color: var(--shop-text-muted); }.tags { display: flex; flex-wrap: wrap; gap: 8px; }.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }.metric-grid > div { padding: 20px; border-radius: 14px; background: #fff; box-shadow: 0 8px 22px rgba(75, 47, 26, .04); }.metric-grid span { display: block; color: var(--shop-text-muted); font-size: 13px; }.metric-grid strong { display: block; margin-top: 12px; color: var(--shop-text); font-size: 26px; }.content-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; }.muted { color: var(--shop-text-muted); }.tag-select { width: 100%; margin: 12px 0; }.binding-action { display: block; margin: 4px 0 18px; } @media (max-width: 860px) { .metric-grid, .content-grid { grid-template-columns: 1fr; } }
+</style>

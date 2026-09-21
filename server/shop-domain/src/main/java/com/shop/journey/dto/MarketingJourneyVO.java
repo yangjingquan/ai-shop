@@ -1,0 +1,3 @@
+package com.shop.journey.dto;
+import lombok.Data; import java.time.LocalDateTime;
+@Data public class MarketingJourneyVO { private Long id; private String name; private String triggerType; private Long segmentId; private Integer delayMinutes; private Long couponTemplateId; private String notificationTitle; private String notificationContent; private Integer frequencyDays; private Integer stopOnPaid; private Integer status; private long enrollmentCount; private long successCount; private long skippedCount; private long couponCount; private long notificationCount; private LocalDateTime updatedAt; }

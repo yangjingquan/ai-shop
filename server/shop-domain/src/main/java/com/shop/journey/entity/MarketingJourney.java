@@ -1,0 +1,3 @@
+package com.shop.journey.entity;
+import com.baomidou.mybatisplus.annotation.TableName; import com.shop.common.entity.BaseEntity; import lombok.Data; import lombok.EqualsAndHashCode;
+@Data @EqualsAndHashCode(callSuper = true) @TableName("marketing_journey") public class MarketingJourney extends BaseEntity { private Long merchantId; private String name; private String triggerType; private Long segmentId; private Integer delayMinutes; private Long couponTemplateId; private String notificationTitle; private String notificationContent; private Integer frequencyDays; private Integer stopOnPaid; private Integer status; }

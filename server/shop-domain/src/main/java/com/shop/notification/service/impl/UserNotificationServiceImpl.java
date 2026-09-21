@@ -50,6 +50,16 @@ public class UserNotificationServiceImpl implements UserNotificationService {
     }
 
     @Override
+    public Long sendMarketing(Long userId, Long merchantId, String title, String content, String link) {
+        UserNotification notification = new UserNotification();
+        notification.setUserId(userId); notification.setMerchantId(merchantId); notification.setType("MARKETING");
+        notification.setTitle(title); notification.setContent(content); notification.setBizType("MARKETING_JOURNEY");
+        notification.setBizId(""); notification.setLink(link == null ? "/pages/coupon/list" : link); notification.setIsRead(0);
+        notificationMapper.insert(notification);
+        return notification.getId();
+    }
+
+    @Override
     public PageResult<UserNotificationVO> page(Long userId, Long merchantId, int page, int size) {
         int safePage = Math.max(page, 1);
         int safeSize = Math.min(Math.max(size, 1), 50);

@@ -115,8 +115,12 @@ const routes: RouteRecordRaw[] = [
         path: 'merchant/members',
         name: 'MerchantMemberCenter',
         component: () => import('@/views/merchant/MemberCenter.vue'),
-        meta: { roles: ['merchant'], permission: 'merchant:points:view' },
+        meta: { roles: ['merchant'], permission: 'merchant:customer:view' },
       },
+      { path: 'merchant/customer-tags', name: 'MerchantCustomerTags', component: () => import('@/views/merchant/CustomerTagList.vue'), meta: { roles: ['merchant'], permission: 'merchant:customer:view' } },
+      { path: 'merchant/customer-segments', name: 'MerchantCustomerSegments', component: () => import('@/views/merchant/CustomerSegmentList.vue'), meta: { roles: ['merchant'], permission: 'merchant:customer:view' } },
+      { path: 'merchant/marketing-journeys', name: 'MerchantMarketingJourneys', component: () => import('@/views/merchant/MarketingJourneyList.vue'), meta: { roles: ['merchant'], permission: 'merchant:journey:view' } },
+      { path: 'merchant/customers/:userId', name: 'MerchantCustomerDetail', component: () => import('@/views/merchant/CustomerDetail.vue'), meta: { roles: ['merchant'], permission: 'merchant:customer:view' } },
       {
         path: 'merchant/password',
         name: 'MerchantPassword',
