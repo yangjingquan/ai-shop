@@ -31,6 +31,11 @@ public interface PaymentLogMapper extends BaseMapper<PaymentLog> {
     BigDecimal selectPaidAmount(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
                                 @Param("merchantId") Long merchantId);
 
+    /** 支付回调已落库、但没有可关联有效订单；不能可靠归属商户，仅用于平台侧对账告警。 */
+    @Select("SELECT COUNT(*) FROM payment_log pl LEFT JOIN `order` o ON o.order_no = pl.order_no AND o.deleted = 0 " +
+            "WHERE pl.created_at &gt;= #{from} AND pl.created_at &lt; #{to} AND o.id IS NULL")
+    Long selectUnmatchedPaymentCount(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
     @Select("<script>SELECT DATE(pl.created_at) AS day, COUNT(*) AS count, " +
             "COALESCE(SUM(pl.amount), 0) AS amount " +
             "FROM payment_log pl JOIN `order` o ON o.order_no = pl.order_no AND o.deleted = 0 " +

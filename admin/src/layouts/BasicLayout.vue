@@ -43,6 +43,7 @@ interface MenuItem {
 
 const adminMenus: MenuItem[] = [
   { index: 'admin', label: '首页', path: '/admin', desc: '经营概览', icon: '店' },
+  { index: 'admin-business-analysis', label: '平台分析', path: '/admin/business-analysis', desc: '成交与来源归因', icon: '析' },
   { index: 'admin-merchants', label: '商家管理', path: '/admin/merchants', desc: '入驻与状态', icon: '商' },
   { index: 'admin-users', label: '用户管理', path: '/admin/users', desc: '用户查询', icon: '用' },
   { index: 'admin-categories', label: '平台分类', path: '/admin/categories', desc: '类目层级', icon: '类' },
@@ -58,6 +59,7 @@ const adminMenus: MenuItem[] = [
 
 const merchantMenus: MenuItem[] = [
   { index: 'merchant', label: '首页', path: '/merchant', desc: '店铺概览', icon: '店', permission: 'merchant:dashboard:view' },
+  { index: 'merchant-business-analysis', label: '经营分析', path: '/merchant/business-analysis', desc: '成交与来源归因', icon: '析', permission: 'merchant:analysis:view' },
   {
     index: 'merchant-customer-operations',
     label: '用户运营',

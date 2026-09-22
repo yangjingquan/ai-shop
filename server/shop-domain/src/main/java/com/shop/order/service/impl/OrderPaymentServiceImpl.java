@@ -25,6 +25,7 @@ import com.shop.coupon.service.CouponIssueService;
 import com.shop.marketing.service.PromotionService;
 import com.shop.inventory.service.ResourceReservationService;
 import com.shop.presale.service.PresaleService;
+import com.shop.analytics.service.BusinessAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import lombok.extern.slf4j.Slf4j;
@@ -68,6 +69,9 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     private OrderStateMachine orderStateMachine;
     @Autowired(required = false)
     private ResourceReservationService resourceReservationService;
+    /** 归因写入不影响资金主流程；报表可在读取时补齐历史快照。 */
+    @Autowired(required = false)
+    private BusinessAnalysisService businessAnalysisService;
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaidCallback(String orderNo, String transactionId, String rawPayload) {
@@ -126,6 +130,10 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
         }
         if (promotionService != null) promotionService.markPaid(orderNo);
         if (resourceReservationService != null) resourceReservationService.confirmOrder(orderNo);
+        if (businessAnalysisService != null) {
+            try { businessAnalysisService.snapshotOrder(order.getMerchantId(), orderNo); }
+            catch (RuntimeException ex) { log.error("订单归因快照写入失败, orderNo={}", orderNo, ex); }
+        }
 
         List<OrderItem> items = orderItemMapper.selectList(
                 new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, order.getId()));

@@ -1,0 +1,6 @@
+import request from '@/utils/request'
+
+export interface AnalysisSource { source: string; sourceName: string; paidOrderCount: number; paidAmount: number; refundAmount: number; netAmount: number; actualDiscountAmount: number; coverage: number }
+export interface MerchantPerformance { merchantId: number; merchantName: string; paidOrderCount: number; paidAmount: number; refundAmount: number; netAmount: number }
+export interface BusinessAnalysis { from: string; to: string; dataAsOf: string; metricDefinition: string; overview: { paidOrderCount: number; paidUserCount: number; paidAmount: number; refundAmount: number; netAmount: number; actualDiscountAmount: number; averageOrderValue: number; refundRate: number; attributionCoverage: number; unmatchedPaymentCount: number }; funnel: { productViewUsers: number; addCartUsers: number; submitOrderUsers: number; paidUsers: number; addCartRate: number; submitRate: number; payRate: number; coverageNote: string }; sources: AnalysisSource[]; merchantPerformance: MerchantPerformance[] }
+export const businessAnalysisApi = { report: (params: { from?: string; to?: string }) => request.get<unknown, BusinessAnalysis>('/api/merchant/business-analysis', { params }), adminReport: (params: { from?: string; to?: string }) => request.get<unknown, BusinessAnalysis>('/api/admin/business-analysis', { params }) }

@@ -7,6 +7,7 @@ const appConfig = require('../../utils/config')
 const marketingCapabilities = require('../../utils/marketing-capabilities')
 const pointsApi = require('../../api/points')
 const engagementApi = require('../../api/engagement')
+const analyticsApi = require('../../api/analytics')
 
 Page({
   data: {
@@ -191,6 +192,8 @@ Page({
       this.applyInitialSku()
       engagementApi.detail(this.data.productId).then((engagement) => this.setData({ engagement: engagement.data || null })).catch(() => {})
       engagementApi.history(this.data.productId).catch(() => {})
+      const page = getCurrentPages().slice(-1)[0]
+      analyticsApi.productView(this.data.productId, `pv_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`, page && page.options ? page.options.channelCode : undefined).catch(() => {})
       marketingCapabilities.load(false).then((map) => {
         const feature = map.POINTS_MEMBER_DAY
         if (feature && (feature.enabled === true || Number(feature.enabled) === 1)) {

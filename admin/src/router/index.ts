@@ -93,6 +93,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/PricingRuleCenter.vue'),
         meta: { roles: ['admin'] },
       },
+      { path: 'admin/business-analysis', name: 'AdminBusinessAnalysis', component: () => import('@/views/admin/BusinessAnalysis.vue'), meta: { roles: ['admin'] } },
       {
         path: 'admin/profile',
         name: 'AdminProfile',
@@ -104,6 +105,12 @@ const routes: RouteRecordRaw[] = [
         name: 'MerchantDashboard',
         component: () => import('@/views/merchant/Dashboard.vue'),
         meta: { roles: ['merchant'], permission: 'merchant:dashboard:view' },
+      },
+      {
+        path: 'merchant/business-analysis',
+        name: 'MerchantBusinessAnalysis',
+        component: () => import('@/views/merchant/BusinessAnalysis.vue'),
+        meta: { roles: ['merchant'], permission: 'merchant:analysis:view' },
       },
       {
         path: 'merchant/profile',

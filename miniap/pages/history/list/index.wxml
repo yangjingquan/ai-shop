@@ -1,13 +1,45 @@
-<view class="record-page">
-  <view class="record-head"><view><view class="record-title">浏览记录</view><view class="record-subtitle">最近浏览的商品会保留在这里</view></view><view wx:if="{{items.length}}" class="clear-action" bindtap="clearHistory">清空</view></view>
-  <view wx:if="{{items.length}}" class="goods-list">
-    <view wx:for="{{items}}" wx:key="productId" class="goods-row {{item.available ? '' : 'goods-row-disabled'}}" data-id="{{item.productId}}" data-available="{{item.available}}" bindtap="openProduct">
-      <image wx:if="{{item.mainImage}}" class="goods-image" src="{{item.mainImage}}" mode="aspectFill" />
-      <view wx:else class="goods-image goods-image-fallback">{{item.initial}}</view>
-      <view class="goods-main"><view class="goods-name">{{item.name}}</view><view wx:if="{{item.available}}" class="goods-price">¥{{item.priceText}}</view><view wx:else class="goods-status">已下架</view><view class="goods-meta"><text wx:if="{{item.viewedAtText}}">浏览于 {{item.viewedAtText}}</text><text wx:if="{{item.viewCountText > 1}}"> · 已浏览 {{item.viewCountText}} 次</text></view></view>
-      <button class="remove-btn" catchtap="removeHistory" data-id="{{item.productId}}">删除</button>
+<view class="history-page">
+  <view class="history-head">
+    <view class="history-heading">
+      <view class="history-title">浏览记录</view>
+      <view class="history-subtitle">最近看过的商品，都留在这里</view>
+    </view>
+    <button wx:if="{{items.length}}" class="clear-action {{clearing ? 'clear-action-disabled' : ''}}" catchtap="clearHistory" disabled="{{clearing}}">{{clearing ? '清空中' : '清空'}}</button>
+  </view>
+
+  <view wx:if="{{loading && !items.length}}" class="loading-list">
+    <view wx:for="{{[1, 2, 3]}}" wx:key="*this" class="loading-row">
+      <view class="loading-marker shimmer"></view><view class="loading-cover shimmer"></view><view class="loading-copy"><view class="loading-line loading-name shimmer"></view><view class="loading-line loading-price shimmer"></view><view class="loading-line loading-meta shimmer"></view></view>
     </view>
   </view>
-  <view wx:elif="{{!loading}}" class="empty-state"><view class="empty-mark">迹</view><view class="empty-title">暂无浏览记录</view><view class="empty-desc">浏览商品后，会自动记录在这里</view><button class="go-shopping" bindtap="goShopping">去逛逛</button></view>
-  <view wx:if="{{loadingMore}}" class="load-state">加载中…</view><view wx:elif="{{items.length && !hasMore}}" class="load-state">没有更多记录了</view>
+
+  <block wx:elif="{{items.length}}">
+    <view class="history-summary"><view class="summary-title">最近浏览</view><view class="summary-count">共 {{total}} 件商品</view></view>
+    <view class="history-list">
+      <view wx:for="{{items}}" wx:key="productId" class="history-row {{item.available ? '' : 'history-row-disabled'}}" data-id="{{item.productId}}" data-available="{{item.available}}" bindtap="openProduct">
+        <view class="timeline"><view class="timeline-marker"></view><view class="timeline-line"></view></view>
+        <view class="record-card">
+          <image wx:if="{{item.mainImage}}" class="goods-image" src="{{item.mainImage}}" mode="aspectFill" lazy-load />
+          <view wx:else class="goods-image goods-image-fallback">{{item.initial}}</view>
+          <view class="goods-main">
+            <view class="record-top"><view class="goods-name">{{item.name}}</view><button class="remove-btn {{removingId === item.productId ? 'remove-btn-disabled' : ''}}" catchtap="removeHistory" data-id="{{item.productId}}" disabled="{{clearing || removingId === item.productId}}">{{removingId === item.productId ? '处理中' : '删除'}}</button></view>
+            <view wx:if="{{item.available}}" class="goods-price"><text class="price-symbol">¥</text><text class="price-value">{{item.priceText}}</text></view>
+            <view wx:else class="goods-status">该商品暂不可购买</view>
+            <view class="goods-meta"><text wx:if="{{item.viewedAtText}}">浏览于 {{item.viewedAtText}}</text><text wx:if="{{item.viewCountText > 1}}"> · 已浏览 {{item.viewCountText}} 次</text></view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view wx:else class="empty-state">
+    <view class="empty-illustration"><view class="history-mark"><view></view></view></view>
+    <view class="empty-title">{{loadError ? '浏览记录加载失败' : '还没有浏览记录'}}</view>
+    <view class="empty-desc">{{loadError ? '网络可能开小差了，请重新加载' : '浏览商品后，会自动记录在这里'}}</view>
+    <button wx:if="{{loadError}}" class="go-shopping" bindtap="retryLoad">重新加载</button>
+    <button wx:else class="go-shopping" bindtap="goShopping">去逛逛</button>
+  </view>
+
+  <view wx:if="{{loadingMore}}" class="load-state">正在加载更多记录…</view>
+  <view wx:elif="{{items.length && !hasMore}}" class="load-state load-state-end"><view class="end-line"></view><text>已经到底了</text><view class="end-line"></view></view>
 </view>
