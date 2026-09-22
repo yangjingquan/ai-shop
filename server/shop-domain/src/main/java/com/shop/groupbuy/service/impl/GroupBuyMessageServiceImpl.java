@@ -39,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -139,7 +140,7 @@ public class GroupBuyMessageServiceImpl implements GroupBuyMessageService {
     public void notifyGroupFormed(GroupBuyGroup group, List<GroupBuyMember> members) {
         for (GroupBuyMember member : members) {
             if (member.getStatus() == GroupBuyMemberStatus.PAID.getCode()) {
-                send(group, member.getUserId(), TYPE_FORMED, TEMPLATE_FORMED, formedData(group));
+                send(group, member.getUserId(), TYPE_FORMED, TEMPLATE_FORMED, formedData(group, member));
             }
         }
     }
@@ -149,7 +150,7 @@ public class GroupBuyMessageServiceImpl implements GroupBuyMessageService {
         for (GroupBuyMember member : members) {
             if (member.getStatus() == GroupBuyMemberStatus.WAIT_REFUND.getCode()
                     || member.getStatus() == GroupBuyMemberStatus.PAID.getCode()) {
-                send(group, member.getUserId(), TYPE_FAILED, TEMPLATE_FAILED, failedData(group));
+                send(group, member.getUserId(), TYPE_FAILED, TEMPLATE_FAILED, failedData(group, member));
             }
         }
     }
@@ -170,7 +171,7 @@ public class GroupBuyMessageServiceImpl implements GroupBuyMessageService {
                     .eq(GroupBuyMember::getGroupId, group.getId())
                     .eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.PAID.getCode()));
             for (GroupBuyMember member : members) {
-                if (send(group, member.getUserId(), TYPE_EXPIRING, TEMPLATE_EXPIRING, expiringData(group))) count++;
+                if (send(group, member.getUserId(), TYPE_EXPIRING, TEMPLATE_EXPIRING, expiringData(group, member))) count++;
             }
         }
         return count;
@@ -185,6 +186,7 @@ public class GroupBuyMessageServiceImpl implements GroupBuyMessageService {
                 .eq(GroupBuySubscription::getGroupId, group.getId())
                 .eq(GroupBuySubscription::getUserId, userId)
                 .eq(GroupBuySubscription::getTemplateType, templateType)
+                .eq(GroupBuySubscription::getTemplateId, templateId)
                 .eq(GroupBuySubscription::getStatus, "accept"));
         if (subscription == null) return false;
         GroupBuyNotificationLog notification = notificationLogMapper.selectOne(new LambdaQueryWrapper<GroupBuyNotificationLog>()
@@ -202,6 +204,8 @@ public class GroupBuyMessageServiceImpl implements GroupBuyMessageService {
             notification.setTemplateType(templateType);
             notification.setTemplateId(templateId);
         }
+        // A template change requires a new user consent; failed logs may be retried with the new template.
+        notification.setTemplateId(templateId);
         try {
             User user = userMapper.selectById(userId);
             MerchantWechatConfig wechat = wechatConfigService.getByMerchantId(group.getMerchantId());
@@ -281,48 +285,63 @@ public class GroupBuyMessageServiceImpl implements GroupBuyMessageService {
 
     private Product product(GroupBuyGroup group) { return productMapper.selectById(group.getProductId()); }
 
-    private Map<String, Map<String, String>> formedData(GroupBuyGroup group) {
+    private Map<String, Map<String, String>> formedData(GroupBuyGroup group, GroupBuyMember recipient) {
         Product product = product(group);
         List<GroupBuyMember> members = memberMapper.selectList(new LambdaQueryWrapper<GroupBuyMember>()
                 .eq(GroupBuyMember::getGroupId, group.getId()).eq(GroupBuyMember::getStatus, 1));
+        String orderNo = recipient == null ? "-" : recipient.getOrderNo();
+        if (orderNo == null || orderNo.isBlank()) orderNo = members.stream().map(GroupBuyMember::getOrderNo)
+                .filter(value -> value != null && !value.isBlank()).findFirst().orElse("-");
         String names = members.stream().map(m -> {
             User u = userMapper.selectById(m.getUserId());
             return u == null || u.getNickname() == null ? "拼团成员" : u.getNickname();
         }).reduce((a, b) -> a + "、" + b).orElse("拼团成员");
-        return data(Map.of("thing1", text(productName(product)), "thing2", text(names), "phrase5", "已成团"));
+        return formedPayload(orderNo, productName(product), money(product == null ? null : product.getGroupBuyPrice()), names);
     }
 
-    private Map<String, Map<String, String>> expiringData(GroupBuyGroup group) {
-        GroupBuyMember member = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>()
-                .eq(GroupBuyMember::getGroupId, group.getId()).eq(GroupBuyMember::getStatus, 1)
-                .orderByAsc(GroupBuyMember::getId).last("LIMIT 1"));
-        String orderNo = member == null ? "-" : member.getOrderNo();
-        String progress = group.getPaidCount() + "人已成团，还差" + Math.max(0, group.getRequiredCount() - group.getPaidCount()) + "人";
-        return data(Map.of("character_string1", text(orderNo), "thing2", text(progress),
-                "time3", group.getExpireAt().format(TIME), "thing4", "请及时邀请好友参团"));
+    private Map<String, Map<String, String>> expiringData(GroupBuyGroup group, GroupBuyMember recipient) {
+        String orderNo = recipient == null || recipient.getOrderNo() == null || recipient.getOrderNo().isBlank() ? "-" : recipient.getOrderNo();
+        return progressPayload(orderNo, productName(product(group)), progress(group), group.getExpireAt());
     }
 
-    private Map<String, Map<String, String>> failedData(GroupBuyGroup group) {
+    private Map<String, Map<String, String>> failedData(GroupBuyGroup group, GroupBuyMember member) {
         Product product = product(group);
-        String amount = "0.00";
-        GroupBuyMember paid = memberMapper.selectOne(new LambdaQueryWrapper<GroupBuyMember>()
-                .eq(GroupBuyMember::getGroupId, group.getId()).eq(GroupBuyMember::getStatus, GroupBuyMemberStatus.WAIT_REFUND.getCode())
-                .orderByAsc(GroupBuyMember::getId).last("LIMIT 1"));
-        if (paid != null) {
+        String refundAmount = "0.00";
+        if (member != null && member.getOrderNo() != null) {
             com.shop.order.entity.Order order = orderMapper.selectOne(new LambdaQueryWrapper<com.shop.order.entity.Order>()
-                    .eq(com.shop.order.entity.Order::getOrderNo, paid.getOrderNo()));
-            if (order != null && order.getPayAmount() != null) amount = order.getPayAmount().toPlainString();
+                    .eq(com.shop.order.entity.Order::getOrderNo, member.getOrderNo()));
+            if (order != null && order.getPayAmount() != null) refundAmount = money(order.getPayAmount());
         }
-        return data(Map.of("thing1", text(productName(product)), "amount2", amount,
-                "number4", String.valueOf(group.getPaidCount()), "amount5", amount, "thing6", "点击查看订单详情"));
+        return failedPayload(productName(product), money(product == null ? null : product.getGroupBuyPrice()), refundAmount);
     }
 
-    private Map<String, Map<String, String>> data(Map<String, String> values) {
+    static Map<String, Map<String, String>> formedPayload(String orderNo, String productName, String groupBuyPrice, String members) {
+        return data(Map.of("character_string1", text(orderNo), "thing7", text(productName), "amount3", groupBuyPrice,
+                "thing8", text(members), "phrase5", "拼团成功"));
+    }
+
+    static Map<String, Map<String, String>> progressPayload(String orderNo, String productName, String groupProgress, LocalDateTime expireAt) {
+        return data(Map.of("character_string11", text(orderNo), "thing1", text(productName), "thing10", text(groupProgress),
+                "time9", expireAt == null ? "-" : expireAt.format(TIME)));
+    }
+
+    static Map<String, Map<String, String>> failedPayload(String productName, String groupBuyPrice, String refundAmount) {
+        return data(Map.of("thing1", text(productName), "amount2", groupBuyPrice, "thing8", "未在截止时间前凑满所需人数",
+                "amount3", refundAmount, "thing4", "点击查看订单详情"));
+    }
+
+    private static Map<String, Map<String, String>> data(Map<String, String> values) {
         Map<String, Map<String, String>> data = new HashMap<>();
         values.forEach((key, value) -> data.put(key, Map.of("value", value)));
         return data;
     }
 
     private String productName(Product product) { return product == null ? "团购商品" : product.getName(); }
-    private String text(String value) { return value == null ? "-" : value.substring(0, Math.min(20, value.length())); }
+    private static String text(String value) { return value == null ? "-" : value.substring(0, Math.min(20, value.length())); }
+    private static String money(BigDecimal value) { return value == null ? "0.00" : value.stripTrailingZeros().toPlainString(); }
+    private static String progress(GroupBuyGroup group) {
+        int paid = group.getPaidCount() == null ? 0 : group.getPaidCount();
+        int required = group.getRequiredCount() == null ? 0 : group.getRequiredCount();
+        return paid + "/" + required;
+    }
 }

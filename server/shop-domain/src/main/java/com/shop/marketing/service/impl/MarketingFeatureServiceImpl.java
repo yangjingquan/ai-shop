@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 public class MarketingFeatureServiceImpl implements MarketingFeatureService {
     private static final String CACHE_PREFIX = "merchant:marketing:features:";
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
-    private static final String GROUP_BUY_CONFIG = "{\"durationHours\":24,\"userLimit\":1,\"showActiveGroups\":1,\"formedTemplateId\":\"sg0sw0AxgcxKZN1_Rz03ggc50HltbY1FK-Me2ZDGWcc\",\"expiringTemplateId\":\"RevYrSvVjLuJ4WEhySpfQ2FrWEyDKGyxcHYz-QiyzN0\",\"failedTemplateId\":\"9eLlvp1elpSJeHU-BgET6tZL2NOaqZfj6CB8vTX8s0A\"}";
+    private static final String GROUP_BUY_CONFIG = "{\"durationHours\":24,\"userLimit\":1,\"showActiveGroups\":1,\"formedTemplateId\":\"1TJtFqCAypEGy5YNcO3WUYHn_xzXghcdUTxegIHsVN0\",\"expiringTemplateId\":\"HXpw3Je-cU96oprVfCEih93NCG30Pd8EX6zYL-bzEqs\",\"failedTemplateId\":\"6SP1uh9d55qix9-bI9BNNUQVev8VJ0kM4mvVQ-KFbis\"}";
 
     private final MerchantMarketingFeatureMapper featureMapper;
     private final StringRedisTemplate stringRedisTemplate;
