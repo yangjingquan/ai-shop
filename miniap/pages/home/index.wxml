@@ -9,198 +9,59 @@
       <view class="brand">潮</view>
       <view class="search">
         <text class="search-mark">⌕</text>
-        <input
-          placeholder="搜索钢笔、打印纸、订书机"
-          placeholder-class="input-placeholder"
-          value="{{ keyword }}"
-          bindinput="onSearchInput"
-          bindconfirm="onSearch"
-          confirm-type="search"
-        />
+        <input placeholder="搜索钢笔、打印纸、订书机" placeholder-class="input-placeholder" value="{{ keyword }}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" />
         <view wx:if="{{ keyword }}" class="search-clear" bindtap="onClearSearch">✕</view>
       </view>
       <view class="search-btn" bindtap="onSearch">搜索</view>
     </view>
 
-    <swiper class="banner" autoplay circular indicator-dots interval="3000" wx:if="{{moduleEnabled.BANNER && banners.length}}">
-      <swiper-item wx:for="{{banners}}" wx:key="id">
-        <image
-          class="banner-img"
-          src="{{ item.imageUrl }}"
-          mode="aspectFill"
-          data-banner="{{ item }}"
-          bindtap="onBannerTap"
-        />
-      </swiper-item>
-    </swiper>
-    <view wx:if="{{moduleEnabled.BANNER && !banners.length}}" class="banner banner-placeholder">
-      <view class="banner-text">
-        <view class="kicker">文具上新</view>
-        <view class="banner-title">周末文具<text>\n</text>上新季</view>
-        <view class="banner-desc">精选办公与学生文具</view>
-        <view class="cta">立即逛逛</view>
+    <block wx:if="{{ !keyword }}" wx:for="{{homeModules}}" wx:for-item="module" wx:key="id">
+      <block wx:if="{{module.code === 'BANNER'}}">
+        <swiper class="banner" autoplay circular indicator-dots interval="3000" wx:if="{{banners.length}}">
+          <swiper-item wx:for="{{banners}}" wx:for-item="banner" wx:key="id"><image class="banner-img" src="{{banner.imageUrl}}" mode="aspectFill" data-banner="{{banner}}" bindtap="onBannerTap" /></swiper-item>
+        </swiper>
+        <view wx:else class="banner banner-placeholder"><view class="banner-text"><view class="kicker">文具上新</view><view class="banner-title">{{module.title}}</view><view class="banner-desc">{{module.subtitle || '精选办公与学生文具'}}</view><view class="cta">立即逛逛</view></view><view class="shoe"><view class="shoe-line"></view></view></view>
+      </block>
+
+      <view class="categories" wx:elif="{{module.code === 'CATEGORY' && topCategories.length}}">
+        <view class="cat" wx:for="{{topCategories}}" wx:for-item="category" wx:key="id" bindtap="onCategory" data-id="{{category.id}}"><view class="cat-icon {{category.tone}}"><image wx:if="{{category.icon}}" class="cat-img" src="{{category.icon}}" mode="aspectFit" /><text wx:else>{{category.symbol}}</text></view><text class="cat-name">{{category.name}}</text></view>
       </view>
-      <view class="shoe"><view class="shoe-line"></view></view>
-    </view>
 
-    <view wx:if="{{moduleEnabled.MARKETING_ZONE && presaleActivity}}" class="presale-entry" bindtap="onPresale">
-      <view class="presale-entry-copy"><view class="presale-entry-kicker">新品 · 预售</view><view class="presale-entry-title">{{presaleActivity.name}}</view><view class="presale-entry-desc">定金膨胀 · 尾款更省 · {{presaleActivity.phaseText}}</view></view>
-      <view class="presale-entry-price"><text>¥</text>{{presaleActivity.skus[0].depositAmount}}<view>立即预订</view></view>
-    </view>
+      <block wx:elif="{{module.code === 'NEW_ARRIVALS' && module.products.length}}">
+        <view class="section-head arrival-head"><view><view class="section-title">{{module.title}}</view><view wx:if="{{module.subtitle}}" class="section-subtitle">{{module.subtitle}}</view></view><view class="section-note">NEW IN</view></view>
+        <view class="arrival-grid"><view class="arrival-card" wx:for="{{module.products}}" wx:for-item="product" wx:key="id" bindtap="onProduct" data-id="{{product.id}}"><view class="arrival-badge">NEW</view><image wx:if="{{product.mainImage}}" class="arrival-image" src="{{product.mainImage}}" mode="aspectFit" /><view wx:else class="arrival-visual rec-visual {{product.visualType}}"></view><view class="arrival-copy"><view class="arrival-name">{{product.name}}</view><view class="arrival-desc">{{product.subtitle}}</view><view class="arrival-price">¥{{product.salePriceText || product.minPrice}}</view></view></view></view>
+      </block>
 
-    <view wx:if="{{moduleEnabled.MARKETING_ZONE && pointsEntry}}" class="points-entry" bindtap="goPointsMall">
-      <view class="points-entry-main"><view class="points-entry-kicker">MEMBER POINTS</view><view class="points-entry-value">{{pointsEntry.balance}}<text> 积分</text></view><view class="points-entry-desc">积分商城兑换精选好礼 ›</view></view>
-      <view class="points-entry-day" catchtap="goMemberDay"><text>{{pointsEntry.active ? '今日会员日' : '积分会员日'}}</text><text>{{pointsEntry.active ? (pointsEntry.couponReceived ? '专享券已领取' : '去领专享券') : ('每月 ' + pointsEntry.dayOfMonth + ' 日') }} ›</text></view>
-    </view>
+      <block wx:elif="{{module.code === 'POPULAR_PRODUCTS' && module.products.length}}">
+        <view class="section-head"><view><view class="section-title">{{module.title}}</view><view wx:if="{{module.subtitle}}" class="section-subtitle">{{module.subtitle}}</view></view><view class="more" bindtap="onMoreRecommend">更多推荐 ›</view></view>
+        <scroll-view class="recommend" scroll-x enhanced show-scrollbar="false"><view class="recommend-track"><view class="rec-card {{product.cardTone}}" wx:for="{{module.products}}" wx:for-item="product" wx:key="id" bindtap="onProduct" data-id="{{product.id}}"><image wx:if="{{product.mainImage}}" class="rec-image" src="{{product.mainImage}}" mode="aspectFit" /><view wx:else class="rec-visual {{product.visualType}}"></view><view class="rec-name">{{product.name}}</view><view class="price">¥{{product.salePriceText || product.minPrice}}</view></view></view></scroll-view>
+      </block>
 
-    <view wx:if="{{moduleEnabled.MARKETING_ZONE && fullReductionActivity}}" class="full-reduction-entry" bindtap="onFullReduction">
-      <view><view class="full-reduction-kicker">BUY MORE, SAVE MORE</view><view class="full-reduction-title">{{fullReductionActivity.name}}</view><view class="full-reduction-rule">{{fullReductionActivity.rule}} · 下单自动优惠</view></view><view class="full-reduction-arrow">›</view>
-    </view>
+      <block wx:elif="{{module.code === 'PRODUCT_FEED' && module.products.length}}">
+        <view class="section-head feed-head"><view><view class="section-title">{{module.title}}</view><view wx:if="{{module.subtitle}}" class="section-subtitle">{{module.subtitle}}</view></view><view class="more" bindtap="onBrowseAll">全部商品 ›</view></view>
+        <view class="product-feed"><view class="feed-card" wx:for="{{module.products}}" wx:for-item="product" wx:key="id" bindtap="onProduct" data-id="{{product.id}}"><view class="feed-image-wrap {{product.cardTone}}"><image wx:if="{{product.mainImage}}" class="feed-image" src="{{product.mainImage}}" mode="aspectFit" /><view wx:else class="feed-visual rec-visual {{product.visualType}}"></view></view><view class="feed-name">{{product.name}}</view><view class="feed-desc">{{product.subtitle}}</view><view class="feed-price-row"><text class="feed-price">¥{{product.salePriceText || product.minPrice}}</text><text wx:if="{{product.hasOriginalPrice}}" class="feed-original">¥{{product.originalPriceText}}</text></view></view></view>
+      </block>
 
-    <view wx:if="{{moduleEnabled.MARKETING_ZONE && lotteryActivity}}" class="lottery-entry" bindtap="onLottery">
-      <image class="lottery-entry-image" src="{{lotteryActivity.entryImage || '/assets/lottery/blind-box-hero.jpg'}}" mode="aspectFill" />
-      <view class="lottery-entry-copy"><view class="lottery-entry-kicker">DAILY SURPRISE</view><view class="lottery-entry-title">互动抽奖盲盒</view><view class="lottery-entry-desc">登录即可参与 · 每日 {{lotteryActivity.dailyChances || 1}} 次</view></view>
-      <view class="lottery-entry-arrow">去抽奖 ›</view>
-    </view>
-
-    <view class="categories" wx:if="{{ moduleEnabled.CATEGORY && topCategories.length }}">
-      <view
-        class="cat"
-        wx:for="{{ topCategories }}"
-        wx:key="id"
-        bindtap="onCategory"
-        data-id="{{ item.id }}"
-      >
-        <view class="cat-icon {{ item.tone }}">
-          <image wx:if="{{ item.icon }}" class="cat-img" src="{{ item.icon }}" mode="aspectFit" />
-          <text wx:else>{{ item.symbol }}</text>
-        </view>
-        <text class="cat-name">{{ item.name }}</text>
+      <view wx:elif="{{module.code === 'MARKETING_ZONE' && (presaleActivity || pointsEntry || fullReductionActivity || lotteryActivity || marketingEnabled.GROUP_BUY || (marketingEnabled.SECKILL && seckillSummary) || referralCampaign)}}" class="marketing-zone">
+        <view class="section-head"><view><view class="section-title">{{module.title}}</view><view wx:if="{{module.subtitle}}" class="section-subtitle">{{module.subtitle}}</view></view><view class="section-note">STORE EVENTS</view></view>
+        <view wx:if="{{presaleActivity}}" class="presale-entry" bindtap="onPresale"><view class="presale-entry-copy"><view class="presale-entry-kicker">新品 · 预售</view><view class="presale-entry-title">{{presaleActivity.name}}</view><view class="presale-entry-desc">定金膨胀 · 尾款更省 · {{presaleActivity.phaseText}}</view></view><view class="presale-entry-price"><text>¥</text>{{presaleActivity.skus[0].depositAmount}}<view>立即预订</view></view></view>
+        <view wx:if="{{pointsEntry}}" class="points-entry" bindtap="goPointsMall"><view class="points-entry-main"><view class="points-entry-kicker">MEMBER POINTS</view><view class="points-entry-value">{{pointsEntry.balance}}<text> 积分</text></view><view class="points-entry-desc">积分商城兑换精选好礼 ›</view></view><view class="points-entry-day" catchtap="goMemberDay"><text>{{pointsEntry.active ? '今日会员日' : '积分会员日'}}</text><text>{{pointsEntry.active ? (pointsEntry.couponReceived ? '专享券已领取' : '去领专享券') : ('每月 ' + pointsEntry.dayOfMonth + ' 日') }} ›</text></view></view>
+        <view wx:if="{{fullReductionActivity}}" class="full-reduction-entry" bindtap="onFullReduction"><view><view class="full-reduction-kicker">BUY MORE, SAVE MORE</view><view class="full-reduction-title">{{fullReductionActivity.name}}</view><view class="full-reduction-rule">{{fullReductionActivity.rule}} · 下单自动优惠</view></view><view class="full-reduction-arrow">›</view></view>
+        <view wx:if="{{lotteryActivity}}" class="lottery-entry" bindtap="onLottery"><image class="lottery-entry-image" src="{{lotteryActivity.entryImage || '/assets/lottery/blind-box-hero.jpg'}}" mode="aspectFill" /><view class="lottery-entry-copy"><view class="lottery-entry-kicker">DAILY SURPRISE</view><view class="lottery-entry-title">互动抽奖盲盒</view><view class="lottery-entry-desc">登录即可参与 · 每日 {{lotteryActivity.dailyChances || 1}} 次</view></view><view class="lottery-entry-arrow">去抽奖 ›</view></view>
+        <view wx:if="{{marketingEnabled.GROUP_BUY || (marketingEnabled.SECKILL && seckillSummary)}}" class="section-head deal-head"><view class="section-title">限时会场</view><view class="more">{{seckillSummary ? seckillSummary.sessionName : ''}}</view></view>
+        <view wx:if="{{marketingEnabled.GROUP_BUY || (marketingEnabled.SECKILL && seckillSummary)}}" class="deal-row {{marketingEnabled.GROUP_BUY && marketingEnabled.SECKILL && seckillSummary ? 'two-deals' : 'single-deal'}}"><view wx:if="{{marketingEnabled.GROUP_BUY}}" class="group-card" bindtap="onGroupBuy"><view class="deal-title">团购商品</view><view class="deal-desc">N人成团·省更多</view><view class="avatars"><view></view><view></view><view></view></view><view class="group-price">享受拼团价</view><view class="headphone"></view></view><view wx:if="{{marketingEnabled.SECKILL && seckillSummary}}" class="flash-card" bindtap="onSeckill"><view class="flash-copy"><view class="flash-head"><view class="deal-title dark">秒杀专场</view><text class="flash-arrow">›</text></view><view class="flash-status">{{seckillSummary.statusText}}</view><view class="flash-product">{{seckillSummary.productName}}</view><view class="flash-price-row"><text class="flash-price">¥{{seckillSummary.activityPriceText}}</text><text class="flash-price-suffix">起</text></view><view class="flash-countdown"><text class="flash-countdown-label">{{seckillSummary.countdownLabel}}</text><text class="flash-time">{{seckillSummary.countdownText}}</text></view></view><view class="speaker"></view></view></view>
+        <view wx:if="{{referralCampaign}}" class="referral-entry" bindtap="onReferral"><view class="referral-entry-copy"><view class="referral-entry-kicker">SHARE &amp; REWARD</view><view class="referral-entry-title">分享有礼·老带新返券</view><view class="referral-entry-desc">邀请好友首单成功，按阶梯领取店铺券</view></view><view class="referral-entry-arrow">›</view></view>
       </view>
-    </view>
 
-    <view wx:if="{{ moduleEnabled.NEW_ARRIVALS && productHighlights.length && !keyword }}" class="section-head arrival-head">
-      <view>
-        <view class="section-title">{{ moduleTitles.NEW_ARRIVALS || '新品速览' }}</view>
-        <view class="section-subtitle">{{ moduleTitles.NEW_ARRIVALS_SUBTITLE || '每天都有新发现' }}</view>
-      </view>
-      <view class="section-note">NEW IN</view>
-    </view>
-    <view wx:if="{{ moduleEnabled.NEW_ARRIVALS && productHighlights.length && !keyword }}" class="arrival-grid">
-      <view
-        class="arrival-card"
-        wx:for="{{ productHighlights }}"
-        wx:key="id"
-        bindtap="onProduct"
-        data-id="{{ item.id }}"
-      >
-        <view class="arrival-badge">NEW</view>
-        <image wx:if="{{ item.mainImage }}" class="arrival-image" src="{{ item.mainImage }}" mode="aspectFit" />
-        <view wx:else class="arrival-visual rec-visual {{ item.visualType }}"></view>
-        <view class="arrival-copy">
-          <view class="arrival-name">{{ item.name }}</view>
-          <view class="arrival-desc">{{ item.subtitle }}</view>
-          <view class="arrival-price">¥{{ item.salePriceText || item.minPrice }}</view>
-        </view>
-      </view>
-    </view>
+      <view wx:elif="{{module.code === 'TOPIC_ENTRY' && module.topicPages.length}}" class="topic-entry"><view class="section-head"><view><view class="section-title">{{module.title}}</view><view wx:if="{{module.subtitle}}" class="section-subtitle">{{module.subtitle}}</view></view><view class="section-note">STORIES</view></view><view class="topic-card" wx:for="{{module.topicPages}}" wx:for-item="topic" wx:key="id" bindtap="onTopic" data-slug="{{topic.slug}}"><image wx:if="{{topic.coverImage}}" class="topic-card-image" src="{{topic.coverImage}}" mode="aspectFill" /><view wx:else class="topic-cover-placeholder"></view><view class="topic-card-copy"><view>{{topic.title}}</view><text>{{topic.summary || '查看专题内容'}}　›</text></view></view></view>
+    </block>
 
-    <view wx:if="{{ moduleEnabled.POPULAR_PRODUCTS && !keyword }}" class="section-head">
-      <view class="section-title">{{ moduleTitles.POPULAR_PRODUCTS || '人气推荐' }}</view>
-      <view class="more" bindtap="onMoreRecommend">更多推荐 ›</view>
-    </view>
-
-    <scroll-view class="recommend" scroll-x enhanced show-scrollbar="false" wx:if="{{ moduleEnabled.POPULAR_PRODUCTS && products.length && !keyword }}">
-      <view class="recommend-track">
-        <view
-          class="rec-card {{ item.cardTone }}"
-          wx:for="{{ products }}"
-          wx:key="id"
-          bindtap="onProduct"
-          data-id="{{ item.id }}"
-        >
-          <image wx:if="{{ item.mainImage }}" class="rec-image" src="{{ item.mainImage }}" mode="aspectFit" />
-          <view wx:else class="rec-visual {{ item.visualType }}"></view>
-          <view class="rec-name">{{ item.name }}</view>
-          <view class="price">¥{{ item.salePriceText || item.minPrice }}</view>
-        </view>
-      </view>
-    </scroll-view>
-    <view class="empty-state" wx:elif="{{ !loading && !productFeed.length }}">
-      <image class="empty-icon" src="/assets/icons/empty.png" mode="aspectFit" />
-      <view class="empty-title">{{ keyword ? '暂无搜索结果' : '暂无推荐商品' }}</view>
-    </view>
-
-    <view wx:if="{{ (moduleEnabled.PRODUCT_FEED || keyword) && productFeed.length }}" class="section-head feed-head">
-      <view>
-        <view class="section-title">{{ keyword ? '搜索到的好物' : (moduleTitles.PRODUCT_FEED || '逛更多好物') }}</view>
-        <view wx:if="{{ !keyword }}" class="section-subtitle">{{ moduleTitles.PRODUCT_FEED_SUBTITLE || '新品与热销都在这里' }}</view>
-      </view>
-      <view wx:if="{{ !keyword }}" class="more" bindtap="onBrowseAll">全部商品 ›</view>
-    </view>
-    <view wx:if="{{ (moduleEnabled.PRODUCT_FEED || keyword) && productFeed.length }}" class="product-feed">
-      <view
-        class="feed-card"
-        wx:for="{{ productFeed }}"
-        wx:key="id"
-        bindtap="onProduct"
-        data-id="{{ item.id }}"
-      >
-        <view class="feed-image-wrap {{ item.cardTone }}">
-          <image wx:if="{{ item.mainImage }}" class="feed-image" src="{{ item.mainImage }}" mode="aspectFit" />
-          <view wx:else class="feed-visual rec-visual {{ item.visualType }}"></view>
-        </view>
-        <view class="feed-name">{{ item.name }}</view>
-        <view class="feed-desc">{{ item.subtitle }}</view>
-        <view class="feed-price-row">
-          <text class="feed-price">¥{{ item.salePriceText || item.minPrice }}</text>
-          <text wx:if="{{ item.hasOriginalPrice }}" class="feed-original">¥{{ item.originalPriceText }}</text>
-        </view>
-      </view>
-    </view>
-
-    <view wx:if="{{ moduleEnabled.MARKETING_ZONE && (marketingEnabled.GROUP_BUY || (marketingEnabled.SECKILL && seckillSummary)) }}" class="section-head deal-head">
-      <view class="section-title">限时会场</view>
-      <view class="more">{{seckillSummary ? seckillSummary.sessionName : ''}}</view>
-    </view>
-    <view wx:if="{{ moduleEnabled.MARKETING_ZONE && (marketingEnabled.GROUP_BUY || (marketingEnabled.SECKILL && seckillSummary)) }}" class="deal-row {{ marketingEnabled.GROUP_BUY && marketingEnabled.SECKILL && seckillSummary ? 'two-deals' : 'single-deal' }}">
-      <view wx:if="{{ marketingEnabled.GROUP_BUY }}" class="group-card" bindtap="onGroupBuy">
-        <view class="deal-title">团购商品</view>
-        <view class="deal-desc">N人成团·省更多</view>
-        <view class="avatars"><view></view><view></view><view></view></view>
-        <view class="group-price">享受拼团价</view>
-        <view class="headphone"></view>
-      </view>
-      <view wx:if="{{ marketingEnabled.SECKILL && seckillSummary }}" class="flash-card" bindtap="onSeckill">
-        <view class="flash-copy">
-          <view class="flash-head"><view class="deal-title dark">秒杀专场</view><text class="flash-arrow">›</text></view>
-          <view class="flash-status">{{seckillSummary.statusText}}</view>
-          <view class="flash-product">{{seckillSummary.productName}}</view>
-          <view class="flash-price-row"><text class="flash-price">¥{{seckillSummary.activityPriceText}}</text><text class="flash-price-suffix">起</text></view>
-          <view class="flash-countdown"><text class="flash-countdown-label">{{seckillSummary.countdownLabel}}</text><text class="flash-time">{{seckillSummary.countdownText}}</text></view>
-        </view>
-        <view class="speaker"></view>
-      </view>
-    </view>
-
-    <view wx:if="{{moduleEnabled.MARKETING_ZONE && referralCampaign}}" class="referral-entry" bindtap="onReferral">
-      <view class="referral-entry-copy"><view class="referral-entry-kicker">SHARE &amp; REWARD</view><view class="referral-entry-title">分享有礼·老带新返券</view><view class="referral-entry-desc">邀请好友首单成功，按阶梯领取店铺券</view></view>
-      <view class="referral-entry-arrow">›</view>
-    </view>
+    <block wx:if="{{keyword}}">
+      <view wx:if="{{productFeed.length}}" class="section-head feed-head"><view><view class="section-title">搜索到的好物</view></view></view>
+      <view wx:if="{{productFeed.length}}" class="product-feed"><view class="feed-card" wx:for="{{productFeed}}" wx:for-item="product" wx:key="id" bindtap="onProduct" data-id="{{product.id}}"><view class="feed-image-wrap {{product.cardTone}}"><image wx:if="{{product.mainImage}}" class="feed-image" src="{{product.mainImage}}" mode="aspectFit" /></view><view class="feed-name">{{product.name}}</view><view class="feed-desc">{{product.subtitle}}</view><view class="feed-price-row"><text class="feed-price">¥{{product.salePriceText || product.minPrice}}</text></view></view></view>
+      <view wx:elif="{{!loading}}" class="empty-state"><image class="empty-icon" src="/assets/icons/empty.png" mode="aspectFit" /><view class="empty-title">暂无搜索结果</view></view>
+    </block>
   </view>
 
-  <view wx:if="{{newUserCoupon}}" class="coupon-mask">
-    <view class="new-user-popup" catchtap="noop">
-      <view class="popup-close" bindtap="closeNewUserCoupon">×</view>
-      <view class="popup-kicker">NEW USER BENEFIT</view>
-      <view class="popup-title">新人专享礼</view>
-      <view class="popup-desc">首单立减，欢迎来到我们的商城</view>
-      <view class="coupon-ticket">
-        <view class="ticket-amount"><text>¥</text>{{newUserCoupon.amount}}</view>
-        <view class="ticket-info"><view>{{newUserCoupon.name}}</view><text>满{{newUserCoupon.thresholdAmount}}元可用</text></view>
-      </view>
-      <button class="claim-btn" bindtap="claimNewUserCoupon">领取后立即使用</button>
-      <view class="popup-note">仅限普通商品首单使用 · 领取后{{newUserCoupon.validityDays || 30}}天有效</view>
-    </view>
-  </view>
+  <view wx:if="{{newUserCoupon}}" class="coupon-mask"><view class="new-user-popup" catchtap="noop"><view class="popup-close" bindtap="closeNewUserCoupon">×</view><view class="popup-kicker">NEW USER BENEFIT</view><view class="popup-title">新人专享礼</view><view class="popup-desc">首单立减，欢迎来到我们的商城</view><view class="coupon-ticket"><view class="ticket-amount"><text>¥</text>{{newUserCoupon.amount}}</view><view class="ticket-info"><view>{{newUserCoupon.name}}</view><text>满{{newUserCoupon.thresholdAmount}}元可用</text></view></view><button class="claim-btn" bindtap="claimNewUserCoupon">领取后立即使用</button><view class="popup-note">仅限普通商品首单使用 · 领取后{{newUserCoupon.validityDays || 30}}天有效</view></view></view>
 </view>

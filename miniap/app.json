@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/home/index",
+    "pages/topic/detail",
     "pages/recommend/index",
     "pages/category/index",
     "pages/cart/index",

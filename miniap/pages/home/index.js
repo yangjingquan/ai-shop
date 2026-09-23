@@ -385,9 +385,19 @@ Page({
   buildModuleState(modules, fallbackProducts) {
     const defaults = this.data.moduleEnabled
     const hasModuleConfig = Array.isArray(modules)
-    const homeModules = hasModuleConfig
+    let homeModules = hasModuleConfig
       ? modules.slice().sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
       : []
+    if (!hasModuleConfig) {
+      const definitions = [
+        ['BANNER', '焦点 Banner'], ['CATEGORY', '分类入口'], ['NEW_ARRIVALS', '新品速览'],
+        ['POPULAR_PRODUCTS', '人气推荐'], ['PRODUCT_FEED', '商品精选流'], ['MARKETING_ZONE', '营销会场'],
+      ]
+      homeModules = definitions.map(([code, title], index) => ({ id: code, code, title, enabled: 1, sortOrder: (index + 1) * 10 }))
+      Object.assign(homeModules.find((item) => item.code === 'NEW_ARRIVALS'), { productSource: 'RECENT', productLimit: 2, products: fallbackProducts.slice(0, 2) })
+      Object.assign(homeModules.find((item) => item.code === 'POPULAR_PRODUCTS'), { productSource: 'TOP_SALES', productLimit: 8, products: fallbackProducts })
+      Object.assign(homeModules.find((item) => item.code === 'PRODUCT_FEED'), { productSource: 'RECOMMEND', productLimit: 10, products: fallbackProducts })
+    }
     const enabled = homeModules.reduce(
       (result, module) => ({ ...result, [module.code]: Number(module.enabled) === 1 }),
       hasModuleConfig ? {} : { ...defaults },
@@ -402,6 +412,16 @@ Page({
     const newest = moduleProducts('NEW_ARRIVALS', fallbackProducts.slice(0, 2))
     const popular = moduleProducts('POPULAR_PRODUCTS', fallbackProducts)
     const feed = moduleProducts('PRODUCT_FEED', fallbackProducts)
+    homeModules = homeModules.map((module) => ({
+      ...module,
+      products: Array.isArray(module.products)
+        ? this.normalizeProducts({ data: { list: module.products } })
+        : [],
+      topicPages: (module.topicPages || []).map((topic) => ({
+        ...topic,
+        coverImage: resolveImageUrl(topic.coverImage || ''),
+      })),
+    }))
     return {
       homeModules,
       moduleEnabled: enabled,
@@ -546,6 +566,12 @@ Page({
   onProduct(e) {
     const id = e.currentTarget.dataset.id
     wx.navigateTo({ url: `/pages/product/detail?id=${id}` })
+  },
+
+  onTopic(e) {
+    const slug = String(e.currentTarget.dataset.slug || '').trim()
+    if (!slug) return
+    wx.navigateTo({ url: `/pages/topic/detail?slug=${encodeURIComponent(slug)}` })
   },
 
   onPullDownRefresh() {

@@ -911,3 +911,9 @@ page {
 .group-card { background: linear-gradient(145deg, #201f1c, #37302a); }
 .flash-card { background: linear-gradient(145deg, #ffead7, #ffb86e); box-shadow: none; }
 .presale-entry, .points-entry, .full-reduction-entry, .lottery-entry, .referral-entry { border-radius: 24rpx; }
+.topic-entry { margin-top: 8rpx; }
+.topic-card { display: flex; align-items: center; gap: 18rpx; min-height: 156rpx; margin: 14rpx 0; padding: 14rpx; border: 1rpx solid #eee6dc; border-radius: 22rpx; background: #fff; box-shadow: 0 10rpx 26rpx rgba(47, 31, 16, .05); }
+.topic-card-image, .topic-cover-placeholder { flex: 0 0 auto; width: 172rpx; height: 128rpx; border-radius: 14rpx; background: linear-gradient(135deg, #f5d7ba, #eadfcf); }
+.topic-card-copy { flex: 1; min-width: 0; }
+.topic-card-copy view { overflow: hidden; color: #292521; font-size: 28rpx; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.topic-card-copy text { display: block; overflow: hidden; margin-top: 12rpx; color: #8b8177; font-size: 22rpx; text-overflow: ellipsis; white-space: nowrap; }

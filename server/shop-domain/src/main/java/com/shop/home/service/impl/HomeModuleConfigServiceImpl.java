@@ -108,6 +108,7 @@ public class HomeModuleConfigServiceImpl implements HomeModuleConfigService {
 
     private HomeModuleVO toVO(Definition definition, HomeModuleConfig saved) {
         HomeModuleVO vo = new HomeModuleVO();
+        vo.setId(definition.code());
         vo.setCode(definition.code());
         vo.setName(definition.name());
         vo.setDescription(definition.description());

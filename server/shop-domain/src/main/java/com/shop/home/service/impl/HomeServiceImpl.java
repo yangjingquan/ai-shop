@@ -5,6 +5,7 @@ import com.shop.common.cache.PublicApiCacheService;
 import com.shop.home.dto.HomeVO;
 import com.shop.home.service.HomeService;
 import com.shop.home.service.HomeModuleConfigService;
+import com.shop.home.service.StorefrontPageService;
 import com.shop.product.dto.ProductListVO;
 import com.shop.product.service.ProductService;
 import com.shop.marketing.service.MarketingFeatureService;
@@ -28,6 +29,9 @@ public class HomeServiceImpl implements HomeService {
 
     @Autowired(required = false)
     private PublicApiCacheService publicApiCacheService;
+
+    @Autowired(required = false)
+    private StorefrontPageService storefrontPageService;
 
     @Autowired
     public HomeServiceImpl(BannerService bannerService, ProductService productService,
@@ -81,8 +85,10 @@ public class HomeServiceImpl implements HomeService {
                 .collect(Collectors.toList());
 
         vo.setRecommends(recommends);
-        if (homeModuleConfigService != null) {
-            var modules = homeModuleConfigService.listEnabled(merchantId);
+        if (storefrontPageService != null || homeModuleConfigService != null) {
+            var modules = storefrontPageService != null
+                    ? storefrontPageService.publishedHomeModules(merchantId)
+                    : homeModuleConfigService.listEnabled(merchantId);
             modules.forEach(module -> {
                 if (module.getProductSource() != null) {
                     module.setProducts(loadModuleProducts(merchantId, module.getProductSource(), module.getProductLimit()));

@@ -1,0 +1,16 @@
+<view class="topic-page">
+  <view wx:if="{{loading}}" class="topic-loading"><view class="loading-spinner"></view><text class="loading-label">正在加载专题</text></view>
+  <view wx:elif="{{unavailable}}" class="topic-empty"><view class="empty-title">专题暂不可用</view><view class="empty-copy">链接可能已下线，回首页继续逛逛吧。</view><button class="home-button" bindtap="backHome">返回首页</button></view>
+  <view wx:else class="topic-content">
+    <image wx:if="{{page.coverImage}}" class="topic-cover" src="{{page.coverImage}}" mode="aspectFill" />
+    <view wx:else class="topic-cover-placeholder"><text class="topic-cover-kicker">店铺专题</text><view class="topic-cover-title">{{page.title}}</view></view>
+    <view class="topic-intro"><view class="topic-title">{{page.title}}</view><view wx:if="{{page.summary}}" class="topic-summary">{{page.summary}}</view></view>
+    <view class="topic-block" wx:for="{{blocks}}" wx:key="id">
+      <view wx:if="{{item.type === 'TEXT'}}" class="text-block"><view wx:if="{{item.title}}" class="block-title">{{item.title}}</view><view class="block-body">{{item.body}}</view></view>
+      <view wx:elif="{{item.type === 'IMAGE_TEXT'}}" class="image-text-block"><view wx:if="{{item.title}}" class="block-title">{{item.title}}</view><image wx:if="{{item.imageUrl}}" class="content-image" src="{{item.imageUrl}}" mode="widthFix" /><view wx:if="{{item.body}}" class="block-body">{{item.body}}</view></view>
+      <view wx:elif="{{item.type === 'PRODUCTS'}}" class="products-block"><view class="block-title">{{item.title || '为你精选'}}</view><view wx:if="{{item.products.length}}" class="product-grid"><view class="product-card" wx:for="{{item.products}}" wx:for-item="product" wx:key="id" bindtap="onProduct" data-id="{{product.id}}"><image wx:if="{{product.mainImage}}" class="topic-product-image" src="{{product.mainImage}}" mode="aspectFit" /><view wx:else class="product-placeholder"></view><view class="product-name">{{product.name}}</view><view class="product-price">¥{{product.minPrice}}</view></view></view><view wx:else class="products-empty">精选商品正在补充</view></view>
+      <view wx:elif="{{item.type === 'BUTTON'}}" class="button-block"><button class="topic-button" bindtap="onBlockButton" data-type="{{item.linkType}}">{{item.buttonText || '查看详情'}}</button></view>
+    </view>
+    <view class="topic-end">已展示全部专题内容</view>
+  </view>
+</view>
