@@ -1,11 +1,18 @@
 import type { App, Directive } from 'vue'
 import { useUserStore } from '@/stores/user'
 
+function updateVisibility(el: HTMLElement, value: string | string[]) {
+  const required = Array.isArray(value) ? value : [value]
+  const visible = required.some((permission) => useUserStore().hasPermission(permission))
+  el.style.display = visible ? '' : 'none'
+}
+
 const permissionDirective: Directive<HTMLElement, string | string[]> = {
   mounted(el, binding) {
-    const required = Array.isArray(binding.value) ? binding.value : [binding.value]
-    const visible = required.some((permission) => useUserStore().hasPermission(permission))
-    if (!visible) el.style.display = 'none'
+    updateVisibility(el, binding.value)
+  },
+  updated(el, binding) {
+    updateVisibility(el, binding.value)
   },
 }
 

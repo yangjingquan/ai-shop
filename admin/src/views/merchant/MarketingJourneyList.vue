@@ -4,7 +4,9 @@ import { ElMessage } from 'element-plus'
 import { couponTemplateApi, type CouponTemplate } from '@/api/marketing'
 import { customerOperationsApi, type CustomerSegment } from '@/api/customerOperations'
 import { marketingJourneyApi, type MarketingJourney, type MarketingJourneyPayload, type MarketingTrigger } from '@/api/marketingJourney'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const loading = ref(false), saving = ref(false), journeys = ref<MarketingJourney[]>([]), segments = ref<CustomerSegment[]>([]), coupons = ref<CouponTemplate[]>([])
 const dialogVisible = ref(false), editing = ref<MarketingJourney | null>(null)
 const triggerOptions: Array<{ value: MarketingTrigger; label: string; hint: string }> = [
@@ -28,7 +30,12 @@ function formatTime(value?: string) { return value ? value.replace('T', ' ').sli
 async function load() {
   loading.value = true
   try {
-    const [journeyData, segmentData, newUserCoupons, repurchaseCoupons] = await Promise.all([marketingJourneyApi.list(), customerOperationsApi.segments(), couponTemplateApi.list('NEW_USER'), couponTemplateApi.list('REPURCHASE_AFTER_PAID')])
+    const [journeyData, segmentData, newUserCoupons, repurchaseCoupons] = await Promise.all([
+      marketingJourneyApi.list(),
+      userStore.hasPermission('merchant:customer:view') ? customerOperationsApi.segments() : Promise.resolve([]),
+      userStore.hasPermission('merchant:coupon:view') ? couponTemplateApi.list('NEW_USER') : Promise.resolve([]),
+      userStore.hasPermission('merchant:coupon:view') ? couponTemplateApi.list('REPURCHASE_AFTER_PAID') : Promise.resolve([]),
+    ])
     journeys.value = journeyData
     segments.value = segmentData.filter((item) => item.status === 1)
     coupons.value = [...new Map([...newUserCoupons, ...repurchaseCoupons].map((item) => [item.id, item])).values()].filter((item) => item.status === 1)

@@ -2,8 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { dashboardApi, type MerchantWorkbench, type MerchantWorkbenchOrder } from '@/api/dashboard'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const loading = ref(false)
 const workbench = ref<MerchantWorkbench | null>(null)
 
@@ -130,7 +132,7 @@ onMounted(load)
         </div>
 
         <div class="todo-grid">
-          <button class="todo-item" type="button" @click="go('/merchant/order-ship', { scope: 'shipable' })">
+          <button class="todo-item" type="button" :disabled="!userStore.hasPermission('merchant:order:view')" @click="go('/merchant/order-ship', { scope: 'shipable' })">
             <span class="todo-dot todo-dot-warning" />
             <span class="todo-copy">
               <span>待发货</span>
@@ -139,7 +141,7 @@ onMounted(load)
             </span>
             <span class="todo-arrow">›</span>
           </button>
-          <button class="todo-item" type="button" @click="go('/merchant/refund-review', { status: '0' })">
+          <button class="todo-item" type="button" :disabled="!userStore.hasPermission('merchant:refund:view')" @click="go('/merchant/refund-review', { status: '0' })">
             <span class="todo-dot todo-dot-danger" />
             <span class="todo-copy">
               <span>待退款审批</span>
@@ -148,7 +150,7 @@ onMounted(load)
             </span>
             <span class="todo-arrow">›</span>
           </button>
-          <button class="todo-item" type="button" @click="go('/merchant/refund-review', { status: '6' })">
+          <button class="todo-item" type="button" :disabled="!userStore.hasPermission('merchant:refund:view')" @click="go('/merchant/refund-review', { status: '6' })">
             <span class="todo-dot todo-dot-primary" />
             <span class="todo-copy">
               <span>待退货验货</span>
@@ -157,7 +159,7 @@ onMounted(load)
             </span>
             <span class="todo-arrow">›</span>
           </button>
-          <button class="todo-item" type="button" @click="go('/merchant/inventory', { lowStockOnly: 'true', threshold: '5' })">
+          <button class="todo-item" type="button" :disabled="!userStore.hasPermission('merchant:inventory:view')" @click="go('/merchant/inventory', { lowStockOnly: 'true', threshold: '5' })">
             <span class="todo-dot todo-dot-warning" />
             <span class="todo-copy">
               <span>库存预警</span>
@@ -169,7 +171,7 @@ onMounted(load)
         </div>
 
         <el-alert
-          v-if="todo?.failedRefundCount"
+          v-if="todo?.failedRefundCount && userStore.hasPermission('merchant:refund:view')"
           class="exception-alert"
           :title="`${todo.failedRefundCount} 笔退款失败，请进入退款审批重试`"
           type="error"
@@ -183,7 +185,7 @@ onMounted(load)
             <template #header>
               <div class="inner-card-header">
                 <span>最近订单</span>
-                <el-button link type="primary" @click="go('/merchant/order-ship')">查看全部</el-button>
+                <el-button v-permission="'merchant:order:view'" link type="primary" @click="go('/merchant/order-ship')">查看全部</el-button>
               </div>
             </template>
             <el-table v-if="workbench?.recentOrders?.length" :data="workbench.recentOrders" size="small">
@@ -201,7 +203,7 @@ onMounted(load)
               </el-table-column>
               <el-table-column label="操作" width="80" fixed="right">
                 <template #default="{ row }">
-                  <el-button link type="primary" @click="goOrder(row as MerchantWorkbenchOrder)">处理</el-button>
+                  <el-button v-permission="'merchant:order:view'" link type="primary" @click="goOrder(row as MerchantWorkbenchOrder)">处理</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -212,7 +214,7 @@ onMounted(load)
             <template #header>
               <div class="inner-card-header">
                 <span>库存预警明细</span>
-                <el-button link type="primary" @click="go('/merchant/inventory', { lowStockOnly: 'true', threshold: '5' })">查看全部</el-button>
+                <el-button v-permission="'merchant:inventory:view'" link type="primary" @click="go('/merchant/inventory', { lowStockOnly: 'true', threshold: '5' })">查看全部</el-button>
               </div>
             </template>
             <div v-if="workbench?.lowStockSkus?.length" class="stock-list">
@@ -236,10 +238,10 @@ onMounted(load)
             </div>
           </div>
           <div class="quick-action-grid">
-            <el-button type="primary" @click="go('/merchant/products/edit')">新增商品</el-button>
-            <el-button @click="go('/merchant/inventory')">调整库存</el-button>
-            <el-button @click="go('/merchant/banners')">配置 Banner</el-button>
-            <el-button @click="go('/merchant/profile')">店铺资料</el-button>
+            <el-button v-if="userStore.hasPermission('merchant:product:view') && userStore.hasPermission('merchant:product:create')" type="primary" @click="go('/merchant/products/edit')">新增商品</el-button>
+            <el-button v-if="userStore.hasPermission('merchant:inventory:view') && userStore.hasPermission('merchant:inventory:adjust')" @click="go('/merchant/inventory')">调整库存</el-button>
+            <el-button v-permission="'merchant:banner:view'" @click="go('/merchant/banners')">配置 Banner</el-button>
+            <el-button v-permission="'merchant:profile:view'" @click="go('/merchant/profile')">店铺资料</el-button>
           </div>
         </div>
       </el-card>

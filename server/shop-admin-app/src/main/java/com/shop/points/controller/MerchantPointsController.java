@@ -23,7 +23,7 @@ public class MerchantPointsController {
  private Long merchant(){CurrentUser u=CurrentUserHolder.get();return u==null?null:u.getMerchantId();}
 
  @GetMapping("/members")
- @RequirePermission("merchant:points:view")
+ @RequirePermission("merchant:customer:view")
  public ApiResult<PageResult<MemberCenterMemberVO>> members(
          @RequestParam(defaultValue="1") int page,
          @RequestParam(defaultValue="10") int size,

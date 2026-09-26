@@ -65,7 +65,7 @@ onMounted(load)
   <div class="customer-page" v-loading="loading">
     <div class="page-header">
       <div><h1 class="page-title">用户标签</h1><p class="page-desc">系统标签按用户指标自动更新；手工标签用于商户的精细化运营。</p></div>
-      <el-button type="primary" @click="openCreate">新建手工标签</el-button>
+      <el-button v-permission="'merchant:customer:manage'" type="primary" @click="openCreate">新建手工标签</el-button>
     </div>
     <el-alert title="系统标签不可手工修改，指标快照每天自动刷新；进入用户详情或刷新分群时也会即时校准。" type="info" :closable="false" show-icon />
     <el-table class="tag-table" :data="tags" empty-text="暂无标签">
@@ -73,7 +73,7 @@ onMounted(load)
       <el-table-column label="类型" width="120"><template #default="{ row }"><el-tag :type="row.tagType === 'SYSTEM' ? 'warning' : 'success'" effect="plain">{{ row.tagType === 'SYSTEM' ? '系统标签' : '手工标签' }}</el-tag></template></el-table-column>
       <el-table-column prop="userCount" label="当前用户数" width="130" align="right" />
       <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag></template></el-table-column>
-      <el-table-column label="操作" width="210" fixed="right"><template #default="{ row }"><el-button link type="primary" :disabled="row.tagType === 'SYSTEM'" @click="openBinding(row)">绑定用户</el-button><el-button link :disabled="row.tagType === 'SYSTEM'" @click="openEdit(row)">编辑</el-button></template></el-table-column>
+      <el-table-column label="操作" width="210" fixed="right"><template #default="{ row }"><el-button v-permission="'merchant:customer:manage'" link type="primary" :disabled="row.tagType === 'SYSTEM'" @click="openBinding(row)">绑定用户</el-button><el-button v-permission="'merchant:customer:manage'" link :disabled="row.tagType === 'SYSTEM'" @click="openEdit(row)">编辑</el-button></template></el-table-column>
     </el-table>
   </div>
 

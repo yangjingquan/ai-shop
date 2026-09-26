@@ -4,8 +4,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { bundleApi, type BundleActivity, type BundleActivityPayload } from '@/api/marketing'
 import { productApi, type ProductListVO } from '@/api/product'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
+const canConfigure = computed(() => userStore.hasPermission('merchant:bundle:manage') && userStore.hasPermission('merchant:product:view'))
 const loading = ref(false)
 const products = ref<ProductListVO[]>([])
 const activities = ref<BundleActivity[]>([])
@@ -24,7 +27,8 @@ async function load() {
   try {
     const [activityList, productPage] = await Promise.all([
       bundleApi.list(),
-      productApi.page({ page: 1, size: 200, status: 1 }),
+      userStore.hasPermission('merchant:product:view')
+        ? productApi.page({ page: 1, size: 200, status: 1 }) : Promise.resolve(null),
     ])
     activities.value = activityList || []
     products.value = productPage?.list || []
@@ -67,9 +71,10 @@ onMounted(load)
   <div class="bundle-activity page" v-loading="loading">
     <div class="page-header">
       <div><span class="page-kicker">BUNDLE COMBINATION</span><h1 class="page-title">搭配购套餐</h1><p class="page-desc">一个主商品搭配多个配件，固定减免套餐优惠；套餐不与其他营销活动叠加。</p></div>
-      <div class="page-actions"><el-button @click="router.push('/merchant/marketing')">返回营销活动</el-button><el-button type="primary" @click="openCreate">新建套餐</el-button></div>
+      <div class="page-actions"><el-button v-if="userStore.hasPermission('merchant:marketing:view')" @click="router.push('/merchant/marketing')">返回营销活动</el-button><el-button v-if="canConfigure" type="primary" @click="openCreate">新建套餐</el-button></div>
     </div>
     <el-alert title="活动边界" description="只有营销能力开关开启、活动在有效期内、商品上架且库存充足时，小程序才会展示并允许下单。" type="info" show-icon :closable="false" class="bundle-tip" />
+    <el-alert v-if="userStore.hasPermission('merchant:bundle:manage') && !userStore.hasPermission('merchant:product:view')" title="配置套餐还需要“查看商品”权限" type="warning" :closable="false" class="bundle-tip" />
     <el-card shadow="never" class="bundle-card">
       <el-table :data="activities" empty-text="暂无套餐">
         <el-table-column label="套餐" min-width="220"><template #default="{ row }"><div class="bundle-title">{{ row.name }}</div><div class="bundle-meta">主商品：{{ row.mainProductName || productLabel(row.mainProductId) }}</div></template></el-table-column>
@@ -77,7 +82,7 @@ onMounted(load)
         <el-table-column label="套餐优惠" width="120"><template #default="{ row }"><span class="price">- ¥{{ Number(row.discountAmount).toFixed(2) }}</span></template></el-table-column>
         <el-table-column label="有效期" min-width="250"><template #default="{ row }">{{ row.startAt }}<br>至 {{ row.endAt }}</template></el-table-column>
         <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag :type="row.status === 1 && row.active ? 'success' : row.status === 2 ? 'info' : 'warning'">{{ row.active ? '生效中' : row.statusText }}</el-tag></template></el-table-column>
-        <el-table-column label="操作" width="150"><template #default="{ row }"><el-button link type="primary" @click="openEdit(row)">编辑</el-button><el-button v-if="row.status !== 2" link type="danger" @click="disable(row)">停用</el-button></template></el-table-column>
+        <el-table-column v-if="canConfigure" label="操作" width="150"><template #default="{ row }"><el-button link type="primary" @click="openEdit(row)">编辑</el-button><el-button v-if="row.status !== 2" link type="danger" @click="disable(row)">停用</el-button></template></el-table-column>
       </el-table>
     </el-card>
 

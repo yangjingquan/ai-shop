@@ -5,7 +5,9 @@ import com.shop.merchant.dto.CreateMerchantRequest;
 import com.shop.merchant.dto.MerchantRoleSaveRequest;
 import com.shop.merchant.dto.MerchantUserCreateRequest;
 import com.shop.merchant.entity.MerchantRole;
+import com.shop.merchant.entity.MerchantPermission;
 import com.shop.merchant.entity.MerchantUser;
+import com.shop.merchant.mapper.MerchantPermissionMapper;
 import com.shop.merchant.mapper.MerchantRoleMapper;
 import com.shop.merchant.mapper.MerchantUserMapper;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,9 @@ class MerchantRbacServiceTest {
     @Autowired
     private MerchantRoleMapper merchantRoleMapper;
 
+    @Autowired
+    private MerchantPermissionMapper merchantPermissionMapper;
+
     @Test
     void initializesOwnerAndSupportsMultipleRoles() {
         String suffix = String.valueOf(System.nanoTime());
@@ -51,6 +56,14 @@ class MerchantRbacServiceTest {
                 .eq(MerchantUser::getMerchantId, merchantId));
         assertTrue(merchantRbacService.hasPermission(owner.getId(), merchantId, "merchant:rbac:manage"));
         assertTrue(merchantRbacService.hasPermission(owner.getId(), merchantId, "merchant:product:delete"));
+        MerchantRole operator = merchantRoleMapper.selectOne(new LambdaQueryWrapper<MerchantRole>()
+                .eq(MerchantRole::getMerchantId, merchantId).eq(MerchantRole::getCode, "operator"));
+        List<String> operatorPermissions = merchantRbacService.listRoles(merchantId).stream()
+                .filter(role -> role.getId().equals(operator.getId()))
+                .findFirst().orElseThrow().getPermissionCodes();
+        assertTrue(operatorPermissions.containsAll(List.of(
+                "merchant:analysis:view", "merchant:customer:view", "merchant:journey:manage",
+                "merchant:settlement:view", "merchant:bundle:view", "merchant:bundle:manage")));
 
         MerchantRoleSaveRequest roleRequest = new MerchantRoleSaveRequest();
         roleRequest.setCode("catalog_reader_" + suffix.substring(suffix.length() - 6));
@@ -76,6 +89,26 @@ class MerchantRbacServiceTest {
         assertTrue(merchantRbacService.hasPermission(member.getId(), merchantId, "merchant:inventory:view"));
         assertFalse(merchantRbacService.hasPermission(member.getId(), merchantId, "merchant:product:update"));
         assertFalse(merchantRbacService.hasPermission(member.getId(), merchantId + 1, "merchant:product:view"));
+
+        merchantRbacService.setUserStatus(merchantId, member.getId(), 0, owner.getId());
+        assertFalse(merchantRbacService.hasPermission(member.getId(), merchantId, "merchant:product:view"));
+        merchantRbacService.setUserStatus(merchantId, member.getId(), 1, owner.getId());
+        assertTrue(merchantRbacService.hasPermission(member.getId(), merchantId, "merchant:product:view"));
+
+        assertTrue(merchantRbacService.hasPermission(owner.getId(), merchantId, "merchant:freight:manage"));
+        assertTrue(merchantRbacService.hasPermission(owner.getId(), merchantId, "merchant:engagement:manage"));
+
+        MerchantPermission laterPermission = new MerchantPermission();
+        laterPermission.setCode("merchant:test:" + suffix);
+        laterPermission.setName("后续新增权限");
+        laterPermission.setModule("测试");
+        laterPermission.setType("API");
+        laterPermission.setSort(9999);
+        merchantPermissionMapper.insert(laterPermission);
+        assertTrue(merchantRbacService.hasPermission(owner.getId(), merchantId, laterPermission.getCode()));
+        assertTrue(merchantRbacService.listRoles(merchantId).stream()
+                .filter(role -> "owner".equals(role.getCode()))
+                .findFirst().orElseThrow().getPermissionCodes().contains(laterPermission.getCode()));
 
         MerchantRole inventoryRole = merchantRoleMapper.selectById(inventoryRoleId);
         inventoryRole.setStatus(0);

@@ -129,6 +129,11 @@ export const useUserStore = defineStore(
       authLoaded = true
     }
 
+    async function refreshCurrentUser() {
+      authLoaded = false
+      await loadCurrentUser()
+    }
+
     function hasPermission(permission: string) {
       return role.value === 'merchant' && permissions.value.includes(permission)
     }
@@ -147,6 +152,7 @@ export const useUserStore = defineStore(
       loginAdmin,
       loginMerchant,
       loadCurrentUser,
+      refreshCurrentUser,
       hasPermission,
     }
   },

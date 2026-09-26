@@ -23,30 +23,30 @@ public class MerchantBundleController {
     private final BundleService bundleService;
 
     @GetMapping
-    @RequirePermission("merchant:marketing:view")
+    @RequirePermission("merchant:bundle:view")
     public ApiResult<List<BundleActivityVO>> list() { return ApiResult.success(bundleService.merchantList(merchantId())); }
 
     @GetMapping("/{id}")
-    @RequirePermission("merchant:marketing:view")
+    @RequirePermission("merchant:bundle:view")
     public ApiResult<BundleActivityVO> get(@PathVariable Long id) { return ApiResult.success(bundleService.merchantGet(merchantId(), id)); }
 
     @PostMapping
     @OpLog(action = "BUNDLE_CREATE", targetType = "BUNDLE_ACTIVITY")
-    @RequirePermission("merchant:marketing:feature:update")
+    @RequirePermission("merchant:bundle:manage")
     public ApiResult<Long> create(@RequestBody @Valid BundleActivityRequest request) {
         return ApiResult.success(bundleService.save(merchantId(), userId(), null, request));
     }
 
     @PutMapping("/{id}")
     @OpLog(action = "BUNDLE_UPDATE", targetType = "BUNDLE_ACTIVITY", targetIdExpr = "#id")
-    @RequirePermission("merchant:marketing:feature:update")
+    @RequirePermission("merchant:bundle:manage")
     public ApiResult<Void> update(@PathVariable Long id, @RequestBody @Valid BundleActivityRequest request) {
         bundleService.save(merchantId(), userId(), id, request); return ApiResult.success();
     }
 
     @DeleteMapping("/{id}")
     @OpLog(action = "BUNDLE_DISABLE", targetType = "BUNDLE_ACTIVITY", targetIdExpr = "#id")
-    @RequirePermission("merchant:marketing:feature:update")
+    @RequirePermission("merchant:bundle:manage")
     public ApiResult<Void> delete(@PathVariable Long id) { bundleService.delete(merchantId(), id); return ApiResult.success(); }
 
     private Long merchantId() { CurrentUser u = CurrentUserHolder.get(); if (u == null || u.getMerchantId() == null) throw new BusinessException(ErrorCode.FORBIDDEN); return u.getMerchantId(); }

@@ -72,7 +72,18 @@ public class MerchantRbacServiceImpl implements MerchantRbacService {
                 "merchant:refund:return-received", "merchant:refund:retry", "merchant:file:upload",
                 "merchant:file:delete", "merchant:marketing:view", "merchant:marketing:feature:update",
                 "merchant:coupon:view", "merchant:coupon:create", "merchant:coupon:update", "merchant:coupon:status",
-                "merchant:points:view", "merchant:points:update")));
+                "merchant:points:view", "merchant:points:update", "merchant:freight:view",
+                "merchant:freight:manage", "merchant:engagement:manage",
+                "merchant:seckill:view", "merchant:seckill:create", "merchant:seckill:update",
+                "merchant:referral:view", "merchant:referral:create", "merchant:referral:update",
+                "merchant:referral:status", "merchant:referral:relation:freeze",
+                "merchant:referral:reward:revoke", "merchant:promotion:view",
+                "merchant:promotion:manage", "merchant:lottery:view", "merchant:lottery:create",
+                "merchant:lottery:update", "merchant:lottery:status", "merchant:lottery:reward",
+                "merchant:presale:view", "merchant:presale:create", "merchant:presale:update",
+                "merchant:home:config", "merchant:customer:view", "merchant:customer:manage",
+                "merchant:journey:view", "merchant:journey:manage", "merchant:analysis:view",
+                "merchant:settlement:view", "merchant:bundle:view", "merchant:bundle:manage")));
         replaceRolePermissions(warehouse.getId(), permissionIds(List.of(
                 "merchant:dashboard:view", "merchant:product:view", "merchant:inventory:view",
                 "merchant:inventory:adjust", "merchant:inventory:transaction:view", "merchant:order:view",
@@ -199,7 +210,7 @@ public class MerchantRbacServiceImpl implements MerchantRbacService {
     @Override
     @Transactional
     public void setUserStatus(Long merchantId, Long userId, int status, Long operatorId) {
-        MerchantUser user = requireUser(merchantId, userId);
+        MerchantUser user = requireUser(merchantId, userId, false);
         if (userId.equals(operatorId)) {
             throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "不能禁用当前登录账号");
         }
@@ -214,7 +225,7 @@ public class MerchantRbacServiceImpl implements MerchantRbacService {
     @Override
     @Transactional
     public void setUserRoles(Long merchantId, Long userId, List<Long> roleIds, Long operatorId) {
-        requireUser(merchantId, userId);
+        requireUser(merchantId, userId, false);
         validateRoleIds(merchantId, roleIds);
         if (roleIds == null || roleIds.isEmpty()) {
             throw new BusinessException(ErrorCode.BIZ_ERROR.getCode(), "账号至少需要一个角色");
@@ -235,7 +246,7 @@ public class MerchantRbacServiceImpl implements MerchantRbacService {
     @Transactional
     public void resetUserPassword(Long merchantId, Long userId, String password) {
         PasswordPolicy.validate(password);
-        MerchantUser user = requireUser(merchantId, userId);
+        MerchantUser user = requireUser(merchantId, userId, false);
         user.setPasswordHash(ENCODER.encode(password));
         user.setTokenVersion((user.getTokenVersion() == null ? 0 : user.getTokenVersion()) + 1);
         userMapper.updateById(user);
@@ -255,14 +266,19 @@ public class MerchantRbacServiceImpl implements MerchantRbacService {
     private Set<String> permissionCodes(Long userId, Long merchantId) {
         List<Long> assignedRoleIds = roleIds(userId);
         if (assignedRoleIds.isEmpty()) return Set.of();
-        List<Long> roleIds = roleMapper.selectList(new LambdaQueryWrapper<MerchantRole>()
+        List<MerchantRole> activeRoles = roleMapper.selectList(new LambdaQueryWrapper<MerchantRole>()
                         .eq(MerchantRole::getMerchantId, merchantId)
                         .eq(MerchantRole::getStatus, 1)
-                        .in(MerchantRole::getId, assignedRoleIds))
-                .stream().map(MerchantRole::getId).toList();
-        if (roleIds.isEmpty()) return Set.of();
+                        .in(MerchantRole::getId, assignedRoleIds));
+        if (activeRoles.stream().anyMatch(role -> "owner".equals(role.getCode()))) {
+            return permissionMapper.selectList(null).stream()
+                    .map(MerchantPermission::getCode)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        }
+        List<Long> activeRoleIds = activeRoles.stream().map(MerchantRole::getId).toList();
+        if (activeRoleIds.isEmpty()) return Set.of();
         List<Long> permissionIds = rolePermissionMapper.selectList(new LambdaQueryWrapper<MerchantRolePermission>()
-                        .in(MerchantRolePermission::getRoleId, roleIds))
+                        .in(MerchantRolePermission::getRoleId, activeRoleIds))
                 .stream().map(MerchantRolePermission::getPermissionId).distinct().toList();
         if (permissionIds.isEmpty()) return Set.of();
         return permissionMapper.selectBatchIds(permissionIds).stream()
@@ -279,11 +295,16 @@ public class MerchantRbacServiceImpl implements MerchantRbacService {
         MerchantRoleVO vo = new MerchantRoleVO();
         BeanUtils.copyProperties(role, vo);
         if (withPermissions) {
-            List<Long> ids = rolePermissionMapper.selectList(new LambdaQueryWrapper<MerchantRolePermission>()
-                            .eq(MerchantRolePermission::getRoleId, role.getId())).stream()
-                    .map(MerchantRolePermission::getPermissionId).toList();
-            vo.setPermissionCodes(ids.isEmpty() ? List.of() : permissionMapper.selectBatchIds(ids).stream()
-                    .map(MerchantPermission::getCode).toList());
+            if ("owner".equals(role.getCode())) {
+                vo.setPermissionCodes(permissionMapper.selectList(null).stream()
+                        .map(MerchantPermission::getCode).toList());
+            } else {
+                List<Long> ids = rolePermissionMapper.selectList(new LambdaQueryWrapper<MerchantRolePermission>()
+                                .eq(MerchantRolePermission::getRoleId, role.getId())).stream()
+                        .map(MerchantRolePermission::getPermissionId).toList();
+                vo.setPermissionCodes(ids.isEmpty() ? List.of() : permissionMapper.selectBatchIds(ids).stream()
+                        .map(MerchantPermission::getCode).toList());
+            }
         }
         vo.setUserCount(userRoleMapper.selectCount(new LambdaQueryWrapper<MerchantUserRole>()
                 .eq(MerchantUserRole::getRoleId, role.getId())).intValue());
@@ -386,9 +407,13 @@ public class MerchantRbacServiceImpl implements MerchantRbacService {
     }
 
     private MerchantUser requireUser(Long merchantId, Long userId) {
+        return requireUser(merchantId, userId, true);
+    }
+
+    private MerchantUser requireUser(Long merchantId, Long userId, boolean activeOnly) {
         MerchantUser user = userMapper.selectOne(new LambdaQueryWrapper<MerchantUser>()
                 .eq(MerchantUser::getMerchantId, merchantId).eq(MerchantUser::getId, userId).last("LIMIT 1"));
-        if (user == null || !Integer.valueOf(1).equals(user.getStatus())) {
+        if (user == null || (activeOnly && !Integer.valueOf(1).equals(user.getStatus()))) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
         return user;

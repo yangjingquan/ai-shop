@@ -3,7 +3,9 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { memberApi, type MemberProfileVO } from '@/api/member'
 import { pointsApi, type MemberLevel } from '@/api/marketing'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const router = useRouter()
 const loading = ref(false)
 const keyword = ref('')
@@ -49,7 +51,7 @@ function goCustomerDetail(userId: number) {
 }
 
 onMounted(async () => {
-  await Promise.all([loadLevels(), load()])
+  await Promise.all([userStore.hasPermission('merchant:points:view') ? loadLevels() : Promise.resolve(), load()])
 })
 </script>
 
@@ -61,7 +63,7 @@ onMounted(async () => {
         <h1 class="page-title">会员中心</h1>
         <p class="page-desc">查看本商户全部注册用户的基本资料、会员等级和积分情况。</p>
       </div>
-      <el-button type="primary" @click="goMemberSettings">会员规则配置</el-button>
+      <el-button v-permission="'merchant:points:view'" type="primary" @click="goMemberSettings">会员规则配置</el-button>
     </div>
 
     <div class="overview-grid">

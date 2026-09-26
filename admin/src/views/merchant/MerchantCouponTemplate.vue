@@ -6,7 +6,9 @@ import { couponTemplateApi, type CouponIssueScene, type CouponPurpose, type Coup
 import ImageUploader from '@/components/upload/ImageUploader.vue'
 import { merchantCategoryApi, type MerchantCategoryVO } from '@/api/category'
 import { productApi, type ProductListVO } from '@/api/product'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const route = useRoute()
 const issueScene = computed<CouponIssueScene>(() => route.meta.couponIssueScene === 'REPURCHASE_AFTER_PAID'
   ? 'REPURCHASE_AFTER_PAID' : 'NEW_USER')
@@ -50,7 +52,9 @@ async function load() {
   loading.value = true
   try {
     const [templates, productPage, tree] = await Promise.all([
-      couponTemplateApi.list(issueScene.value), productApi.page({ page: 1, size: 200, status: 1, auditStatus: 1 }), merchantCategoryApi.enabledTree(),
+      couponTemplateApi.list(issueScene.value),
+      userStore.hasPermission('merchant:product:view') ? productApi.page({ page: 1, size: 200, status: 1, auditStatus: 1 }) : Promise.resolve(null),
+      userStore.hasPermission('merchant:category:view') ? merchantCategoryApi.enabledTree() : Promise.resolve([]),
     ])
     list.value = templates || []
     goods.value = productPage?.list || []

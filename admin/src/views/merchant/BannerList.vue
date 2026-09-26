@@ -5,7 +5,9 @@ import { bannerApi, type BannerPayload, type BannerVO } from '@/api/banner'
 import { merchantCategoryApi, type MerchantCategoryVO } from '@/api/category'
 import { productApi, type ProductListVO } from '@/api/product'
 import ImageUploader from '@/components/upload/ImageUploader.vue'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const saving = ref(false)
 const dialogVisible = ref(false)
@@ -72,10 +74,12 @@ function resetForm() {
 }
 
 async function loadCategories() {
-  categories.value = (await merchantCategoryApi.enabledTree().catch(() => [])) ?? []
+  categories.value = userStore.hasPermission('merchant:category:view')
+    ? (await merchantCategoryApi.enabledTree()) ?? [] : []
 }
 
 async function searchProducts(keyword = '') {
+  if (!userStore.hasPermission('merchant:product:view')) return
   productSearching.value = true
   try {
     const data = await productApi.page({
@@ -91,7 +95,7 @@ async function searchProducts(keyword = '') {
 }
 
 async function loadEditingProduct(id: number) {
-  if (!id || products.value.some((item) => item.id === id)) return
+  if (!id || !userStore.hasPermission('merchant:product:view') || products.value.some((item) => item.id === id)) return
   try {
     const product = await productApi.get(id)
     products.value = [product, ...products.value]
@@ -243,8 +247,8 @@ onMounted(async () => {
         <el-form-item label="跳转类型" required>
           <el-radio-group v-model="form.linkType" @change="onLinkTypeChange">
             <el-radio-button :value="0">不跳转</el-radio-button>
-            <el-radio-button :value="1">商品</el-radio-button>
-            <el-radio-button :value="2">分类</el-radio-button>
+            <el-radio-button :value="1" :disabled="!userStore.hasPermission('merchant:product:view')">商品</el-radio-button>
+            <el-radio-button :value="2" :disabled="!userStore.hasPermission('merchant:category:view')">分类</el-radio-button>
             <el-radio-button :value="3">外部链接</el-radio-button>
           </el-radio-group>
         </el-form-item>

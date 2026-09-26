@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import { useUserStore } from '@/stores/user'
 import type { AdminLogisticsTracking } from '@/api/order'
 import type { OrderDictionaryItem } from '@/api/order'
 
@@ -78,6 +79,7 @@ interface OrderDetail {
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081').replace(/\/$/, '')
 const route = useRoute()
+const userStore = useUserStore()
 
 const orders = ref<OrderRow[]>([])
 const shipNos = ref<Record<string, string>>({})
@@ -185,7 +187,7 @@ async function openOrderDetail(orderNo: string) {
   orderDetail.value = null
   try {
     orderDetail.value = await request.get<unknown, OrderDetail>(`/api/merchant/order/${orderNo}`)
-    if (orderDetail.value?.shipNo) await loadLogistics()
+    if (orderDetail.value?.shipNo && userStore.hasPermission('merchant:order:logistics:view')) await loadLogistics()
   } finally {
     detailLoading.value = false
   }
@@ -419,7 +421,7 @@ onMounted(async () => {
             </el-descriptions>
           </div>
 
-          <div v-if="orderDetail.shipNo" class="detail-section">
+          <div v-if="orderDetail.shipNo && userStore.hasPermission('merchant:order:logistics:view')" class="detail-section">
             <div class="section-title logistics-title">
               <span>物流轨迹</span>
               <el-button v-permission="'merchant:order:logistics:refresh'" link type="primary" :loading="logisticsLoading" @click="loadLogistics(true)">刷新物流</el-button>

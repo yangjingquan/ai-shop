@@ -101,13 +101,13 @@ const merchantMenus: MenuItem[] = [
       { index: 'merchant-full-reduction', label: '满减满折', path: '/merchant/full-reduction', desc: '阶梯优惠与预算', icon: '满', permission: 'merchant:promotion:view' },
       { index: 'merchant-referral', label: '邀请有礼', path: '/merchant/referral', desc: '老带新返券', icon: '礼', permission: 'merchant:referral:view' },
       { index: 'merchant-points', label: '积分会员日', path: '/merchant/points', desc: '积分、兑换与会员日', icon: '积', permission: 'merchant:points:view' },
-      { index: 'merchant-bundles', label: '搭配购套餐', path: '/merchant/bundles', desc: '主商品与配件组合', icon: '搭', permission: 'merchant:marketing:view' },
+      { index: 'merchant-bundles', label: '搭配购套餐', path: '/merchant/bundles', desc: '主商品与配件组合', icon: '搭', permission: 'merchant:bundle:view' },
       { index: 'merchant-lottery', label: '互动抽奖盲盒', path: '/merchant/lottery', desc: '活动与奖品', icon: '抽', permission: 'merchant:lottery:view' },
     ],
   },
   { index: 'merchant-order-ship', label: '订单发货', path: '/merchant/order-ship', desc: '履约处理', icon: '单', permission: 'merchant:order:view' },
   { index: 'merchant-refund-review', label: '退款审批', path: '/merchant/refund-review', desc: '售后审核', icon: '退', permission: 'merchant:refund:view' },
-  { index: 'merchant-settlements', label: '结算中心', path: '/merchant/settlements', desc: '账期与明细', icon: '结', permission: 'merchant:dashboard:view' },
+  { index: 'merchant-settlements', label: '结算中心', path: '/merchant/settlements', desc: '账期与明细', icon: '结', permission: 'merchant:settlement:view' },
   { index: 'merchant-access-control', label: '账号与权限', path: '/merchant/access-control', desc: '角色与成员', icon: '权', permission: 'merchant:rbac:manage' },
 ]
 

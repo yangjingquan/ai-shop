@@ -3,7 +3,9 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { productApi, type ProductDetailVO, type ProductListVO } from '@/api/product'
 import { seckillApi, type SeckillActivity, type SeckillSessionConfig, type SeckillSkuConfig } from '@/api/seckill'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const saving = ref(false)
 const activities = ref<SeckillActivity[]>([])
@@ -35,7 +37,8 @@ async function load() {
   try {
     const [page, productPage] = await Promise.all([
       seckillApi.page({ page: 1, size: 50 }),
-      productApi.page({ page: 1, size: 100, status: 1, auditStatus: 1 }),
+      userStore.hasPermission('merchant:product:view')
+        ? productApi.page({ page: 1, size: 100, status: 1, auditStatus: 1 }) : Promise.resolve(null),
     ])
     activities.value = page?.list || []
     products.value = productPage?.list || []
@@ -200,7 +203,7 @@ onMounted(load)
         <h1 class="page-title">秒杀活动</h1>
         <p class="page-desc">配置多场次限时折扣。活动库存独立管理，订单创建时同时校验活动库存和普通库存。</p>
       </div>
-      <div class="page-actions"><el-button @click="load">刷新</el-button><el-button type="primary" @click="openCreate">新建活动</el-button></div>
+      <div class="page-actions"><el-button @click="load">刷新</el-button><el-button v-permission="'merchant:seckill:create'" type="primary" :disabled="!userStore.hasPermission('merchant:product:view')" @click="openCreate">新建活动</el-button></div>
     </div>
     <el-alert title="使用前请先在营销活动中启用“限时秒杀”开关" description="秒杀价必须低于 SKU 日常价；秒杀订单不参与优惠券。活动开始后，预热时间、场次时间和已存在 SKU 配置不可修改，但可以新增 SKU。" type="info" show-icon :closable="false" class="tip" />
     <el-table v-loading="loading" :data="activities" class="activity-table">
@@ -209,7 +212,7 @@ onMounted(load)
       <el-table-column label="场次" width="90"><template #default="{ row }">{{ sessionCount(row) }} 场</template></el-table-column>
       <el-table-column label="时间" min-width="220"><template #default="{ row }">{{ activityTime(row) }}</template></el-table-column>
       <el-table-column label="商品数" width="100"><template #default="{ row }">{{ skuCount(row) }}</template></el-table-column>
-      <el-table-column label="操作" width="100"><template #default="{ row }"><el-button link type="primary" @click="confirmEdit(row)">编辑</el-button></template></el-table-column>
+      <el-table-column label="操作" width="100"><template #default="{ row }"><el-button v-permission="'merchant:seckill:update'" link type="primary" :disabled="!userStore.hasPermission('merchant:product:view')" @click="confirmEdit(row)">编辑</el-button></template></el-table-column>
     </el-table>
 
     <el-dialog v-model="dialogVisible" :title="editingId ? '编辑秒杀活动' : '新建秒杀活动'" width="980px" top="5vh">

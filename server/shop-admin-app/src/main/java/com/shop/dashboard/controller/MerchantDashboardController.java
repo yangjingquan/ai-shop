@@ -45,7 +45,7 @@ public class MerchantDashboardController {
     }
 
     @GetMapping("/settlement-analysis")
-    @RequirePermission("merchant:dashboard:view")
+    @RequirePermission("merchant:settlement:view")
     public ApiResult<SettlementAnalysisVO> settlementAnalysis(@RequestParam(required = false) LocalDateTime from,
                                                                @RequestParam(required = false) LocalDateTime to) {
         CurrentUser user = CurrentUserHolder.get();

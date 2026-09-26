@@ -88,58 +88,58 @@ onMounted(load)
             />
           </div>
           <el-button
-            v-if="feature.code === 'FULL_REDUCTION' && feature.enabled === 1"
+            v-if="feature.code === 'FULL_REDUCTION' && feature.enabled === 1 && userStore.hasPermission('merchant:promotion:view')"
             link type="primary" class="feature-link" @click="router.push('/merchant/full-reduction')"
           >去配置满减满折 →</el-button>
           <el-button
-            v-if="feature.code === 'GROUP_BUY' && feature.enabled === 1"
+            v-if="feature.code === 'GROUP_BUY' && feature.enabled === 1 && userStore.hasPermission('merchant:product:view')"
             link
             type="primary"
             class="feature-link"
             @click="router.push('/merchant/products')"
           >去配置团购商品 →</el-button>
           <el-button
-            v-if="feature.code === 'NEW_USER_COUPON' && feature.enabled === 1"
+            v-if="feature.code === 'NEW_USER_COUPON' && feature.enabled === 1 && userStore.hasPermission('merchant:coupon:view')"
             link
             type="primary"
             class="feature-link"
             @click="router.push('/merchant/coupon-templates')"
           >去配置通用优惠券 →</el-button>
           <el-button
-            v-if="feature.code === 'REPURCHASE_COUPON' && feature.enabled === 1"
+            v-if="feature.code === 'REPURCHASE_COUPON' && feature.enabled === 1 && userStore.hasPermission('merchant:coupon:view')"
             link
             type="primary"
             class="feature-link"
             @click="router.push('/merchant/repurchase-coupon-templates')"
           >去配置复购券 →</el-button>
           <el-button
-            v-if="feature.code === 'SECKILL' && feature.enabled === 1"
+            v-if="feature.code === 'SECKILL' && feature.enabled === 1 && userStore.hasPermission('merchant:seckill:view')"
             link
             type="primary"
             class="feature-link"
             @click="router.push('/merchant/seckill')"
           >去配置秒杀活动 →</el-button>
           <el-button
-            v-if="feature.code === 'PRESALE' && feature.enabled === 1"
+            v-if="feature.code === 'PRESALE' && feature.enabled === 1 && userStore.hasPermission('merchant:presale:view')"
             link type="primary" class="feature-link" @click="router.push('/merchant/presales')"
           >去配置预售活动 →</el-button>
           <el-button
-            v-if="feature.code === 'REFERRAL' && feature.enabled === 1"
+            v-if="feature.code === 'REFERRAL' && feature.enabled === 1 && userStore.hasPermission('merchant:referral:view')"
             link
             type="primary"
             class="feature-link"
             @click="router.push('/merchant/referral')"
           >去配置邀请有礼 →</el-button>
           <el-button
-            v-if="feature.code === 'POINTS_MEMBER_DAY' && feature.enabled === 1"
+            v-if="feature.code === 'POINTS_MEMBER_DAY' && feature.enabled === 1 && userStore.hasPermission('merchant:points:view')"
             link type="primary" class="feature-link" @click="router.push('/merchant/points')"
           >去配置积分会员日 →</el-button>
           <el-button
-            v-if="feature.code === 'BUNDLE' && feature.enabled === 1"
+            v-if="feature.code === 'BUNDLE' && feature.enabled === 1 && userStore.hasPermission('merchant:bundle:view')"
             link type="primary" class="feature-link" @click="router.push('/merchant/bundles')"
           >去配置搭配购套餐 →</el-button>
           <el-button
-            v-if="feature.code === 'LOTTERY_BLIND_BOX'"
+            v-if="feature.code === 'LOTTERY_BLIND_BOX' && userStore.hasPermission('merchant:lottery:view')"
             link type="primary" class="feature-link" @click="router.push('/merchant/lottery')"
           >去配置抽奖盲盒{{ feature.enabled === 1 ? ' →' : '（先配置后发布）' }}</el-button>
         </el-card>

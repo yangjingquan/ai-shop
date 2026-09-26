@@ -187,7 +187,7 @@ const routes: RouteRecordRaw[] = [
         path: 'merchant/bundles',
         name: 'MerchantBundles',
         component: () => import('@/views/merchant/BundleActivity.vue'),
-        meta: { roles: ['merchant'], permission: 'merchant:marketing:view' },
+        meta: { roles: ['merchant'], permission: 'merchant:bundle:view' },
       },
       {
         path: 'merchant/seckill',
@@ -247,7 +247,7 @@ const routes: RouteRecordRaw[] = [
         path: 'merchant/settlements',
         name: 'SettlementCenter',
         component: () => import('@/views/merchant/SettlementCenter.vue'),
-        meta: { roles: ['merchant'], permission: 'merchant:dashboard:view' },
+        meta: { roles: ['merchant'], permission: 'merchant:settlement:view' },
       },
       {
         path: 'merchant/access-control',
