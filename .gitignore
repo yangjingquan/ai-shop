@@ -39,4 +39,5 @@ server/uploads/*
 
 docs
 
-deploy
+deploy/*
+!deploy/.dockerignore

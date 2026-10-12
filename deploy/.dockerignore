@@ -1,0 +1,9 @@
+# The nginx build context is deploy/ (or /opt/shop in production).
+# Only the files copied by nginx/Dockerfile may enter the build context.
+*
+!nginx/
+!nginx/Dockerfile
+!nginx/conf.d/
+!nginx/conf.d/*.conf
+!admin-dist/
+!admin-dist/**
