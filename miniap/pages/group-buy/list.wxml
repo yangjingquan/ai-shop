@@ -1,29 +1,38 @@
-<view class="group-list-page">
-  <view class="group-hero"><view class="hero-kicker">GROUP BUY · SAVE TOGETHER</view><view class="page-title">一起拼，更省钱</view><view class="page-subtitle">精选好物，邀请好友一起享拼团价</view><view class="hero-note">低价成团 · 成团后优先发货</view></view>
-  <view class="search-row">
-    <view class="search-box">
-      <input value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" placeholder="搜索团购商品" />
-      <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">✕</view>
-    </view>
-    <view class="search-btn" bindtap="onSearch">搜索</view>
+<view class="group-list-page page-shell">
+  <view class="page-hero page-hero-blue group-hero">
+    <view class="hero-blob"></view>
+    <view class="hero-kicker">GROUP BUY · SAVE TOGETHER</view>
+    <view class="hero-heading">一起拼，更省钱</view>
+    <view class="hero-desc">精选好物，邀请好友一起享拼团价</view>
+    <view class="hero-note">低价成团 · 成团后优先发货</view>
   </view>
 
-  <view wx:if="{{!loading && products.length === 0}}" class="empty-card">暂无团购商品，换个关键词试试</view>
+  <view class="group-body">
+    <view class="search-row">
+      <view class="search-box">
+        <input value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" placeholder="搜索团购商品" />
+        <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">✕</view>
+      </view>
+      <view class="btn btn-dark btn-sm search-btn" bindtap="onSearch">搜索</view>
+    </view>
 
-  <view class="product-list">
-    <view class="product-card" wx:for="{{products}}" wx:key="id" data-id="{{item.id}}" bindtap="goProduct">
-      <image class="thumb" src="{{item.mainImage}}" mode="aspectFill" />
-      <view class="info">
-        <view class="name">{{item.name}}</view>
-        <view class="meta"><text class="group-tag">团购</text>{{item.groupBuyRequiredCount}} 人成团</view>
-        <view class="price-row">
-          <text class="price">¥{{item.groupBuyPriceText}}</text>
-          <text class="ordinary">普通价 ¥{{item.minPrice}}</text>
+    <view wx:if="{{!loading && products.length === 0}}" class="empty-state2 card">暂无团购商品，换个关键词试试</view>
+
+    <view class="product-list">
+      <view class="product-card card" wx:for="{{products}}" wx:key="id" data-id="{{item.id}}" bindtap="goProduct">
+        <image class="thumb" src="{{item.mainImage}}" mode="aspectFill" />
+        <view class="info">
+          <view class="name">{{item.name}}</view>
+          <view class="meta"><text class="tag tag-blue">团购</text>{{item.groupBuyRequiredCount}} 人成团</view>
+          <view class="price-row">
+            <text class="price"><text>¥</text>{{item.groupBuyPriceText}}</text>
+            <text class="ordinary">普通价 ¥{{item.minPrice}}</text>
+          </view>
         </view>
       </view>
     </view>
-  </view>
 
-  <view wx:if="{{loading}}" class="loading-text">加载中...</view>
-  <view wx:if="{{products.length > 0 && !hasMore}}" class="end-text">没有更多了</view>
+    <view wx:if="{{loading}}" class="page-end-note">加载中...</view>
+    <view wx:if="{{products.length > 0 && !hasMore}}" class="page-end-note">没有更多了</view>
+  </view>
 </view>
