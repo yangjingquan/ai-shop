@@ -6,12 +6,16 @@
       <view class="record-main">
         <view class="record-title-row"><view class="record-title">{{item.title}}</view><text class="type-tag">{{item.typeText}}</text></view>
         <view class="record-meta">{{item.quantityText}} · {{item.timeText}}</view>
-        <view class="record-status">{{item.statusText}}</view>
+        <text class="st-pill st-pill-green record-status">{{item.statusText}}</text>
       </view>
       <view class="record-side"><view class="record-points">{{item.pointsText}}</view><view wx:if="{{item.actionText}}" class="record-action">{{item.actionText}} ›</view></view>
     </view>
   </view>
-  <view wx:elif="{{!loading}}" class="empty-state"><view class="empty-title">暂无兑换记录</view><view class="empty-desc">去积分商城兑换一份喜欢的好礼吧</view></view>
+  <view wx:elif="{{!loading}}" class="empty-state2">
+    <view class="empty-state2-symbol">记</view>
+    <text class="empty-state2-title">暂无兑换记录</text>
+    <text class="empty-state2-desc">去积分商城兑换一份喜欢的好礼吧</text>
+  </view>
   <view wx:if="{{loading && !records.length}}" class="loading-text">加载中...</view>
   <view wx:if="{{records.length && !hasMore}}" class="end-text">没有更多记录了</view>
 </view>
