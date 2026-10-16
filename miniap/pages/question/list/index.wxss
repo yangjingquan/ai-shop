@@ -1,1 +1,69 @@
-.ask-card,.row{margin:20rpx;padding:22rpx;background:#fff;border-radius:14rpx}.ask-card textarea{width:100%;height:130rpx;font-size:28rpx}.ask-actions{display:flex;justify-content:space-between;align-items:center;color:#777;font-size:24rpx}.row{font-size:28rpx;line-height:1.6}.tag{color:#FF4A1C;font-size:22rpx}.reply{margin-top:12rpx;padding:12rpx;background:#faf7f3;color:#6f6255;border-radius:10rpx;font-size:24rpx}.pending{margin-top:10rpx;color:#a0a4aa;font-size:24rpx}
+.question-page {
+  min-height: 100vh;
+  padding: 28rpx 0 48rpx;
+  background: #fff;
+}
+
+.question-body {
+  padding: 0 32rpx;
+}
+
+.ask-card {
+  margin-bottom: 20rpx;
+  padding: 28rpx;
+}
+
+.ask-textarea {
+  min-height: 160rpx;
+}
+
+.ask-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20rpx;
+}
+
+.ask-submit {
+  height: 60rpx;
+  padding: 0 36rpx;
+  font-size: 26rpx;
+}
+
+.qa-card {
+  margin-bottom: 20rpx;
+  padding: 28rpx;
+}
+
+.qa-question {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.qa-content {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #15161C;
+  line-height: 1.45;
+}
+
+.qa-answer {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.qa-answer-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #5B5F6B;
+  line-height: 1.55;
+}
+
+.qa-pending {
+  margin-top: 16rpx;
+}

@@ -1,1 +1,35 @@
-<view class="page-shell"><view class="ask-card"><textarea value="{{content}}" maxlength="500" placeholder="向商家提问" bindinput="input"/><view class="ask-actions"><text bindtap="toggle">{{anonymous?'☑':'☐'}} 匿名提问</text><button size="mini" bindtap="ask">提交</button></view></view><view wx:for="{{items}}" wx:key="id" class="card row"><view>{{item.content}} <text wx:if="{{item.purchased}}" class="tag">已购</text></view><view wx:if="{{item.answer}}" class="reply">商家：{{item.answer}}</view><view wx:else class="pending">等待商家回复</view></view></view>
+<view class="question-page page-shell">
+  <view class="question-body">
+    <view class="ask-card card">
+      <textarea
+        class="field-textarea ask-textarea"
+        value="{{content}}"
+        maxlength="500"
+        placeholder="向商家提问"
+        bindinput="input"
+      />
+      <view class="ask-footer">
+        <view class="check-row" bindtap="toggle">
+          <view class="check-box {{anonymous ? 'check-box-on' : ''}}">{{anonymous ? '✓' : ''}}</view>
+          <text>匿名提问</text>
+        </view>
+        <button class="btn btn-primary btn-sm ask-submit" bindtap="ask">提交</button>
+      </view>
+    </view>
+
+    <view wx:for="{{items}}" wx:key="id" class="qa-card card">
+      <view class="qa-question">
+        <text class="qa-tag qa-tag-q">问</text>
+        <text class="qa-content">{{item.content}}</text>
+        <text wx:if="{{item.purchased}}" class="tag">已购</text>
+      </view>
+      <view wx:if="{{item.answer}}" class="qa-answer">
+        <text class="qa-tag qa-tag-a">答</text>
+        <text class="qa-answer-text">商家：{{item.answer}}</text>
+      </view>
+      <view wx:else class="qa-pending">
+        <text class="st-pill st-pill-gray">等待商家回复</text>
+      </view>
+    </view>
+  </view>
+</view>
