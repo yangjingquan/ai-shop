@@ -142,7 +142,13 @@
         </view>
       </scroll-view>
 
-      <button class="confirm-btn" bindtap="onConfirm" disabled="{{addingCart}}">
+      <view wx:if="{{skuAction === 'group-open' || skuAction === 'group-join'}}" class="sku-group-tip">团购价 · {{product.groupBuyRequiredText}}</view>
+
+      <button
+        class="confirm-btn {{(skuAction === 'group-open' || skuAction === 'group-join') ? 'confirm-btn-group' : ''}} {{addingCart ? 'confirm-btn-disabled' : ''}}"
+        bindtap="onConfirm"
+        disabled="{{addingCart}}"
+      >
         {{addingCart ? '处理中...' : '确定'}}
       </button>
     </view>
