@@ -1,1 +1,55 @@
-page{background:#F6F6F8}.records-page{min-height:100vh;padding:28rpx 24rpx 56rpx;color:#2d241f;background:#F6F6F8}.page-head{padding:18rpx 4rpx 20rpx}.head-title{font-size:44rpx;font-weight:900}.head-desc{margin-top:8rpx;color:#988f88;font-size:23rpx}.card{margin-top:16rpx;padding:24rpx;border-radius:18rpx;background:#fff;box-shadow:0 8rpx 24rpx rgba(15,23,42,.04)}.record-head{display:flex;justify-content:space-between;align-items:center}.record-type{color:#f15e17;font-size:23rpx;font-weight:700}.record-time{color:#9a918a;font-size:20rpx}.record-name{margin-top:15rpx;font-size:30rpx;font-weight:800}.record-meta{margin-top:8rpx;color:#aaa19a;font-size:20rpx}.record-status{margin-top:15rpx;padding-top:14rpx;border-top:1rpx solid #f0eee9;color:#55a145;font-size:22rpx}.empty{text-align:center;padding:58rpx 24rpx}.empty-symbol{width:88rpx;height:88rpx;margin:0 auto;border-radius:50%;color:#fff;background:#ffb45b;font-size:36rpx;line-height:88rpx;font-weight:800}.empty-title{margin-top:20rpx;font-size:30rpx;font-weight:800}.empty-desc{margin-top:8rpx;color:#9a918a;font-size:23rpx}.primary-btn,.outline-btn{width:100%;margin-top:28rpx}.outline-btn{height:72rpx;padding:0;border:1rpx solid #FF4A1C;border-radius:18rpx;color:#FF4A1C;background:#fff7f0;font-size:26rpx}
+.records-page {
+  min-height: 100vh;
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+}
+
+.records-page .page-body {
+  margin-top: -8rpx;
+}
+
+.record-card {
+  margin-bottom: 20rpx;
+  padding: 28rpx;
+}
+
+.record-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.record-time {
+  font-size: 22rpx;
+  color: #9A9EA8;
+}
+
+.record-name {
+  margin-top: 16rpx;
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #15161C;
+}
+
+.record-meta {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #9A9EA8;
+}
+
+.record-status-row {
+  margin-top: 16rpx;
+}
+
+.records-home-btn {
+  width: auto;
+  min-width: 240rpx;
+  height: 72rpx;
+  margin-top: 28rpx;
+  box-shadow: 0 12rpx 28rpx rgba(255, 74, 28, 0.28);
+}
+
+.records-footer-btn {
+  margin-top: 24rpx;
+  width: 100%;
+}
