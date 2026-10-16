@@ -1,2 +1,77 @@
-page{background:#3b1d0f}.result-page{min-height:100vh;padding:110rpx 34rpx 60rpx;box-sizing:border-box;background:radial-gradient(circle at 50% 8%,#ff9a38 0,#6d2e12 42%,#30160d 100%)}.result-card{padding:42rpx 30rpx 32rpx;border-radius:28rpx;text-align:center;background:#fffaf3;box-shadow:0 20rpx 50rpx rgba(16,7,2,.3);animation:resultRise .45s ease-out both}.result-kicker{color:#f19a33;font-size:20rpx;letter-spacing:3rpx}.result-title{margin-top:10rpx;color:#ed5b12;font-size:48rpx;font-weight:900}.result-image,.result-symbol{display:block;width:170rpx;height:170rpx;margin:28rpx auto 10rpx;border-radius:50%}.result-symbol{color:#fff;background:#ff7a25;font-size:78rpx;line-height:170rpx;font-weight:900}.prize-name{color:#33261f;font-size:36rpx;font-weight:800}.prize-desc{margin:14rpx 20rpx 24rpx;color:#877c73;font-size:24rpx;line-height:1.55}.primary-btn{margin-top:12rpx}.outline-btn{height:72rpx;margin:16rpx 0 0;padding:0;border:1rpx solid #FF4A1C;border-radius:18rpx;color:#FF4A1C;background:#fff7f0;font-size:26rpx}.home-link{margin-top:22rpx;color:#9b9188;font-size:23rpx}@keyframes resultRise{from{opacity:0;transform:translateY(28rpx) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
-.result-links{display:flex;justify-content:center;gap:32rpx;margin-top:22rpx;color:#9b9188;font-size:23rpx}
+.result-page {
+  min-height: 100vh;
+  padding: 32rpx;
+  background: #F3EEFF;
+  box-sizing: border-box;
+}
+
+.result-card {
+  margin-top: 20rpx;
+  padding: 60rpx 40rpx 48rpx;
+  text-align: center;
+  background: linear-gradient(180deg, #F3EEFF, #fff);
+}
+
+.result-kicker {
+  font-size: 22rpx;
+  font-weight: 800;
+  letter-spacing: 6rpx;
+  color: #7B5CFF;
+}
+
+.result-title {
+  margin: 12rpx 0 36rpx;
+  font-size: 60rpx;
+  font-weight: 900;
+  color: #15161C;
+}
+
+.result-image,
+.result-symbol {
+  width: 260rpx;
+  height: 260rpx;
+  margin: 0 auto;
+  border-radius: 72rpx;
+}
+
+.result-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #FFD23F, #FF8A00);
+  color: #fff;
+  font-size: 108rpx;
+  font-weight: 900;
+  box-shadow: 0 28rpx 60rpx rgba(255, 138, 0, 0.35);
+}
+
+.prize-name {
+  margin-top: 32rpx;
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #15161C;
+}
+
+.prize-desc {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #9A9EA8;
+}
+
+.result-card .btn-lg {
+  margin-top: 40rpx;
+  width: 100%;
+}
+
+.result-again {
+  margin-top: 20rpx;
+}
+
+.result-links {
+  display: flex;
+  justify-content: center;
+  gap: 48rpx;
+  margin-top: 28rpx;
+  font-size: 26rpx;
+  color: #5B5F6B;
+}
