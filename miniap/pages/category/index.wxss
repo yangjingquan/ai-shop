@@ -387,7 +387,7 @@ page {
 
 .price {
   display: block;
-  color: #ef5523;
+  color: #FF4A1C;
   font-size: 27rpx;
   font-weight: 950;
 }
