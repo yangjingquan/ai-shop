@@ -1,1 +1,28 @@
-<view class="page-shell"><view class="card"><view class="title">为商品评分</view><view class="stars"><text wx:for="{{[1,2,3,4,5]}}" wx:key="*this" data-value="{{item}}" bindtap="pick" class="{{item<=rating?'active':''}}">★</text></view><textarea value="{{content}}" maxlength="1000" placeholder="分享一下你的使用感受吧" bindinput="input"/><view class="check" bindtap="toggle">{{anonymous?'☑':'☐'}} 匿名评价</view><button class="primary-btn" loading="{{submitting}}" bindtap="submit">发布评价</button></view></view>
+<view class="review-edit-page page-shell">
+  <view class="review-edit-body">
+    <view class="review-form card">
+      <view class="form-title">为商品评分</view>
+      <view class="star-row">
+        <text
+          wx:for="{{[1,2,3,4,5]}}"
+          wx:key="*this"
+          data-value="{{item}}"
+          bindtap="pick"
+          class="star {{item <= rating ? 'star-on' : ''}}"
+        >★</text>
+      </view>
+      <textarea
+        class="field-textarea review-textarea"
+        value="{{content}}"
+        maxlength="1000"
+        placeholder="分享一下你的使用感受吧"
+        bindinput="input"
+      />
+      <view class="check-row" bindtap="toggle">
+        <view class="check-box {{anonymous ? 'check-box-on' : ''}}">{{anonymous ? '✓' : ''}}</view>
+        <text>匿名评价</text>
+      </view>
+      <button class="btn btn-primary btn-lg submit-btn" loading="{{submitting}}" bindtap="submit">发布评价</button>
+    </view>
+  </view>
+</view>
