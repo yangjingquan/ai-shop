@@ -184,7 +184,7 @@
   left: 10rpx;
   width: 10rpx;
   height: 17rpx;
-  border: 2rpx solid #ef5523;
+  border: 2rpx solid #FF4A1C;
   border-radius: 3rpx;
   content: '';
 }
@@ -196,7 +196,7 @@
   width: 3rpx;
   height: 3rpx;
   border-radius: 50%;
-  background: #ef5523;
+  background: #FF4A1C;
   content: '';
 }
 
@@ -291,7 +291,7 @@
   padding: 0 7rpx;
   border: 2rpx solid #fff;
   border-radius: 16rpx;
-  background: #ef5523;
+  background: #FF4A1C;
   color: #fff;
   font-size: 17rpx;
   line-height: 24rpx;
