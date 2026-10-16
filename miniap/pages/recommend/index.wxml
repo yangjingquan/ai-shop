@@ -1,8 +1,9 @@
 <view class="recommend-page">
   <view class="content">
-    <view class="hero">
+    <view class="page-hero page-hero-primary recommend-hero">
+      <view class="hero-blob"></view>
       <view class="hero-kicker">CURATED FOR YOU</view>
-      <view class="hero-title">今日值得买</view>
+      <view class="hero-heading">今日值得买</view>
       <view class="hero-desc">优先推荐值得立即入手的好物</view>
     </view>
 

@@ -14,19 +14,10 @@ page {
   box-sizing: border-box;
 }
 
-.hero {
-  height: 236rpx;
-  margin-top: 0;
-  padding: 28rpx;
-  position: relative;
+.recommend-hero {
+  margin-bottom: 24rpx;
+  border-radius: 32rpx;
   overflow: hidden;
-  border-radius: 16rpx;
-  color: #fff;
-  background:
-    radial-gradient(circle at 84% 30%, #ffef68 0 18%, transparent 19%),
-    linear-gradient(132deg, #15161C 0%, #252b36 55%, #ff5f55 56%, #ff8c68 100%);
-  box-shadow: 0 32rpx 60rpx rgba(225, 74, 62, 0.16);
-  box-sizing: border-box;
 }
 
 .hero-kicker {
