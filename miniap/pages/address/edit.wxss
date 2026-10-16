@@ -64,15 +64,16 @@
 }
 .submit-btn {
   margin-top: 48rpx;
-  height: 88rpx;
+  height: 96rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: normal;
-  background: #FF4A1C;
+  background: linear-gradient(90deg, #FF4A1C, #FF8A00);
   color: #fff;
-  border-radius: 18rpx;
-  font-size: 30rpx;
-  font-weight: 600;
+  border-radius: 48rpx;
+  font-size: 32rpx;
+  font-weight: 700;
   box-sizing: border-box;
+  box-shadow: 0 12rpx 28rpx rgba(255, 74, 28, 0.28);
 }
