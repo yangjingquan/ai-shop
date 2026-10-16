@@ -1,1 +1,56 @@
-.row{margin:20rpx;padding:24rpx;background:#fff;border-radius:14rpx;font-size:28rpx;line-height:1.6}.stars{color:#FF4A1C;margin-right:16rpx}.user{color:#999}.reply{margin-top:14rpx;padding:12rpx;background:#faf7f3;color:#6f6255;border-radius:10rpx;font-size:24rpx}
+.review-list-page {
+  min-height: 100vh;
+  padding: 16rpx 0 48rpx;
+  background: #fff;
+}
+
+.review-list-body {
+  padding: 0 32rpx;
+}
+
+.review-card {
+  margin-bottom: 20rpx;
+  padding: 28rpx;
+}
+
+.review-head {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.review-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  flex: none;
+}
+
+.review-user {
+  flex: 1;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #15161C;
+}
+
+.review-stars {
+  font-size: 26rpx;
+  font-weight: 900;
+  color: #FFD23F;
+}
+
+.review-content {
+  margin: 16rpx 0;
+  font-size: 28rpx;
+  line-height: 1.6;
+  color: #15161C;
+}
+
+.review-reply {
+  padding: 16rpx 20rpx;
+  border-radius: 20rpx;
+  background: #F6F6F8;
+  font-size: 24rpx;
+  color: #5B5F6B;
+  line-height: 1.5;
+}

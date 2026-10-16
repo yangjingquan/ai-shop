@@ -1,1 +1,18 @@
-<view class="page-shell"><view wx:for="{{items}}" wx:key="id" class="card row"><view><text class="stars">{{item.rating}} ★</text><text class="user">{{item.userName}}</text></view><view>{{item.content}}</view><view wx:if="{{item.merchantReply}}" class="reply">商家回复：{{item.merchantReply}}</view></view><view wx:if="{{!items.length}}" class="empty-state">暂无评价</view></view>
+<view class="review-list-page page-shell">
+  <view class="review-list-body">
+    <view wx:for="{{items}}" wx:key="id" class="review-card card">
+      <view class="review-head">
+        <view class="review-avatar img-placeholder img-placeholder-2"></view>
+        <text class="review-user">{{item.userName}}</text>
+        <text class="review-stars">{{item.rating}} ★</text>
+      </view>
+      <view class="review-content">{{item.content}}</view>
+      <view wx:if="{{item.merchantReply}}" class="review-reply">商家回复：{{item.merchantReply}}</view>
+    </view>
+
+    <view wx:if="{{!items.length}}" class="empty-state2">
+      <view class="empty-state2-symbol">评</view>
+      <text class="empty-state2-title">暂无评价</text>
+    </view>
+  </view>
+</view>
