@@ -1,94 +1,115 @@
 <view class="confirm-page page-shell">
   <view class="no-address-card card" wx:if="{{noAddress}}">
-    <image class="empty-icon" src="/assets/icons/location.png" mode="aspectFit" />
-    <view class="no-address-title">还没有收货地址</view>
-    <view class="no-address-desc">请先到【我的】页面设置收货地址，再返回提交订单。</view>
-    <button class="go-my-btn" bindtap="goMy">去我的页面设置</button>
-  </view>
-
-  <view class="section card" wx:if="{{preview}}">
-    <view class="section-title">收货地址</view>
-    <view class="address-card" bindtap="chooseAddress">
-      <image class="icon location-icon" src="/assets/icons/location.png" mode="aspectFit" />
-      <view class="address-info">
-        <block wx:if="{{preview.address && preview.address.receiver}}">
-          <view class="receiver-line">{{preview.address.receiver}} {{preview.address.phone}}</view>
-          <view class="address-text">{{preview.address.region}} {{preview.address.detail}}</view>
-        </block>
-        <view class="address-change">点击切换收货地址</view>
-      </view>
-      <image class="icon icon-sm arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" />
+    <view class="empty-state2">
+      <view class="empty-state2-symbol">址</view>
+      <text class="empty-state2-title">还没有收货地址</text>
+      <text class="empty-state2-desc">请先到【我的】页面设置收货地址，再返回提交订单。</text>
+      <button class="btn btn-primary btn-sm no-address-btn" bindtap="goMy">去我的页面设置</button>
     </view>
   </view>
 
-  <view class="section card" wx:if="{{preview}}">
-    <view class="section-title">商品明细</view>
-    <block wx:for="{{preview.groups}}" wx:key="merchantId">
-      <view class="merchant-header">
-        <image class="icon icon-sm" src="/assets/icons/shop.png" mode="aspectFit" />
-        <text>{{item.merchantName}}</text>
+  <view class="confirm-body" wx:if="{{!noAddress}}">
+    <view class="section card" wx:if="{{preview}}">
+      <view class="card-header"><text>收货地址</text></view>
+      <view class="address-card" bindtap="chooseAddress">
+        <view class="address-symbol">址</view>
+        <view class="address-info">
+          <block wx:if="{{preview.address && preview.address.receiver}}">
+            <view class="receiver-line">{{preview.address.receiver}} {{preview.address.phone}}</view>
+            <view class="address-text">{{preview.address.region}} {{preview.address.detail}}</view>
+          </block>
+          <view class="address-change">点击切换收货地址</view>
+        </view>
+        <text class="address-arrow">›</text>
       </view>
-      <view class="order-item" wx:for="{{item.items}}" wx:key="cartItemId">
-        <image class="item-img" src="{{item.mainImage}}" mode="aspectFill" />
-        <view class="item-info">
-          <view class="item-name">{{item.productName}}</view>
-          <view class="spec">{{item.specText}}</view>
-          <view wx:if="{{!item.available}}" class="unavailable-tip">
-            <image class="icon icon-sm" src="/assets/icons/warning.png" mode="aspectFit" />
-            <text>{{item.unavailableReason}}</text>
+    </view>
+
+    <view class="section card" wx:if="{{preview}}">
+      <view class="card-header"><text>商品明细</text></view>
+      <block wx:for="{{preview.groups}}" wx:key="merchantId">
+        <view class="merchant-header">
+          <image class="icon icon-sm" src="/assets/icons/shop.png" mode="aspectFit" />
+          <text>{{item.merchantName}}</text>
+        </view>
+        <view class="order-item" wx:for="{{item.items}}" wx:key="cartItemId">
+          <image class="item-img" src="{{item.mainImage}}" mode="aspectFill" />
+          <view class="item-info">
+            <view class="item-name {{!item.available ? 'item-name-muted' : ''}}">{{item.productName}}</view>
+            <view class="spec">{{item.specText}}</view>
+            <view wx:if="{{!item.available}}" class="unavailable-tip">
+              <image class="icon icon-sm" src="/assets/icons/warning.png" mode="aspectFit" />
+              <text>{{item.unavailableReason}}</text>
+            </view>
+          </view>
+          <view class="item-right">
+            <text class="unit">¥{{item.unitPrice}} x {{item.quantity}}</text>
+            <text class="subtotal price"><text>¥</text>{{item.subtotal}}</text>
           </view>
         </view>
-        <view class="item-right">
-          <text class="unit">¥{{item.unitPrice}} x {{item.quantity}}</text>
-          <text class="subtotal">¥{{item.subtotal}}</text>
+        <view class="group-total">
+          小计：<text class="price"><text>¥</text>{{item.payAmount}}</text>（免运费）
+        </view>
+      </block>
+    </view>
+
+    <view class="section card bundle-summary" wx:if="{{preview && preview.bundleActivityId}}">
+      <view class="card-header card-header-promo">
+        <text>{{preview.bundleName || '搭配购套餐'}}</text>
+        <text class="st-pill st-pill-orange">已优惠 ¥{{preview.bundleDiscountAmount}}</text>
+      </view>
+      <view class="promotion-summary-desc">套餐商品不参与优惠券、满减或其他活动，价格以本次结算为准。</view>
+    </view>
+
+    <view class="section card" wx:if="{{preview}}">
+      <view class="card-header"><text>价格明细</text></view>
+      <view class="price-line"><text>商品原价</text><text>¥{{preview.originalAmount || preview.totalAmount}}</text></view>
+      <view class="price-line" wx:if="{{preview.activityDiscountAmount || preview.promotionDiscountAmount || preview.bundleDiscountAmount}}">
+        <text>活动优惠</text><text class="price-neg">-¥{{preview.activityDiscountAmount || preview.promotionDiscountAmount || preview.bundleDiscountAmount}}</text>
+      </view>
+      <view class="price-line" wx:if="{{preview.couponDiscountAmount}}"><text>优惠券</text><text class="price-neg">-¥{{preview.couponDiscountAmount}}</text></view>
+      <view class="price-line" wx:if="{{preview.pointsDiscountAmount}}"><text>积分抵扣</text><text class="price-neg">-¥{{preview.pointsDiscountAmount}}</text></view>
+      <view class="price-line"><text>运费</text><text>¥{{preview.freightAmount || '0.00'}}</text></view>
+      <view class="price-line price-total"><text>实付</text><text class="price price-total-num"><text>¥</text>{{preview.payAmount || preview.payableAmount || preview.totalAmount}}</text></view>
+    </view>
+
+    <view class="section card promotion-summary" wx:if="{{preview && preview.promotionActivityId && !preview.bundleActivityId}}">
+      <view class="card-header card-header-promo">
+        <text>{{preview.promotionName || '满减满折'}}</text>
+        <text class="st-pill st-pill-orange">已优惠 ¥{{preview.promotionDiscountAmountText}}</text>
+      </view>
+      <view class="promotion-summary-desc">优惠已按参与商品金额实时计算，提交订单时将再次校验。</view>
+    </view>
+
+    <view class="section card coupon-section" wx:if="{{preview && mode === 'cart' && !preview.bundleActivityId}}" bindtap="chooseCoupon">
+      <view class="card-header card-header-link">
+        <text>优惠券</text>
+        <view class="coupon-choice-wrap">
+          <text class="coupon-choice">{{preview.couponName ? '已优惠¥' + preview.couponDiscountAmount : '选择优惠券'}}</text>
+          <text class="coupon-arrow">›</text>
         </view>
       </view>
-      <view class="group-total">
-        小计：<text>¥{{item.payAmount}}</text>（免运费）
-      </view>
-    </block>
-  </view>
+      <view wx:if="{{preview.couponName}}" class="coupon-selected">{{preview.couponName}} · 立减 ¥{{preview.couponDiscountAmount}}</view>
+      <view wx:elif="{{preview.couponMessage}}" class="coupon-message">{{preview.couponMessage}}</view>
+    </view>
 
-  <view class="section card bundle-summary" wx:if="{{preview && preview.bundleActivityId}}">
-    <view class="section-title promotion-title-row"><text>{{preview.bundleName || '搭配购套餐'}}</text><text>已优惠 ¥{{preview.bundleDiscountAmount}}</text></view>
-    <view class="promotion-summary-desc">套餐商品不参与优惠券、满减或其他活动，价格以本次结算为准。</view>
-  </view>
+    <view wx:if="{{preview && mode === 'seckill'}}" class="section card seckill-rule-card">
+      <view class="card-header"><text>秒杀规则</text></view>
+      <view class="rule-line">{{preview.ruleText}}</view>
+      <view class="rule-line">当前活动库存仅剩 {{preview.remainingStock}} 件</view>
+    </view>
 
-  <view class="section card" wx:if="{{preview}}">
-    <view class="section-title">价格明细</view>
-    <view class="price-line"><text>商品原价</text><text>¥{{preview.originalAmount || preview.totalAmount}}</text></view>
-    <view class="price-line" wx:if="{{preview.activityDiscountAmount || preview.promotionDiscountAmount || preview.bundleDiscountAmount}}"><text>活动优惠</text><text>-¥{{preview.activityDiscountAmount || preview.promotionDiscountAmount || preview.bundleDiscountAmount}}</text></view>
-    <view class="price-line" wx:if="{{preview.couponDiscountAmount}}"><text>优惠券</text><text>-¥{{preview.couponDiscountAmount}}</text></view>
-    <view class="price-line" wx:if="{{preview.pointsDiscountAmount}}"><text>积分抵扣</text><text>-¥{{preview.pointsDiscountAmount}}</text></view>
-    <view class="price-line"><text>运费</text><text>¥{{preview.freightAmount || '0.00'}}</text></view>
-    <view class="price-line price-total"><text>实付</text><text>¥{{preview.payAmount || preview.payableAmount || preview.totalAmount}}</text></view>
-  </view>
-
-  <view class="section card promotion-summary" wx:if="{{preview && preview.promotionActivityId && !preview.bundleActivityId}}">
-    <view class="section-title promotion-title-row"><text>{{preview.promotionName || '满减满折'}}</text><text>已优惠 ¥{{preview.promotionDiscountAmountText}}</text></view>
-    <view class="promotion-summary-desc">优惠已按参与商品金额实时计算，提交订单时将再次校验。</view>
-  </view>
-
-  <view class="section card coupon-section" wx:if="{{preview && mode === 'cart' && !preview.bundleActivityId}}" bindtap="chooseCoupon">
-    <view class="section-title coupon-title-row"><text>优惠券</text><text class="coupon-choice">{{preview.couponName ? '已优惠¥' + preview.couponDiscountAmount : '选择优惠券'}}</text><image class="icon icon-sm arrow" src="/assets/icons/arrow-right.png" mode="aspectFit" /></view>
-    <view wx:if="{{preview.couponName}}" class="coupon-selected">{{preview.couponName}} · 立减 ¥{{preview.couponDiscountAmount}}</view>
-    <view wx:elif="{{preview.couponMessage}}" class="coupon-message">{{preview.couponMessage}}</view>
-  </view>
-
-  <view wx:if="{{preview && mode === 'seckill'}}" class="section card seckill-rule-card">
-    <view class="section-title">秒杀规则</view>
-    <view class="seckill-rule-text">{{preview.ruleText}}</view>
-    <view class="seckill-rule-text">当前活动库存仅剩 {{preview.remainingStock}} 件</view>
-  </view>
-
-  <view wx:if="{{preview && memberDayActive && mode !== 'seckill'}}" class="section card member-day-order-tip">
-    <view class="section-title">会员日权益</view>
-    <view>积分会员日进行中，本单支付成功后可获双倍积分。</view>
+    <view wx:if="{{preview && memberDayActive && mode !== 'seckill'}}" class="section card member-day-order-tip">
+      <view class="card-header"><text>会员日权益</text></view>
+      <view class="member-day-copy">积分会员日进行中，本单支付成功后可获双倍积分。</view>
+    </view>
   </view>
 
   <view class="bottom-bar" wx:if="{{!noAddress}}">
-    <text>合计：<text class="amount">¥{{preview.payAmount || preview.totalAmount || '0.00'}}</text></text>
-    <button class="submit-btn" bindtap="submitOrder" disabled="{{submitting}}">
+    <view class="bottom-sum">
+      <text class="bottom-sum-label">合计：</text>
+      <text class="price bottom-amount"><text>¥</text>{{preview.payAmount || preview.totalAmount || '0.00'}}</text>
+    </view>
+    <button class="btn btn-primary submit-btn" bindtap="submitOrder" disabled="{{submitting}}">
       {{submitting ? '提交中...' : '提交订单'}}
     </button>
   </view>
