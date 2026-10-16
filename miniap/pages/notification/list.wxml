@@ -1,36 +1,41 @@
 <view class="notification-page page-shell">
-  <view class="toolbar">
-    <text class="summary">{{unreadCount ? unreadCount + ' 条未读消息' : '暂无未读消息'}}</text>
-    <text wx:if="{{unreadCount > 0}}" class="read-all" bindtap="readAll">全部已读</text>
+  <view class="page-hero page-hero-primary notification-hero">
+    <view class="hero-blob"></view>
+    <view class="hero-kicker">INBOX</view>
+    <view class="hero-heading">消息中心</view>
+    <view class="hero-desc">{{unreadCount ? unreadCount + ' 条未读消息' : '暂无未读消息'}}</view>
+    <button wx:if="{{unreadCount > 0}}" class="read-all-btn" bindtap="readAll">全部已读</button>
   </view>
 
-  <view wx:if="{{list.length}}" class="message-list">
-    <view
-      wx:for="{{list}}"
-      wx:key="id"
-      class="message-card {{item.isRead ? 'read' : 'unread'}}"
-      data-id="{{item.id}}"
-      data-link="{{item.link}}"
-      bindtap="readMessage"
-    >
-      <view class="message-head">
-        <view class="title-row">
-          <view wx:if="{{!item.isRead}}" class="unread-dot"></view>
-          <text class="title">{{item.title}}</text>
+  <view class="notification-body">
+    <view wx:if="{{list.length}}" class="message-list">
+      <view
+        wx:for="{{list}}"
+        wx:key="id"
+        class="message-card card {{item.isRead ? 'read' : 'unread'}}"
+        data-id="{{item.id}}"
+        data-link="{{item.link}}"
+        bindtap="readMessage"
+      >
+        <view class="message-head">
+          <view class="title-row">
+            <view wx:if="{{!item.isRead}}" class="unread-dot"></view>
+            <text class="title">{{item.title}}</text>
+          </view>
+          <text class="time">{{item.timeText}}</text>
         </view>
-        <text class="time">{{item.timeText}}</text>
+        <view class="content">{{item.content}}</view>
+        <view wx:if="{{item.link}}" class="link-tip">查看详情 ›</view>
       </view>
-      <view class="content">{{item.content}}</view>
-      <view wx:if="{{item.link}}" class="link-tip">查看详情 ›</view>
     </view>
-  </view>
 
-  <view wx:elif="{{!loading}}" class="empty">
-    <view class="empty-icon">消息</view>
-    <view class="empty-title">暂无消息</view>
-    <view class="empty-desc">拼团结果等通知会出现在这里</view>
-  </view>
+    <view wx:elif="{{!loading}}" class="empty-state2 card">
+      <view class="empty-state2-symbol">消息</view>
+      <text class="empty-state2-title">暂无消息</text>
+      <text class="empty-state2-desc">拼团结果等通知会出现在这里</text>
+    </view>
 
-  <view wx:if="{{loading}}" class="loading">加载中...</view>
-  <view wx:if="{{finished && list.length}}" class="finished">没有更多消息了</view>
+    <view wx:if="{{loading}}" class="page-end-note">加载中...</view>
+    <view wx:if="{{finished && list.length}}" class="page-end-note">没有更多消息了</view>
+  </view>
 </view>
