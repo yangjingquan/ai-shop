@@ -1,1 +1,8 @@
 <web-view wx:if="{{url}}" src="{{url}}" />
+<view wx:else class="webview-placeholder page-shell">
+  <view class="placeholder-card card">
+    <text class="placeholder-title">web-view 容器</text>
+    <text class="placeholder-desc">加载外部 HTTPS 页面，内容由页面自身决定</text>
+    <text class="placeholder-desc">链接无效时：Toast「链接无效」</text>
+  </view>
+</view>
