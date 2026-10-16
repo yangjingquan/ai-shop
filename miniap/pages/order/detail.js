@@ -240,7 +240,7 @@ Page({
   refundPresaleDeposit() {
     const orderNo = this.data.order && this.data.order.orderNo
     if (!orderNo || !this.data.presale || !this.data.presale.canRefundDeposit) return
-    wx.showModal({
+    wx.showModal({ confirmColor: '#FF4A1C', 
       title: '申请退定金',
       content: '确认申请退回已支付的定金吗？',
       confirmColor: '#ff4b43',
@@ -262,7 +262,7 @@ Page({
   cancelOrder() {
     const orderNo = this.data.order && this.data.order.orderNo
     if (!orderNo) return
-    wx.showModal({
+    wx.showModal({ confirmColor: '#FF4A1C', 
       title: '取消订单',
       content: '确定要取消这笔订单吗？',
       confirmColor: '#ff4b43',
@@ -279,7 +279,7 @@ Page({
   deleteOrder() {
     const order = this.data.order || {}
     if (!order.orderNo || (order.status !== 3 && order.status !== 4)) return
-    wx.showModal({
+    wx.showModal({ confirmColor: '#FF4A1C', 
       title: '删除订单',
       content: '确定要删除这笔订单吗？删除后将无法在订单列表中查看。',
       confirmColor: '#ff4b43',
@@ -330,7 +330,7 @@ Page({
   confirmReceive() {
     const orderNo = this.data.order && this.data.order.orderNo
     if (!orderNo) return
-    wx.showModal({
+    wx.showModal({ confirmColor: '#FF4A1C', 
       title: '确认收货',
       content: '确认已经收到商品了吗？',
       confirmColor: '#ff4b43',
@@ -479,7 +479,7 @@ Page({
   submitReturnShipment() {
     const order = this.data.order || {}
     if (!order.refundId) return
-    wx.showModal({
+    wx.showModal({ confirmColor: '#FF4A1C', 
       title: '填写退货物流',
       editable: true,
       placeholderText: '承运商,单号，例如 顺丰,SF12345678',

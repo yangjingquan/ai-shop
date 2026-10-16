@@ -21,19 +21,19 @@
 .receiver {
   font-size: 30rpx;
   font-weight: 700;
-  color: #1f2329;
+  color: #15161C;
 }
 .phone-icon {
   margin-left: 8rpx;
 }
 .phone {
   font-size: 26rpx;
-  color: #646a73;
+  color: #5B5F6B;
 }
 .tag-default {
   margin-left: auto;
   font-size: 22rpx;
-  color: #ef5523;
+  color: #FF4A1C;
   background: #fff7f0;
   padding: 4rpx 14rpx;
   border-radius: 20rpx;
@@ -48,13 +48,13 @@
   flex: 1;
   min-width: 0;
   font-size: 26rpx;
-  color: #1f2329;
+  color: #15161C;
   line-height: 1.55;
 }
 .actions {
   display: flex;
   gap: 30rpx;
-  border-top: 1rpx solid #eef0f3;
+  border-top: 1rpx solid #ECEDF0;
   padding-top: 18rpx;
 }
 .action {
@@ -62,7 +62,7 @@
   align-items: center;
   gap: 6rpx;
   font-size: 26rpx;
-  color: #ef5523;
+  color: #FF4A1C;
 }
 .action.danger {
   color: #ff4d4f;
@@ -81,7 +81,7 @@
   align-items: center;
   justify-content: center;
   gap: 10rpx;
-  background: #ef5523;
+  background: #FF4A1C;
   color: #fff;
   border-radius: 18rpx;
   font-size: 30rpx;

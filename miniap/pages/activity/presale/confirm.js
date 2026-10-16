@@ -122,7 +122,7 @@ Page({
       setTimeout(() => wx.redirectTo({ url: `/pages/order/detail?orderNo=${data.orderNo}` }), 700)
     }).catch((err) => {
       if (err && err.message === 'missing pay params') wx.showToast({ title: '支付参数错误', icon: 'none' })
-      else wx.showModal({
+      else wx.showModal({ confirmColor: '#FF4A1C', 
         title: '支付未完成',
         content: '预售订单已创建，可在订单列表中继续支付定金。',
         confirmText: '去订单',

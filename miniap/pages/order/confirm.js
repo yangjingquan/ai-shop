@@ -257,7 +257,7 @@ Page({
             }), 1000);
           }).catch(() => {
             this.setData({ submitting: false });
-            wx.showModal({
+            wx.showModal({ confirmColor: '#FF4A1C', 
               title: '支付未完成',
               content: '订单已创建，可在订单列表中重新支付。',
               confirmText: '去订单',
@@ -297,7 +297,7 @@ Page({
           setTimeout(() => wx.redirectTo({ url: `/pages/order/success?orderNo=${res.data.orderNo || ''}` }), 1000)
         }).catch(() => {
           this.setData({ submitting: false })
-          wx.showModal({
+          wx.showModal({ confirmColor: '#FF4A1C', 
             title: '支付未完成',
             content: '秒杀订单已创建，可在订单列表中继续支付。',
             confirmText: '去订单',
@@ -368,7 +368,7 @@ Page({
     }).catch(() => {
       this.setData({ submitting: false });
       const pendingCount = orders.length - paidCount;
-      wx.showModal({
+      wx.showModal({ confirmColor: '#FF4A1C', 
         title: '支付未完成',
         content: `已支付 ${paidCount} 笔，仍有 ${pendingCount} 笔订单待支付，可在订单列表中继续完成。`,
         confirmText: '去订单',

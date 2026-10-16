@@ -234,7 +234,7 @@ Page({
     const orderNo = e.currentTarget.dataset.orderno
     if (!orderNo) return
     this.closeSwipeRows()
-    wx.showModal({
+    wx.showModal({ confirmColor: '#FF4A1C', 
       title: '删除订单',
       content: '确定要删除这笔订单吗？删除后将无法在订单列表中查看。',
       confirmColor: '#ff4b43',
@@ -255,7 +255,7 @@ Page({
   cancelOrder(e) {
     const orderNo = e.currentTarget.dataset.orderno
     if (!orderNo) return
-    wx.showModal({
+    wx.showModal({ confirmColor: '#FF4A1C', 
       title: '取消订单',
       content: '确定要取消这笔订单吗？',
       confirmColor: '#ff4b43',
@@ -306,7 +306,7 @@ Page({
   confirmReceive(e) {
     const orderNo = e.currentTarget.dataset.orderno
     if (!orderNo) return
-    wx.showModal({
+    wx.showModal({ confirmColor: '#FF4A1C', 
       title: '确认收货',
       content: '确认已经收到商品了吗？',
       confirmColor: '#ff4b43',

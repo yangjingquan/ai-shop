@@ -2,7 +2,7 @@
   min-height: 100vh;
   padding: 24rpx;
   box-sizing: border-box;
-  background: #f8f5f0;
+  background: #F6F6F8;
 }
 .toolbar {
   display: flex;
@@ -12,7 +12,7 @@
   font-size: 25rpx;
 }
 .summary { color: #7b818a; }
-.read-all { color: #ef5523; }
+.read-all { color: #FF4A1C; }
 .message-card {
   margin-bottom: 18rpx;
   padding: 28rpx;
@@ -21,7 +21,7 @@
   box-shadow: 0 8rpx 24rpx rgba(31,35,41,0.05);
 }
 .message-card.read { opacity: 0.72; }
-.message-card.unread { border-left: 6rpx solid #ef5523; }
+.message-card.unread { border-left: 6rpx solid #FF4A1C; }
 .message-head, .title-row {
   display: flex;
   align-items: center;
@@ -35,10 +35,10 @@
   background: #ff4d4f;
   flex-shrink: 0;
 }
-.title { font-size: 30rpx; font-weight: 700; color: #1f2329; }
+.title { font-size: 30rpx; font-weight: 700; color: #15161C; }
 .time { font-size: 22rpx; color: #a3a8b0; flex-shrink: 0; }
 .content { margin-top: 18rpx; color: #59606a; font-size: 27rpx; line-height: 1.65; }
-.link-tip { margin-top: 18rpx; color: #ef5523; font-size: 24rpx; }
+.link-tip { margin-top: 18rpx; color: #FF4A1C; font-size: 24rpx; }
 .empty { padding-top: 220rpx; text-align: center; color: #a3a8b0; }
 .empty-icon {
   width: 100rpx;

@@ -47,7 +47,7 @@ Page({
 
   onDelete(e) {
     const id = e.currentTarget.dataset.id
-    wx.showModal({
+    wx.showModal({ confirmColor: '#FF4A1C', 
       title: '提示',
       content: '确认删除此地址？',
       success: (res) => {

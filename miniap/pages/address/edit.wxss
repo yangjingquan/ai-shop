@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   min-height: 104rpx;
-  border-bottom: 1rpx solid #eef0f3;
+  border-bottom: 1rpx solid #ECEDF0;
 }
 .row:last-child {
   border-bottom: none;
@@ -32,22 +32,22 @@
 .label {
   width: 142rpx;
   font-size: 28rpx;
-  color: #1f2329;
+  color: #15161C;
   font-weight: 500;
 }
 .input {
   flex: 1;
   font-size: 28rpx;
-  color: #1f2329;
+  color: #15161C;
 }
 .value {
   flex: 1;
   min-width: 0;
   font-size: 28rpx;
-  color: #1f2329;
+  color: #15161C;
 }
 .placeholder {
-  color: #9aa0a6;
+  color: #9A9EA8;
 }
 .arrow {
   width: 28rpx;
@@ -59,7 +59,7 @@
   margin-top: 18rpx;
   font-size: 28rpx;
   min-height: 140rpx;
-  color: #1f2329;
+  color: #15161C;
   line-height: 1.5;
 }
 .submit-btn {
@@ -69,7 +69,7 @@
   align-items: center;
   justify-content: center;
   line-height: normal;
-  background: #ef5523;
+  background: #FF4A1C;
   color: #fff;
   border-radius: 18rpx;
   font-size: 30rpx;

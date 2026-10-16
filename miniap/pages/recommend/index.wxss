@@ -1,11 +1,11 @@
 page {
-  background: #f8f5f0;
+  background: #F6F6F8;
 }
 
 .recommend-page {
   min-height: 100vh;
-  background: #f8f5f0;
-  color: #17191f;
+  background: #F6F6F8;
+  color: #15161C;
   box-sizing: border-box;
 }
 
@@ -24,7 +24,7 @@ page {
   color: #fff;
   background:
     radial-gradient(circle at 84% 30%, #ffef68 0 18%, transparent 19%),
-    linear-gradient(132deg, #17191f 0%, #252b36 55%, #ff5f55 56%, #ff8c68 100%);
+    linear-gradient(132deg, #15161C 0%, #252b36 55%, #ff5f55 56%, #ff8c68 100%);
   box-shadow: 0 32rpx 60rpx rgba(225, 74, 62, 0.16);
   box-sizing: border-box;
 }
@@ -36,7 +36,7 @@ page {
   align-items: center;
   padding: 0 16rpx;
   border-radius: 12rpx;
-  color: #17191f;
+  color: #15161C;
   background: #c7ff6b;
   font-size: 20rpx;
   font-weight: 900;
@@ -83,7 +83,7 @@ page {
 
 .chip.active {
   color: #fff;
-  background: #17191f;
+  background: #15161C;
 }
 
 .showcase {
@@ -111,7 +111,7 @@ page {
 }
 
 .top-no {
-  color: #ef5523;
+  color: #FF4A1C;
   font-size: 22rpx;
   font-weight: 950;
 }
@@ -139,7 +139,7 @@ page {
 
 .price {
   margin-top: 14rpx;
-  color: #ef5523;
+  color: #FF4A1C;
   font-size: 30rpx;
   font-weight: 950;
 }
@@ -170,7 +170,7 @@ page {
   width: 72rpx;
   height: 144rpx;
   border-radius: 28rpx;
-  background: #17191f;
+  background: #15161C;
   transform: rotate(-7deg);
 }
 
@@ -220,7 +220,7 @@ page {
   width: 24rpx;
   height: 128rpx;
   border-radius: 16rpx;
-  background: #17191f;
+  background: #15161C;
   transform: rotate(-7deg);
 }
 
@@ -231,7 +231,7 @@ page {
   top: 50rpx;
   width: 96rpx;
   height: 96rpx;
-  border: 16rpx solid #17191f;
+  border: 16rpx solid #15161C;
   border-radius: 50%;
   background: #c7ff6b;
   box-sizing: border-box;
@@ -248,14 +248,14 @@ page {
   top: 54rpx;
   width: 144rpx;
   height: 84rpx;
-  border: 18rpx solid #17191f;
+  border: 18rpx solid #15161C;
   border-bottom: 0;
   border-radius: 76rpx 76rpx 0 0;
   box-sizing: border-box;
 }
 
 .mini-visual.bag {
-  background: linear-gradient(#ff6a5c, #d83736) 74rpx 70rpx / 100rpx 72rpx no-repeat, radial-gradient(circle at 50% 28%, transparent 34rpx, #17191f 36rpx 42rpx, transparent 44rpx), #e5ffd8;
+  background: linear-gradient(#ff6a5c, #d83736) 74rpx 70rpx / 100rpx 72rpx no-repeat, radial-gradient(circle at 50% 28%, transparent 34rpx, #15161C 36rpx 42rpx, transparent 44rpx), #e5ffd8;
 }
 
 .pick-title {
@@ -288,7 +288,7 @@ page {
   padding: 20rpx;
   border-radius: 16rpx;
   background: linear-gradient(135deg, #fffdf3 0%, #fff3c8 48%, #ffe1de 100%);
-  color: #17191f;
+  color: #15161C;
   border: 1rpx solid rgba(255, 95, 85, 0.16);
   box-shadow: 0 20rpx 44rpx rgba(225, 74, 62, 0.08);
   box-sizing: border-box;
@@ -323,7 +323,7 @@ page {
 }
 
 .rank-price {
-  color: #ef5523;
+  color: #FF4A1C;
   font-size: 32rpx;
   font-weight: 950;
 }
@@ -338,9 +338,9 @@ page {
   font-weight: 760;
 }
 
-.recommend-page { background: #f8f5f0; }
+.recommend-page { background: #F6F6F8; }
 .recommend-page .content { padding: 18rpx 24rpx 48rpx; }
-.hero { height: 264rpx; padding: 30rpx; border-radius: 28rpx; background: linear-gradient(135deg, #201f1c 0%, #38322d 56%, #ef5523 57%, #ff8a32 100%); box-shadow: 0 16rpx 36rpx rgba(47, 31, 16, .14); }
+.hero { height: 264rpx; padding: 30rpx; border-radius: 28rpx; background: linear-gradient(135deg, #201f1c 0%, #38322d 56%, #FF4A1C 57%, #ff8a32 100%); box-shadow: 0 16rpx 36rpx rgba(47, 31, 16, .14); }
 .hero-kicker { border-radius: 999rpx; background: #ffcd69; }
 .filters { height: 76rpx; margin-top: 20rpx; }
 .filter-track { gap: 10rpx; }

@@ -1,4 +1,4 @@
-.seckill-page { min-height: 100vh; padding-bottom: 42rpx; background: #f8f5f0; color: #201f1c; }
+.seckill-page { min-height: 100vh; padding-bottom: 42rpx; background: #F6F6F8; color: #201f1c; }
 .seckill-hero { padding: 32rpx 24rpx 26rpx; border: 0; color: #fff; background: linear-gradient(135deg, #201f1c 0%, #3c342e 55%, #ed5524 56%, #ff8b33 100%); }
 .hero-copy { padding: 0 4rpx; }
 .hero-kicker-row { display: flex; align-items: center; justify-content: space-between; }
@@ -14,10 +14,10 @@
 .session-tabs { white-space: nowrap; background: #fff; border-bottom: 1rpx solid #eee8df; }
 .session-tab-list { display: flex; padding: 16rpx 18rpx 0; }
 .session-tab { flex: 0 0 176rpx; padding: 0 12rpx 15rpx; color: #a0a4aa; border-bottom: 5rpx solid transparent; text-align: center; }
-.session-tab.active { color: #ef5523; border-color: #ef5523; }
+.session-tab.active { color: #FF4A1C; border-color: #FF4A1C; }
 .session-tab-top { display: flex; align-items: center; justify-content: center; gap: 8rpx; }
 .session-dot { width: 10rpx; height: 10rpx; border-radius: 50%; background: #cdd1d5; }
-.session-tab.active .session-dot { background: #ef5523; }
+.session-tab.active .session-dot { background: #FF4A1C; }
 .session-name { font-size: 28rpx; font-weight: 700; }
 .session-time { display: block; margin-top: 5rpx; font-size: 22rpx; }
 .session-status { display: block; margin-top: 4rpx; font-size: 19rpx; }
@@ -27,13 +27,13 @@
 .session-title-line { display: flex; align-items: center; gap: 12rpx; }
 .session-label { color: #252a32; font-size: 30rpx; font-weight: 800; }
 .session-live { padding: 5rpx 10rpx; border-radius: 8rpx; color: #ff551b; background: #fff0e8; font-size: 19rpx; }
-.session-range { display: block; margin-top: 8rpx; color: #9aa0a6; font-size: 22rpx; }
-.session-desc { max-width: 210rpx; flex: 1; text-align: right; color: #9aa0a6; font-size: 21rpx; line-height: 1.5; }
+.session-range { display: block; margin-top: 8rpx; color: #9A9EA8; font-size: 22rpx; }
+.session-desc { max-width: 210rpx; flex: 1; text-align: right; color: #9A9EA8; font-size: 21rpx; line-height: 1.5; }
 .session-divider { height: 1rpx; margin: 20rpx 0 0; background: #f1ede7; }
 .seckill-product { display: flex; gap: 18rpx; margin-top: 18rpx; padding: 16rpx; border: 1rpx solid #f1e5dc; border-radius: 20rpx; background: #fffaf7; }
 .product-image { width: 180rpx; height: 190rpx; flex: 0 0 180rpx; border-radius: 14rpx; background: #f1ece5; }
 .product-content { min-width: 0; flex: 1; }
-.product-name { display: -webkit-box; overflow: hidden; color: #1f2329; font-size: 27rpx; font-weight: 700; line-height: 1.35; text-overflow: ellipsis; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.product-name { display: -webkit-box; overflow: hidden; color: #15161C; font-size: 27rpx; font-weight: 700; line-height: 1.35; text-overflow: ellipsis; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .product-spec { margin-top: 6rpx; overflow: hidden; color: #898f98; font-size: 21rpx; text-overflow: ellipsis; white-space: nowrap; }
 .product-price-row { display: flex; align-items: baseline; gap: 10rpx; margin-top: 12rpx; }
 .product-price { display: flex; align-items: baseline; color: #ff4b1d; font-size: 36rpx; font-weight: 900; }
@@ -48,6 +48,6 @@
 .buy-button { width: 100%; height: 58rpx; display: flex; align-items: center; justify-content: center; margin: 12rpx 0 0; padding: 0 18rpx; border-radius: 30rpx; color: #fff; background: linear-gradient(100deg, #f4511e, #ff7a1a); font-size: 24rpx; font-weight: 700; line-height: normal; box-sizing: border-box; }
 .buy-button.disabled { color: #fff; background: #b9bdc3; }
 .buy-button::after { border: none; }
-.empty-inner, .empty-card { padding: 72rpx 24rpx; text-align: center; color: #9aa0a6; }
+.empty-inner, .empty-card { padding: 72rpx 24rpx; text-align: center; color: #9A9EA8; }
 .empty-title { color: #555b64; font-size: 30rpx; font-weight: 700; }
 .empty-desc { margin-top: 12rpx; font-size: 24rpx; }

@@ -1,7 +1,7 @@
-page { background: #f8f5f0; }
+page { background: #F6F6F8; }
 
-.group-list-page { min-height: 100vh; padding: 18rpx 20rpx 44rpx; background: #f8f5f0; color: #201f1c; box-sizing: border-box; }
-.group-hero { padding: 32rpx 28rpx 26rpx; overflow: hidden; position: relative; border-radius: 28rpx; color: #fff; background: linear-gradient(135deg, #201f1c 0%, #3d342d 58%, #ef5523 59%, #ff8c36 100%); }
+.group-list-page { min-height: 100vh; padding: 18rpx 20rpx 44rpx; background: #F6F6F8; color: #201f1c; box-sizing: border-box; }
+.group-hero { padding: 32rpx 28rpx 26rpx; overflow: hidden; position: relative; border-radius: 28rpx; color: #fff; background: linear-gradient(135deg, #201f1c 0%, #3d342d 58%, #FF4A1C 59%, #ff8c36 100%); }
 .group-hero::after { content: ''; position: absolute; right: -56rpx; bottom: -76rpx; width: 238rpx; height: 238rpx; border: 20rpx solid rgba(255,255,255,.13); border-radius: 50%; }
 .hero-kicker, .hero-note { position: relative; z-index: 1; font-size: 19rpx; letter-spacing: .13em; color: #ffcf7c; font-weight: 800; }
 .page-title { position: relative; z-index: 1; margin-top: 14rpx; color: #fff; font-size: 48rpx; line-height: 1.05; font-weight: 950; }
@@ -23,6 +23,6 @@ page { background: #f8f5f0; }
 .meta { display: flex; align-items: center; gap: 8rpx; margin-top: 8rpx; color: #82776f; font-size: 22rpx; line-height: 1.2; }
 .group-tag { display: inline-flex; padding: 5rpx 10rpx; border-radius: 999rpx; color: #e94d1b; background: #fff0e7; font-size: 19rpx; line-height: 1.2; }
 .price-row { display: flex; align-items: baseline; gap: 8rpx; min-width: 0; margin-top: 8rpx; }
-.price { color: #ef5523; font-size: 38rpx; line-height: 1; font-weight: 950; letter-spacing: -.02em; }
+.price { color: #FF4A1C; font-size: 38rpx; line-height: 1; font-weight: 950; letter-spacing: -.02em; }
 .ordinary { overflow: hidden; color: #a09790; font-size: 20rpx; text-overflow: ellipsis; white-space: nowrap; }
 .empty-card, .loading-text, .end-text { padding: 56rpx 0; color: #93877d; text-align: center; font-size: 24rpx; }

@@ -42,7 +42,7 @@ Page({
   removeFavorite(e) {
     const id = Number(e.currentTarget.dataset.id || 0)
     if (!id || this.data.removingId) return
-    wx.showModal({ title: '取消收藏', content: '取消后可在商品详情再次收藏。', success: async (result) => {
+    wx.showModal({ confirmColor: '#FF4A1C',  title: '取消收藏', content: '取消后可在商品详情再次收藏。', success: async (result) => {
       if (!result.confirm) return
       this.setData({ removingId: id })
       try {

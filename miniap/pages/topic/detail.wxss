@@ -1,7 +1,7 @@
-.topic-page { min-height: 100vh; padding-bottom: 40rpx; color: #2d2722; background: #f8f5f0; }
+.topic-page { min-height: 100vh; padding-bottom: 40rpx; color: #2d2722; background: #F6F6F8; }
 .topic-loading, .topic-empty { min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 36rpx; text-align: center; }
 .loading-label { margin-top: 20rpx; color: #897e73; font-size: 24rpx; }
-.loading-spinner { width: 48rpx; height: 48rpx; border: 5rpx solid #eadfd4; border-top-color: #ef5523; border-radius: 50%; animation: spin .8s linear infinite; }
+.loading-spinner { width: 48rpx; height: 48rpx; border: 5rpx solid #eadfd4; border-top-color: #FF4A1C; border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .topic-content { padding-bottom: 28rpx; }
 .topic-cover, .topic-cover-placeholder { display: block; width: 100%; height: 420rpx; object-fit: cover; }

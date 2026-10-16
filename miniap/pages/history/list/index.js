@@ -42,7 +42,7 @@ Page({
   removeHistory(e) {
     const id = Number(e.currentTarget.dataset.id || 0)
     if (!id || this.data.removingId || this.data.clearing) return
-    wx.showModal({ title: '删除记录', content: '删除后无法恢复。', success: async (result) => {
+    wx.showModal({ confirmColor: '#FF4A1C',  title: '删除记录', content: '删除后无法恢复。', success: async (result) => {
       if (!result.confirm) return
       this.setData({ removingId: id })
       try {
@@ -59,7 +59,7 @@ Page({
 
   clearHistory() {
     if (!this.data.items.length || this.data.clearing || this.data.removingId) return
-    wx.showModal({ title: '清空浏览记录', content: '将清空全部浏览记录，且无法恢复。', success: async (result) => {
+    wx.showModal({ confirmColor: '#FF4A1C',  title: '清空浏览记录', content: '将清空全部浏览记录，且无法恢复。', success: async (result) => {
       if (!result.confirm) return
       this.setData({ clearing: true })
       try {

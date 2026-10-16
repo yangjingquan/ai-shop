@@ -32,7 +32,7 @@
       <image class="field-icon" src="/assets/icons/check.png" mode="aspectFit" />
       <text class="label">设为默认</text>
       <view class="value"></view>
-      <switch checked="{{ form.isDefault }}" color="#ff6600" bindchange="onDefaultChange" />
+      <switch checked="{{ form.isDefault }}" color="#FF4A1C" bindchange="onDefaultChange" />
     </view>
   </view>
 

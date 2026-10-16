@@ -1,4 +1,4 @@
-.history-page{min-height:100vh;padding:34rpx 24rpx calc(42rpx + env(safe-area-inset-bottom));background:#f8f5f0;box-sizing:border-box}
+.history-page{min-height:100vh;padding:34rpx 24rpx calc(42rpx + env(safe-area-inset-bottom));background:#F6F6F8;box-sizing:border-box}
 .history-head{position:relative;margin:0 8rpx 30rpx}
 .history-heading{padding-right:172rpx}
 .history-title{color:#2e211a;font-size:42rpx;font-weight:800;line-height:1.2}
@@ -14,7 +14,7 @@
 .history-row:last-child{min-height:190rpx}
 .history-row-disabled{opacity:.72}
 .timeline{position:relative;flex:0 0 34rpx;width:34rpx}
-.timeline-marker{position:absolute;top:31rpx;left:0;width:18rpx;height:18rpx;border:5rpx solid #f8f5f0;border-radius:50%;background:#ed5520;box-shadow:0 0 0 1rpx #e6bca7}
+.timeline-marker{position:absolute;top:31rpx;left:0;width:18rpx;height:18rpx;border:5rpx solid #F6F6F8;border-radius:50%;background:#ed5520;box-shadow:0 0 0 1rpx #e6bca7}
 .timeline-line{position:absolute;top:55rpx;bottom:0;left:9rpx;width:1rpx;background:#dfd3c8}
 .history-row:last-child .timeline-line{display:none}
 .record-card{display:flex;flex:1;min-width:0;min-height:174rpx;margin:0 0 18rpx 10rpx;padding:16rpx;border:1rpx solid #eee6de;border-radius:24rpx;background:#fffdfb;transition:transform .18s ease,opacity .18s ease}

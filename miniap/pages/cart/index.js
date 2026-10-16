@@ -370,7 +370,7 @@ Page({
     const ids = current && current.bundleGroupId
       ? this.data.items.filter(item => item.bundleGroupId === current.bundleGroupId).map(item => item.id)
       : [id]
-    wx.showModal({
+    wx.showModal({ confirmColor: '#FF4A1C', 
       title: '确认删除商品？',
       content: '删除后可在商品详情页重新加入购物车。',
       cancelText: '取消',
@@ -403,7 +403,7 @@ Page({
       return
     }
 
-    wx.showModal({
+    wx.showModal({ confirmColor: '#FF4A1C', 
       title: '确认删除选中商品？',
       content: `将删除已选的 ${ids.length} 件商品，删除后可在商品详情页重新加入购物车。`,
       cancelText: '取消',
