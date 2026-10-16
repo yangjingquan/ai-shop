@@ -1,13 +1,13 @@
 .order-list-page {
   min-height: 100vh;
-  padding: 22rpx 24rpx 140rpx;
-  background: #f8f5f0;
-  color: #17191f;
+  padding: 22rpx 32rpx 160rpx;
+  background: #F6F6F8;
+  color: #15161C;
 }
 
 .tabs-scroll {
   width: 100%;
-  margin-bottom: 18rpx;
+  margin-bottom: 20rpx;
   white-space: nowrap;
 }
 
@@ -19,18 +19,18 @@
 }
 
 .tab-chip {
-  height: 64rpx;
+  height: 68rpx;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-right: 14rpx;
-  padding: 0 24rpx;
-  border-radius: 16rpx;
-  color: #5f626b;
+  margin-right: 16rpx;
+  padding: 0 28rpx;
+  border-radius: 34rpx;
+  color: #5B5F6B;
   background: #fff;
-  box-shadow: 0 10rpx 24rpx rgba(50, 44, 36, 0.05);
-  font-size: 24rpx;
-  font-weight: 800;
+  box-shadow: 0 8rpx 24rpx rgba(20, 22, 28, 0.04);
+  font-size: 26rpx;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -40,7 +40,9 @@
 
 .tab-chip.active {
   color: #fff;
-  background: #17191f;
+  background: linear-gradient(90deg, #FF4A1C, #FF8A00);
+  font-weight: 800;
+  box-shadow: 0 8rpx 20rpx rgba(255, 74, 28, 0.24);
 }
 
 .order-list {
@@ -51,8 +53,8 @@
 .swipe-row {
   position: relative;
   overflow: hidden;
-  margin-bottom: 18rpx;
-  border-radius: 18rpx;
+  margin-bottom: 20rpx;
+  border-radius: 32rpx;
 }
 
 .swipe-delete {
@@ -60,85 +62,85 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 140rpx;
+  width: 144rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  background: #ef5523;
-  font-size: 24rpx;
-  font-weight: 900;
+  background: #FF4A1C;
+  font-size: 28rpx;
+  font-weight: 700;
 }
 
 .order-card {
   position: relative;
   z-index: 1;
   margin-bottom: 0;
-  padding: 22rpx;
-  border-radius: 18rpx;
+  padding: 28rpx;
+  border-radius: 32rpx;
   background: #fff;
-  box-shadow: 0 14rpx 30rpx rgba(50, 44, 36, 0.06);
+  box-shadow: 0 8rpx 24rpx rgba(20, 22, 28, 0.04);
   transition: transform 0.2s ease;
   will-change: transform;
 }
 
 .order-head {
-  min-height: 36rpx;
+  min-height: 40rpx;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  margin-bottom: 14rpx;
+  margin-bottom: 16rpx;
 }
 
-.seckill-order-tag { margin-left: 12rpx; padding: 4rpx 10rpx; border-radius: 8rpx; color: #ff551b; background: #fff0e8; font-size: 20rpx; }
-.presale-order-tag { margin-left: 12rpx; padding: 4rpx 10rpx; border-radius: 8rpx; color: #e45d1b; background: #fff0e8; font-size: 20rpx; font-weight: 800; }
+.seckill-order-tag { margin-left: 12rpx; padding: 6rpx 12rpx; border-radius: 12rpx; color: #FF4A1C; background: #FFF1EB; font-size: 22rpx; font-weight: 800; }
+.presale-order-tag { margin-left: 12rpx; padding: 6rpx 12rpx; border-radius: 12rpx; color: #7B5CFF; background: #F0E6FF; font-size: 22rpx; font-weight: 800; }
 
 .state-text {
   flex: 0 0 auto;
   margin-left: 0;
-  color: #ef5523;
-  font-size: 24rpx;
-  font-weight: 900;
+  color: #FF4A1C;
+  font-size: 26rpx;
+  font-weight: 800;
 }
 
 .refund-status {
   flex: 0 1 auto;
   max-width: 100%;
   margin-left: 12rpx;
-  padding: 5rpx 12rpx;
-  border: 1rpx solid #f6d8c9;
-  border-radius: 12rpx;
-  color: #b94a25;
-  background: #fff2eb;
+  padding: 6rpx 16rpx;
+  border: 2rpx solid #FF4A1C;
+  border-radius: 16rpx;
+  color: #FF4A1C;
+  background: #FFF1EB;
   box-sizing: border-box;
-  font-size: 21rpx;
-  line-height: 30rpx;
-  font-weight: 800;
+  font-size: 22rpx;
+  line-height: 32rpx;
+  font-weight: 700;
   text-align: center;
 }
 
 .refund-status-3 {
-  border-color: #d5ead9;
-  color: #277342;
-  background: #eff8f0;
+  border-color: #16C47F;
+  color: #16C47F;
+  background: #E6FBF2;
 }
 
 .s0,
 .s1,
 .s2 {
-  color: #ef5523;
+  color: #FF4A1C;
 }
 
 .s3,
 .s4 {
-  color: #8b8e97;
+  color: #9A9EA8;
 }
 
-.group-progress { margin-left: 12rpx; color: #ef5523; font-size: 24rpx; }
-.state-text.s5 { color: #f59e0b; }
-.state-text.s6 { color: #16a34a; }
-.state-text.s7 { color: #dc2626; }
+.group-progress { margin-left: 12rpx; color: #3D7BFF; font-size: 24rpx; }
+.state-text.s5 { color: #FFD23F; }
+.state-text.s6 { color: #16C47F; }
+.state-text.s7 { color: #FF4A1C; }
 
 .goods-list {
   border-radius: 14rpx;
