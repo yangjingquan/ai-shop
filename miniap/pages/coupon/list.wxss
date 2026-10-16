@@ -1,6 +1,124 @@
-.coupon-page { min-height: 100vh; padding: 24rpx; box-sizing: border-box; background: #f7f8fa; }
-.coupon-head { padding: 34rpx 30rpx; border-radius: 22rpx; color: #fff; background: linear-gradient(135deg, #f47721, #ed4d13); box-shadow: 0 12rpx 30rpx rgba(239, 91, 25, .2); }
-.coupon-kicker { font-size: 21rpx; letter-spacing: .14em; opacity: .8; }.coupon-title { margin-top: 10rpx; font-size: 42rpx; font-weight: 800; }.coupon-subtitle { margin-top: 8rpx; font-size: 25rpx; opacity: .82; }
-.tabs { display: flex; height: 92rpx; align-items: center; justify-content: space-around; margin: 18rpx 0 4rpx; background: #fff; border-radius: 18rpx; }.tab { position: relative; color: #8b929b; font-size: 28rpx; }.tab.active { color: #f15e17; font-weight: 700; }.tab.active::after { position: absolute; left: 50%; bottom: -18rpx; width: 44rpx; height: 5rpx; border-radius: 5rpx; background: #f15e17; transform: translateX(-50%); content: ''; }
-.coupon-list { margin-top: 18rpx; }.coupon-card { display: flex; align-items: center; min-height: 190rpx; margin-bottom: 18rpx; padding: 24rpx 20rpx; border-radius: 20rpx; background: #fff; box-sizing: border-box; box-shadow: 0 8rpx 22rpx rgba(26, 32, 44, .04); }.coupon-card.disabled { opacity: .56; }.coupon-left { display: flex; align-items: baseline; width: 168rpx; color: #f15e17; }.yuan { font-size: 25rpx; }.amount { font-size: 72rpx; font-weight: 900; line-height: 1; }.coupon-mid { flex: 1; min-width: 0; padding: 0 14rpx; border-left: 1rpx dashed #e4e7eb; }.name { overflow: hidden; color: #262b33; font-size: 29rpx; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }.condition { margin-top: 8rpx; color: #5B5F6B; font-size: 24rpx; }.date { margin-top: 10rpx; color: #a0a6ad; font-size: 20rpx; }.reason { margin-top: 8rpx; color: #e15231; font-size: 21rpx; }.coupon-action { width: 88rpx; color: #f15e17; font-size: 24rpx; text-align: center; }.disabled .coupon-action { color: #9A9EA8; }.empty { padding-top: 180rpx; color: #9A9EA8; font-size: 27rpx; text-align: center; }.empty-icon { display: grid; place-items: center; width: 110rpx; height: 110rpx; margin: 0 auto 24rpx; border-radius: 50%; color: #f15e17; background: #fff0e5; font-size: 32rpx; font-weight: 700; }
-.source-tag { display: inline-block; margin-left: 8rpx; padding: 2rpx 8rpx; border-radius: 8rpx; color: #e45d1b; background: #fff0e5; font-size: 18rpx; font-weight: 650; vertical-align: 3rpx; }.expiry { margin-top: 7rpx; color: #e45d1b; font-size: 20rpx; font-weight: 650; }
+.coupon-page {
+  min-height: 100vh;
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+}
+
+.coupon-chips {
+  display: flex;
+  flex-direction: row;
+  gap: 16rpx;
+  margin-top: 24rpx;
+  padding-bottom: 8rpx;
+  white-space: nowrap;
+}
+
+.coupon-chips .hero-chip {
+  flex: none;
+}
+
+.coupon-body {
+  margin-top: 8rpx;
+}
+
+.coupon-card {
+  display: flex;
+  align-items: stretch;
+  margin-bottom: 20rpx;
+  border-radius: 32rpx;
+  background: #fff;
+  box-shadow: 0 8rpx 36rpx rgba(20, 22, 28, 0.04);
+  overflow: hidden;
+  position: relative;
+}
+
+.coupon-card::before,
+.coupon-card::after {
+  content: '';
+  position: absolute;
+  left: 176rpx;
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  background: #F6F6F8;
+}
+
+.coupon-card::before {
+  top: -16rpx;
+}
+
+.coupon-card::after {
+  bottom: -16rpx;
+}
+
+.coupon-card-off {
+  opacity: 0.82;
+}
+
+.coupon-left {
+  width: 192rpx;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #FF4A1C, #FF8A00);
+  color: #fff;
+  font-weight: 900;
+}
+
+.coupon-card-off .coupon-left {
+  background: #C9CCD3;
+}
+
+.coupon-yuan {
+  font-size: 28rpx;
+  margin-right: 4rpx;
+}
+
+.coupon-amount {
+  font-size: 64rpx;
+  line-height: 1;
+}
+
+.coupon-mid {
+  flex: 1;
+  min-width: 0;
+  padding: 24rpx 16rpx 24rpx 20rpx;
+}
+
+.coupon-name {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #15161C;
+}
+
+.coupon-line {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #9A9EA8;
+}
+
+.coupon-expiry {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #FF4A1C;
+}
+
+.coupon-reason {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #9A9EA8;
+}
+
+.coupon-action {
+  display: flex;
+  align-items: center;
+  padding-right: 20rpx;
+}
+
+.coupon-action .btn-sm {
+  height: 60rpx;
+  padding: 0 24rpx;
+  font-size: 24rpx;
+  pointer-events: none;
+}

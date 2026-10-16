@@ -1,16 +1,49 @@
-<view class="coupon-page">
-  <view class="coupon-head">
-    <view class="coupon-kicker">STORE BENEFITS</view>
-    <view class="coupon-title">优惠券中心</view>
-    <view class="coupon-subtitle">领取优惠，结算时自动抵扣</view>
+<view class="coupon-page page-shell">
+  <view class="page-hero page-hero-primary">
+    <view class="hero-blob"></view>
+    <view class="hero-kicker">STORE BENEFITS</view>
+    <view class="hero-heading">优惠券中心</view>
+    <view class="hero-desc">领取优惠，结算时自动抵扣</view>
+    <scroll-view scroll-x class="coupon-chips" enable-flex>
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="hero-chip {{activeTab === item.key ? 'hero-chip-on' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="changeTab"
+      >{{item.label}}</view>
+    </scroll-view>
   </view>
-  <view class="tabs"><view wx:for="{{tabs}}" wx:key="key" class="tab {{activeTab === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="changeTab">{{item.label}}</view></view>
-  <view wx:if="{{coupons.length}}" class="coupon-list">
-    <view wx:for="{{coupons}}" wx:key="id" class="coupon-card {{item.available ? '' : 'disabled'}}" data-coupon="{{item}}" bindtap="selectCoupon">
-      <view class="coupon-left"><text class="yuan">¥</text><text class="amount">{{item.amountText}}</text></view>
-      <view class="coupon-mid"><view class="name">{{item.name}}<text wx:if="{{item.issueScene === 'REPURCHASE_AFTER_PAID'}}" class="source-tag">复购券</text></view><view class="condition">满{{item.thresholdText}}元可用</view><view class="date">{{item.validFrom}} 至 {{item.validTo}}</view><view wx:if="{{item.expiryText && item.available}}" class="expiry">{{item.expiryText}}</view><view wx:if="{{item.unavailableReason}}" class="reason">{{item.unavailableReason}}</view></view>
-      <view class="coupon-action">{{mode === 'select' && item.available ? '选择' : item.available ? '去使用' : item.statusText}}</view>
+
+  <view class="page-body coupon-body">
+    <view wx:if="{{coupons.length}}" class="coupon-list">
+      <view
+        wx:for="{{coupons}}"
+        wx:key="id"
+        class="coupon-card {{item.available ? '' : 'coupon-card-off'}}"
+        data-coupon="{{item}}"
+        bindtap="selectCoupon"
+      >
+        <view class="coupon-left">
+          <text class="coupon-yuan">¥</text>
+          <text class="coupon-amount">{{item.amountText}}</text>
+        </view>
+        <view class="coupon-mid">
+          <view class="coupon-name">{{item.name}}<text wx:if="{{item.issueScene === 'REPURCHASE_AFTER_PAID'}}" class="tag">复购券</text></view>
+          <view class="coupon-line">满{{item.thresholdText}}元可用</view>
+          <view class="coupon-line coupon-date">{{item.validFrom}} 至 {{item.validTo}}</view>
+          <view wx:if="{{item.expiryText && item.available}}" class="coupon-expiry">{{item.expiryText}}</view>
+          <view wx:if="{{item.unavailableReason}}" class="coupon-reason">{{item.unavailableReason}}</view>
+        </view>
+        <view class="coupon-action">
+          <text class="btn btn-sm {{item.available ? 'btn-primary' : 'btn-disabled'}}">{{mode === 'select' && item.available ? '选择' : item.available ? '去使用' : item.statusText}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:elif="{{!loading}}" class="empty-state2">
+      <view class="empty-state2-symbol">券</view>
+      <text class="empty-state2-title">暂无{{activeTab === 0 ? '可使用' : activeTab === 1 ? '已使用' : '已失效/过期'}}优惠券</text>
     </view>
   </view>
-  <view wx:elif="{{!loading}}" class="empty"><view class="empty-icon">券</view><view>暂无{{activeTab === 0 ? '可使用' : activeTab === 1 ? '已使用' : '已失效/过期'}}优惠券</view></view>
 </view>
