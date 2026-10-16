@@ -1,1 +1,57 @@
-<view class="day page-shell"><view class="hero"><text class="kicker">每月 {{activity.dayOfMonth || '--'}} 日 · 会员专享</text><view class="title">积分会员日</view><view class="sub">{{activity.active ? '今日权益已开启' : (activity.statusText || '敬请期待')}}</view></view><view wx:if="{{lotteryActivity}}" class="lottery-entry" bindtap="goLottery"><image class="lottery-entry-image" src="{{lotteryActivity.entryImage || '/assets/lottery/blind-box-hero.jpg'}}" mode="aspectFill"/><view class="lottery-entry-copy"><view class="lottery-entry-kicker">DAILY SURPRISE</view><view class="lottery-entry-title">互动抽奖盲盒</view><view class="lottery-entry-desc">每日 {{lotteryActivity.dailyChances || 1}} 次，惊喜好礼随机开</view></view><view class="lottery-entry-arrow">去抽奖 ›</view></view><view class="benefits"><view class="benefit"><text class="benefit-icon">倍</text><view><view class="benefit-title">双倍积分</view><view class="benefit-desc">活动时段内下单享双倍积分</view></view></view><view class="benefit"><text class="benefit-icon">券</text><view><view class="benefit-title">会员专享券</view><view class="benefit-desc">精选商品享专属优惠</view></view><button wx:if="{{activity.couponTemplateId && activity.active}}" class="coupon-btn {{activity.couponReceived ? 'done' : ''}}" disabled="{{activity.couponReceived || couponReceiving}}" bindtap="receiveCoupon">{{couponReceiving ? '领取中' : (activity.couponReceived ? '已领取' : '立即领取')}}</button></view></view><view class="mall-title">积分兑换好礼 <text bindtap="goMall">全部 ›</text></view><view class="products"><view wx:for="{{items}}" wx:key="id" class="product"><view class="product-name">{{item.title}}</view><view class="product-points">{{item.pointsPrice}} 积分</view></view></view><button class="primary-btn" bindtap="goMall">立即兑换</button><view class="tip">实物好礼纯积分兑换，商家包邮</view></view>
+<view class="member-day-page page-shell">
+  <view class="page-hero page-hero-dark">
+    <view class="hero-blob"></view>
+    <view class="hero-kicker">每月 {{activity.dayOfMonth || '--'}} 日 · 会员专享</view>
+    <view class="hero-heading">积分会员日</view>
+    <view class="hero-desc">{{activity.active ? '今日权益已开启' : (activity.statusText || '敬请期待')}}</view>
+  </view>
+
+  <view class="member-lift">
+    <view class="benefit-card card">
+      <view class="benefit-symbol benefit-symbol-yellow">倍</view>
+      <view>
+        <view class="benefit-title">双倍积分</view>
+        <view class="benefit-desc">活动时段内下单享双倍积分</view>
+      </view>
+    </view>
+    <view class="benefit-card card">
+      <view class="benefit-symbol benefit-symbol-orange">券</view>
+      <view class="benefit-copy">
+        <view class="benefit-title">会员专享券</view>
+        <view class="benefit-desc">精选商品享专属优惠</view>
+      </view>
+      <button
+        wx:if="{{activity.couponTemplateId && activity.active}}"
+        class="btn btn-primary btn-sm coupon-btn {{activity.couponReceived ? 'btn-disabled' : ''}}"
+        disabled="{{activity.couponReceived || couponReceiving}}"
+        bindtap="receiveCoupon"
+      >{{couponReceiving ? '领取中' : (activity.couponReceived ? '已领取' : '立即领取')}}</button>
+    </view>
+  </view>
+
+  <view wx:if="{{lotteryActivity}}" class="lottery-entry card" bindtap="goLottery">
+    <image class="lottery-thumb" src="{{lotteryActivity.entryImage || '/assets/lottery/blind-box-hero.jpg'}}" mode="aspectFill" />
+    <view class="lottery-copy">
+      <view class="lottery-kicker">DAILY SURPRISE</view>
+      <view class="lottery-title">互动抽奖盲盒</view>
+      <view class="lottery-desc">每日 {{lotteryActivity.dailyChances || 1}} 次，惊喜好礼随机开</view>
+    </view>
+    <text class="lottery-go">去抽奖 ›</text>
+  </view>
+
+  <view class="page-section-head mall-head">
+    <text class="page-section-title">积分兑换好礼</text>
+    <text class="page-section-tip" bindtap="goMall">全部 ›</text>
+  </view>
+
+  <view class="product-grid">
+    <view wx:for="{{items}}" wx:key="id" wx:for-index="idx" class="product-mini">
+      <view class="product-mini-cover img-placeholder img-placeholder-{{idx % 6 + 1}}"></view>
+      <view class="product-mini-name">{{item.title}}</view>
+      <view class="product-mini-points">{{item.pointsPrice}} 积分</view>
+    </view>
+  </view>
+
+  <button class="btn btn-primary btn-lg member-cta" bindtap="goMall">立即兑换</button>
+  <view class="page-end-note">实物好礼纯积分兑换，商家包邮</view>
+</view>
