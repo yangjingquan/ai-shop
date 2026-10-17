@@ -5,7 +5,7 @@
         <view class="addr-top">
           <text class="receiver">{{ item.receiver }}</text>
           <text class="phone">{{ item.phone }}</text>
-          <text wx:if="{{ item.isDefault }}" class="tag">默认</text>
+          <text wx:if="{{ item.isDefault }}" class="tag tag-solid">默认</text>
         </view>
         <view class="addr-text">{{ item.region }} {{ item.detail }}</view>
         <view class="actions">

@@ -1,7 +1,12 @@
 .address-page {
   min-height: 100vh;
-  padding: 24rpx 32rpx calc(180rpx + env(safe-area-inset-bottom));
+  padding: 0 32rpx calc(160rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
+  background: #F6F6F8;
+}
+
+.address-list {
+  padding-top: 24rpx;
 }
 
 .addr-card {
