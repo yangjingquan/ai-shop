@@ -9,6 +9,7 @@
     </view>
   </view>
 
+  <view class="mall-follow page-body-lift">
   <view class="mall-notice">实物兑换纯积分支付，商家包邮</view>
 
   <view class="mall-grid page-body">
@@ -31,5 +32,6 @@
       <text class="empty-state2-title">暂无可兑换好礼</text>
       <text class="empty-state2-desc">商家正在准备中</text>
     </view>
+  </view>
   </view>
 </view>

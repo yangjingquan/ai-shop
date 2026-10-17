@@ -213,6 +213,11 @@
   gap: 16rpx;
 }
 
+.invite-copy {
+  flex: 1;
+  min-width: 0;
+}
+
 .invite-icon {
   width: 72rpx;
   height: 72rpx;

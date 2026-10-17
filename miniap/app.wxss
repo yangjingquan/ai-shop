@@ -8,7 +8,7 @@ page {
   --tab-bar-inset: calc(var(--tab-bar-gap) + var(--tab-bar-height) + env(safe-area-inset-bottom));
   --tab-page-pad-bottom: calc(200rpx + env(safe-area-inset-bottom));
   --cart-checkout-height: 128rpx;
-  --cart-page-pad-bottom: calc(200rpx + var(--cart-checkout-height) + env(safe-area-inset-bottom));
+  --cart-page-pad-bottom: calc(200rpx + var(--cart-checkout-height) + 96rpx + env(safe-area-inset-bottom));
 }
 
 page, view, text { box-sizing: border-box; }
@@ -446,12 +446,15 @@ button.btn-sm.btn-ghost {
 .img-placeholder-5 { background: linear-gradient(135deg, #F0E6FF, #D6C2FF); }
 .img-placeholder-6 { background: linear-gradient(135deg, #EDEEF2, #D5D8E0); }
 
-/* Page hero (batch-2 secondary pages) */
+/* Shared marketing / list page hero (inset card + lifted content below) */
 .page-hero {
   position: relative;
-  padding: 8rpx 32rpx 40rpx;
+  margin: 24rpx 24rpx 0;
+  padding: 40rpx 32rpx 64rpx;
+  border-radius: 32rpx;
   overflow: hidden;
   color: #fff;
+  box-sizing: border-box;
 }
 
 .page-hero-primary {
@@ -492,27 +495,72 @@ button.btn-sm.btn-ghost {
 .hero-kicker {
   font-size: 20rpx;
   font-weight: 800;
-  letter-spacing: 5rpx;
+  letter-spacing: 6rpx;
+  line-height: 1.45;
+  opacity: 0.7;
 }
 
 .hero-heading {
-  margin-top: 8rpx;
-  font-size: 56rpx;
+  margin-top: 16rpx;
+  font-size: 52rpx;
   font-weight: 900;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .hero-desc {
-  margin-top: 8rpx;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  line-height: 1.55;
+  opacity: 0.85;
+}
+
+.hero-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.hero-title-stack {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-title-stack .hero-heading {
+  margin-top: 12rpx;
+}
+
+.hero-action-pill,
+.hero-count-pill {
+  flex: none;
+  height: 56rpx;
+  margin-top: 28rpx;
+  padding: 0 24rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.55);
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
   font-size: 24rpx;
-  line-height: 1.5;
-  opacity: 0.88;
+  font-weight: 700;
+  line-height: 52rpx;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.hero-count-pill {
+  border: 0;
+  background: #fff;
+  color: #FF4A1C;
+  line-height: 56rpx;
+}
+
+.hero-chips-slot {
+  margin-top: 28rpx;
+  padding-bottom: 4rpx;
 }
 
 .hero-badge {
-  position: absolute;
-  right: 32rpx;
-  top: 120rpx;
+  /* legacy: use hero-count-pill in hero-top-row */
   padding: 8rpx 24rpx;
   border-radius: 28rpx;
   background: #fff;
@@ -525,7 +573,7 @@ button.btn-sm.btn-ghost {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
-  margin-top: 12rpx;
+  margin-top: 20rpx;
 }
 
 .hero-chip {
@@ -547,6 +595,13 @@ button.btn-sm.btn-ghost {
 
 .page-body {
   padding: 0 32rpx 48rpx;
+  box-sizing: border-box;
+}
+
+.page-body-lift {
+  margin-top: -40rpx;
+  position: relative;
+  z-index: 2;
 }
 
 .page-section-head {

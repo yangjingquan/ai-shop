@@ -8,21 +8,10 @@
 }
 
 .read-all-btn {
-  position: absolute;
-  right: 32rpx;
-  top: 120rpx;
   width: auto;
-  flex: none;
-  height: 56rpx;
   margin: 0;
   padding: 0 24rpx;
-  border: 2rpx solid rgba(255, 255, 255, 0.6);
-  border-radius: 28rpx;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  font-size: 24rpx;
-  font-weight: 700;
-  line-height: 56rpx;
+  line-height: 52rpx;
 }
 
 .read-all-btn::after {
@@ -31,7 +20,6 @@
 
 .notification-body {
   padding: 0 32rpx;
-  margin-top: 8rpx;
 }
 
 .message-list {

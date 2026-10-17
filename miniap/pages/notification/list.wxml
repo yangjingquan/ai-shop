@@ -1,13 +1,17 @@
 <view class="notification-page page-shell">
   <view class="page-hero page-hero-primary notification-hero">
     <view class="hero-blob"></view>
-    <view class="hero-kicker">INBOX</view>
-    <view class="hero-heading">消息中心</view>
+    <view class="hero-top-row">
+      <view class="hero-title-stack">
+        <view class="hero-kicker">INBOX</view>
+        <view class="hero-heading">消息中心</view>
+      </view>
+      <button wx:if="{{unreadCount > 0}}" class="hero-action-pill read-all-btn" bindtap="readAll">全部已读</button>
+    </view>
     <view class="hero-desc">{{unreadCount ? unreadCount + ' 条未读消息' : '暂无未读消息'}}</view>
-    <button wx:if="{{unreadCount > 0}}" class="read-all-btn" bindtap="readAll">全部已读</button>
   </view>
 
-  <view class="notification-body">
+  <view class="notification-body page-body-lift">
     <view wx:if="{{list.length}}" class="message-list">
       <view
         wx:for="{{list}}"

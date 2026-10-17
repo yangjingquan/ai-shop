@@ -10,8 +10,7 @@
 }
 
 .group-body {
-  padding: 0 32rpx;
-  margin-top: 8rpx;
+  padding: 0 32rpx 48rpx;
 }
 
 .search-row {

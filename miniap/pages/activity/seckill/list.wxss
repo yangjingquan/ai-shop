@@ -8,14 +8,14 @@
 }
 
 .seckill-hero {
-  padding-bottom: 0;
+  padding-bottom: 32rpx;
   color: #fff;
 }
 
 .seckill-hd {
   position: relative;
   z-index: 1;
-  padding: 12rpx 32rpx 40rpx;
+  padding: 0;
 }
 
 .seckill-kicker {
@@ -81,11 +81,12 @@
 .seckill-countdown-value {
   display: block;
   margin-top: 8rpx;
-  font-size: 52rpx;
+  font-size: 40rpx;
   font-weight: 900;
   font-family: 'DIN Alternate', monospace;
-  letter-spacing: 4rpx;
+  letter-spacing: 2rpx;
   color: #fff;
+  word-break: keep-all;
 }
 
 .seckill-countdown-hint {
@@ -109,8 +110,8 @@
 }
 
 .session-chip {
-  flex: 0 0 192rpx;
-  width: 192rpx;
+  flex: 0 0 220rpx;
+  width: 220rpx;
   padding: 16rpx;
   border-radius: 28rpx;
   background: rgba(255, 255, 255, 0.15);
@@ -126,8 +127,11 @@
 
 .session-chip-name {
   display: block;
-  font-size: 26rpx;
+  font-size: 24rpx;
   font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .session-chip-time {
@@ -147,7 +151,7 @@
 .session-card {
   position: relative;
   z-index: 2;
-  margin: -16rpx 32rpx 0;
+  margin: -40rpx 24rpx 0;
   padding: 28rpx;
 }
 

@@ -1,17 +1,21 @@
 <view class="history-page page-shell">
   <view class="page-hero page-hero-primary">
     <view class="hero-blob"></view>
-    <view class="hero-kicker">RECENTLY VIEWED</view>
-    <view class="hero-heading">浏览记录</view>
+    <view class="hero-top-row">
+      <view class="hero-title-stack">
+        <view class="hero-kicker">RECENTLY VIEWED</view>
+        <view class="hero-heading">浏览记录</view>
+      </view>
+      <text
+        wx:if="{{items.length}}"
+        class="hero-action-pill"
+        catchtap="clearHistory"
+      >{{clearing ? '清空中' : '清空'}}</text>
+    </view>
     <view class="hero-desc">最近看过的商品，都留在这里</view>
-    <text
-      wx:if="{{items.length}}"
-      class="hero-clear-btn"
-      catchtap="clearHistory"
-    >{{clearing ? '清空中' : '清空'}}</text>
   </view>
 
-  <view class="page-body">
+  <view class="page-body page-body-lift">
     <view wx:if="{{loading && !items.length}}" class="loading-list">
       <view wx:for="{{[1, 2, 3]}}" wx:key="*this" class="loading-row">
         <view class="timeline-marker skel"></view>

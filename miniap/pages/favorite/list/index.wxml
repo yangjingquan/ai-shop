@@ -1,13 +1,17 @@
 <view class="favorite-page page-shell">
   <view class="page-hero page-hero-primary">
     <view class="hero-blob"></view>
-    <view class="hero-kicker">MY FAVORITES</view>
-    <view class="hero-heading">我的收藏</view>
+    <view class="hero-top-row">
+      <view class="hero-title-stack">
+        <view class="hero-kicker">MY FAVORITES</view>
+        <view class="hero-heading">我的收藏</view>
+      </view>
+      <view wx:if="{{total}}" class="hero-count-pill">{{total}} 件</view>
+    </view>
     <view class="hero-desc">把心仪好物留在这里，随时回来看看</view>
-    <view wx:if="{{total}}" class="hero-badge">{{total}} 件</view>
   </view>
 
-  <view class="page-body">
+  <view class="page-body page-body-lift">
     <view wx:if="{{loading && !items.length}}" class="loading-grid">
       <view wx:for="{{[1, 2, 3, 4]}}" wx:key="*this" class="loading-card">
         <view class="loading-cover skel"></view>

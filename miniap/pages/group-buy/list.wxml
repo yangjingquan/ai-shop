@@ -7,7 +7,7 @@
     <view class="hero-note">低价成团 · 成团后优先发货</view>
   </view>
 
-  <view class="group-body">
+  <view class="group-body page-body-lift">
     <view class="search-row">
       <view class="search-box">
         <input value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" placeholder="搜索团购商品" />

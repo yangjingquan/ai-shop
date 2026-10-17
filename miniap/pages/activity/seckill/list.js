@@ -78,12 +78,19 @@ Page({
       ? Number(value || 0)
       : new Date(String(value || '').replace(' ', 'T')).getTime()
     const target = session.status === 0 ? parseTime(session.startAt) : parseTime(session.endAt)
-    let seconds = Math.max(0, Math.floor((target - this.data.now) / 1000))
-    const h = Math.floor(seconds / 3600)
-    seconds -= h * 3600
-    const m = Math.floor(seconds / 60)
-    const s = seconds % 60
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    let remain = Math.max(0, Math.floor((target - this.data.now) / 1000))
+    const pad = (n) => String(n).padStart(2, '0')
+    const days = Math.floor(remain / 86400)
+    remain -= days * 86400
+    const h = Math.floor(remain / 3600)
+    remain -= h * 3600
+    const m = Math.floor(remain / 60)
+    const s = remain % 60
+    const totalHours = Math.floor(Math.max(0, target - this.data.now) / 1000 / 3600)
+    if (totalHours > 99) {
+      return `${days}天 ${pad(h)}:${pad(m)}:${pad(s)}`
+    }
+    return `${pad(h)}:${pad(m)}:${pad(s)}`
   },
 
   withCountdown(session) {

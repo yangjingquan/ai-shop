@@ -1,13 +1,13 @@
 <view class="referral-page page-shell" wx:if="{{campaign}}">
   <view class="page-hero page-hero-green referral-hero">
     <view class="hero-blob"></view>
-    <view class="hero-kicker">SHARE &amp; REWARD</view>
+    <view class="hero-kicker">SHARE & REWARD</view>
     <view class="hero-heading">分享有礼·老带新返券</view>
     <view class="hero-desc">{{campaign.shareDescription || '邀请好友完成首单，双方都能得券，多邀多得'}}</view>
     <view class="safe-line">◉ 安全合规 · 无强制分享 · 无现金返利</view>
   </view>
 
-  <view class="referral-body">
+  <view class="referral-body page-body-lift">
     <view wx:if="{{isInvitee}}" class="landing-card card">
       <view class="landing-kicker">NEW USER BENEFIT</view>
       <view class="landing-title">新用户专享券</view>

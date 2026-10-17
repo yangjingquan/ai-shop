@@ -13,10 +13,9 @@
 }
 
 .referral-body {
-  padding: 0 32rpx;
-  margin-top: -16rpx;
+  padding: 0 32rpx 48rpx;
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .landing-card,

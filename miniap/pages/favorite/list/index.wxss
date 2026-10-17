@@ -3,10 +3,6 @@
   padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
 }
 
-.favorite-page .page-body {
-  margin-top: 8rpx;
-}
-
 .goods-grid,
 .loading-grid {
   display: flex;

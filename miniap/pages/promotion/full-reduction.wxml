@@ -6,7 +6,7 @@
     <view class="hero-desc">多买多省，优惠自动计算</view>
   </view>
 
-  <view class="page-body">
+  <view class="page-body page-body-lift">
     <view wx:if="{{activities.length}}" class="activity-list">
       <view wx:for="{{activities}}" wx:key="id" class="activity-card card">
         <view class="activity-head">

@@ -4,7 +4,7 @@
     <view class="hero-kicker">STORE BENEFITS</view>
     <view class="hero-heading">优惠券中心</view>
     <view class="hero-desc">领取优惠，结算时自动抵扣</view>
-    <scroll-view scroll-x class="coupon-chips" enable-flex>
+    <scroll-view scroll-x class="coupon-chips hero-chips-slot" enable-flex>
       <view
         wx:for="{{tabs}}"
         wx:key="key"
@@ -15,7 +15,7 @@
     </scroll-view>
   </view>
 
-  <view class="page-body coupon-body">
+  <view class="page-body page-body-lift coupon-body">
     <view wx:if="{{coupons.length}}" class="coupon-list">
       <view
         wx:for="{{coupons}}"

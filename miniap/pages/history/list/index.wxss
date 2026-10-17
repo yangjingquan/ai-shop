@@ -9,23 +9,6 @@
   margin: 32rpx 0 24rpx;
 }
 
-.hero-clear-btn {
-  position: absolute;
-  right: 32rpx;
-  top: 120rpx;
-  height: 56rpx;
-  padding: 0 24rpx;
-  border: 2rpx solid rgba(255, 255, 255, 0.6);
-  border-radius: 28rpx;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  font-size: 24rpx;
-  font-weight: 700;
-  line-height: 52rpx;
-  text-align: center;
-  box-sizing: border-box;
-}
-
 .history-list {
   padding-left: 4rpx;
 }
