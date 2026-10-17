@@ -1,31 +1,51 @@
 <view class="seckill-page page-shell">
-  <view class="seckill-hero">
+  <view class="seckill-hero page-hero-dark">
+    <view class="hero-blob"></view>
     <view class="hero-copy">
-      <view class="hero-kicker-row"><text class="hero-kicker">LIMITED TIME SALE</text><text class="hero-badge">限时会场</text></view>
+      <view class="hero-kicker-row">
+        <text class="hero-kicker">LIMITED TIME SALE</text>
+        <text class="hero-venue-tag tag tag-yellow">限时会场</text>
+      </view>
       <view class="hero-title">秒杀限时折扣</view>
       <view class="hero-subtitle">精选好物，限时低价抢</view>
     </view>
     <view wx:if="{{activeSession}}" class="hero-countdown-card">
-      <view class="hero-countdown-label"><text>{{activeSession.status === 0 ? '距开始' : activeSession.status === 1 ? '距结束' : '本场已结束'}}</text><text class="hero-countdown-dot"></text></view>
-      <text wx:if="{{activeSession.status !== 2}}" class="countdown-value">{{activeSession.countdownText}}</text>
+      <view class="hero-countdown-left">
+        <view class="hero-countdown-label">
+          <text>{{activeSession.status === 0 ? '距开始' : activeSession.status === 1 ? '距结束' : '本场已结束'}}</text>
+          <text class="hero-countdown-dot"></text>
+        </view>
+        <text wx:if="{{activeSession.status !== 2}}" class="countdown-value">{{activeSession.countdownText}}</text>
+      </view>
       <text class="hero-countdown-hint">先到先得 · 售完即止</text>
     </view>
-  </view>
-
-  <scroll-view wx:if="{{sessions.length}}" class="session-tabs" scroll-x enhanced show-scrollbar="false">
-    <view class="session-tab-list">
-      <view wx:for="{{sessions}}" wx:key="id" class="session-tab {{activeIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="selectSession">
-        <view class="session-tab-top"><text class="session-dot"></text><text class="session-name">{{item.name}}</text></view>
-        <text class="session-time">{{item.startText}}</text>
-        <text class="session-status">{{item.status === 0 ? '即将开始' : item.status === 1 ? '抢购中' : '已结束'}}</text>
+    <scroll-view wx:if="{{sessions.length}}" class="session-chips" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="session-chip-list">
+        <view
+          wx:for="{{sessions}}"
+          wx:key="id"
+          class="session-chip {{activeIndex === index ? 'session-chip-active' : ''}}"
+          data-index="{{index}}"
+          bindtap="selectSession"
+        >
+          <text class="session-chip-name">● {{item.name}}</text>
+          <text class="session-chip-time">{{item.startText}}</text>
+          <text class="session-chip-status">{{item.status === 0 ? '即将开始' : item.status === 1 ? '抢购中' : '已结束'}}</text>
+        </view>
       </view>
-    </view>
-  </scroll-view>
+    </scroll-view>
+  </view>
 
   <view wx:if="{{activeSession}}" class="session-card card">
     <view class="session-head">
-      <view class="session-title-wrap"><view class="session-title-line"><text class="session-label">{{activeSession.name}}</text><text class="session-live">{{activeSession.status === 0 ? '即将开始' : activeSession.status === 1 ? '限量抢购' : '已结束'}}</text></view><text class="session-range">{{activeSession.startText}} - {{activeSession.endText}}</text></view>
-      <text class="session-desc">{{activeSession.activityDescription || '限时特价，售完即止'}}</text>
+      <view class="session-title-wrap">
+        <view class="session-title-line">
+          <text class="session-label">{{activeSession.name}}</text>
+          <text class="session-live">{{activeSession.status === 0 ? '即将开始' : activeSession.status === 1 ? '限量抢购' : '已结束'}}</text>
+        </view>
+        <text class="session-range">{{activeSession.startText}} - {{activeSession.endText}}</text>
+        <text class="session-desc">{{activeSession.activityDescription || '限时特价，售完即止'}}</text>
+      </view>
     </view>
     <view class="session-divider"></view>
     <view wx:if="{{activeSession.products.length}}" class="seckill-products">

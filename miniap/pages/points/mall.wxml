@@ -1,7 +1,6 @@
 <view class="mall-page page-shell">
   <view class="page-hero page-hero-gold">
     <view class="hero-blob"></view>
-    <view class="hero-kicker">POINTS MALL</view>
     <view class="points-balance-label">当前可用积分</view>
     <view class="points-balance-value">{{balance}}</view>
     <view class="hero-chip-row">

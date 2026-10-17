@@ -3,8 +3,12 @@
   padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
 }
 
+.mall-page .page-hero {
+  padding-bottom: 40rpx;
+}
+
 .points-balance-label {
-  margin-top: 8rpx;
+  margin-top: 0;
   font-size: 26rpx;
   opacity: 0.92;
 }
@@ -35,7 +39,7 @@
 .mall-item {
   width: calc(50% - 10rpx);
   margin-bottom: 20rpx;
-  padding: 16rpx 16rpx 20rpx;
+  padding: 16rpx 16rpx 24rpx;
   border-radius: 32rpx;
   background: #fff;
   box-shadow: 0 8rpx 36rpx rgba(20, 22, 28, 0.04);
