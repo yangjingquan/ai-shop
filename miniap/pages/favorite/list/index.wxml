@@ -34,12 +34,11 @@
             <image wx:if="{{item.mainImage}}" class="goods-image" src="{{item.mainImage}}" mode="aspectFill" lazy-load />
             <view wx:else class="goods-image goods-image-fallback img-placeholder img-placeholder-1">{{item.initial}}</view>
             <view wx:if="{{!item.available}}" class="unavailable-mask"><text>已下架</text></view>
-            <button
+            <view
               class="favorite-badge {{removingId === item.productId ? 'favorite-badge-disabled' : ''}}"
               catchtap="removeFavorite"
               data-id="{{item.productId}}"
-              disabled="{{removingId === item.productId}}"
-            >{{removingId === item.productId ? '处理中' : '♥ 已收藏'}}</button>
+            >{{removingId === item.productId ? '处理中' : '♥ 已收藏'}}</view>
           </view>
           <view class="goods-content">
             <view class="goods-name">{{item.name}}</view>
