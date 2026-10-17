@@ -1,8 +1,9 @@
 .order-list-page {
   min-height: 100vh;
-  padding: 22rpx 32rpx 160rpx;
+  padding: 22rpx 32rpx 0;
   background: #F6F6F8;
   color: #15161C;
+  box-sizing: border-box;
 }
 
 .tabs-scroll {
@@ -377,20 +378,7 @@
   font-size: 24rpx;
 }
 
-.order-list-page { padding: 0 20rpx 34rpx; background: #f8f5f0; }
-.order-page-head { padding: 22rpx 4rpx 14rpx; }
-.order-page-title { color: #201f1c; font-size: 40rpx; font-weight: 900; }
-.order-page-subtitle { margin-top: 7rpx; color: #8d8175; font-size: 22rpx; }
-.tabs-scroll { margin: 0 -20rpx; padding: 0 20rpx 14rpx; background: #f8f5f0; }
-.tab-chip { border-radius: 30rpx; border: 1rpx solid #e9e1d8; background: #fff; }
-.tab-chip.active { color: #fff; background: #201f1c; border-color: #201f1c; }
-.order-card { border-radius: 24rpx; box-shadow: none; border: 1rpx solid #eee6dc; }
-.state-text { color: #ef5523; }
-.actions .btn { border-radius: 28rpx; }
-.actions .btn.primary, .actions .btn.dark { background: #201f1c; }
-.empty-card { border-radius: 28rpx; }
-
-.refund-reason-mask { position: fixed; z-index: 1100; top: 0; right: 0; bottom: calc(112rpx + env(safe-area-inset-bottom)); left: 0; display: flex; align-items: flex-end; justify-content: center; background: rgba(23, 25, 31, .48); }
+.refund-reason-mask { position: fixed; z-index: 1100; top: 0; right: 0; bottom: var(--tab-bar-inset); left: 0; display: flex; align-items: flex-end; justify-content: center; background: rgba(23, 25, 31, .48); }
 .refund-reason-modal { width: 100%; max-height: 100%; overflow-y: auto; padding: 34rpx 28rpx 28rpx; border-radius: 30rpx 30rpx 0 0; background: #fffaf6; box-sizing: border-box; box-shadow: 0 -12rpx 40rpx rgba(50, 44, 36, .18); }
 .refund-reason-head { display: flex; align-items: flex-start; justify-content: space-between; }
 .refund-reason-title { color: #201f1c; font-size: 34rpx; font-weight: 950; }

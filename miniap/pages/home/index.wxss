@@ -4,7 +4,6 @@ page {
 
 .home {
   min-height: 100vh;
-  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
   background: #F6F6F8;
   color: #15161C;
   box-sizing: border-box;
@@ -16,7 +15,6 @@ page {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
   color: #9A9EA8;
   background: #F6F6F8;
   box-sizing: border-box;
@@ -869,7 +867,6 @@ page {
 .lottery-entry-arrow { position: relative; z-index: 1; margin-left: auto; padding-left: 16rpx; color: #fff; font-size: 24rpx; font-weight: 700; white-space: nowrap; }
 
 /* The home feed leads with discovery, then introduces campaigns as optional value. */
-.home { background: #f8f5f0; color: #201f1c; }
 .content { padding: 18rpx 24rpx 34rpx; }
 .nav { height: 92rpx; gap: 14rpx; }
 .brand { width: 88rpx; height: 88rpx; border-radius: 28rpx; background: #201f1c; box-shadow: none; }

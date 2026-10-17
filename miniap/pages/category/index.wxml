@@ -1,4 +1,4 @@
-<view class="cat-page">
+<view class="cat-page pad-custom-tab-bar">
   <view class="topbar">
     <view class="page-title">分类</view>
     <view class="search" bindtap="onSearchTap">⌕ 搜索手机、香氛、运动鞋</view>

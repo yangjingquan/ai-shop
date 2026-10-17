@@ -4,7 +4,7 @@ page {
 
 .cat-page {
   min-height: 100vh;
-  padding: 20rpx 32rpx calc(160rpx + env(safe-area-inset-bottom));
+  padding: 20rpx 32rpx 0;
   box-sizing: border-box;
   background: #F6F6F8;
   color: #15161C;
@@ -417,20 +417,3 @@ page {
   opacity: 0.52;
 }
 
-.cat-page { padding: 18rpx 20rpx calc(112rpx + env(safe-area-inset-bottom)); background: #f8f5f0; }
-.topbar { gap: 14rpx; }
-.page-title { width: 98rpx; font-size: 40rpx; }
-.search { height: 74rpx; padding: 0 20rpx; border-radius: 37rpx; box-shadow: none; border-color: #eee6dc; }
-.layout { margin-top: 18rpx; grid-template-columns: 154rpx 1fr; gap: 14rpx; }
-.side { padding: 10rpx 8rpx; border-radius: 22rpx; background: #fff; box-shadow: none; }
-.side-item { width: 138rpx; min-height: 82rpx; margin-bottom: 6rpx; border-radius: 16rpx; }
-.side-item.active { background: #201f1c; box-shadow: none; }
-.side-item.active::before { left: 4rpx; top: 26rpx; width: 6rpx; height: 30rpx; background: #ff7a1a; }
-.category-panel { padding: 18rpx; border-radius: 22rpx; box-shadow: none; }
-.cat-chip { height: 54rpx; border-radius: 27rpx; background: #f6f1eb; }
-.cat-chip.active { color: #fff; background: #201f1c; }
-.view-toggle { border-radius: 50%; box-shadow: none; }
-.product-list { gap: 12rpx; }
-.tile { min-height: 330rpx; border-radius: 20rpx; box-shadow: none; }
-.tile-media { height: 180rpx; border-radius: 16rpx; background: #f6f1eb; }
-.product-single .tile { min-height: 200rpx; }

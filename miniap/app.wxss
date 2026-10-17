@@ -3,6 +3,12 @@ page {
   font-size: 28rpx;
   color: #15161C;
   background: #F6F6F8;
+  --tab-bar-gap: 36rpx;
+  --tab-bar-height: 124rpx;
+  --tab-bar-inset: calc(var(--tab-bar-gap) + var(--tab-bar-height) + env(safe-area-inset-bottom));
+  --tab-page-pad-bottom: calc(var(--tab-bar-inset) + 24rpx);
+  --cart-checkout-height: 128rpx;
+  --cart-page-pad-bottom: calc(var(--tab-bar-inset) + var(--cart-checkout-height) + 32rpx);
 }
 
 page, view, text { box-sizing: border-box; }
@@ -220,6 +226,25 @@ button::after {
 .tag-purple {
   background: #F0E6FF;
   color: #7B5CFF;
+}
+
+.tag-solid {
+  background: #FF4A1C;
+  color: #fff;
+}
+
+.pad-custom-tab-bar {
+  padding-bottom: var(--tab-page-pad-bottom);
+  box-sizing: border-box;
+}
+
+.pad-custom-tab-bar-cart {
+  padding-bottom: var(--cart-page-pad-bottom);
+  box-sizing: border-box;
+}
+
+.fixed-above-custom-tab-bar {
+  bottom: var(--tab-bar-inset);
 }
 
 .note-label {
