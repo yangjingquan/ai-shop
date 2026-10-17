@@ -1,6 +1,7 @@
 .address-page {
   min-height: 100vh;
-  padding: 0 32rpx calc(160rpx + env(safe-area-inset-bottom));
+  padding-left: 32rpx;
+  padding-right: 32rpx;
   box-sizing: border-box;
   background: #F6F6F8;
 }

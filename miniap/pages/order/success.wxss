@@ -92,6 +92,11 @@
   margin-top: 20rpx;
 }
 
+.repurchase-info {
+  flex: 1;
+  min-width: 0;
+}
+
 .repurchase-yuan {
   font-size: 28rpx;
   color: #FF4A1C;
@@ -124,6 +129,11 @@
   display: flex;
   align-items: center;
   gap: 20rpx;
+}
+
+.points-reward-copy {
+  flex: 1;
+  min-width: 0;
 }
 
 .reward-icon {
@@ -161,6 +171,11 @@
   display: flex;
   align-items: center;
   gap: 20rpx;
+}
+
+.lottery-entry-copy {
+  flex: 1;
+  min-width: 0;
 }
 
 .lottery-entry-image {

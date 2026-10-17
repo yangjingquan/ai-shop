@@ -6,7 +6,7 @@
   "pages/cart/index": "pad-custom-tab-bar-cart + checkout bar clearance",
   "pages/order/list": "Tab pad; swipe card width 100%; end-text clearance; no orange delete bleed",
   "pages/my/index": "Tab pad (no padding:0 wipe); hero overlap points card; 88rpx service tiles",
-  "pages/address/list": "btn-block add; fixed bottom bar + page padding-bottom",
+  "pages/address/list": "btn-block add; pad-fixed-bottom-bar + fixed bottom bar",
   "pages/address/edit": "btn-block save; form card radius",
   "pages/product/detail": "pad-fixed-bottom-bar; bottom-bar grid buttons; title ellipsis",
   "pages/order/confirm": "pad-fixed-bottom-bar; btn-inline submit",

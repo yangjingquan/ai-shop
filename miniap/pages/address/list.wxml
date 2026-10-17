@@ -1,4 +1,4 @@
-<view class="address-page page-shell">
+<view class="address-page page-shell pad-fixed-bottom-bar">
   <view class="address-list">
     <block wx:for="{{ list }}" wx:key="id">
       <view class="addr-card card" bindtap="onSelect" data-id="{{ item.id }}">

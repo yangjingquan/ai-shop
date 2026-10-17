@@ -1,6 +1,6 @@
 .detail-page {
   min-height: 100vh;
-  padding: 16rpx 24rpx 56rpx;
+  padding: 16rpx 24rpx calc(48rpx + env(safe-area-inset-bottom));
   background: #F6F6F8;
   color: #15161C;
 }
