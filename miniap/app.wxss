@@ -273,46 +273,27 @@ button.btn-sm.btn-ghost {
   color: #fff;
 }
 
-.pad-custom-tab-bar {
-  /* Fallback first: WXSS may drop the whole rule if calc(var()+env()) is invalid */
-  padding-bottom: 200rpx;
-  padding-bottom: calc(200rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
-  box-sizing: border-box;
-}
-
-/* Tab roots must not use padding shorthand with bottom 0 — it overrides this utility (see order/list, category). */
-.home.pad-custom-tab-bar,
-.cat-page.pad-custom-tab-bar,
-.order-list-page.pad-custom-tab-bar,
-.my-page.pad-custom-tab-bar {
-  padding-bottom: 200rpx;
-  padding-bottom: calc(200rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
-}
-
+/* Tab pages: bottom clearance is ONLY via .tab-bottom-spacer / .cart-bottom-spacer (no padding-bottom here — stacking caused ~2× gap). */
+.pad-custom-tab-bar,
 .pad-custom-tab-bar-cart {
-  padding-bottom: 360rpx;
-  padding-bottom: calc(360rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(360rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
-/* In-flow scroll extent (reliable vs page padding alone): tab 36+124 + margin */
+/* 36rpx tab float offset + 124rpx bar + 24rpx breathing room (+ safe area) */
 .tab-bottom-spacer {
   width: 100%;
-  height: 200rpx;
-  height: calc(200rpx + constant(safe-area-inset-bottom));
-  height: calc(200rpx + env(safe-area-inset-bottom));
+  height: 184rpx;
+  height: calc(184rpx + constant(safe-area-inset-bottom));
+  height: calc(184rpx + env(safe-area-inset-bottom));
   flex-shrink: 0;
 }
 
-/* Checkout bar (~168rpx) + tab-bar-inset (36+124) + safe area */
+/* Tab inset (36+124) + checkout bar (~168rpx) + 24rpx above checkout */
 .cart-bottom-spacer {
   width: 100%;
-  height: 360rpx;
-  height: calc(360rpx + constant(safe-area-inset-bottom));
-  height: calc(360rpx + env(safe-area-inset-bottom));
+  height: 352rpx;
+  height: calc(352rpx + constant(safe-area-inset-bottom));
+  height: calc(352rpx + env(safe-area-inset-bottom));
   flex-shrink: 0;
 }
 

@@ -1,4 +1,4 @@
-<view class="cart-page page-shell pad-custom-tab-bar-cart {{items.length === 0 ? 'is-empty pad-custom-tab-bar' : ''}}">
+<view class="cart-page page-shell {{items.length === 0 ? 'is-empty' : ''}}">
   <view wx:if="{{items.length > 0}}" class="cart-hero page-hero page-hero-primary">
     <view class="hero-blob"></view>
     <view class="cart-topbar">
