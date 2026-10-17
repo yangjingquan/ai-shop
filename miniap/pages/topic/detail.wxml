@@ -53,7 +53,7 @@
         <view wx:else class="products-empty">精选商品正在补充</view>
       </view>
       <view wx:elif="{{item.type === 'BUTTON'}}" class="button-block">
-        <button class="btn btn-dark btn-lg topic-cta" bindtap="onBlockButton" data-type="{{item.linkType}}">{{item.buttonText || '查看详情'}}</button>
+        <button class="btn btn-dark btn-lg btn-block topic-cta" bindtap="onBlockButton" data-type="{{item.linkType}}">{{item.buttonText || '查看详情'}}</button>
       </view>
     </view>
     <view class="page-end-note">— 已展示全部专题内容 —</view>

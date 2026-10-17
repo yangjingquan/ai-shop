@@ -278,6 +278,14 @@ button.btn-sm.btn-ghost {
   box-sizing: border-box;
 }
 
+/* Tab roots must not use padding shorthand with bottom 0 — it overrides this utility (see order/list, category). */
+.home.pad-custom-tab-bar,
+.cat-page.pad-custom-tab-bar,
+.order-list-page.pad-custom-tab-bar,
+.my-page.pad-custom-tab-bar {
+  padding-bottom: var(--tab-page-pad-bottom);
+}
+
 .pad-custom-tab-bar-cart {
   padding-bottom: var(--cart-page-pad-bottom);
   box-sizing: border-box;

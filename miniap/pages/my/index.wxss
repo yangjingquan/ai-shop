@@ -1,7 +1,9 @@
 .my-page {
   width: 100%;
   min-height: 100vh;
-  padding: 0;
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
   background: #F6F6F8;
   box-sizing: border-box;
   overflow-x: hidden;

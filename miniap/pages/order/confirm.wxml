@@ -1,4 +1,4 @@
-<view class="confirm-page page-shell">
+<view class="confirm-page page-shell pad-fixed-bottom-bar">
   <view class="no-address-card card" wx:if="{{noAddress}}">
     <view class="empty-state2">
       <view class="empty-state2-symbol">址</view>
@@ -109,7 +109,7 @@
       <text class="bottom-sum-label">合计：</text>
       <text class="price bottom-amount"><text>¥</text>{{preview.payAmount || preview.totalAmount || '0.00'}}</text>
     </view>
-    <button class="btn btn-primary submit-btn" bindtap="submitOrder" disabled="{{submitting}}">
+    <button class="btn btn-primary btn-inline submit-btn" bindtap="submitOrder" disabled="{{submitting}}">
       {{submitting ? '提交中...' : '提交订单'}}
     </button>
   </view>

@@ -53,5 +53,8 @@
 }
 
 .promotion-cta {
-  margin-top: 24rpx;
+  width: 100%;
+  display: flex;
+  margin: 24rpx 0 0;
+  box-sizing: border-box;
 }

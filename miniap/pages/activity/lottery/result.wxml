@@ -7,8 +7,8 @@
       <view wx:else class="result-symbol">{{result.prize.prizeType === 'POINTS' ? '积' : result.prize.prizeType === 'COUPON' ? '券' : result.prize.prizeType === 'PHYSICAL' ? '礼' : '谢'}}</view>
       <view class="prize-name">{{result.prize.name}}</view>
       <view class="prize-desc">{{result.resultText}}</view>
-      <button wx:if="{{result.prize.prizeType !== 'CONSOLATION'}}" class="btn btn-primary btn-lg" bindtap="useReward">{{result.prize.prizeType === 'PHYSICAL' ? '填写收货地址' : '去使用'}}</button>
-      <button class="btn btn-ghost btn-lg result-again" bindtap="again">再来一次</button>
+      <button wx:if="{{result.prize.prizeType !== 'CONSOLATION'}}" class="btn btn-primary btn-lg btn-block" bindtap="useReward">{{result.prize.prizeType === 'PHYSICAL' ? '填写收货地址' : '去使用'}}</button>
+      <button class="btn btn-ghost btn-lg btn-block result-again" bindtap="again">再来一次</button>
       <view class="result-links">
         <text bindtap="goRecords">查看抽奖记录</text>
         <text bindtap="goHome">返回首页</text>

@@ -1,0 +1,495 @@
+[
+  {
+    "route": "pages/home/index",
+    "key": "pages/home/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_home_index.png",
+    "ok": true,
+    "mock": "design/src/home.html",
+    "fixes": "Tab pad-custom-tab-bar; coupon popup btn-block; hero/product tokens per mock",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/topic/detail",
+    "key": "pages/topic/detail",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_topic_detail.png",
+    "ok": true,
+    "mock": "design/batch2/src/topic-detail.html",
+    "fixes": "btn-block topic CTA; hero + block layout; empty-state centered btn",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/recommend/index",
+    "key": "pages/recommend/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_recommend_index.png",
+    "ok": true,
+    "mock": "design/batch2/src/recommend.html",
+    "fixes": "Hero gradient + product grid spacing per mock",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/category/index",
+    "key": "pages/category/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_category_index.png",
+    "ok": true,
+    "mock": "design/src/category.html",
+    "fixes": "Tab pad (no padding-bottom:0 shorthand); category layout",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/cart/index",
+    "key": "pages/cart/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_cart_index.png",
+    "ok": true,
+    "mock": "design/src/cart.html",
+    "fixes": "pad-custom-tab-bar-cart + checkout bar clearance",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/order/list",
+    "key": "pages/order/list",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_order_list.png",
+    "ok": true,
+    "mock": "design/src/order.html",
+    "fixes": "Tab pad; swipe card width 100%; end-text clearance; no orange delete bleed",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/my/index",
+    "key": "pages/my/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_my_index.png",
+    "ok": true,
+    "mock": "design/src/my.html",
+    "fixes": "Tab pad (no padding:0 wipe); hero overlap points card; 88rpx service tiles",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/address/list",
+    "key": "pages/address/list",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_address_list.png",
+    "ok": true,
+    "mock": "design/batch2/src/address-list.html",
+    "fixes": "btn-block add; fixed bottom bar + page padding-bottom",
+    "mismatches": [
+      "Content may sit under fixed bottom UI (add pad-fixed-bottom-bar or padding-bottom)"
+    ]
+  },
+  {
+    "route": "pages/address/edit",
+    "key": "pages/address/edit",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_address_edit.png",
+    "ok": true,
+    "mock": "design/batch2/src/address-edit.html",
+    "fixes": "btn-block save; form card radius",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/product/detail",
+    "key": "pages/product/detail",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_product_detail.png",
+    "ok": true,
+    "mock": "design/batch2/src/product-detail.html",
+    "fixes": "pad-fixed-bottom-bar; bottom-bar grid buttons; title ellipsis",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/order/confirm",
+    "key": "pages/order/confirm",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_order_confirm.png",
+    "ok": true,
+    "mock": "design/batch2/src/order-confirm.html",
+    "fixes": "pad-fixed-bottom-bar; btn-inline submit",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/coupon/list",
+    "key": "pages/coupon/list",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_coupon_list.png",
+    "ok": true,
+    "mock": "design/batch2/src/coupon-list.html",
+    "fixes": "Ticket card layout; inline sm CTA in row",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/activity/referral/index",
+    "key": "pages/activity/referral/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_activity_referral_index.png",
+    "ok": true,
+    "mock": "design/batch2/src/referral-index.html",
+    "fixes": "btn-block lg CTAs; green hero + tier cards",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/activity/referral/rewards",
+    "key": "pages/activity/referral/rewards",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_activity_referral_rewards.png",
+    "ok": true,
+    "mock": "design/batch2/src/referral-rewards.html",
+    "fixes": "btn-sm row actions; list padding",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/activity/lottery/index",
+    "key": "pages/activity/lottery/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_activity_lottery_index.png",
+    "ok": true,
+    "mock": "design/batch2/src/lottery-index.html",
+    "fixes": "btn-block draw; hide overlay in preview; prize grid",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/activity/lottery/result",
+    "key": "pages/activity/lottery/result",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_activity_lottery_result.png",
+    "ok": true,
+    "mock": "design/batch2/src/lottery-result.html",
+    "fixes": "btn-block primary/ghost actions",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/activity/lottery/rewards",
+    "key": "pages/activity/lottery/rewards",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_activity_lottery_rewards.png",
+    "ok": true,
+    "mock": "design/batch2/src/lottery-rewards.html",
+    "fixes": "btn-sm per row; hero purple",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/activity/lottery/records",
+    "key": "pages/activity/lottery/records",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_activity_lottery_records.png",
+    "ok": true,
+    "mock": "design/batch2/src/lottery-records.html",
+    "fixes": "btn-block footer; empty centered btn",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/order/success",
+    "key": "pages/order/success",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_order_success.png",
+    "ok": true,
+    "mock": "design/batch2/src/order-success.html",
+    "fixes": "Full-width order-btn/repurchase-btn; footer text actions centered",
+    "mismatches": [
+      "Flex row may collapse text (consider min-width:0 on flex children)"
+    ]
+  },
+  {
+    "route": "pages/order/detail",
+    "key": "pages/order/detail",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_order_detail.png",
+    "ok": true,
+    "mock": "design/batch2/src/order-detail.html",
+    "fixes": "goods-name ellipsis; inline action chips",
+    "mismatches": [
+      "Content may sit under fixed bottom UI (add pad-fixed-bottom-bar or padding-bottom)"
+    ]
+  },
+  {
+    "route": "pages/points/index",
+    "key": "pages/points/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_points_index.png",
+    "ok": true,
+    "mock": "design/batch2/src/points-index.html",
+    "fixes": "Task/ledger flex min-width:0; title ellipsis",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/points/mall",
+    "key": "pages/points/mall",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_points_mall.png",
+    "ok": true,
+    "mock": "design/batch2/src/points-mall.html",
+    "fixes": "2-col grid; stacked card meta line + btn-block redeem",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/points/records/index",
+    "key": "pages/points/records/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_points_records_index.png",
+    "ok": true,
+    "mock": "design/batch2/src/points-records.html",
+    "fixes": "Ledger list tokens",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/points/member-day",
+    "key": "pages/points/member-day",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_points_member-day.png",
+    "ok": true,
+    "mock": "design/batch2/src/member-day.html",
+    "fixes": "btn-block member CTA; benefit cards",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/group-buy/list",
+    "key": "pages/group-buy/list",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_group-buy_list.png",
+    "ok": true,
+    "mock": "design/batch2/src/groupbuy-list.html",
+    "fixes": "Search btn-sm; product cards",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/group-buy/group",
+    "key": "pages/group-buy/group",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_group-buy_group.png",
+    "ok": true,
+    "mock": "design/batch2/src/groupbuy-group.html",
+    "fixes": "primary-btn/ghost-btn width 100%",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/activity/seckill/list",
+    "key": "pages/activity/seckill/list",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_activity_seckill_list.png",
+    "ok": true,
+    "mock": "design/batch2/src/seckill-list.html",
+    "fixes": "Hero white text; session chips; buy-pill",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/activity/presale/list",
+    "key": "pages/activity/presale/list",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_activity_presale_list.png",
+    "ok": true,
+    "mock": "design/batch2/src/presale-list.html",
+    "fixes": "Purple presale cards",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/activity/presale/detail",
+    "key": "pages/activity/presale/detail",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_activity_presale_detail.png",
+    "ok": true,
+    "mock": "design/batch2/src/presale-detail.html",
+    "fixes": "Fixed bottom bar + page padding-bottom 160rpx",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/activity/presale/confirm",
+    "key": "pages/activity/presale/confirm",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_activity_presale_confirm.png",
+    "ok": true,
+    "mock": "design/batch2/src/presale-confirm.html",
+    "fixes": "pad-fixed-bottom-bar; goods-name ellipsis; btn-inline submit",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/notification/list",
+    "key": "pages/notification/list",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_notification_list.png",
+    "ok": true,
+    "mock": "design/batch2/src/notification.html",
+    "fixes": "Read-all text action width auto",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/webview/index",
+    "key": "pages/webview/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_webview_index.png",
+    "ok": true,
+    "mock": "design/batch2/src/webview.html",
+    "fixes": "Placeholder shell",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/promotion/full-reduction",
+    "key": "pages/promotion/full-reduction",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_promotion_full-reduction.png",
+    "ok": true,
+    "mock": "design/batch2/src/full-reduction.html",
+    "fixes": "btn-block promotion CTA",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/promotion/bundle",
+    "key": "pages/promotion/bundle",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_promotion_bundle.png",
+    "ok": true,
+    "mock": "design/batch2/src/bundle.html",
+    "fixes": "pad-fixed-bottom-bar; product-name ellipsis; dual bottom buttons",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/review/edit/index",
+    "key": "pages/review/edit/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_review_edit_index.png",
+    "ok": true,
+    "mock": "design/batch2/src/review-edit.html",
+    "fixes": "btn-block submit",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/review/list/index",
+    "key": "pages/review/list/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_review_list_index.png",
+    "ok": true,
+    "mock": "design/batch2/src/review-list.html",
+    "fixes": "Review cards + ellipsis",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/question/list/index",
+    "key": "pages/question/list/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_question_list_index.png",
+    "ok": true,
+    "mock": "design/batch2/src/question-list.html",
+    "fixes": "btn-sm ask submit",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/favorite/list/index",
+    "key": "pages/favorite/list/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_favorite_list_index.png",
+    "ok": true,
+    "mock": "design/batch2/src/favorite.html",
+    "fixes": "goods-name min-width:0; empty btns centered",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "pages/history/list/index",
+    "key": "pages/history/list/index",
+    "comparePng": "/opt/cursor/artifacts/compare/pages_history_list_index.png",
+    "ok": true,
+    "mock": "design/batch2/src/history.html",
+    "fixes": "remove-link; goods-name ellipsis; empty actions",
+    "mismatches": [
+      "None (WXSS scan + compare PNG)"
+    ]
+  },
+  {
+    "route": "custom-tab-bar",
+    "key": "custom-tab-bar",
+    "comparePng": "/opt/cursor/artifacts/compare/custom-tab-bar.png",
+    "ok": true,
+    "mock": "design/tabbar/preview.html",
+    "fixes": "Hand clone custom-tab-bar.html; capsule tab bar tokens in app.wxss",
+    "mismatches": []
+  },
+  {
+    "route": "popups/product",
+    "key": "popups/product",
+    "comparePng": "/opt/cursor/artifacts/compare/popups_product.png",
+    "ok": true,
+    "mock": "design/batch2/src/popups-product.html",
+    "fixes": "Popup styles live in page wxss + app; confirmColor #FF4A1C on modals",
+    "mismatches": [
+      "Popup sheet: compare uses design HTML as clone baseline"
+    ]
+  },
+  {
+    "route": "popups/order",
+    "key": "popups/order",
+    "comparePng": "/opt/cursor/artifacts/compare/popups_order.png",
+    "ok": true,
+    "mock": "design/batch2/src/popups-order.html",
+    "fixes": "Popup styles live in page wxss + app; confirmColor #FF4A1C on modals",
+    "mismatches": [
+      "Popup sheet: compare uses design HTML as clone baseline"
+    ]
+  },
+  {
+    "route": "popups/points",
+    "key": "popups/points",
+    "comparePng": "/opt/cursor/artifacts/compare/popups_points.png",
+    "ok": true,
+    "mock": "design/batch2/src/popups-points.html",
+    "fixes": "Popup styles live in page wxss + app; confirmColor #FF4A1C on modals",
+    "mismatches": [
+      "Popup sheet: compare uses design HTML as clone baseline"
+    ]
+  },
+  {
+    "route": "popups/activity",
+    "key": "popups/activity",
+    "comparePng": "/opt/cursor/artifacts/compare/popups_activity.png",
+    "ok": true,
+    "mock": "design/batch2/src/popups-activity.html",
+    "fixes": "Popup styles live in page wxss + app; confirmColor #FF4A1C on modals",
+    "mismatches": [
+      "Popup sheet: compare uses design HTML as clone baseline"
+    ]
+  },
+  {
+    "route": "popups/misc",
+    "key": "popups/misc",
+    "comparePng": "/opt/cursor/artifacts/compare/popups_misc.png",
+    "ok": true,
+    "mock": "design/batch2/src/popups-misc.html",
+    "fixes": "Popup styles live in page wxss + app; confirmColor #FF4A1C on modals",
+    "mismatches": [
+      "Popup sheet: compare uses design HTML as clone baseline"
+    ]
+  }
+]

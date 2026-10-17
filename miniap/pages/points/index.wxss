@@ -159,8 +159,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16rpx;
   margin: 20rpx 32rpx 0;
   padding: 28rpx;
+}
+
+.task-card > view:first-child {
+  flex: 1;
+  min-width: 0;
 }
 
 .task-title {
@@ -194,8 +200,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16rpx;
   padding: 24rpx 0;
   border-bottom: 2rpx solid #ECEDF0;
+}
+
+.ledger-row > view:first-child {
+  flex: 1;
+  min-width: 0;
 }
 
 .ledger-row:last-child {
@@ -206,6 +218,9 @@
   font-size: 26rpx;
   font-weight: 700;
   color: #15161C;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ledger-time {

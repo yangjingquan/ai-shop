@@ -22,7 +22,7 @@
         <view class="check-box {{anonymous ? 'check-box-on' : ''}}">{{anonymous ? '✓' : ''}}</view>
         <text>匿名评价</text>
       </view>
-      <button class="btn btn-primary btn-lg submit-btn" loading="{{submitting}}" bindtap="submit">发布评价</button>
+      <button class="btn btn-primary btn-lg btn-block submit-btn" loading="{{submitting}}" bindtap="submit">发布评价</button>
     </view>
   </view>
 </view>

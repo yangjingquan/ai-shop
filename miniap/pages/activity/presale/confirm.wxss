@@ -3,7 +3,7 @@
 .goods-card { display: flex; align-items: center; position: relative; padding: 20rpx; }
 .goods-image { width: 150rpx; height: 150rpx; flex: 0 0 auto; border-radius: 16rpx; background: #f1f3f5; }
 .goods-info { min-width: 0; flex: 1; margin-left: 18rpx; padding-right: 74rpx; }
-.goods-name { color: #15161C; font-size: 27rpx; line-height: 36rpx; font-weight: 900; }
+.goods-name { color: #15161C; font-size: 27rpx; line-height: 36rpx; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .goods-spec { margin-top: 8rpx; color: #9A9EA8; font-size: 22rpx; }
 .goods-price { margin-top: 18rpx; color: #FF4A1C; font-size: 25rpx; font-weight: 900; }
 .goods-price text { display: block; margin-top: 7rpx; color: #9A9EA8; font-size: 21rpx; font-weight: 700; }

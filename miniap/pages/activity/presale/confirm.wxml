@@ -1,4 +1,4 @@
-<view class="confirm-page" wx:if="{{activity && selectedSku}}">
+<view class="confirm-page page-shell pad-fixed-bottom-bar" wx:if="{{activity && selectedSku}}">
   <view class="goods-card card">
     <image class="goods-image" src="{{selectedSku.mainImage}}" mode="aspectFill" />
     <view class="goods-info">
@@ -43,7 +43,7 @@
 
   <view class="bottom-bar">
     <view><text class="bottom-label">定金</text><text class="bottom-price">¥{{quote ? quote.payableAmount : selectedSku.totalDepositText}}</text></view>
-    <button class="submit-btn" bindtap="submit" disabled="{{submitting}}">{{submitting ? '提交中...' : '立即支付定金'}}</button>
+    <button class="btn btn-primary btn-inline submit-btn" bindtap="submit" disabled="{{submitting}}">{{submitting ? '提交中...' : '立即支付定金'}}</button>
   </view>
 </view>
 

@@ -156,6 +156,9 @@
 }
 
 .member-cta {
+  width: 100%;
+  display: flex;
   margin: 28rpx 32rpx 0;
+  box-sizing: border-box;
   width: calc(100% - 64rpx);
 }

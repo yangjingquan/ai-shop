@@ -1,4 +1,4 @@
-<view wx:if="{{ product }}" class="detail page-shell">
+<view wx:if="{{ product }}" class="detail page-shell pad-fixed-bottom-bar">
   <swiper class="banner" autoplay circular indicator-dots>
     <swiper-item wx:for="{{ banners }}" wx:key="*this">
       <image src="{{ item }}" mode="aspectFill" />

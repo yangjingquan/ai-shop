@@ -26,6 +26,6 @@
       </view>
     </view>
 
-    <button wx:if="{{records.length}}" class="btn btn-ghost btn-lg records-footer-btn" bindtap="goRewards">查看我的奖品</button>
+    <button wx:if="{{records.length}}" class="btn btn-ghost btn-lg btn-block records-footer-btn" bindtap="goRewards">查看我的奖品</button>
   </view>
 </view>

@@ -49,7 +49,7 @@
         <view class="rule-line">{{activity.condition.firstOrderOnly ? '仅限首单用户' : activity.condition.repurchaseOnly ? '仅限复购用户' : '首单/复购均可参与'}}</view>
       </view>
 
-      <button class="btn btn-lg draw-btn {{activity.remainingChances <= 0 ? 'btn-disabled' : 'draw-btn-active'}}" loading="{{drawing}}" disabled="{{drawing || activity.remainingChances <= 0}}" bindtap="draw">{{drawing ? '抽奖中…' : activity.remainingChances > 0 ? '开始抽奖' : '今日次数已用完'}}</button>
+      <button class="btn btn-lg btn-block draw-btn {{activity.remainingChances <= 0 ? 'btn-disabled' : 'draw-btn-active'}}" loading="{{drawing}}" disabled="{{drawing || activity.remainingChances <= 0}}" bindtap="draw">{{drawing ? '抽奖中…' : activity.remainingChances > 0 ? '开始抽奖' : '今日次数已用完'}}</button>
       <view class="page-end-note">中奖后可在“我的奖品”查看；实物奖品支持抽奖后或稍后填写地址</view>
     </view>
   </view>
@@ -58,7 +58,7 @@
     <view class="rule-dialog card" catchtap="noop">
       <view class="dialog-title">活动规则</view>
       <scroll-view scroll-y class="dialog-scroll"><text>{{activity.ruleText || '每位用户每日可参与抽奖，奖品概率以页面公示为准。活动结束后未使用的抽奖机会失效。'}}</text></scroll-view>
-      <button class="btn btn-ghost" bindtap="hideRules">知道了</button>
+      <button class="btn btn-ghost btn-block" bindtap="hideRules">知道了</button>
     </view>
   </view>
 

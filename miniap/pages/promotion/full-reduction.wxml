@@ -27,6 +27,6 @@
       <text class="empty-card-text">当前暂无可参与活动</text>
     </view>
 
-    <button class="btn btn-primary btn-lg promotion-cta" bindtap="goCart">去购物车凑单</button>
+    <button class="btn btn-primary btn-lg btn-block promotion-cta" bindtap="goCart">去购物车凑单</button>
   </view>
 </view>
