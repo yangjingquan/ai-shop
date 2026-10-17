@@ -3,7 +3,7 @@
 | Page | Mismatches found | Fixes made | Compare PNG |
 |------|------------------|------------|-------------|
 | `pages/home/index` | None (WXSS scan + compare PNG) | Tab pad; presale entry price+CTA row align; marketing zone cards | `/opt/cursor/artifacts/compare/pages_home_index.png` |
-| `pages/topic/detail` | None (WXSS scan + compare PNG) | Inset 16:9 cover card + gradient title overlay; section-title product grid (aspectFill square cards, 2-line ellipsis, + CTA); 24rpx bottom safe spacer | `/opt/cursor/artifacts/compare/pages_topic_detail.png` |
+| `pages/topic/detail` | None (WXSS scan + compare PNG) | Inset cover card; section-title product grid; bottom safe spacer | `/opt/cursor/artifacts/compare/pages_topic_detail.png` |
 | `pages/recommend/index` | None (WXSS scan + compare PNG) | Hero gradient + product grid spacing per mock | `/opt/cursor/artifacts/compare/pages_recommend_index.png` |
 | `pages/category/index` | None (WXSS scan + compare PNG) | Tab pad (no padding-bottom:0 shorthand); category layout | `/opt/cursor/artifacts/compare/pages_category_index.png` |
 | `pages/cart/index` | Tab page missing pad-custom-tab-bar; Content may sit under fixed bottom UI (add pad-fixed-bottom-bar or padding-bottom) | Extra cart pad for guess-you-like + checkout + tab bar | `/opt/cursor/artifacts/compare/pages_cart_index.png` |

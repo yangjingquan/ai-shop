@@ -16,7 +16,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_topic_detail.png",
     "ok": true,
     "mock": "design/batch2/src/topic-detail.html",
-    "fixes": "btn-block topic CTA; hero + block layout; empty-state centered btn",
+    "fixes": "Inset cover card; section-title product grid; bottom safe spacer",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]

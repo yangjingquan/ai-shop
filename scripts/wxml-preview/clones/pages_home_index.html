@@ -281,46 +281,27 @@ button.btn-sm.btn-ghost {
   color: #fff;
 }
 
-.pad-custom-tab-bar {
-  /* Fallback first: WXSS may drop the whole rule if calc(var()+env()) is invalid */
-  padding-bottom: 100px;
-  padding-bottom: calc(100px + constant(safe-area-inset-bottom));
-  padding-bottom: calc(100px + env(safe-area-inset-bottom));
-  box-sizing: border-box;
-}
-
-/* Tab roots must not use padding shorthand with bottom 0 — it overrides this utility (see order/list, category). */
-.home.pad-custom-tab-bar,
-.cat-page.pad-custom-tab-bar,
-.order-list-page.pad-custom-tab-bar,
-.my-page.pad-custom-tab-bar {
-  padding-bottom: 100px;
-  padding-bottom: calc(100px + constant(safe-area-inset-bottom));
-  padding-bottom: calc(100px + env(safe-area-inset-bottom));
-}
-
+/* Tab pages: bottom clearance is ONLY via .tab-bottom-spacer / .cart-bottom-spacer (no padding-bottom here — stacking caused ~2× gap). */
+.pad-custom-tab-bar,
 .pad-custom-tab-bar-cart {
-  padding-bottom: 180px;
-  padding-bottom: calc(180px + constant(safe-area-inset-bottom));
-  padding-bottom: calc(180px + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
-/* In-flow scroll extent (reliable vs page padding alone): tab 36+124 + margin */
+/* 18px tab float offset + 62px bar + 12px breathing room (+ safe area) */
 .tab-bottom-spacer {
   width: 100%;
-  height: 100px;
-  height: calc(100px + constant(safe-area-inset-bottom));
-  height: calc(100px + env(safe-area-inset-bottom));
+  height: 92px;
+  height: calc(92px + constant(safe-area-inset-bottom));
+  height: calc(92px + env(safe-area-inset-bottom));
   flex-shrink: 0;
 }
 
-/* Checkout bar (~84px) + tab-bar-inset (36+124) + safe area */
+/* Tab inset (36+124) + checkout bar (~84px) + 12px above checkout */
 .cart-bottom-spacer {
   width: 100%;
-  height: 180px;
-  height: calc(180px + constant(safe-area-inset-bottom));
-  height: calc(180px + env(safe-area-inset-bottom));
+  height: 176px;
+  height: calc(176px + constant(safe-area-inset-bottom));
+  height: calc(176px + env(safe-area-inset-bottom));
   flex-shrink: 0;
 }
 
@@ -1729,12 +1710,112 @@ page {
 .group-card { background: linear-gradient(145deg, #201f1c, #37302a); }
 .flash-card { background: linear-gradient(145deg, #ffead7, #ffb86e); box-shadow: none; }
 .presale-entry, .points-entry, .full-reduction-entry, .lottery-entry, .referral-entry { border-radius: 12px; }
-.topic-entry { margin-top: 8px; }
-.topic-card { display: flex; align-items: center; gap: 10px; min-height: 80px; margin: 8px 0; padding: 8px; border-radius: 16px; background: #fff; box-shadow: 0 4px 12px rgba(20, 22, 28, 0.04); }
-.topic-card-image, .topic-cover-placeholder { flex: 0 0 auto; width: 90px; height: 66px; border-radius: 12px; background: linear-gradient(135deg, #EDEEF2, #D5D8E0); }
-.topic-card-copy { flex: 1; min-width: 0; }
-.topic-card-copy view { overflow: hidden; color: #15161C; font-size: 14px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-.topic-card-copy text { display: block; overflow: hidden; margin-top: 6px; color: #9A9EA8; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.topic-story-scroll {
+  width: 100%;
+  margin-top: 10px;
+  white-space: nowrap;
+}
+
+.topic-story-track {
+  display: inline-flex;
+  gap: 10px;
+  padding-right: 2px;
+}
+
+.topic-story-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.topic-story-card {
+  position: relative;
+  flex: 0 0 auto;
+  width: 310px;
+  height: 150px;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 6px 14px rgba(20, 22, 28, 0.14);
+  box-sizing: border-box;
+}
+
+.topic-story-card-full {
+  width: 100%;
+}
+
+.topic-story-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.topic-story-media-placeholder {
+  background: linear-gradient(135deg, #2B2E3A 0%, #FF4A1C 100%);
+}
+
+.topic-story-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(21, 22, 28, 0.05) 0%, rgba(21, 22, 28, 0.35) 55%, rgba(21, 22, 28, 0.78) 100%);
+  pointer-events: none;
+}
+
+.topic-story-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 14px 16px;
+  box-sizing: border-box;
+}
+
+.topic-story-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.topic-story-title {
+  color: #fff;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.25px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topic-story-summary {
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.topic-story-pill {
+  flex-shrink: 0;
+  padding: 7px 13px;
+  border-radius: 499.5px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  white-space: nowrap;
+}
 
 </style></head><body><div class="home pad-custom-tab-bar">
   <div class="home-loading">
@@ -1788,10 +1869,69 @@ page {
         <div class="lottery-entry"><div class="wx-image-stub"></div><div class="lottery-entry-copy"><div class="lottery-entry-kicker">DAILY SURPRISE</div><div class="lottery-entry-title">互动抽奖盲盒</div><div class="lottery-entry-desc">登录即可参与 · 每日 1 次</div></div><div class="lottery-entry-arrow">去抽奖 ›</div></div>
         <div class="section-head deal-head"><div class="section-title">限时会场</div><div class="more">示例文案</div></div>
         <div class="deal-row 示例"><div class="group-card"><div class="deal-title">团购商品</div><div class="deal-desc">N人成团·省更多</div><div class="avatars"><div></div><div></div><div></div></div><div class="group-price">享受拼团价</div><div class="headphone"></div></div><div class="flash-card"><div class="flash-copy"><div class="flash-head"><div class="deal-title dark">秒杀专场</div><span class="flash-arrow">›</span></div><div class="flash-status">示例文案</div><div class="flash-product">示例文案</div><div class="flash-price-row"><span class="flash-price">¥29.9</span><span class="flash-price-suffix">起</span></div><div class="flash-countdown"><span class="flash-countdown-label">示例文案</span><span class="flash-time">示例文案</span></div></div><div class="speaker"></div></div></div>
-        <div class="referral-entry"><div class="referral-entry-copy"><div class="referral-entry-kicker">SHARE &amp; REWARD</div><div class="referral-entry-title">分享有礼·老带新返券</div><div class="referral-entry-desc">邀请好友首单成功，按阶梯领取店铺券</div></div><div class="referral-entry-arrow">›</div></div>
+        <div class="referral-entry"><div class="referral-entry-copy"><div class="referral-entry-kicker">SHARE & REWARD</div><div class="referral-entry-title">分享有礼·老带新返券</div><div class="referral-entry-desc">邀请好友首单成功，按阶梯领取店铺券</div></div><div class="referral-entry-arrow">›</div></div>
       </div>
 
-      <div class="topic-entry"><div class="section-head"><div><div class="section-title">示例文案</div><div class="section-subtitle">示例文案</div></div><div class="section-note">STORIES</div></div><div class="topic-card"><div class="wx-image-stub"></div><div class="topic-cover-placeholder"></div><div class="topic-card-copy"><div>示例文案</div><span>示例　›</span></div></div></div>
+      <div class="topic-entry">
+        <div class="section-head">
+          <div>
+            <div class="section-title">示例文案</div>
+            <div class="section-subtitle">示例文案</div>
+          </div>
+          <div class="section-note">STORIES</div>
+        </div>
+        <div class="wx-scroll-view"
+         
+          class="topic-story-scroll"
+          scroll-x
+          enhanced
+         
+         
+        >
+          <div class="topic-story-track">
+            <div
+              class="topic-story-card"
+             
+             
+             
+             
+             
+            >
+              <div class="wx-image-stub"></div>
+              <div class="topic-story-media topic-story-media-placeholder"></div>
+              <div class="topic-story-shade"></div>
+              <div class="topic-story-body">
+                <div class="topic-story-copy">
+                  <div class="topic-story-title">示例文案</div>
+                  <div class="topic-story-summary">示例</div>
+                </div>
+                <div class="topic-story-pill">去看看 ›</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="topic-story-stack">
+          <div
+            class="topic-story-card topic-story-card-full"
+           
+           
+           
+           
+           
+          >
+            <div class="wx-image-stub"></div>
+            <div class="topic-story-media topic-story-media-placeholder"></div>
+            <div class="topic-story-shade"></div>
+            <div class="topic-story-body">
+              <div class="topic-story-copy">
+                <div class="topic-story-title">示例文案</div>
+                <div class="topic-story-summary">示例</div>
+              </div>
+              <div class="topic-story-pill">去看看 ›</div>
+            </div>
+          </div>
+        </div>
+      </div>
     
 
     

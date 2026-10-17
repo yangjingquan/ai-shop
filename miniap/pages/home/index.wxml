@@ -53,7 +53,66 @@
         <view wx:if="{{referralCampaign}}" class="referral-entry" bindtap="onReferral"><view class="referral-entry-copy"><view class="referral-entry-kicker">SHARE & REWARD</view><view class="referral-entry-title">分享有礼·老带新返券</view><view class="referral-entry-desc">邀请好友首单成功，按阶梯领取店铺券</view></view><view class="referral-entry-arrow">›</view></view>
       </view>
 
-      <view wx:elif="{{module.code === 'TOPIC_ENTRY' && module.topicPages.length}}" class="topic-entry"><view class="section-head"><view><view class="section-title">{{module.title}}</view><view wx:if="{{module.subtitle}}" class="section-subtitle">{{module.subtitle}}</view></view><view class="section-note">STORIES</view></view><view class="topic-card" wx:for="{{module.topicPages}}" wx:for-item="topic" wx:key="id" bindtap="onTopic" data-slug="{{topic.slug}}"><image wx:if="{{topic.coverImage}}" class="topic-card-image" src="{{topic.coverImage}}" mode="aspectFill" /><view wx:else class="topic-cover-placeholder"></view><view class="topic-card-copy"><view>{{topic.title}}</view><text>{{topic.summary || '查看专题内容'}}　›</text></view></view></view>
+      <view wx:elif="{{module.code === 'TOPIC_ENTRY' && module.topicPages.length}}" class="topic-entry">
+        <view class="section-head">
+          <view>
+            <view class="section-title">{{module.title}}</view>
+            <view wx:if="{{module.subtitle}}" class="section-subtitle">{{module.subtitle}}</view>
+          </view>
+          <view class="section-note">STORIES</view>
+        </view>
+        <scroll-view
+          wx:if="{{module.topicPages.length > 1}}"
+          class="topic-story-scroll"
+          scroll-x
+          enhanced
+          show-scrollbar="{{false}}"
+          aria-label="专题故事，左右滑动查看更多"
+        >
+          <view class="topic-story-track">
+            <view
+              class="topic-story-card"
+              wx:for="{{module.topicPages}}"
+              wx:for-item="topic"
+              wx:key="id"
+              bindtap="onTopic"
+              data-slug="{{topic.slug}}"
+            >
+              <image wx:if="{{topic.coverImage}}" class="topic-story-media" src="{{topic.coverImage}}" mode="aspectFill" />
+              <view wx:else class="topic-story-media topic-story-media-placeholder"></view>
+              <view class="topic-story-shade"></view>
+              <view class="topic-story-body">
+                <view class="topic-story-copy">
+                  <view class="topic-story-title">{{topic.title}}</view>
+                  <view class="topic-story-summary">{{topic.summary || '查看专题内容'}}</view>
+                </view>
+                <view class="topic-story-pill">去看看 ›</view>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+        <view wx:else class="topic-story-stack">
+          <view
+            class="topic-story-card topic-story-card-full"
+            wx:for="{{module.topicPages}}"
+            wx:for-item="topic"
+            wx:key="id"
+            bindtap="onTopic"
+            data-slug="{{topic.slug}}"
+          >
+            <image wx:if="{{topic.coverImage}}" class="topic-story-media" src="{{topic.coverImage}}" mode="aspectFill" />
+            <view wx:else class="topic-story-media topic-story-media-placeholder"></view>
+            <view class="topic-story-shade"></view>
+            <view class="topic-story-body">
+              <view class="topic-story-copy">
+                <view class="topic-story-title">{{topic.title}}</view>
+                <view class="topic-story-summary">{{topic.summary || '查看专题内容'}}</view>
+              </view>
+              <view class="topic-story-pill">去看看 ›</view>
+            </view>
+          </view>
+        </view>
+      </view>
     </block>
 
     <block wx:if="{{keyword}}">
