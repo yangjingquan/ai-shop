@@ -82,6 +82,9 @@
     </view>
   </view>
 
+  <view wx:if="{{items.length > 0}}" class="cart-bottom-spacer" aria-hidden="true"></view>
+  <view wx:elif="{{items.length === 0}}" class="tab-bottom-spacer" aria-hidden="true"></view>
+
   <view class="bottom-bar" wx:if="{{items.length > 0}}">
     <view class="select-all" bindtap="selectAll" aria-role="checkbox" aria-checked="{{allSelected}}" aria-label="全选商品">
       <view class="check-btn {{allSelected ? 'checked' : ''}}"><image wx:if="{{allSelected}}" class="check-icon" src="/assets/icons/check-primary.png" mode="aspectFit" /></view><text>全选</text>

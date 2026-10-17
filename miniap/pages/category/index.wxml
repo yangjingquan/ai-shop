@@ -108,4 +108,5 @@
       </scroll-view>
     </view>
   </view>
+  <view class="tab-bottom-spacer" aria-hidden="true"></view>
 </view>

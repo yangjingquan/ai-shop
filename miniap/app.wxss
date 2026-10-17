@@ -274,7 +274,10 @@ button.btn-sm.btn-ghost {
 }
 
 .pad-custom-tab-bar {
-  padding-bottom: var(--tab-page-pad-bottom);
+  /* Fallback first: WXSS may drop the whole rule if calc(var()+env()) is invalid */
+  padding-bottom: 200rpx;
+  padding-bottom: calc(200rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
@@ -283,12 +286,34 @@ button.btn-sm.btn-ghost {
 .cat-page.pad-custom-tab-bar,
 .order-list-page.pad-custom-tab-bar,
 .my-page.pad-custom-tab-bar {
-  padding-bottom: var(--tab-page-pad-bottom);
+  padding-bottom: 200rpx;
+  padding-bottom: calc(200rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
 }
 
 .pad-custom-tab-bar-cart {
-  padding-bottom: var(--cart-page-pad-bottom);
+  padding-bottom: 360rpx;
+  padding-bottom: calc(360rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(360rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
+}
+
+/* In-flow scroll extent (reliable vs page padding alone): tab 36+124 + margin */
+.tab-bottom-spacer {
+  width: 100%;
+  height: 200rpx;
+  height: calc(200rpx + constant(safe-area-inset-bottom));
+  height: calc(200rpx + env(safe-area-inset-bottom));
+  flex-shrink: 0;
+}
+
+/* Checkout bar (~168rpx) + tab-bar-inset (36+124) + safe area */
+.cart-bottom-spacer {
+  width: 100%;
+  height: 360rpx;
+  height: calc(360rpx + constant(safe-area-inset-bottom));
+  height: calc(360rpx + env(safe-area-inset-bottom));
+  flex-shrink: 0;
 }
 
 .pad-fixed-bottom-bar {

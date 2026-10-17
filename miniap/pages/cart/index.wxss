@@ -478,7 +478,6 @@ page {
 
 .guess-section {
   margin-top: 44rpx;
-  padding-bottom: 48rpx;
 }
 
 .guess-head {

@@ -5,7 +5,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_home_index.png",
     "ok": true,
     "mock": "design/src/home.html",
-    "fixes": "Tab pad-custom-tab-bar; coupon popup btn-block; hero/product tokens per mock",
+    "fixes": "Tab pad; presale entry price+CTA row align; marketing zone cards",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]
@@ -49,7 +49,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_cart_index.png",
     "ok": true,
     "mock": "design/src/cart.html",
-    "fixes": "pad-custom-tab-bar-cart + checkout bar clearance",
+    "fixes": "Extra cart pad for guess-you-like + checkout + tab bar",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]
@@ -82,9 +82,9 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_address_list.png",
     "ok": true,
     "mock": "design/batch2/src/address-list.html",
-    "fixes": "btn-block add; fixed bottom bar + page padding-bottom",
+    "fixes": "btn-block add; pad-fixed-bottom-bar + fixed bottom bar",
     "mismatches": [
-      "Content may sit under fixed bottom UI (add pad-fixed-bottom-bar or padding-bottom)"
+      "None (WXSS scan + compare PNG)"
     ]
   },
   {
@@ -126,7 +126,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_coupon_list.png",
     "ok": true,
     "mock": "design/batch2/src/coupon-list.html",
-    "fixes": "Ticket card layout; inline sm CTA in row",
+    "fixes": "Inset hero; spaced tab chips; centered empty state",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]
@@ -137,7 +137,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_activity_referral_index.png",
     "ok": true,
     "mock": "design/batch2/src/referral-index.html",
-    "fixes": "btn-block lg CTAs; green hero + tier cards",
+    "fixes": "Inset hero; SHARE & REWARD text; body lift; btn-block CTAs",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]
@@ -205,7 +205,7 @@
     "mock": "design/batch2/src/order-success.html",
     "fixes": "Full-width order-btn/repurchase-btn; footer text actions centered",
     "mismatches": [
-      "Flex row may collapse text (consider min-width:0 on flex children)"
+      "None (WXSS scan + compare PNG)"
     ]
   },
   {
@@ -236,7 +236,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_points_mall.png",
     "ok": true,
     "mock": "design/batch2/src/points-mall.html",
-    "fixes": "2-col grid; stacked card meta line + btn-block redeem",
+    "fixes": "Shared inset hero; page-body-lift; grid card layout",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]
@@ -269,7 +269,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_group-buy_list.png",
     "ok": true,
     "mock": "design/batch2/src/groupbuy-list.html",
-    "fixes": "Search btn-sm; product cards",
+    "fixes": "Shared inset hero + body lift; search row",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]
@@ -291,7 +291,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_activity_seckill_list.png",
     "ok": true,
     "mock": "design/batch2/src/seckill-list.html",
-    "fixes": "Hero white text; session chips; buy-pill",
+    "fixes": "Inset hero; chip ellipsis; countdown days+time; lifted session card",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]
@@ -302,7 +302,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_activity_presale_list.png",
     "ok": true,
     "mock": "design/batch2/src/presale-list.html",
-    "fixes": "Purple presale cards",
+    "fixes": "Shared inset hero + lifted content section",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]
@@ -335,7 +335,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_notification_list.png",
     "ok": true,
     "mock": "design/batch2/src/notification.html",
-    "fixes": "Read-all text action width auto",
+    "fixes": "Hero top-row + read-all pill; body lift",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]
@@ -357,7 +357,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_promotion_full-reduction.png",
     "ok": true,
     "mock": "design/batch2/src/full-reduction.html",
-    "fixes": "btn-block promotion CTA",
+    "fixes": "Shared inset hero + page-body-lift; btn-block CTA",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]
@@ -412,7 +412,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_favorite_list_index.png",
     "ok": true,
     "mock": "design/batch2/src/favorite.html",
-    "fixes": "goods-name min-width:0; empty btns centered",
+    "fixes": "Hero top-row count pill; body lift; goods ellipsis",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]
@@ -423,7 +423,7 @@
     "comparePng": "/opt/cursor/artifacts/compare/pages_history_list_index.png",
     "ok": true,
     "mock": "design/batch2/src/history.html",
-    "fixes": "remove-link; goods-name ellipsis; empty actions",
+    "fixes": "Hero top-row 清空 pill; body lift; timeline list",
     "mismatches": [
       "None (WXSS scan + compare PNG)"
     ]

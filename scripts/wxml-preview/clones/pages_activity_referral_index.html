@@ -16,7 +16,7 @@ page {
   --tab-bar-inset: calc(var(--tab-bar-gap) + var(--tab-bar-height) + env(safe-area-inset-bottom));
   --tab-page-pad-bottom: calc(100px + env(safe-area-inset-bottom));
   --cart-checkout-height: 64px;
-  --cart-page-pad-bottom: calc(100px + var(--cart-checkout-height) + env(safe-area-inset-bottom));
+  --cart-page-pad-bottom: calc(100px + var(--cart-checkout-height) + 48px + env(safe-area-inset-bottom));
 }
 
 page, view, text { box-sizing: border-box; }
@@ -282,7 +282,10 @@ button.btn-sm.btn-ghost {
 }
 
 .pad-custom-tab-bar {
-  padding-bottom: var(--tab-page-pad-bottom);
+  /* Fallback first: WXSS may drop the whole rule if calc(var()+env()) is invalid */
+  padding-bottom: 100px;
+  padding-bottom: calc(100px + constant(safe-area-inset-bottom));
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
@@ -291,12 +294,34 @@ button.btn-sm.btn-ghost {
 .cat-page.pad-custom-tab-bar,
 .order-list-page.pad-custom-tab-bar,
 .my-page.pad-custom-tab-bar {
-  padding-bottom: var(--tab-page-pad-bottom);
+  padding-bottom: 100px;
+  padding-bottom: calc(100px + constant(safe-area-inset-bottom));
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
 }
 
 .pad-custom-tab-bar-cart {
-  padding-bottom: var(--cart-page-pad-bottom);
+  padding-bottom: 180px;
+  padding-bottom: calc(180px + constant(safe-area-inset-bottom));
+  padding-bottom: calc(180px + env(safe-area-inset-bottom));
   box-sizing: border-box;
+}
+
+/* In-flow scroll extent (reliable vs page padding alone): tab 36+124 + margin */
+.tab-bottom-spacer {
+  width: 100%;
+  height: 100px;
+  height: calc(100px + constant(safe-area-inset-bottom));
+  height: calc(100px + env(safe-area-inset-bottom));
+  flex-shrink: 0;
+}
+
+/* Checkout bar (~84px) + tab-bar-inset (36+124) + safe area */
+.cart-bottom-spacer {
+  width: 100%;
+  height: 180px;
+  height: calc(180px + constant(safe-area-inset-bottom));
+  height: calc(180px + env(safe-area-inset-bottom));
+  flex-shrink: 0;
 }
 
 .pad-fixed-bottom-bar {
@@ -454,12 +479,15 @@ button.btn-sm.btn-ghost {
 .img-placeholder-5 { background: linear-gradient(135deg, #F0E6FF, #D6C2FF); }
 .img-placeholder-6 { background: linear-gradient(135deg, #EDEEF2, #D5D8E0); }
 
-/* Page hero (batch-2 secondary pages) */
+/* Shared marketing / list page hero (inset card + lifted content below) */
 .page-hero {
   position: relative;
-  padding: 4px 16px 20px;
+  margin: 12px 12px 0;
+  padding: 20px 16px 32px;
+  border-radius: 16px;
   overflow: hidden;
   color: #fff;
+  box-sizing: border-box;
 }
 
 .page-hero-primary {
@@ -500,27 +528,72 @@ button.btn-sm.btn-ghost {
 .hero-kicker {
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 2.5px;
+  letter-spacing: 3px;
+  line-height: 1.45;
+  opacity: 0.7;
 }
 
 .hero-heading {
-  margin-top: 4px;
-  font-size: 28px;
+  margin-top: 8px;
+  font-size: 26px;
   font-weight: 900;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .hero-desc {
-  margin-top: 4px;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.55;
+  opacity: 0.85;
+}
+
+.hero-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hero-title-stack {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-title-stack .hero-heading {
+  margin-top: 6px;
+}
+
+.hero-action-pill,
+.hero-count-pill {
+  flex: none;
+  height: 28px;
+  margin-top: 14px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
   font-size: 12px;
-  line-height: 1.5;
-  opacity: 0.88;
+  font-weight: 700;
+  line-height: 26px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.hero-count-pill {
+  border: 0;
+  background: #fff;
+  color: #FF4A1C;
+  line-height: 28px;
+}
+
+.hero-chips-slot {
+  margin-top: 14px;
+  padding-bottom: 2px;
 }
 
 .hero-badge {
-  position: absolute;
-  right: 16px;
-  top: 60px;
+  /* legacy: use hero-count-pill in hero-top-row */
   padding: 4px 12px;
   border-radius: 14px;
   background: #fff;
@@ -533,7 +606,7 @@ button.btn-sm.btn-ghost {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 10px;
 }
 
 .hero-chip {
@@ -555,6 +628,20 @@ button.btn-sm.btn-ghost {
 
 .page-body {
   padding: 0 16px 24px;
+  box-sizing: border-box;
+}
+
+/* Positive gap after inset page-hero (do not use negative overlap) */
+.page-body-lift {
+  margin-top: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.page-body-lift > .section-title:first-child,
+.page-body-lift > .page-section-head:first-child,
+.page-body-lift > .mall-notice:first-child {
+  margin-top: 0;
 }
 
 .page-section-head {
@@ -735,10 +822,9 @@ button.btn-sm.btn-ghost {
 }
 
 .referral-body {
-  padding: 0 16px;
-  margin-top: -8px;
+  padding: 0 16px 24px;
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .landing-card,
@@ -974,13 +1060,13 @@ button.btn-sm.btn-ghost {
 </style></head><body><div class="referral-page page-shell">
   <div class="page-hero page-hero-green referral-hero">
     <div class="hero-blob"></div>
-    <div class="hero-kicker">SHARE &amp; REWARD</div>
+    <div class="hero-kicker">SHARE & REWARD</div>
     <div class="hero-heading">分享有礼·老带新返券</div>
     <div class="hero-desc">示例</div>
     <div class="safe-line">◉ 安全合规 · 无强制分享 · 无现金返利</div>
   </div>
 
-  <div class="referral-body">
+  <div class="referral-body page-body-lift">
     <div class="landing-card card">
       <div class="landing-kicker">NEW USER BENEFIT</div>
       <div class="landing-title">新用户专享券</div>
