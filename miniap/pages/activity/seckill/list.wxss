@@ -1,27 +1,28 @@
 .seckill-page {
+  width: 100%;
   min-height: 100vh;
   padding-bottom: 48rpx;
   background: #F6F6F8;
   color: #15161C;
+  box-sizing: border-box;
 }
 
 .seckill-hero {
-  margin-bottom: 0;
-  padding-bottom: 32rpx;
+  padding-bottom: 0;
   color: #fff;
 }
 
-.seckill-hero .hero-title,
-.seckill-hero .hero-subtitle,
-.seckill-hero .hero-countdown-label,
-.seckill-hero .countdown-value,
-.seckill-hero .hero-countdown-hint {
-  color: #fff;
-}
-
-.seckill-hero .hero-copy {
+.seckill-hd {
   position: relative;
   z-index: 1;
+  padding: 12rpx 32rpx 40rpx;
+}
+
+.seckill-kicker {
+  font-size: 20rpx;
+  font-weight: 800;
+  letter-spacing: 5rpx;
+  color: #FFD23F;
 }
 
 .hero-kicker-row {
@@ -30,33 +31,23 @@
   gap: 16rpx;
 }
 
-.hero-kicker {
-  font-size: 20rpx;
-  font-weight: 800;
-  letter-spacing: 4rpx;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.hero-venue-tag {
-  margin: 0;
-}
-
-.hero-title {
-  margin-top: 12rpx;
+.seckill-title {
+  margin-top: 8rpx;
   font-size: 56rpx;
   font-weight: 900;
-  line-height: 1.15;
+  line-height: 1.2;
+  color: #fff;
 }
 
-.hero-subtitle {
+.seckill-subtitle {
   margin-top: 8rpx;
-  font-size: 26rpx;
-  opacity: 0.85;
+  font-size: 24rpx;
+  line-height: 1.5;
+  opacity: 0.88;
+  color: #fff;
 }
 
-.hero-countdown-card {
-  position: relative;
-  z-index: 1;
+.seckill-countdown {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -67,18 +58,19 @@
   background: rgba(0, 0, 0, 0.18);
 }
 
-.hero-countdown-left {
+.seckill-countdown-main {
   flex: 1;
   min-width: 0;
 }
 
-.hero-countdown-label {
+.seckill-countdown-label {
   display: flex;
   align-items: center;
   font-size: 24rpx;
+  color: #fff;
 }
 
-.hero-countdown-dot {
+.seckill-countdown-dot {
   width: 12rpx;
   height: 12rpx;
   margin-left: 12rpx;
@@ -86,42 +78,38 @@
   background: #FFD23F;
 }
 
-.countdown-value {
+.seckill-countdown-value {
   display: block;
   margin-top: 8rpx;
   font-size: 52rpx;
   font-weight: 900;
   font-family: 'DIN Alternate', monospace;
   letter-spacing: 4rpx;
+  color: #fff;
 }
 
-.hero-countdown-hint {
+.seckill-countdown-hint {
+  flex: none;
   font-size: 22rpx;
   opacity: 0.85;
+  color: #fff;
   white-space: nowrap;
 }
 
-.session-chips {
+.session-chips-row {
   position: relative;
   z-index: 1;
-  width: 100%;
-  height: 152rpx;
-  margin-top: 24rpx;
-  box-sizing: border-box;
-}
-
-.session-chip-list {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   gap: 16rpx;
-  height: 152rpx;
-  padding-right: 32rpx;
-  box-sizing: border-box;
+  padding: 0 32rpx 32rpx;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .session-chip {
-  flex: none;
+  flex: 0 0 192rpx;
   width: 192rpx;
   padding: 16rpx;
   border-radius: 28rpx;
@@ -163,26 +151,21 @@
   padding: 28rpx;
 }
 
-.session-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18rpx;
-}
-
-.session-title-wrap {
-  min-width: 0;
+.session-card-head {
+  margin-bottom: 12rpx;
 }
 
 .session-title-line {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12rpx;
 }
 
 .session-label {
   font-size: 32rpx;
   font-weight: 800;
+  color: #15161C;
 }
 
 .session-live {
@@ -202,28 +185,23 @@
 }
 
 .session-desc {
+  display: block;
   margin-top: 12rpx;
   color: #9A9EA8;
   font-size: 24rpx;
   line-height: 1.5;
 }
 
-.session-divider {
-  height: 1rpx;
-  margin: 20rpx 0 0;
-  background: #ECEDF0;
-}
-
-.seckill-product {
+.seckill-product-row {
   display: flex;
   gap: 24rpx;
   padding: 24rpx 0;
   border-top: 1rpx solid #ECEDF0;
 }
 
-.seckill-product:first-child {
+.seckill-product-row:first-child {
   border-top: 0;
-  padding-top: 20rpx;
+  padding-top: 8rpx;
 }
 
 .product-image {
@@ -235,21 +213,20 @@
 }
 
 .product-content {
-  min-width: 0;
   flex: 1;
+  min-width: 0;
 }
 
 .product-name {
-  display: -webkit-box;
-  overflow: hidden;
+  display: block;
   font-size: 28rpx;
   font-weight: 700;
+  color: #15161C;
   line-height: 1.35;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
 .product-spec {
+  display: block;
   margin-top: 6rpx;
   color: #9A9EA8;
   font-size: 24rpx;
@@ -302,43 +279,40 @@
 
 .stock-track {
   height: 12rpx;
-  margin: 12rpx 0;
+  margin: 12rpx 0 8rpx;
   border-radius: 8rpx;
-  background: #FFE9B0;
+  background: #FFF1EB;
   overflow: hidden;
 }
 
 .stock-fill {
   height: 100%;
   border-radius: 8rpx;
-  background: linear-gradient(90deg, #FF6A2B, #FF4A1C);
+  background: linear-gradient(90deg, #FF8A00, #FF4A1C);
 }
 
-.buy-button {
+.product-cta-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.buy-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: auto;
-  flex: none;
   min-width: 160rpx;
   height: 60rpx;
-  margin: 0 0 0 auto;
   padding: 0 28rpx;
   border-radius: 30rpx;
   color: #fff;
   background: linear-gradient(90deg, #FF4A1C, #FF8A00);
   font-size: 24rpx;
   font-weight: 700;
-  line-height: normal;
 }
 
-.buy-button.disabled {
+.buy-pill-disabled {
   background: #E5E6EA;
   color: #A9ACB4;
-}
-
-.buy-button::after {
-  border: none;
 }
 
 .empty-inner,

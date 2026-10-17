@@ -1,7 +1,16 @@
 .my-page {
+  width: 100%;
   min-height: 100vh;
-  padding: 0 32rpx;
+  padding: 0;
   background: #F6F6F8;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.my-body {
+  width: 100%;
+  padding: 0 32rpx;
+  box-sizing: border-box;
 }
 
 .my-hero {
@@ -30,7 +39,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 32rpx 28rpx 28rpx 20rpx;
+  padding: 16rpx 0 0;
 }
 
 .avatar-btn {
@@ -108,7 +117,7 @@
 
 .member-tier-label {
   margin-right: 8rpx;
-  color: rgba(255, 255, 255, 0.95);
+  color: #fff;
   font-size: 20rpx;
   font-weight: 700;
   letter-spacing: 1rpx;
@@ -151,9 +160,11 @@
   justify-content: space-between;
   width: 100%;
   min-height: 88rpx;
+  margin-top: 32rpx;
   padding: 28rpx 0 8rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.25);
   font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.95);
+  color: #fff;
 }
 
 .phone-bound {
@@ -203,11 +214,13 @@
   z-index: 2;
   display: flex;
   align-items: stretch;
+  width: 100%;
   margin: -108rpx 0 24rpx;
   overflow: hidden;
   border-radius: 40rpx;
   background: #fff;
   box-shadow: 0 20rpx 60rpx rgba(255, 74, 28, 0.12);
+  box-sizing: border-box;
 }
 
 .points-card-main {
@@ -241,6 +254,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  flex: none;
   width: 260rpx;
   padding: 32rpx 28rpx;
   background: linear-gradient(160deg, #FFD23F, #FFB400);
@@ -248,6 +262,7 @@
   font-size: 30rpx;
   font-weight: 900;
   gap: 8rpx;
+  box-sizing: border-box;
 }
 
 .points-day-desc {
@@ -257,8 +272,10 @@
 }
 
 .service-section {
+  width: 100%;
   margin-bottom: 20rpx;
   padding: 28rpx;
+  box-sizing: border-box;
 }
 
 .section-heading {
@@ -291,11 +308,18 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 8rpx 4rpx 12rpx;
+  width: 100%;
+  padding: 8rpx 0 12rpx;
   color: #5B5F6B;
   font-size: 24rpx;
   line-height: 1.35;
   text-align: center;
+  background: transparent;
+}
+
+.service-label {
+  display: block;
+  width: 100%;
 }
 
 .service-item-hover {
@@ -324,6 +348,7 @@
   height: 88rpx;
   margin: 0 auto 12rpx;
   border-radius: 30rpx;
+  flex: none;
 }
 
 .service-icon::before,
@@ -442,14 +467,17 @@
 }
 
 .asset-section {
+  width: 100%;
   margin-bottom: 24rpx;
   padding: 28rpx;
+  box-sizing: border-box;
 }
 
 .asset-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20rpx;
+  width: 100%;
 }
 
 .asset-item {
@@ -462,6 +490,33 @@
   background: #F6F6F8;
   color: #15161C;
   box-sizing: border-box;
+  width: 100%;
+}
+
+.asset-thumb {
+  width: 72rpx;
+  height: 72rpx;
+  flex: none;
+  border-radius: 24rpx;
+}
+
+.asset-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.asset-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #15161C;
+}
+
+.asset-desc {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: #9A9EA8;
 }
 
 .asset-item-hover {

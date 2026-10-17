@@ -53,6 +53,7 @@ button.btn-inline,
 }
 
 .page-shell {
+  width: 100%;
   min-height: 100vh;
   background: #F6F6F8;
   box-sizing: border-box;
@@ -156,7 +157,9 @@ button.btn-inline,
   color: #15161C;
 }
 
-.btn-primary {
+.btn-primary,
+button.btn-primary,
+button.btn.btn-primary {
   height: 96rpx;
   border-radius: 48rpx;
   background: linear-gradient(90deg, #FF4A1C, #FF8A00);
@@ -220,11 +223,19 @@ button.btn-inline,
   font-size: 28rpx;
 }
 
-.btn-sm {
+.btn-sm,
+button.btn-sm {
   height: 60rpx;
   border-radius: 30rpx;
   font-size: 24rpx;
   padding: 0 28rpx;
+}
+
+button.btn-sm.btn-primary,
+button.btn-sm.btn-ghost {
+  display: inline-flex;
+  width: auto;
+  flex: none;
 }
 
 .tag {

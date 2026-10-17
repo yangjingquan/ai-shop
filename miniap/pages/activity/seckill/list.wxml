@@ -1,63 +1,77 @@
 <view class="seckill-page page-shell">
   <view class="seckill-hero page-hero page-hero-dark">
     <view class="hero-blob"></view>
-    <view class="hero-copy">
+    <view class="seckill-hd">
       <view class="hero-kicker-row">
-        <text class="hero-kicker">LIMITED TIME SALE</text>
+        <text class="seckill-kicker">LIMITED TIME SALE</text>
         <text class="hero-venue-tag tag tag-yellow">限时会场</text>
       </view>
-      <view class="hero-title">秒杀限时折扣</view>
-      <view class="hero-subtitle">精选好物，限时低价抢</view>
-    </view>
-    <view wx:if="{{activeSession}}" class="hero-countdown-card">
-      <view class="hero-countdown-left">
-        <view class="hero-countdown-label">
-          <text>{{activeSession.status === 0 ? '距开始' : activeSession.status === 1 ? '距结束' : '本场已结束'}}</text>
-          <text class="hero-countdown-dot"></text>
+      <view class="seckill-title">秒杀限时折扣</view>
+      <view class="seckill-subtitle">精选好物，限时低价抢</view>
+      <view wx:if="{{activeSession}}" class="seckill-countdown">
+        <view class="seckill-countdown-main">
+          <view class="seckill-countdown-label">
+            <text>{{activeSession.status === 0 ? '距开始' : activeSession.status === 1 ? '距结束' : '本场已结束'}}</text>
+            <text class="seckill-countdown-dot"></text>
+          </view>
+          <text wx:if="{{activeSession.status !== 2}}" class="seckill-countdown-value">{{activeSession.countdownText}}</text>
         </view>
-        <text wx:if="{{activeSession.status !== 2}}" class="countdown-value">{{activeSession.countdownText}}</text>
+        <text class="seckill-countdown-hint">先到先得 · 售完即止</text>
       </view>
-      <text class="hero-countdown-hint">先到先得 · 售完即止</text>
     </view>
-    <scroll-view wx:if="{{sessions.length}}" class="session-chips" scroll-x enhanced show-scrollbar="{{false}}">
-      <view class="session-chip-list">
-        <view
-          wx:for="{{sessions}}"
-          wx:key="id"
-          class="session-chip {{activeIndex === index ? 'session-chip-active' : ''}}"
-          data-index="{{index}}"
-          bindtap="selectSession"
-        >
-          <text class="session-chip-name">● {{item.name}}</text>
-          <text class="session-chip-time">{{item.startText}}</text>
-          <text class="session-chip-status">{{item.status === 0 ? '即将开始' : item.status === 1 ? '抢购中' : '已结束'}}</text>
-        </view>
+    <view wx:if="{{sessions.length}}" class="session-chips-row">
+      <view
+        wx:for="{{sessions}}"
+        wx:key="id"
+        class="session-chip {{activeIndex === index ? 'session-chip-active' : ''}}"
+        data-index="{{index}}"
+        bindtap="selectSession"
+      >
+        <text class="session-chip-name">● {{item.name}}</text>
+        <text class="session-chip-time">{{item.startText}}</text>
+        <text class="session-chip-status">{{item.status === 0 ? '即将开始' : item.status === 1 ? '抢购中' : '已结束'}}</text>
       </view>
-    </scroll-view>
+    </view>
   </view>
 
   <view wx:if="{{activeSession}}" class="session-card card">
-    <view class="session-head">
-      <view class="session-title-wrap">
-        <view class="session-title-line">
-          <text class="session-label">{{activeSession.name}}</text>
-          <text class="session-live">{{activeSession.status === 0 ? '即将开始' : activeSession.status === 1 ? '限量抢购' : '已结束'}}</text>
-        </view>
-        <text class="session-range">{{activeSession.startText}} - {{activeSession.endText}}</text>
-        <text class="session-desc">{{activeSession.activityDescription || '限时特价，售完即止'}}</text>
+    <view class="session-card-head">
+      <view class="session-title-line">
+        <text class="session-label">{{activeSession.name}}</text>
+        <text class="session-live">{{activeSession.status === 0 ? '即将开始' : activeSession.status === 1 ? '限量抢购' : '已结束'}}</text>
       </view>
+      <text class="session-range">{{activeSession.startText}} - {{activeSession.endText}}</text>
+      <text class="session-desc">{{activeSession.activityDescription || '限时特价，售完即止'}}</text>
     </view>
-    <view class="session-divider"></view>
     <view wx:if="{{activeSession.products.length}}" class="seckill-products">
-      <view wx:for="{{activeSession.products}}" wx:key="seckillSkuId" class="seckill-product" data-item="{{item}}" bindtap="openProduct">
+      <view
+        wx:for="{{activeSession.products}}"
+        wx:key="seckillSkuId"
+        class="seckill-product-row"
+        data-item="{{item}}"
+        bindtap="openProduct"
+      >
         <image class="product-image" src="{{item.mainImage}}" mode="aspectFill" />
         <view class="product-content">
-          <view class="product-name">{{item.productName}}</view>
-          <view class="product-spec">{{item.specText || '精选规格'}}</view>
-          <view class="product-price-row"><view class="product-price"><text class="currency">¥</text><text>{{item.activityPriceText}}</text></view><text class="product-original">¥{{item.originalPriceText}}</text></view>
-          <view class="stock-row"><text class="stock-highlight">{{item.remainingText}}</text><text class="stock-percent">剩余{{item.stockPercent}}%</text><text class="limit-line">每人限购{{item.userLimit}}件</text></view>
+          <text class="product-name">{{item.productName}}</text>
+          <text class="product-spec">{{item.specText || '精选规格'}}</text>
+          <view class="product-price-row">
+            <view class="product-price"><text class="currency">¥</text><text>{{item.activityPriceText}}</text></view>
+            <text class="product-original">¥{{item.originalPriceText}}</text>
+          </view>
+          <view class="stock-row">
+            <text class="stock-highlight">{{item.remainingText}}</text>
+            <text class="stock-percent">剩余{{item.stockPercent}}%</text>
+            <text class="limit-line">每人限购{{item.userLimit}}件</text>
+          </view>
           <view class="stock-track"><view class="stock-fill" style="width: {{item.stockPercent}}%;"></view></view>
-          <button class="buy-button {{item.status === 1 ? '' : 'disabled'}}" catchtap="openProduct" data-item="{{item}}">{{item.statusText}}</button>
+          <view class="product-cta-row">
+            <view
+              class="buy-pill {{item.status === 1 ? '' : 'buy-pill-disabled'}}"
+              catchtap="openProduct"
+              data-item="{{item}}"
+            >{{item.statusText}}</view>
+          </view>
         </view>
       </view>
     </view>

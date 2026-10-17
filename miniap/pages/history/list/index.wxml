@@ -4,11 +4,11 @@
     <view class="hero-kicker">RECENTLY VIEWED</view>
     <view class="hero-heading">浏览记录</view>
     <view class="hero-desc">最近看过的商品，都留在这里</view>
-    <view
+    <text
       wx:if="{{items.length}}"
-      class="hero-clear-btn btn-inline {{clearing ? 'hero-clear-btn-disabled' : ''}}"
+      class="hero-clear-btn"
       catchtap="clearHistory"
-    >{{clearing ? '清空中' : '清空'}}</view>
+    >{{clearing ? '清空中' : '清空'}}</text>
   </view>
 
   <view class="page-body">
@@ -49,18 +49,18 @@
             <view wx:else class="goods-image goods-image-fallback img-placeholder img-placeholder-5">{{item.initial}}</view>
             <view class="goods-main">
               <view class="record-top">
-                <view class="goods-name">{{item.name}}</view>
-                <view
-                  class="remove-btn btn-inline {{removingId === item.productId || clearing ? 'remove-btn-disabled' : ''}}"
+                <text class="goods-name">{{item.name}}</text>
+                <text
+                  class="remove-link"
                   catchtap="removeHistory"
                   data-id="{{item.productId}}"
-                >{{removingId === item.productId ? '处理中' : '删除'}}</view>
+                >{{removingId === item.productId ? '处理中' : '删除'}}</text>
               </view>
               <view wx:if="{{item.available}}" class="goods-price price"><text>¥</text>{{item.priceText}}</view>
               <view wx:else class="goods-status">该商品暂不可购买</view>
               <view class="goods-meta">
                 <text wx:if="{{item.viewedAtText}}">浏览于 {{item.viewedAtText}}</text>
-                <text wx:if="{{item.viewCountText > 1}}"> · 已浏览 {{item.viewCountText}} 次</text>
+                <block wx:if="{{item.viewCount > 1}}"><text> · 已浏览 {{item.viewCount}} 次</text></block>
               </view>
             </view>
           </view>

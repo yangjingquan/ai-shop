@@ -1,6 +1,8 @@
 .history-page {
+  width: 100%;
   min-height: 100vh;
   padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 .history-page .page-section-head {
@@ -11,7 +13,6 @@
   position: absolute;
   right: 32rpx;
   top: 120rpx;
-  min-width: 120rpx;
   height: 56rpx;
   padding: 0 24rpx;
   border: 2rpx solid rgba(255, 255, 255, 0.6);
@@ -20,13 +21,9 @@
   color: #fff;
   font-size: 24rpx;
   font-weight: 700;
-  line-height: 56rpx;
+  line-height: 52rpx;
   text-align: center;
   box-sizing: border-box;
-}
-
-.hero-clear-btn-disabled {
-  opacity: 0.6;
 }
 
 .history-list {
@@ -111,7 +108,8 @@
 
 .record-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
   gap: 12rpx;
 }
 
@@ -122,10 +120,24 @@
   font-weight: 700;
   color: #15161C;
   line-height: 1.4;
-  display: -webkit-box;
   overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove-link {
+  flex: none;
+  height: 48rpx;
+  padding: 0 20rpx;
+  border: 2rpx solid #ECEDF0;
+  border-radius: 24rpx;
+  background: #fff;
+  color: #15161C;
+  font-size: 22rpx;
+  font-weight: 600;
+  line-height: 44rpx;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .goods-price {
@@ -147,27 +159,6 @@
   line-height: 1.45;
 }
 
-.remove-btn {
-  flex: none;
-  width: auto;
-  max-width: 140rpx;
-  height: 48rpx;
-  margin: 0;
-  padding: 0 20rpx;
-  border: 2rpx solid #ECEDF0;
-  border-radius: 24rpx;
-  background: #fff;
-  color: #15161C;
-  font-size: 22rpx;
-  font-weight: 600;
-  line-height: 48rpx;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.remove-btn-disabled {
-  color: #9A9EA8;
-}
 
 .loading-row {
   display: flex;
