@@ -281,46 +281,27 @@ button.btn-sm.btn-ghost {
   color: #fff;
 }
 
-.pad-custom-tab-bar {
-  /* Fallback first: WXSS may drop the whole rule if calc(var()+env()) is invalid */
-  padding-bottom: 100px;
-  padding-bottom: calc(100px + constant(safe-area-inset-bottom));
-  padding-bottom: calc(100px + env(safe-area-inset-bottom));
-  box-sizing: border-box;
-}
-
-/* Tab roots must not use padding shorthand with bottom 0 — it overrides this utility (see order/list, category). */
-.home.pad-custom-tab-bar,
-.cat-page.pad-custom-tab-bar,
-.order-list-page.pad-custom-tab-bar,
-.my-page.pad-custom-tab-bar {
-  padding-bottom: 100px;
-  padding-bottom: calc(100px + constant(safe-area-inset-bottom));
-  padding-bottom: calc(100px + env(safe-area-inset-bottom));
-}
-
+/* Tab pages: bottom clearance is ONLY via .tab-bottom-spacer / .cart-bottom-spacer (no padding-bottom here — stacking caused ~2× gap). */
+.pad-custom-tab-bar,
 .pad-custom-tab-bar-cart {
-  padding-bottom: 180px;
-  padding-bottom: calc(180px + constant(safe-area-inset-bottom));
-  padding-bottom: calc(180px + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
-/* In-flow scroll extent (reliable vs page padding alone): tab 36+124 + margin */
+/* 18px tab float offset + 62px bar + 12px breathing room (+ safe area) */
 .tab-bottom-spacer {
   width: 100%;
-  height: 100px;
-  height: calc(100px + constant(safe-area-inset-bottom));
-  height: calc(100px + env(safe-area-inset-bottom));
+  height: 92px;
+  height: calc(92px + constant(safe-area-inset-bottom));
+  height: calc(92px + env(safe-area-inset-bottom));
   flex-shrink: 0;
 }
 
-/* Checkout bar (~84px) + tab-bar-inset (36+124) + safe area */
+/* Tab inset (36+124) + checkout bar (~84px) + 12px above checkout */
 .cart-bottom-spacer {
   width: 100%;
-  height: 180px;
-  height: calc(180px + constant(safe-area-inset-bottom));
-  height: calc(180px + env(safe-area-inset-bottom));
+  height: 176px;
+  height: calc(176px + constant(safe-area-inset-bottom));
+  height: calc(176px + env(safe-area-inset-bottom));
   flex-shrink: 0;
 }
 
@@ -809,7 +790,7 @@ button.btn-sm.btn-ghost {
 
 .topic-page {
   min-height: 100vh;
-  padding-bottom: 24px;
+  background: #F6F6F8;
 }
 
 .topic-state {
@@ -846,22 +827,39 @@ button.btn-sm.btn-ghost {
   min-width: 120px;
 }
 
-.topic-banner {
-  display: block;
-  width: calc(100% - 32px);
-  height: 220px;
-  margin: 0 16px;
-  border-radius: 22px;
-  object-fit: cover;
+.topic-content {
+  padding: 12px 12px 0;
+  box-sizing: border-box;
 }
 
-.topic-banner-placeholder {
-  position: relative;
+.topic-cover-card {
+  border-radius: 16px;
   overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(20, 22, 28, 0.06);
+}
+
+.topic-cover-media {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  overflow: hidden;
+  background: #ECEDF0;
+}
+
+.topic-cover-image,
+.topic-cover-placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.topic-cover-placeholder {
   background: linear-gradient(135deg, #2B2E3A, #FF4A1C);
 }
 
-.topic-banner-blob {
+.topic-cover-blob {
   position: absolute;
   right: -30px;
   top: -30px;
@@ -872,44 +870,55 @@ button.btn-sm.btn-ghost {
   transform: rotate(20deg);
 }
 
-.topic-banner-inner {
+.topic-cover-shade {
   position: absolute;
-  left: 18px;
-  bottom: 18px;
-  color: #fff;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(21, 22, 28, 0.08) 0%, rgba(21, 22, 28, 0.55) 72%, rgba(21, 22, 28, 0.72) 100%);
+  pointer-events: none;
 }
 
-.topic-banner-title {
-  margin-top: 6px;
-  font-size: 24px;
+.topic-cover-copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 14px 16px 16px;
+  color: #fff;
+  box-sizing: border-box;
+}
+
+.topic-cover-title {
+  margin-top: 4px;
+  font-size: 22px;
   font-weight: 900;
   line-height: 1.2;
+  letter-spacing: -0.25px;
 }
 
-.topic-intro {
-  position: relative;
-  margin: -28px 16px 0;
-  padding: 16px;
-  z-index: 1;
-}
-
-.topic-title {
-  font-size: 24px;
-  font-weight: 900;
-  line-height: 1.25;
-  color: #15161C;
-}
-
-.topic-summary {
+.topic-cover-summary {
   margin-top: 6px;
-  font-size: 14px;
-  line-height: 1.7;
-  color: #5B5F6B;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.9);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.topic-body {
+  margin-top: 16px;
 }
 
 .topic-block {
-  margin: 10px 16px 0;
+  margin-top: 10px;
   padding: 14px;
+  box-sizing: border-box;
+}
+
+.topic-block:first-child {
+  margin-top: 0;
 }
 
 .block-title {
@@ -934,40 +943,91 @@ button.btn-sm.btn-ghost {
   border-radius: 12px;
 }
 
-.product-grid {
+.topic-products-head {
+  margin: 0 0 10px;
+}
+
+.products-block {
+  padding-bottom: 4px;
+}
+
+.topic-product-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
-.product-card {
+.topic-product-card {
   min-width: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #F6F6F8;
+}
+
+.topic-product-media {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  background: #fff;
 }
 
 .topic-product-image {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
-  height: 130px;
-  border-radius: 12px;
+  height: 100%;
 }
 
-.product-name {
-  margin-top: 6px;
-  font-size: 13px;
-  font-weight: 700;
+.topic-product-info {
+  padding: 9px 10px 11px;
+  background: #fff;
+}
+
+.topic-product-name {
+  min-height: 36px;
   color: #15161C;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 700;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-.product-price {
-  margin-top: 4px;
-  font-size: 16px;
+.topic-product-foot {
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.topic-product-price {
+  flex: 1;
+  min-width: 0;
+  font-size: 17px;
+  color: #FF4A1C;
+}
+
+.topic-product-add {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #FF4A1C;
+  background: #FFF1EB;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 500;
 }
 
 .products-empty {
-  padding: 16px;
+  padding: 16px 8px;
   text-align: center;
   font-size: 12px;
   color: #9A9EA8;
@@ -981,6 +1041,14 @@ button.btn-sm.btn-ghost {
   padding: 0;
 }
 
+.topic-bottom-spacer {
+  width: 100%;
+  height: 12px;
+  height: calc(12px + constant(safe-area-inset-bottom));
+  height: calc(12px + env(safe-area-inset-bottom));
+  flex-shrink: 0;
+}
+
 </style></head><body><div class="topic-page page-shell">
   <div class="topic-state">
     <div class="loading-spinner"></div>
@@ -992,54 +1060,67 @@ button.btn-sm.btn-ghost {
     <button class="btn btn-primary btn-sm topic-home-btn">返回首页</button>
   </div>
   <div class="topic-content">
-    <div class="topic-hero-wrap">
-      <div class="wx-image-stub"></div>
-      <div class="topic-banner topic-banner-placeholder">
-        <div class="topic-banner-blob"></div>
-        <div class="topic-banner-inner">
-          <span class="tag tag-yellow">店铺专题</span>
-          <div class="topic-banner-title">示例文案</div>
-        </div>
-      </div>
-    </div>
-    <div class="topic-intro card">
-      <div class="topic-title">示例文案</div>
-      <div class="topic-summary">示例</div>
-    </div>
-    <div class="topic-block card">
-      <div class="text-block">
-        <div class="block-title">示例文案</div>
-        <div class="block-body">示例</div>
-      </div>
-      <div class="image-text-block">
-        <div class="block-title">示例文案</div>
+    <div class="topic-cover-card">
+      <div class="topic-cover-media">
         <div class="wx-image-stub"></div>
-        <div class="block-body">示例</div>
-      </div>
-      <div class="products-block">
-        <div class="block-title">示例文案</div>
-        <div class="product-grid">
-          <div
-            class="product-card"
-           
-           
-           
-           
-           
-          >
-            <div class="wx-image-stub"></div>
-            <div class="topic-product-image img-placeholder img-placeholder-3"></div>
-            <div class="product-name">示例文案</div>
-            <div class="product-price price"><span>¥</span>29.9</div>
-          </div>
+        <div class="topic-cover-placeholder">
+          <div class="topic-cover-blob"></div>
         </div>
-        <div class="products-empty">精选商品正在补充</div>
-      </div>
-      <div class="button-block">
-        <button class="btn btn-dark btn-lg btn-block topic-cta">示例文案</button>
+        <div class="topic-cover-shade"></div>
+        <div class="topic-cover-copy">
+          <span class="tag tag-yellow">店铺专题</span>
+          <div class="topic-cover-title">示例文案</div>
+          <div class="topic-cover-summary">示例</div>
+        </div>
       </div>
     </div>
-    <div class="page-end-note">— 已展示全部专题内容 —</div>
+
+    <div class="topic-body">
+      <div class="topic-block card">
+        <div class="text-block">
+          <div class="block-title">示例文案</div>
+          <div class="block-body">示例</div>
+        </div>
+        <div class="image-text-block">
+          <div class="block-title">示例文案</div>
+          <div class="wx-image-stub"></div>
+          <div class="block-body">示例</div>
+        </div>
+        <div class="products-block">
+          <div class="section-head topic-products-head">
+            <div class="section-title">示例文案</div>
+          </div>
+          <div class="topic-product-grid">
+            <div
+              class="topic-product-card"
+             
+             
+             
+             
+             
+            >
+              <div class="topic-product-media">
+                <div class="wx-image-stub"></div>
+                <div class="topic-product-image img-placeholder img-placeholder-3"></div>
+              </div>
+              <div class="topic-product-info">
+                <div class="topic-product-name">示例文案</div>
+                <div class="topic-product-foot">
+                  <div class="topic-product-price price"><span>¥</span>29.9</div>
+                  <div class="topic-product-add">+</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="products-empty">精选商品正在补充</div>
+        </div>
+        <div class="button-block">
+          <button class="btn btn-dark btn-lg btn-block topic-cta">示例文案</button>
+        </div>
+      </div>
+      <div class="page-end-note">— 已展示全部专题内容 —</div>
+      <div class="topic-bottom-spacer"></div>
+    </div>
   </div>
 </div>
 </body></html>

@@ -51,7 +51,8 @@
     "mock": "design/src/cart.html",
     "fixes": "Extra cart pad for guess-you-like + checkout + tab bar",
     "mismatches": [
-      "None (WXSS scan + compare PNG)"
+      "Tab page missing pad-custom-tab-bar",
+      "Content may sit under fixed bottom UI (add pad-fixed-bottom-bar or padding-bottom)"
     ]
   },
   {

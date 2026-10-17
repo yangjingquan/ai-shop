@@ -9,53 +9,66 @@
     <button class="btn btn-primary btn-sm topic-home-btn" bindtap="backHome">返回首页</button>
   </view>
   <view wx:else class="topic-content">
-    <view class="topic-hero-wrap">
-      <image wx:if="{{page.coverImage}}" class="topic-banner" src="{{page.coverImage}}" mode="aspectFill" />
-      <view wx:else class="topic-banner topic-banner-placeholder">
-        <view class="topic-banner-blob"></view>
-        <view class="topic-banner-inner">
-          <text class="tag tag-yellow">店铺专题</text>
-          <view class="topic-banner-title">{{page.title}}</view>
+    <view class="topic-cover-card">
+      <view class="topic-cover-media">
+        <image wx:if="{{page.coverImage}}" class="topic-cover-image" src="{{page.coverImage}}" mode="aspectFill" />
+        <view wx:else class="topic-cover-placeholder">
+          <view class="topic-cover-blob"></view>
+        </view>
+        <view class="topic-cover-shade"></view>
+        <view class="topic-cover-copy">
+          <text wx:if="{{!page.coverImage}}" class="tag tag-yellow">店铺专题</text>
+          <view class="topic-cover-title">{{page.title}}</view>
+          <view wx:if="{{page.summary}}" class="topic-cover-summary">{{page.summary}}</view>
         </view>
       </view>
     </view>
-    <view class="topic-intro card">
-      <view class="topic-title">{{page.title}}</view>
-      <view wx:if="{{page.summary}}" class="topic-summary">{{page.summary}}</view>
-    </view>
-    <view class="topic-block card" wx:for="{{blocks}}" wx:key="id">
-      <view wx:if="{{item.type === 'TEXT'}}" class="text-block">
-        <view wx:if="{{item.title}}" class="block-title">{{item.title}}</view>
-        <view class="block-body">{{item.body}}</view>
-      </view>
-      <view wx:elif="{{item.type === 'IMAGE_TEXT'}}" class="image-text-block">
-        <view wx:if="{{item.title}}" class="block-title">{{item.title}}</view>
-        <image wx:if="{{item.imageUrl}}" class="content-image" src="{{item.imageUrl}}" mode="widthFix" />
-        <view wx:if="{{item.body}}" class="block-body">{{item.body}}</view>
-      </view>
-      <view wx:elif="{{item.type === 'PRODUCTS'}}" class="products-block">
-        <view class="block-title">{{item.title || '为你精选'}}</view>
-        <view wx:if="{{item.products.length}}" class="product-grid">
-          <view
-            class="product-card"
-            wx:for="{{item.products}}"
-            wx:for-item="product"
-            wx:key="id"
-            bindtap="onProduct"
-            data-id="{{product.id}}"
-          >
-            <image wx:if="{{product.mainImage}}" class="topic-product-image" src="{{product.mainImage}}" mode="aspectFit" />
-            <view wx:else class="topic-product-image img-placeholder img-placeholder-3"></view>
-            <view class="product-name">{{product.name}}</view>
-            <view class="product-price price"><text>¥</text>{{product.minPrice}}</view>
+
+    <view class="topic-body">
+      <view class="topic-block card" wx:for="{{blocks}}" wx:key="id">
+        <view wx:if="{{item.type === 'TEXT'}}" class="text-block">
+          <view wx:if="{{item.title}}" class="block-title">{{item.title}}</view>
+          <view class="block-body">{{item.body}}</view>
+        </view>
+        <view wx:elif="{{item.type === 'IMAGE_TEXT'}}" class="image-text-block">
+          <view wx:if="{{item.title}}" class="block-title">{{item.title}}</view>
+          <image wx:if="{{item.imageUrl}}" class="content-image" src="{{item.imageUrl}}" mode="widthFix" />
+          <view wx:if="{{item.body}}" class="block-body">{{item.body}}</view>
+        </view>
+        <view wx:elif="{{item.type === 'PRODUCTS'}}" class="products-block">
+          <view class="section-head topic-products-head">
+            <view class="section-title">{{item.title || '为你精选'}}</view>
           </view>
+          <view wx:if="{{item.products.length}}" class="topic-product-grid">
+            <view
+              class="topic-product-card"
+              wx:for="{{item.products}}"
+              wx:for-item="product"
+              wx:key="id"
+              bindtap="onProduct"
+              data-id="{{product.id}}"
+            >
+              <view class="topic-product-media">
+                <image wx:if="{{product.mainImage}}" class="topic-product-image" src="{{product.mainImage}}" mode="aspectFill" />
+                <view wx:else class="topic-product-image img-placeholder img-placeholder-3"></view>
+              </view>
+              <view class="topic-product-info">
+                <view class="topic-product-name">{{product.name}}</view>
+                <view class="topic-product-foot">
+                  <view class="topic-product-price price"><text>¥</text>{{product.minPrice}}</view>
+                  <view class="topic-product-add" catchtap="onProduct" data-id="{{product.id}}" aria-role="button" aria-label="查看{{product.name}}">+</view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view wx:else class="products-empty">精选商品正在补充</view>
         </view>
-        <view wx:else class="products-empty">精选商品正在补充</view>
+        <view wx:elif="{{item.type === 'BUTTON'}}" class="button-block">
+          <button class="btn btn-dark btn-lg btn-block topic-cta" bindtap="onBlockButton" data-type="{{item.linkType}}">{{item.buttonText || '查看详情'}}</button>
+        </view>
       </view>
-      <view wx:elif="{{item.type === 'BUTTON'}}" class="button-block">
-        <button class="btn btn-dark btn-lg btn-block topic-cta" bindtap="onBlockButton" data-type="{{item.linkType}}">{{item.buttonText || '查看详情'}}</button>
-      </view>
+      <view class="page-end-note">— 已展示全部专题内容 —</view>
+      <view class="topic-bottom-spacer" aria-hidden="true"></view>
     </view>
-    <view class="page-end-note">— 已展示全部专题内容 —</view>
   </view>
 </view>

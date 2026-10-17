@@ -1,6 +1,6 @@
 {
   "pages/home/index": "Tab pad; presale entry price+CTA row align; marketing zone cards",
-  "pages/topic/detail": "btn-block topic CTA; hero + block layout; empty-state centered btn",
+  "pages/topic/detail": "Inset cover card; section-title product grid; bottom safe spacer",
   "pages/recommend/index": "Hero gradient + product grid spacing per mock",
   "pages/category/index": "Tab pad (no padding-bottom:0 shorthand); category layout",
   "pages/cart/index": "Extra cart pad for guess-you-like + checkout + tab bar",

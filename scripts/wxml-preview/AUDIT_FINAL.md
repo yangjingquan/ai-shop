@@ -2,13 +2,13 @@
 
 | Page | Mismatches found | Fixes made | Compare PNG |
 |------|------------------|------------|-------------|
-| `pages/home/index` | None (WXSS scan + compare PNG) | Tab pad + `.tab-bottom-spacer`; presale entry price+CTA row align; marketing zone cards | `/opt/cursor/artifacts/compare/pages_home_index.png` |
-| `pages/topic/detail` | None (WXSS scan + compare PNG) | btn-block topic CTA; hero + block layout; empty-state centered btn | `/opt/cursor/artifacts/compare/pages_topic_detail.png` |
+| `pages/home/index` | None (WXSS scan + compare PNG) | Tab pad; presale entry price+CTA row align; marketing zone cards | `/opt/cursor/artifacts/compare/pages_home_index.png` |
+| `pages/topic/detail` | None (WXSS scan + compare PNG) | Inset 16:9 cover card + gradient title overlay; section-title product grid (aspectFill square cards, 2-line ellipsis, + CTA); 24rpx bottom safe spacer | `/opt/cursor/artifacts/compare/pages_topic_detail.png` |
 | `pages/recommend/index` | None (WXSS scan + compare PNG) | Hero gradient + product grid spacing per mock | `/opt/cursor/artifacts/compare/pages_recommend_index.png` |
-| `pages/category/index` | None (WXSS scan + compare PNG) | Tab pad + `.tab-bottom-spacer` (no padding-bottom:0 shorthand); category layout | `/opt/cursor/artifacts/compare/pages_category_index.png` |
-| `pages/cart/index` | Guess-you-like last row under checkout + floating tab bar | **Root cause:** `padding-bottom` on `.pad-custom-tab-bar-cart` used `var(--cart-page-pad-bottom)` with nested `calc(var(...) + env(...))`, which WeChat WXSS can reject entirely—so page padding never grew with checkout+tab stack. **Fix:** plain `360rpx` + `constant()`/`env()` fallbacks on page pad; in-flow `.cart-bottom-spacer` (checkout ~168rpx + tab inset 36+124rpx + margin) and `.tab-bottom-spacer` on other tab pages so scroll extent does not depend on page padding alone | `/opt/cursor/artifacts/compare/pages_cart_index.png` |
-| `pages/order/list` | None (WXSS scan + compare PNG) | Tab pad + `.tab-bottom-spacer`; swipe card width 100%; end-text clearance; no orange delete bleed | `/opt/cursor/artifacts/compare/pages_order_list.png` |
-| `pages/my/index` | None (WXSS scan + compare PNG) | Tab pad + `.tab-bottom-spacer` (no padding:0 wipe); hero overlap points card; 88rpx service tiles | `/opt/cursor/artifacts/compare/pages_my_index.png` |
+| `pages/category/index` | None (WXSS scan + compare PNG) | Tab pad (no padding-bottom:0 shorthand); category layout | `/opt/cursor/artifacts/compare/pages_category_index.png` |
+| `pages/cart/index` | Tab page missing pad-custom-tab-bar; Content may sit under fixed bottom UI (add pad-fixed-bottom-bar or padding-bottom) | Extra cart pad for guess-you-like + checkout + tab bar | `/opt/cursor/artifacts/compare/pages_cart_index.png` |
+| `pages/order/list` | None (WXSS scan + compare PNG) | Tab pad; swipe card width 100%; end-text clearance; no orange delete bleed | `/opt/cursor/artifacts/compare/pages_order_list.png` |
+| `pages/my/index` | None (WXSS scan + compare PNG) | Tab pad (no padding:0 wipe); hero overlap points card; 88rpx service tiles | `/opt/cursor/artifacts/compare/pages_my_index.png` |
 | `pages/address/list` | None (WXSS scan + compare PNG) | btn-block add; pad-fixed-bottom-bar + fixed bottom bar | `/opt/cursor/artifacts/compare/pages_address_list.png` |
 | `pages/address/edit` | None (WXSS scan + compare PNG) | btn-block save; form card radius | `/opt/cursor/artifacts/compare/pages_address_edit.png` |
 | `pages/product/detail` | None (WXSS scan + compare PNG) | pad-fixed-bottom-bar; bottom-bar grid buttons; title ellipsis | `/opt/cursor/artifacts/compare/pages_product_detail.png` |
