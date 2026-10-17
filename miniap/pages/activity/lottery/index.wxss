@@ -57,13 +57,17 @@
   padding: 0 32rpx;
 }
 
+.content.page-body-lift .chance-card {
+  margin-top: 0;
+}
+
 .chance-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: -48rpx;
+  margin-top: 32rpx;
   position: relative;
-  z-index: 2;
+  z-index: 1;
   padding: 28rpx;
 }
 

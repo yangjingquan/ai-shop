@@ -12,7 +12,7 @@
   z-index: 2;
 }
 
-.mall-follow .mall-notice {
+.mall-follow.page-body-lift .mall-notice {
   margin-top: 0;
 }
 

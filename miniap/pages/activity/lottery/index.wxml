@@ -12,7 +12,7 @@
       </view>
     </view>
 
-    <view class="content">
+    <view class="content page-body-lift">
       <view class="chance-card card">
         <view>
           <view class="chance-label">今日剩余抽奖次数</view>

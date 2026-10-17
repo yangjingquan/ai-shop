@@ -6,7 +6,7 @@
     <view class="hero-desc">完成阶梯条件后，奖励优惠券将自动发放</view>
   </view>
 
-  <view class="rewards-body">
+  <view class="rewards-body page-body-lift">
     <view class="progress-card card">
       <view class="card-header"><text>邀请进度</text></view>
       <view class="progress-track"><view class="progress-fill" style="width: {{campaign.progressPercent}}%;"></view></view>

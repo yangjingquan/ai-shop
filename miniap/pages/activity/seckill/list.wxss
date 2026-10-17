@@ -150,8 +150,8 @@
 
 .session-card {
   position: relative;
-  z-index: 2;
-  margin: -40rpx 24rpx 0;
+  z-index: 1;
+  margin: 32rpx 24rpx 0;
   padding: 28rpx;
 }
 

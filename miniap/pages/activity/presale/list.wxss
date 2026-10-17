@@ -12,6 +12,13 @@
   opacity: 0.85;
 }
 
+.presale-content .section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+  margin: 0 0 20rpx;
+}
+
 .section-title {
   display: flex;
   align-items: baseline;

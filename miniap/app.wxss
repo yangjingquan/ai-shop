@@ -598,10 +598,17 @@ button.btn-sm.btn-ghost {
   box-sizing: border-box;
 }
 
+/* Positive gap after inset page-hero (do not use negative overlap) */
 .page-body-lift {
-  margin-top: -40rpx;
+  margin-top: 32rpx;
   position: relative;
-  z-index: 2;
+  z-index: 1;
+}
+
+.page-body-lift > .section-title:first-child,
+.page-body-lift > .page-section-head:first-child,
+.page-body-lift > .mall-notice:first-child {
+  margin-top: 0;
 }
 
 .page-section-head {
