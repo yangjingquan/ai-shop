@@ -21,6 +21,14 @@ dist/
 # Mini-app
 miniprogram_npm/
 
+# Mini-program UI audit / design mocks (local dev only; not shipped)
+scripts/wxml-preview/
+design/
+spec/shots/
+uploads/
+miniap/fb/
+miniap/fb2/
+
 # Env
 .env
 .env.local
