@@ -8,6 +8,15 @@
 .seckill-hero {
   margin-bottom: 0;
   padding-bottom: 32rpx;
+  color: #fff;
+}
+
+.seckill-hero .hero-title,
+.seckill-hero .hero-subtitle,
+.seckill-hero .hero-countdown-label,
+.seckill-hero .countdown-value,
+.seckill-hero .hero-countdown-hint {
+  color: #fff;
 }
 
 .seckill-hero .hero-copy {
@@ -51,7 +60,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  gap: 16rpx;
   margin-top: 28rpx;
   padding: 24rpx 28rpx;
   border-radius: 32rpx;
@@ -96,14 +105,19 @@
   position: relative;
   z-index: 1;
   width: 100%;
+  height: 152rpx;
   margin-top: 24rpx;
-  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .session-chip-list {
-  display: inline-flex;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   gap: 16rpx;
-  padding-bottom: 8rpx;
+  height: 152rpx;
+  padding-right: 32rpx;
+  box-sizing: border-box;
 }
 
 .session-chip {
@@ -301,10 +315,11 @@
 }
 
 .buy-button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: auto;
+  flex: none;
   min-width: 160rpx;
   height: 60rpx;
   margin: 0 0 0 auto;

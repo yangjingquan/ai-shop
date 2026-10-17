@@ -1,5 +1,5 @@
 <view class="seckill-page page-shell">
-  <view class="seckill-hero page-hero-dark">
+  <view class="seckill-hero page-hero page-hero-dark">
     <view class="hero-blob"></view>
     <view class="hero-copy">
       <view class="hero-kicker-row">

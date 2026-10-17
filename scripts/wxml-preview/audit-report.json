@@ -1,0 +1,275 @@
+[
+  {
+    "route": "pages/home/index",
+    "wxml": "miniap/pages/home/index.wxml",
+    "buttons": 1,
+    "unscopedButtons": 1,
+    "mock": "design/src/home.html"
+  },
+  {
+    "route": "pages/topic/detail",
+    "wxml": "miniap/pages/topic/detail.wxml",
+    "buttons": 2,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/recommend/index",
+    "wxml": "miniap/pages/recommend/index.wxml",
+    "buttons": 0,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/category/index",
+    "wxml": "miniap/pages/category/index.wxml",
+    "buttons": 0,
+    "unscopedButtons": 0,
+    "mock": "design/src/category.html"
+  },
+  {
+    "route": "pages/cart/index",
+    "wxml": "miniap/pages/cart/index.wxml",
+    "buttons": 5,
+    "unscopedButtons": 3,
+    "mock": "design/src/cart.html"
+  },
+  {
+    "route": "pages/order/list",
+    "wxml": "miniap/pages/order/list.wxml",
+    "buttons": 1,
+    "unscopedButtons": 1,
+    "mock": null
+  },
+  {
+    "route": "pages/my/index",
+    "wxml": "miniap/pages/my/index.wxml",
+    "buttons": 2,
+    "unscopedButtons": 1,
+    "mock": "design/src/my.html"
+  },
+  {
+    "route": "pages/address/list",
+    "wxml": "miniap/pages/address/list.wxml",
+    "buttons": 1,
+    "unscopedButtons": 0,
+    "mock": "design/batch2/src/address-list.html"
+  },
+  {
+    "route": "pages/address/edit",
+    "wxml": "miniap/pages/address/edit.wxml",
+    "buttons": 1,
+    "unscopedButtons": 0,
+    "mock": "design/batch2/src/address-edit.html"
+  },
+  {
+    "route": "pages/product/detail",
+    "wxml": "miniap/pages/product/detail.wxml",
+    "buttons": 6,
+    "unscopedButtons": 6,
+    "mock": null
+  },
+  {
+    "route": "pages/order/confirm",
+    "wxml": "miniap/pages/order/confirm.wxml",
+    "buttons": 2,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/coupon/list",
+    "wxml": "miniap/pages/coupon/list.wxml",
+    "buttons": 0,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/activity/referral/index",
+    "wxml": "miniap/pages/activity/referral/index.wxml",
+    "buttons": 4,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/activity/referral/rewards",
+    "wxml": "miniap/pages/activity/referral/rewards.wxml",
+    "buttons": 1,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/activity/lottery/index",
+    "wxml": "miniap/pages/activity/lottery/index.wxml",
+    "buttons": 2,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/activity/lottery/result",
+    "wxml": "miniap/pages/activity/lottery/result.wxml",
+    "buttons": 2,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/activity/lottery/rewards",
+    "wxml": "miniap/pages/activity/lottery/rewards.wxml",
+    "buttons": 5,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/activity/lottery/records",
+    "wxml": "miniap/pages/activity/lottery/records.wxml",
+    "buttons": 2,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/order/success",
+    "wxml": "miniap/pages/order/success.wxml",
+    "buttons": 6,
+    "unscopedButtons": 6,
+    "mock": null
+  },
+  {
+    "route": "pages/order/detail",
+    "wxml": "miniap/pages/order/detail.wxml",
+    "buttons": 1,
+    "unscopedButtons": 1,
+    "mock": null
+  },
+  {
+    "route": "pages/points/index",
+    "wxml": "miniap/pages/points/index.wxml",
+    "buttons": 1,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/points/mall",
+    "wxml": "miniap/pages/points/mall.wxml",
+    "buttons": 1,
+    "unscopedButtons": 0,
+    "mock": "design/batch2/src/points-mall.html"
+  },
+  {
+    "route": "pages/points/records/index",
+    "wxml": "miniap/pages/points/records/index.wxml",
+    "buttons": 0,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/points/member-day",
+    "wxml": "miniap/pages/points/member-day.wxml",
+    "buttons": 2,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/group-buy/list",
+    "wxml": "miniap/pages/group-buy/list.wxml",
+    "buttons": 0,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/group-buy/group",
+    "wxml": "miniap/pages/group-buy/group.wxml",
+    "buttons": 4,
+    "unscopedButtons": 4,
+    "mock": null
+  },
+  {
+    "route": "pages/activity/seckill/list",
+    "wxml": "miniap/pages/activity/seckill/list.wxml",
+    "buttons": 1,
+    "unscopedButtons": 0,
+    "mock": "design/batch2/src/seckill-list.html"
+  },
+  {
+    "route": "pages/activity/presale/list",
+    "wxml": "miniap/pages/activity/presale/list.wxml",
+    "buttons": 0,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/activity/presale/detail",
+    "wxml": "miniap/pages/activity/presale/detail.wxml",
+    "buttons": 0,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/activity/presale/confirm",
+    "wxml": "miniap/pages/activity/presale/confirm.wxml",
+    "buttons": 1,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/notification/list",
+    "wxml": "miniap/pages/notification/list.wxml",
+    "buttons": 1,
+    "unscopedButtons": 1,
+    "mock": null
+  },
+  {
+    "route": "pages/webview/index",
+    "wxml": "miniap/pages/webview/index.wxml",
+    "buttons": 0,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/promotion/full-reduction",
+    "wxml": "miniap/pages/promotion/full-reduction.wxml",
+    "buttons": 1,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/promotion/bundle",
+    "wxml": "miniap/pages/promotion/bundle.wxml",
+    "buttons": 2,
+    "unscopedButtons": 2,
+    "mock": null
+  },
+  {
+    "route": "pages/review/edit/index",
+    "wxml": "miniap/pages/review/edit/index.wxml",
+    "buttons": 1,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/review/list/index",
+    "wxml": "miniap/pages/review/list/index.wxml",
+    "buttons": 0,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/question/list/index",
+    "wxml": "miniap/pages/question/list/index.wxml",
+    "buttons": 1,
+    "unscopedButtons": 0,
+    "mock": null
+  },
+  {
+    "route": "pages/favorite/list/index",
+    "wxml": "miniap/pages/favorite/list/index.wxml",
+    "buttons": 2,
+    "unscopedButtons": 0,
+    "mock": "design/batch2/src/favorite.html"
+  },
+  {
+    "route": "pages/history/list/index",
+    "wxml": "miniap/pages/history/list/index.wxml",
+    "buttons": 2,
+    "unscopedButtons": 0,
+    "mock": "design/batch2/src/history.html"
+  }
+]

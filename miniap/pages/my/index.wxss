@@ -319,13 +319,11 @@
 }
 
 /* A single CSS-drawn icon family: 2rpx warm-orange rounded strokes in 56rpx tiles. */
-.service-icon {
-  position: relative;
+.service-tile {
   width: 88rpx;
   height: 88rpx;
   margin: 0 auto 12rpx;
   border-radius: 30rpx;
-  background: #F6F6F8;
 }
 
 .service-icon::before,

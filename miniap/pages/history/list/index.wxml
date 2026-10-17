@@ -4,12 +4,11 @@
     <view class="hero-kicker">RECENTLY VIEWED</view>
     <view class="hero-heading">浏览记录</view>
     <view class="hero-desc">最近看过的商品，都留在这里</view>
-    <button
+    <view
       wx:if="{{items.length}}"
-      class="hero-clear-btn {{clearing ? 'hero-clear-btn-disabled' : ''}}"
+      class="hero-clear-btn btn-inline {{clearing ? 'hero-clear-btn-disabled' : ''}}"
       catchtap="clearHistory"
-      disabled="{{clearing}}"
-    >{{clearing ? '清空中' : '清空'}}</button>
+    >{{clearing ? '清空中' : '清空'}}</view>
   </view>
 
   <view class="page-body">
@@ -51,12 +50,11 @@
             <view class="goods-main">
               <view class="record-top">
                 <view class="goods-name">{{item.name}}</view>
-                <button
-                  class="remove-btn {{removingId === item.productId ? 'remove-btn-disabled' : ''}}"
+                <view
+                  class="remove-btn btn-inline {{removingId === item.productId || clearing ? 'remove-btn-disabled' : ''}}"
                   catchtap="removeHistory"
                   data-id="{{item.productId}}"
-                  disabled="{{clearing || removingId === item.productId}}"
-                >{{removingId === item.productId ? '处理中' : '删除'}}</button>
+                >{{removingId === item.productId ? '处理中' : '删除'}}</view>
               </view>
               <view wx:if="{{item.available}}" class="goods-price price"><text>¥</text>{{item.priceText}}</view>
               <view wx:else class="goods-status">该商品暂不可购买</view>

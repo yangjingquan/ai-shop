@@ -13,7 +13,6 @@
   top: 120rpx;
   min-width: 120rpx;
   height: 56rpx;
-  margin: 0;
   padding: 0 24rpx;
   border: 2rpx solid rgba(255, 255, 255, 0.6);
   border-radius: 28rpx;
@@ -22,10 +21,8 @@
   font-size: 24rpx;
   font-weight: 700;
   line-height: 56rpx;
-}
-
-.hero-clear-btn::after {
-  border: 0;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .hero-clear-btn-disabled {
@@ -120,6 +117,7 @@
 
 .goods-name {
   flex: 1;
+  min-width: 0;
   font-size: 26rpx;
   font-weight: 700;
   color: #15161C;
@@ -151,8 +149,8 @@
 
 .remove-btn {
   flex: none;
-  min-width: 0;
   width: auto;
+  max-width: 140rpx;
   height: 48rpx;
   margin: 0;
   padding: 0 20rpx;
@@ -163,10 +161,8 @@
   font-size: 22rpx;
   font-weight: 600;
   line-height: 48rpx;
-}
-
-.remove-btn::after {
-  border: 0;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .remove-btn-disabled {

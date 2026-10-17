@@ -14,16 +14,42 @@ page {
 page, view, text { box-sizing: border-box; }
 
 button {
+  margin: 0;
+  padding: 0;
+  border: none;
   font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: inherit;
+  background: transparent;
   box-sizing: border-box;
-  display: flex;
+  width: auto;
+  min-height: 0;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  line-height: normal;
+  vertical-align: middle;
 }
 
 button::after {
+  display: none;
   border: none;
+}
+
+button.btn-block,
+.btn-block {
+  width: 100%;
+  display: flex;
+  box-sizing: border-box;
+}
+
+button.btn-inline,
+.btn-inline {
+  width: auto;
+  flex: none;
+  display: inline-flex;
+  max-width: none;
 }
 
 .page-shell {
@@ -119,6 +145,8 @@ button::after {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: auto;
+  flex: none;
   padding: 0 36rpx;
   border-radius: 36rpx;
   font-size: 28rpx;
@@ -183,6 +211,7 @@ button::after {
   border-radius: 48rpx;
   font-size: 32rpx;
   width: 100%;
+  display: flex;
 }
 
 .btn-md {

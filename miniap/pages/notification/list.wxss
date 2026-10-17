@@ -11,7 +11,8 @@
   position: absolute;
   right: 32rpx;
   top: 120rpx;
-  min-width: 0;
+  width: auto;
+  flex: none;
   height: 56rpx;
   margin: 0;
   padding: 0 24rpx;

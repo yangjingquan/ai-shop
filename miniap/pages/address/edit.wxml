@@ -36,5 +36,5 @@
     </view>
   </view>
 
-  <button class="submit-btn" bindtap="onSubmit">保存</button>
+  <button class="btn btn-primary btn-block submit-btn" bindtap="onSubmit">保存</button>
 </view>

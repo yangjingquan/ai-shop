@@ -69,25 +69,25 @@
     </view>
     <view class="service-grid">
       <view class="service-item" hover-class="service-item-hover" bindtap="goNotifications">
-        <view class="service-icon service-icon-message"><view></view></view>
+        <view class="service-tile img-placeholder img-placeholder-2"></view>
         <text>消息中心</text>
         <view wx:if="{{unreadCount > 0}}" class="service-badge">{{unreadCount > 99 ? '99+' : unreadCount}}</view>
       </view>
       <navigator class="service-item" url="/pages/address/list" hover-class="service-item-hover">
-        <view class="service-icon service-icon-location"><view></view></view>
+        <view class="service-tile img-placeholder img-placeholder-3"></view>
         <text>收货地址</text>
       </navigator>
       <view class="service-item" hover-class="service-item-hover" bindtap="goOrders">
-        <view class="service-icon service-icon-order"><view></view></view>
+        <view class="service-tile img-placeholder img-placeholder-1"></view>
         <text>我的订单</text>
       </view>
       <view wx:if="{{couponEnabled}}" class="service-item" hover-class="service-item-hover" bindtap="goCoupons">
-        <view class="service-icon service-icon-coupon"><view></view></view>
+        <view class="service-tile img-placeholder img-placeholder-4"></view>
         <text>优惠券</text>
         <view wx:if="{{couponCount > 0}}" class="service-badge">{{couponCount > 99 ? '99+' : couponCount}}</view>
       </view>
       <view wx:if="{{referralEnabled}}" class="service-item" hover-class="service-item-hover" bindtap="goReferral">
-        <view class="service-icon service-icon-gift"><view></view></view>
+        <view class="service-tile img-placeholder img-placeholder-5"></view>
         <text>分享有礼</text>
       </view>
     </view>

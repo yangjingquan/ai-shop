@@ -356,8 +356,10 @@
 }
 
 .empty-btn {
+  width: auto;
+  flex: none;
   height: 64rpx;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   margin: 24rpx 0 0;

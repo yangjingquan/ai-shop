@@ -24,6 +24,6 @@
   </view>
 
   <view class="address-bottom-bar">
-    <button class="btn btn-primary address-add-btn" bindtap="onAdd">＋ 新增地址</button>
+    <button class="btn btn-primary btn-block address-add-btn" bindtap="onAdd">＋ 新增地址</button>
   </view>
 </view>
