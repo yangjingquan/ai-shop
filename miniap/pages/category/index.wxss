@@ -4,7 +4,11 @@ page {
 
 .cat-page {
   min-height: 100vh;
-  padding: 20rpx 32rpx 0;
+  width: 100%;
+  padding-top: 20rpx;
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+  overflow-x: hidden;
   box-sizing: border-box;
   background: #F6F6F8;
   color: #15161C;

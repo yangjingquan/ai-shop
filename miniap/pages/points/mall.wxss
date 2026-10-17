@@ -7,6 +7,10 @@
   padding-bottom: 40rpx;
 }
 
+.mall-page .hero-chip-on {
+  color: #B07A00;
+}
+
 .points-balance-label {
   margin-top: 0;
   font-size: 26rpx;
@@ -30,20 +34,25 @@
 }
 
 .mall-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20rpx;
   margin-top: 24rpx;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .mall-item {
-  width: calc(50% - 10rpx);
-  margin-bottom: 20rpx;
-  padding: 16rpx 16rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  padding: 16rpx 16rpx 20rpx;
   border-radius: 32rpx;
   background: #fff;
   box-shadow: 0 8rpx 36rpx rgba(20, 22, 28, 0.04);
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .mall-image {
@@ -56,6 +65,7 @@
   font-size: 48rpx;
   font-weight: 900;
   color: #FF4A1C;
+  flex: none;
 }
 
 .mall-name {
@@ -67,37 +77,39 @@
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  min-width: 0;
 }
 
 .mall-price {
   color: #B07A00;
   font-size: 26rpx;
   font-weight: 800;
+  flex: none;
 }
 
-.mall-bottom {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 8rpx;
-  margin-top: 12rpx;
-}
-
-.mall-meta {
-  flex: 1;
+.mall-meta-line {
+  width: 100%;
   min-width: 0;
+  margin-top: 12rpx;
   font-size: 20rpx;
   color: #9A9EA8;
   line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.mall-bottom .btn-sm {
-  flex: none;
+.mall-redeem-btn {
+  width: 100%;
   height: 60rpx;
-  padding: 0 20rpx;
+  margin: 16rpx 0 0;
+  padding: 0 16rpx;
   font-size: 22rpx;
+  display: flex;
+  box-sizing: border-box;
+  flex: none;
 }
 
 .mall-empty {
-  width: 100%;
+  grid-column: 1 / -1;
 }

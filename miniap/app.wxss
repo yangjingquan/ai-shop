@@ -6,9 +6,9 @@ page {
   --tab-bar-gap: 36rpx;
   --tab-bar-height: 124rpx;
   --tab-bar-inset: calc(var(--tab-bar-gap) + var(--tab-bar-height) + env(safe-area-inset-bottom));
-  --tab-page-pad-bottom: calc(var(--tab-bar-inset) + 24rpx);
+  --tab-page-pad-bottom: calc(200rpx + env(safe-area-inset-bottom));
   --cart-checkout-height: 128rpx;
-  --cart-page-pad-bottom: calc(var(--tab-bar-inset) + var(--cart-checkout-height) + 32rpx);
+  --cart-page-pad-bottom: calc(200rpx + var(--cart-checkout-height) + env(safe-area-inset-bottom));
 }
 
 page, view, text { box-sizing: border-box; }
@@ -281,6 +281,18 @@ button.btn-sm.btn-ghost {
 .pad-custom-tab-bar-cart {
   padding-bottom: var(--cart-page-pad-bottom);
   box-sizing: border-box;
+}
+
+.pad-fixed-bottom-bar {
+  padding-bottom: calc(156rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .fixed-above-custom-tab-bar {
@@ -608,6 +620,12 @@ button.btn-sm.btn-ghost {
   margin-top: 10rpx;
   font-size: 24rpx;
   color: #9A9EA8;
+}
+
+.empty-state2 button,
+.empty-state2 .btn {
+  display: flex;
+  margin: 28rpx auto 0;
 }
 
 .page-end-note {

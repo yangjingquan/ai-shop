@@ -17,18 +17,13 @@
       <view wx:else class="mall-image img-placeholder img-placeholder-1">积</view>
       <view class="mall-name">{{item.title}}</view>
       <view class="mall-price">消耗 {{item.pointsPrice}} 积分</view>
-      <view class="mall-bottom">
-        <view class="mall-meta">
-          <text>{{item.stockText}}</text>
-          <text>{{item.quotaText}}</text>
-        </view>
-        <button
-          class="btn btn-sm {{item.canRedeem ? 'btn-primary' : 'btn-disabled'}}"
-          disabled="{{!item.canRedeem || redeemingId === item.id}}"
-          bindtap="redeem"
-          data-item="{{item}}"
-        >{{redeemingId === item.id ? '兑换中' : item.redeemText}}</button>
-      </view>
+      <view class="mall-meta-line">{{item.stockText}} {{item.quotaText}}</view>
+      <button
+        class="btn btn-sm btn-block mall-redeem-btn {{item.canRedeem ? 'btn-primary' : 'btn-disabled'}}"
+        disabled="{{!item.canRedeem || redeemingId === item.id}}"
+        bindtap="redeem"
+        data-item="{{item}}"
+      >{{redeemingId === item.id ? '兑换中' : item.redeemText}}</button>
     </view>
 
     <view wx:if="{{!items.length}}" class="empty-state2 mall-empty">
