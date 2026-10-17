@@ -3,6 +3,10 @@
   padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
 }
 
+.history-page .page-section-head {
+  margin: 32rpx 0 24rpx;
+}
+
 .hero-clear-btn {
   position: absolute;
   right: 32rpx;
